@@ -1,0 +1,2 @@
+#!/bin/sh
+[ "$ACTION" = "reload" ] && /etc/init.d/vpn-policy-routing reload

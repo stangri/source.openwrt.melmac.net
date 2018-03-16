@@ -1,0 +1,25 @@
+<%+header%>
+<%- if not nixio.fs.access("/tmp/firmware.img") or not nixio.fs.access("/tmp/firmware.tag")  then -%>
+<p class="alert-message"><%:Firmware upgrade files were not found!%></p>
+<%- else
+content = nixio.fs.readfile("/var/firmware.tag")
+text = luci.util.trim(content) -%>
+<fieldset class="cbi-section">
+	<fieldset class="cbi-section">
+		<legend><%:Easy Flash%></legend>
+		<div class="cbi-section-descr"><%:Click "Run Easy Flash" to start flashing %><strong><%=text .. '.' %></strong></div>
+		<div class="cbi-section-node">
+			<form class="inline" method="post" action="<%=url('admin/system/flashops/sysupgrade')%>">
+                <input type="hidden" name="step" value="2" />
+                <input type="hidden" name="keep" value="" />
+                <input type="hidden" name="token" value="<%=token%>" />
+					<label class="cbi-value-title" for="image"><%:Start Flashing%>:</label>
+					<div class="cbi-value-field">
+						<input class="cbi-button cbi-button-apply" type="submit" name="backup" value="<%:Run Easy Flash%>" />
+					</div>
+				</div>
+			</form>
+		</div>
+</fieldset>
+<%- end -%>
+<%+footer%>
