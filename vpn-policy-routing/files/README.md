@@ -39,7 +39,7 @@ You can also set policies for traffic with specific DSCP tag. On Windows 10, for
 
 
 ## Screenshot (luci-app-vpn-policy-routing)
-![screenshot](https://raw.githubusercontent.com/stangri/screenshots/master/vpn-policy-routing/screenshot01.png "screenshot")
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot01.png "screenshot")
 
 
 ## How it works

@@ -22,7 +22,7 @@ If you want a more robust AdBlocking, supporting free memory detection and compl
 
 
 ## Screenshot (luci-app-simple-adblock)
-![screenshot](https://raw.githubusercontent.com/stangri/screenshots/master/simple-adblock/screenshot04.png "screenshot")
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/simple-adblock/screenshot04.png "screenshot")
 
 
 ## Requirements
