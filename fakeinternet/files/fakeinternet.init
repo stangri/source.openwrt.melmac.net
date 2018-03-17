@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# https://192.168.1.1:65530/generate_204 https://192.18.1.1/generate_204
+# https://192.168.1.1:${wwwPort}/generate_204 https://192.18.1.1/generate_204
 PKG_VERSION=
 
 export START=94
@@ -8,13 +8,14 @@ export USE_PROCD=1
 
 readonly packageName='fakeinternet'
 readonly serviceName="$packageName $PKG_VERSION"
-export ip range
+export ip range serviceEnabled wwwIP domainsList
 
 load_package_config() {
 	config_load "$packageName"
 	config_get_bool serviceEnabled 'config' 'enabled' 0
-	config_get wwwIP               'config' 'default_ip' '192.18.1.1'
-	config_get domains_list        'config' 'address'
+	config_get wwwIP               'config' 'www_ip' '192.18.1.1'
+	config_get wwwPort             'config' 'www_port' '65530'
+	config_get domainsList         'config' 'address'
 }
 
 is_enabled() {
@@ -26,30 +27,6 @@ is_enabled() {
 	if [[ -z "$ip" || -z "$range" ]]; then return 1; else return 0; fi
 }
 
-ipt() {
-  local d
-	d="${*//-A/-D}"; if [ "$d" != "$*" ]; then
-		iptables $d >/dev/null 2>&1
-		ip6tables $d >/dev/null 2>&1
-	fi
-	d="${*//-I/-D}"; if [ "$d" != "$*" ]; then
-		iptables $d >/dev/null 2>&1
-		ip6tables $d >/dev/null 2>&1
-	fi
-	d="${*//-N/-F}"; if [ "$d" != "$*" ]; then
-		iptables $d >/dev/null 2>&1
-		ip6tables $d >/dev/null 2>&1
-	fi
-	d="${*//-N/-X}"; if [ "$d" != "$*" ]; then
-		iptables $d >/dev/null 2>&1
-		ip6tables $d >/dev/null 2>&1
-	fi
-
-	d="$*"
-	iptables $d >/dev/null 2>&1
-	ip6tables $d >/dev/null 2>&1
-}
-
 ipt_rules(){
 	case "$1" in
 		stop)
@@ -57,16 +34,16 @@ ipt_rules(){
 			logger -t "fakeinternet" "Removed iptables rules for fakeinternet uhttpd instances"
 			;;
 		start)
-			ipt -t nat -A prerouting_rule -i br-lan -p udp --dport 53 -j DNAT --to $ip -m comment --comment "fakeinternet_rule"
-			ipt -t nat -A prerouting_rule -i br-lan -p tcp --dport 53 -j DNAT --to $ip -m comment --comment "fakeinternet_rule"
-			ipt -t nat -A prerouting_rule ! -d $range -p tcp -m tcp --dport 80 -j DNAT --to-destination $ip:65530 -m comment --comment "fakeinternet_rule"
-			ipt -t nat -A prerouting_rule ! -d $range -p tcp -m tcp --dport 443 -j DNAT --to-destination $ip:65530 -m comment --comment "fakeinternet_rule"
+#			ipt -t nat -A prerouting_rule -i br-lan -p udp --dport 53 -j DNAT --to $ip -m comment --comment "fakeinternet_rule"
+#			ipt -t nat -A prerouting_rule -i br-lan -p tcp --dport 53 -j DNAT --to $ip -m comment --comment "fakeinternet_rule"
+#			ipt -t nat -A prerouting_rule ! -d $range -p tcp -m tcp --dport 80 -j DNAT --to-destination $ip:${wwwPort} -m comment --comment "fakeinternet_rule"
+#			ipt -t nat -A prerouting_rule ! -d $range -p tcp -m tcp --dport 443 -j DNAT --to-destination $ip:${wwwPort} -m comment --comment "fakeinternet_rule"
 			ipt -w -A forwarding_rule -d $wwwIP -p tcp -j REJECT --reject-with tcp-reset -m comment --comment "fakeinternet_rule"
 			ipt -w -A forwarding_rule -d $wwwIP -j REJECT --reject-with icmp-host-unreachable -m comment --comment "fakeinternet_rule"
 			ipt -w -A output_rule -d $wwwIP -p tcp -j REJECT --reject-with tcp-reset -m comment --comment "fakeinternet_rule"
 			ipt -w -A output_rule -d $wwwIP -j REJECT --reject-with icmp-host-unreachable -m comment --comment "fakeinternet_rule"
-			ipt -w -t nat -A prerouting_rule -p tcp -d $wwwIP --dport 80 -j DNAT --to-destination $ip:65530 -m comment --comment "fakeinternet_rule"
-			ipt -w -t nat -A prerouting_rule -p tcp -d $wwwIP --dport 443 -j DNAT --to-destination $ip:65530 -m comment --comment "fakeinternet_rule"
+#			ipt -w -t nat -A prerouting_rule -p tcp -d $wwwIP --dport 80 -j DNAT --to-destination $ip:${wwwPort} -m comment --comment "fakeinternet_rule"
+#			ipt -w -t nat -A prerouting_rule -p tcp -d $wwwIP --dport 443 -j DNAT --to-destination $ip:${wwwPort} -m comment --comment "fakeinternet_rule"
 			logger -t "fakeinternet" "Added iptables rules for fakeinternet uhttpd instances"
 			;;
 	esac
@@ -74,38 +51,32 @@ ipt_rules(){
 }
 
 dns_forward() {
-	local record
+	local i list="$(uci -q get dhcp.@dnsmasq[0].address)"
 	case "$1" in
-		stop)
-		 for record in ${domains_list}; do
-			if [ -n "$record" ]; then
-				uci -q del_list dhcp.@dnsmasq[0].address="/${record}/${wwwIP}"
-			fi
+		Rem*)
+		 for i in ${domainsList}; do
+			[ -n "$i" ] && uci -q del_list dhcp.@dnsmasq[0].address="/${i}/${wwwIP}"
 		 done
-			uci commit dhcp
-			logger -t "fakeinternet" "Removed dnsmasq address entries"
-			/etc/init.d/dnsmasq restart >/dev/null 2>&1
-			;;
-		start)
-			for record in ${domains_list}; do
-				if [ -n "$record" ] && ! uci get dhcp.@dnsmasq[0].address | grep -q "/$record/"; then
-					uci add_list dhcp.@dnsmasq[0].address="/${record}/${wwwIP}"
-				fi
-			done
-			uci commit dhcp
-			logger -t "fakeinternet" "Added dnsmasq address entries"
-			/etc/init.d/dnsmasq restart >/dev/null 2>&1
+		 ;;
+		Add*)
+		for i in ${domainsList}; do
+			[[ -n "$i" && "${list//\/$i\/${wwwIP}}" != "$list" ]] && uci add_list dhcp.@dnsmasq[0].address="/${i}/${wwwIP}"
+		done
 			;;
 	esac
+	if [ -n "$(uci changes)" ]; then
+		uci commit dhcp
+		logger -t "fakeinternet" "${1}ed dnsmasq address entries"
+		/etc/init.d/dnsmasq restart >/dev/null 2>&1
+	fi
 	return 0
 }
 
 start_service() {
 	is_enabled || return 1
-	ipt_rules 'start' || return 1
-	dns_forward 'start' || return 1
+	dns_forward 'Add' || return 1
 	procd_open_instance
-	procd_set_param command /usr/sbin/uhttpd -f -h /www_fakeinternet -r fakeinternet -x /cgi-bin -t 60 -T 30 -k 20 -A 1 -E /cgi-bin/error.cgi -n 3 -N 100 -R -p 0.0.0.0:65530 -p "[::]:65530" -i .cgi=/bin/ash
+	procd_set_param command /usr/sbin/uhttpd -f -h /www_fakeinternet -r fakeinternet -x /cgi-bin -t 60 -T 30 -k 20 -A 1 -E /cgi-bin/error.cgi -n 3 -N 100 -R -p 0.0.0.0:${wwwPort} -p "[::]:${wwwPort}" -i .cgi=/bin/ash
 	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
 	procd_set_param stdout 1
 	procd_set_param stderr 1
@@ -115,12 +86,59 @@ start_service() {
 	json_add_string type redirect
 	json_add_string target 'DNAT'
 	json_add_string src 'lan'
+	json_add_string proto 'tcpudp'
+	json_add_string src_dport '53'
+	json_add_string dest_port '53'
+#	json_add_string dest_ip "$ip"
+	json_add_string name 'PROCD_rule_01'
+	json_add_string reflection '0'
+	json_close_object
+	json_add_object ""
+	json_add_string type redirect
+	json_add_string target 'DNAT'
+	json_add_string src 'lan'
 	json_add_string proto 'tcp'
 	json_add_string src_dport '80'
 	json_add_string src_dip "!$range"
 	json_add_string dest_ip "$ip"
-	json_add_string dest_port '65535'
-	json_add_string name 'PROCD_rule'
+	json_add_string dest_port "${wwwPort}"
+	json_add_string name 'PROCD_rule_03'
+	json_add_string reflection '0'
+	json_close_object
+	json_add_object ""
+	json_add_string type redirect
+	json_add_string target 'DNAT'
+	json_add_string src 'lan'
+	json_add_string proto 'tcp'
+	json_add_string src_dport '443'
+	json_add_string src_dip "!$range"
+	json_add_string dest_ip "$ip"
+	json_add_string dest_port "${wwwPort}"
+	json_add_string name 'PROCD_rule_04'
+	json_add_string reflection '0'
+	json_close_object
+	json_add_object ""
+	json_add_string type redirect
+	json_add_string target 'DNAT'
+	json_add_string src 'lan'
+	json_add_string proto 'tcp'
+	json_add_string src_dport '80'
+	json_add_string src_dip "$wwwIP"
+	json_add_string dest_ip "$ip"
+	json_add_string dest_port "${wwwPort}"
+	json_add_string name 'PROCD_rule_09'
+	json_add_string reflection '0'
+	json_close_object
+	json_add_object ""
+	json_add_string type redirect
+	json_add_string target 'DNAT'
+	json_add_string src 'lan'
+	json_add_string proto 'tcp'
+	json_add_string src_dport '443'
+	json_add_string src_dip "$wwwIP"
+	json_add_string dest_ip "$ip"
+	json_add_string dest_port "${wwwPort}"
+	json_add_string name 'PROCD_rule_10'
 	json_add_string reflection '0'
 	json_close_object
 	json_close_array
@@ -129,9 +147,13 @@ start_service() {
 	logger -t "$serviceName" "Service started"
 }
 
+service_started() {
+	procd_set_config_changed firewall
+}
+
 stop_service () {
 	load_package_config
-	ipt_rules 'stop'
-	dns_forward 'stop'
+	dns_forward 'Remov'
+	procd_set_config_changed firewall
 	logger -t "$serviceName" "Service stopped"
 }

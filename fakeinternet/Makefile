@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fakeinternet
-PKG_VERSION:=0.0.2
-PKG_RELEASE:=2
+PKG_VERSION:=0.0.3
+PKG_RELEASE:=1
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -63,7 +63,6 @@ define Package/$(PKG_NAME)/postinst
 		uci -q batch <<-EOF >/dev/null
 			add ucitrack fakeinternet
 			set ucitrack.@fakeinternet[-1].init='fakeinternet'
-			add_list ucitrack.@firewall[-1].affects='fakeinternet'
 			commit ucitrack
 	EOF
 	fi
