@@ -29,20 +29,20 @@ failn() { case $verbosity in 1) output "$_FAIL_\n";; 2) output "$__FAIL__\n";; e
 output() { [[ $# -ne 1 ]] && { [[ ! $((verbosity & $1)) -gt 0 ]] && return 0 || shift; }; local msg; msg=$(echo -n "${1/$serviceName /service }" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g'); [[ -t 1 ]] && echo -e -n "$1"; [[ $(echo -e -n "$msg" | wc -l) -gt 0 ]] && logger -t "${packageName:-service} [$$]" "$(echo -e -n ${logmsg}${msg})" && logmsg='' || logmsg=${logmsg}${msg}; }
 led_on(){ [[ -n "$led" && -e "$led/trigger" ]] && echo "default-on" > "$led/trigger"; }
 led_off(){ [[ -n "$led" && -e "$led/trigger" ]] && echo "none" > "$led/trigger"; }
-export serviceEnabled verbosity force_dns debug led wan_if wan_gw wanphysdev hosts_file boot_delay
+export serviceEnabled verbosity forceDNS debug led wan_if wan_gw wanphysdev hosts_file boot_delay
 
 boot() { load_package_config; ( sleep $boot_delay && rc_procd start_service && rc_procd service_triggers | cat & ); }
 
 load_package_config() {
 	config_load "$packageName"
 	config_get_bool serviceEnabled 'config' 'enabled' 1
-	config_get_bool force_dns      'config' 'force_dns' 1
+	config_get_bool forceDNS       'config' 'force_dns' 1
 	config_get_bool debug          'config' 'debug' 0
 	config_get boot_delay          'config' 'boot_delay' '120'
 	config_get verbosity           'config' 'verbosity' '2'
 	config_get hosts_file  	       'config' 'hosts_file' "/var/dnsmasq.d/${packageName}"
 	config_get led        	       'config' 'led'
-	source 	/lib/functions/network.sh
+	source /lib/functions/network.sh
 }
 
 is_enabled() {
@@ -66,57 +66,6 @@ is_enabled() {
 		output "$_ERROR_: $serviceName failed to discover WAN gateway.\n"; return 1;
 }
 
-force_dns_redirect() {
-	local command="$1" noise="$2" reloadfw rule="${packageName//-/_}_dns"
-	[ -n "$packageName" ] || return 1
-	case $command in
-		stop)
-			if [ -z "$(uci -q get firewall.${rule})" ]; then
-				[ "$noise" != "quiet" ] && output 'No longer forcing local DNS server '
-				uci -q del firewall.${rule}
-				reloadfw=1
-			fi
-			;;
-		start)
-			[ $force_dns -ne 0 ] || return 0
-			if [ -z "$(uci -q get firewall.${rule})" ]; then
-				[ "$noise" != "quiet" ] && output 'Forcing local DNS server '
-				uci -q set firewall.${rule}='redirect'
-				uci -q set firewall.${rule}.name="${packageName} DNS Redirect"
-				uci -q set firewall.${rule}.src='lan'
-				uci -q set firewall.${rule}.proto='tcpudp'
-				uci -q set firewall.${rule}.src_dport='53'
-				uci -q set firewall.${rule}.dest_port='53'
-				uci -q set firewall.${rule}.target='DNAT'
-				reloadfw=1
-			else
-				[ "$noise" != "quiet" ] && { output 'Already forcing local DNS server '; okn; }
-			fi
-			;;
-	esac
-	if [ -n "$reloadfw" ]; then
-		uci -q commit firewall
-		if /etc/init.d/firewall reload >/dev/null 2>&1; then
-			[ "$noise" != "quiet" ] && okn
-		else
-			[ "$noise" != "quiet" ] && failn
-		fi
-	fi
-}
-
-stop_adblocking() {
-	load_package_config
-  [ -f $hosts_file ] && mv $hosts_file $T_TMP
-  output 3 "Restarting dnsmasq "
-	led_off
-  /etc/init.d/dnsmasq restart >/dev/null 2>&1
-	if [[ $? -eq 0 ]]; then
-		okn; output "$serviceName stopped.\n";
-	else
-		failn; output "$_ERROR_: $serviceName failed to reload dnsmasq!\n";
-	fi
-}
-
 process_url() {
 	local label type D_TMP R_TMP
 	[[ -n "$1" && -n "$2" && -n "$3" ]] || return 1
@@ -131,58 +80,50 @@ process_url() {
 	{ sed -i "$filter" "$R_TMP"; cat "$R_TMP" >> "$D_TMP"; rm -f "$R_TMP"; } &
 }
 
-start_adblocking() {
-		local whitelist_domains blacklist_domains whitelist_domains_urls blacklist_domains_urls blacklist_hosts_urls
-    config_get whitelist_domains          'config' 'whitelist_domain'
-    config_get blacklist_domains          'config' 'blacklist_domain'
-    config_get whitelist_domains_urls     'config' 'whitelist_domains_url'
-    config_get blacklist_domains_urls     'config' 'blacklist_domains_url'
-    config_get blacklist_hosts_urls       'config' 'blacklist_hosts_url'
-
-    local hf w_filter
+download_lists() {
+	local i hf w_filter whitelist_domains blacklist_domains whitelist_domains_urls blacklist_domains_urls blacklist_hosts_urls
+  config_get whitelist_domains          'config' 'whitelist_domain'
+  config_get blacklist_domains          'config' 'blacklist_domain'
+  config_get whitelist_domains_urls     'config' 'whitelist_domains_url'
+  config_get blacklist_domains_urls     'config' 'blacklist_domains_url'
+  config_get blacklist_hosts_urls       'config' 'blacklist_hosts_url'
 
 	[ ! -d ${hosts_file%/*} ] && mkdir -p ${hosts_file%/*}
-	[ ! -f "$hosts_file" ] && touch "$hosts_file"
-	if [[ -s $T_TMP && ! "$1" == "reload" ]]; then
-		output 3 'Found existing data file, reusing it '
-		mv $T_TMP $hosts_file && okn || failn
-	else
-		[ -f $A_TMP ] && rm -f $A_TMP; [ -f $B_TMP ] && rm -f $B_TMP; [ -f $T_TMP ] && rm -f $T_TMP; [ -f $hosts_file ] && rm -f $hosts_file;
-		if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
-			output 1 'Low free memory, restarting dnsmasq...'
-			/etc/init.d/dnsmasq restart >/dev/null 2>&1 && okn || failn
-		fi
-    touch $A_TMP; touch $B_TMP; touch $T_TMP;
-    if [ -n "$blacklist_hosts_urls" ]; then
-	    output 1 '[DL] Blocked Hosts '
-	    for hf in ${blacklist_hosts_urls}; do process_url "$hf" 'hosts' 'blocked'; done
-			output 1 '\n'
-		fi
-    if [ -n "$blacklist_domains_urls" ]; then
-	    output 1 '[DL] Blocked Domains '
-	    for hf in ${blacklist_domains_urls}; do process_url "$hf" 'domains' 'blocked'; done
-			output 1 '\n'
-		fi
-    if [ -n "$whitelist_domains_urls" ]; then
-	    output 1 '[DL] Allowed Domains '
-	    for hf in ${whitelist_domains_urls}; do process_url "$hf" 'domains' 'allowed'; done
-			output 1 '\n'
-		fi
-		output 3 'Waiting for background processes '
-		wait && okn
-    [ -n "$blacklist_domains" ] && for hf in ${blacklist_domains}; do echo "$hf" | sed "$d_filter" >> $B_TMP; done
-    whitelist_domains="${whitelist_domains}"$'\n'"$(cat $A_TMP)"
-    [ -n "$whitelist_domains" ] && for hf in ${whitelist_domains}; do hf=$(echo $hf | sed 's/\./\\./g'); w_filter="$w_filter/^${hf}$/d;/\\.${hf}$/d;"; done
-		if [ -s $B_TMP ]; then
-		    output 1 'Processing downloads '
-		    output 2 'Sorting merged file '; sort $B_TMP | uniq > $T_TMP && ok || fail
-		    output 2 'Whitelisting domains '; sed -i "$w_filter" $T_TMP && ok || fail
-		    output 2 'Formatting merged file '; sed "$f_filter" $T_TMP > $B_TMP && mv $B_TMP $hosts_file && ok || fail
-		    output 1 '\n'
-		    output 3 'Removing temporary files '
-			[ -f $A_TMP ] && rm -f $A_TMP; [ -f $B_TMP ] && rm -f $B_TMP; [ -f $T_TMP ] && rm -f $T_TMP;
- 		    okn
-		fi
+	for i in $A_TMP $B_TMP $T_TMP $hosts_file; do [ -f $i ] && rm -f $i; done
+	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
+		output 1 'Low free memory, restarting dnsmasq...'
+		/etc/init.d/dnsmasq restart >/dev/null 2>&1 && okn || failn
+	fi
+  touch $A_TMP; touch $B_TMP; touch $T_TMP;
+  if [ -n "$blacklist_hosts_urls" ]; then
+    output 1 '[DL] Blocked Hosts '
+    for hf in ${blacklist_hosts_urls}; do process_url "$hf" 'hosts' 'blocked'; done
+		output 1 '\n'
+	fi
+  if [ -n "$blacklist_domains_urls" ]; then
+    output 1 '[DL] Blocked Domains '
+    for hf in ${blacklist_domains_urls}; do process_url "$hf" 'domains' 'blocked'; done
+		output 1 '\n'
+	fi
+  if [ -n "$whitelist_domains_urls" ]; then
+    output 1 '[DL] Allowed Domains '
+    for hf in ${whitelist_domains_urls}; do process_url "$hf" 'domains' 'allowed'; done
+		output 1 '\n'
+	fi
+	output 3 'Waiting for background processes '
+	wait && okn
+  [ -n "$blacklist_domains" ] && for hf in ${blacklist_domains}; do echo "$hf" | sed "$d_filter" >> $B_TMP; done
+  whitelist_domains="${whitelist_domains}"$'\n'"$(cat $A_TMP)"
+  [ -n "$whitelist_domains" ] && for hf in ${whitelist_domains}; do hf=$(echo $hf | sed 's/\./\\./g'); w_filter="$w_filter/^${hf}$/d;/\\.${hf}$/d;"; done
+	if [ -s $B_TMP ]; then
+	    output 1 'Processing downloads '
+	    output 2 'Sorting merged file '; sort $B_TMP | uniq > $T_TMP && ok || fail
+	    output 2 'Whitelisting domains '; sed -i "$w_filter" $T_TMP && ok || fail
+	    output 2 'Formatting merged file '; sed "$f_filter" $T_TMP > $B_TMP && mv $B_TMP $hosts_file && ok || fail
+	    output 1 '\n'
+	    output 3 'Removing temporary files '
+		[ -f $A_TMP ] && rm -f $A_TMP; [ -f $B_TMP ] && rm -f $B_TMP; [ -f $T_TMP ] && rm -f $T_TMP;
+		    okn
 	fi
 
 	if [ -s $hosts_file ]; then
@@ -218,22 +159,56 @@ check() {
 
 start_service() {
   is_enabled || return 1
-	if [ -f "$hosts_file" ]; then
+	if [ $forceDNS -ne 0 ]; then
+		procd_open_instance
+		procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
+		procd_set_param stdout 1
+		procd_set_param stderr 1
+		procd_open_data
+		json_add_array firewall
+		json_add_object ""
+		json_add_string type redirect
+		json_add_string target 'DNAT'
+		json_add_string src 'lan'
+		json_add_string proto 'tcpudp'
+		json_add_string src_dport '53'
+		json_add_string dest_port '53'
+		json_add_string name 'simple_adblock_dns'
+		json_add_string reflection '0'
+		json_close_object
+		json_close_array
+		procd_close_data
+		procd_close_instance
+	fi
+	if [ "$1" == "reload" ]; then
 		output "Reloading $serviceName...\n"
-		force_dns_redirect 'start' 'quiet'
-		start_adblocking 'reload'
+		download_lists
+	elif [ -s "$hosts_file" ]; then
+		output "$serviceName is already running...\n"
+	elif [ -s "$T_TMP" ]; then
+		output 3 'Found existing data file, reusing it '
+		mv $T_TMP $hosts_file && okn || failn
 	else
 		output "Starting $serviceName...\n"
-		force_dns_redirect 'start'
-		start_adblocking
+		download_lists
 	fi
 }
 
-stop_service() {
-  load_package_config
-	output "Stopping $serviceName...\n"
-	force_dns_redirect 'stop'
-	stop_adblocking
-}
-
+service_started() { procd_set_config_changed firewall; }
+reload_service() { start_service 'reload'; }
 killcache() { [ -s $T_TMP ] && rm -f $T_TMP; }
+
+stop_service() {
+	load_package_config
+	output "Stopping $serviceName...\n"
+  [ -f $hosts_file ] && mv $hosts_file $T_TMP
+  output 3 "Restarting dnsmasq "
+	led_off
+  /etc/init.d/dnsmasq restart >/dev/null 2>&1
+	if [[ $? -eq 0 ]]; then
+		okn; output "$serviceName stopped.\n";
+	else
+		failn; output "$_ERROR_: $serviceName failed to reload dnsmasq!\n";
+	fi
+	procd_set_config_changed firewall
+}
