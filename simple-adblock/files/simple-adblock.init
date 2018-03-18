@@ -125,7 +125,9 @@ download_lists() {
 		[ -f $A_TMP ] && rm -f $A_TMP; [ -f $B_TMP ] && rm -f $B_TMP; [ -f $T_TMP ] && rm -f $T_TMP;
 		    okn
 	fi
+}
 
+reload_dnsmasq() {
 	if [ -s $hosts_file ]; then
 		output 3 'Restarting dnsmasq '
 		/etc/init.d/dnsmasq restart >/dev/null 2>&1
@@ -183,14 +185,17 @@ start_service() {
 	if [ "$1" == "reload" ]; then
 		output "Reloading $serviceName...\n"
 		download_lists
+		reload_dnsmasq
 	elif [ -s "$hosts_file" ]; then
 		output "$serviceName is already running...\n"
 	elif [ -s "$T_TMP" ]; then
 		output 3 'Found existing data file, reusing it '
 		mv $T_TMP $hosts_file && okn || failn
+		reload_dnsmasq
 	else
 		output "Starting $serviceName...\n"
 		download_lists
+		reload_dnsmasq
 	fi
 }
 
