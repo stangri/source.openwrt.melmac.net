@@ -41,8 +41,8 @@ function is_supported_interface(arg)
 	if name and not ignoredIfaces:find(name) then
 --		if ifname and ifname:sub(1,3) == "tun" then return true end
 --		if ifname and ifname:sub(1,3) == "tap" then return true end
-		if ifname and ifname.find("tun") then return true end
-		if ifname and ifname.find("tap") then return true end
+		if ifname and ifname:find("tun") then return true end
+		if ifname and ifname:find("tap") then return true end
 		if ifname and nixio.fs.access("/sys/devices/virtual/net/" .. ifname .. "/tun_flags") then return true end
 		if proto and proto:sub(1,11) == "openconnect" then return true end
 		if proto and proto:sub(1,4) == "pptp" then return true end
