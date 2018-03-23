@@ -5,7 +5,7 @@ readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/vpn-policy-
 -- 	if obj ~= nil then if type(obj) == "table" then luci.util.dumptable(obj) else luci.util.perror(obj) end else luci.util.perror("Empty object") end
 -- end
 
-t = luci.model.uci.cursor():get("vpn-policy-routing", "config", "supported_interface")
+t = uci.cursor():get("vpn-policy-routing", "config", "supported_interface")
 if not t then
 	supportedIfaces = ""
 elseif (type(t) == "table") then
@@ -14,7 +14,7 @@ elseif (type(t) == "string") then
 	supportedIfaces = t
 end
 
-t = luci.model.uci.cursor():get("vpn-policy-routing", "config", "ignored_interface")
+t = uci.cursor():get("vpn-policy-routing", "config", "ignored_interface")
 if not t then
 	ignoredIfaces = ""
 elseif (type(t) == "table") then
@@ -23,19 +23,31 @@ elseif (type(t) == "string") then
 	ignoredIfaces = t
 end
 
+lanIPAddr = uci.cursor():get("network", "lan", "ipaddr")
+lanNetmask = uci.cursor():get("network", "lan", "netmask")
+if lanIPAddr and lanNetmask then
+	laPlaceholder = luci.ip.new(lanIPAddr .. "/" .. lanNetmask )
+end
+
 function is_supported_interface(arg)
 	local name=arg['.name']
-	local ifname=arg['ifname']
 	local proto=arg['proto']
+	if (type(arg['ifname']) == "table") then
+		for key,value in pairs(arg['ifname']) do ifname = ifname and ifname .. ' ' .. value or value end
+	else
+		ifname=arg['ifname']
+	end
 	if name and supportedIfaces:find(name) then return true end
 	if name and not ignoredIfaces:find(name) then
-		if ifname and ifname:sub(0,3) == "tun" then return true end
+--		if ifname and ifname:sub(1,3) == "tun" then return true end
+--		if ifname and ifname:sub(1,3) == "tap" then return true end
+		if ifname and ifname.find("tun") then return true end
+		if ifname and ifname.find("tap") then return true end
 		if ifname and nixio.fs.access("/sys/devices/virtual/net/" .. ifname .. "/tun_flags") then return true end
-		if ifname and ifname:sub(0,3) == "tap" then return true end
-		if proto and proto:sub(0,11) == "openconnect" then return true end
-		if proto and proto:sub(0,4) == "pptp" then return true end
-		if proto and proto:sub(0,4) == "l2tp" then return true end
-		if proto and proto:sub(0,9) == "wireguard" then return true end
+		if proto and proto:sub(1,11) == "openconnect" then return true end
+		if proto and proto:sub(1,4) == "pptp" then return true end
+		if proto and proto:sub(1,4) == "l2tp" then return true end
+		if proto and proto:sub(1,9) == "wireguard" then return true end
 	end
 end
 
@@ -158,8 +170,8 @@ s3.addremove = true
 s3:option(Value, "comment", translate("Comment"))
 
 la = s3:option(Value, "local_addresses", translate("Local addresses/devices"))
-if uci.cursor():get("network", "lan", "ipaddr") and uci.cursor():get("network", "lan", "netmask") then
-	la.placeholder = luci.ip.new(uci.cursor():get("network", "lan", "ipaddr") .. "/" .. uci.cursor():get("network", "lan", "netmask"))
+if laPlaceholder then
+	la.placeholder = laPlaceholder
 end
 la.rmempty = true
 
