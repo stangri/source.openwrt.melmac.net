@@ -8,18 +8,18 @@ readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/vpn-policy-
 t = uci.cursor():get("vpn-policy-routing", "config", "supported_interface")
 if not t then
 	supportedIfaces = ""
-elseif (type(t) == "table") then
+elseif type(t) == "table" then
 	for key,value in pairs(t) do supportedIfaces = supportedIfaces and supportedIfaces .. ' ' .. value or value end
-elseif (type(t) == "string") then
+elseif type(t) == "string" then
 	supportedIfaces = t
 end
 
 t = uci.cursor():get("vpn-policy-routing", "config", "ignored_interface")
 if not t then
 	ignoredIfaces = ""
-elseif (type(t) == "table") then
+elseif type(t) == "table" then
 	for key,value in pairs(t) do ignoredIfaces = ignoredIfaces and ignoredIfaces .. ' ' .. value or value end
-elseif (type(t) == "string") then
+elseif type(t) == "string" then
 	ignoredIfaces = t
 end
 
@@ -32,18 +32,21 @@ end
 function is_supported_interface(arg)
 	local name=arg['.name']
 	local proto=arg['proto']
-	if (type(arg['ifname']) == "table") then
-		for key,value in pairs(arg['ifname']) do ifname = ifname and ifname .. ' ' .. value or value end
-	else
-		ifname=arg['ifname']
-	end
+	local ifname=arg['ifname']
+
 	if name and supportedIfaces:find(name) then return true end
 	if name and not ignoredIfaces:find(name) then
---		if ifname and ifname:sub(1,3) == "tun" then return true end
---		if ifname and ifname:sub(1,3) == "tap" then return true end
-		if ifname and ifname:find("tun") then return true end
-		if ifname and ifname:find("tap") then return true end
-		if ifname and nixio.fs.access("/sys/devices/virtual/net/" .. ifname .. "/tun_flags") then return true end
+		if type(ifname) == "table" then
+			for key,value in pairs(ifname) do
+				if value and value:sub(1,3) == "tun" then return true end
+				if value and value:sub(1,3) == "tap" then return true end
+				if value and nixio.fs.access("/sys/devices/virtual/net/" .. value .. "/tun_flags") then return true end
+			end
+		elseif type(ifname) == "string" then
+			if ifname and ifname:sub(1,3) == "tun" then return true end
+			if ifname and ifname:sub(1,3) == "tap" then return true end
+			if ifname and nixio.fs.access("/sys/devices/virtual/net/" .. ifname .. "/tun_flags") then return true end
+		end
 		if proto and proto:sub(1,11) == "openconnect" then return true end
 		if proto and proto:sub(1,4) == "pptp" then return true end
 		if proto and proto:sub(1,4) == "l2tp" then return true end
