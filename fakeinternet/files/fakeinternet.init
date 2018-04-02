@@ -60,7 +60,7 @@ dns_forward() {
 		 ;;
 		Add*)
 		for i in ${domainsList}; do
-			[[ -n "$i" && "${list//\/$i\/${wwwIP}}" != "$list" ]] && uci add_list dhcp.@dnsmasq[0].address="/${i}/${wwwIP}"
+			[[ -n "$i" && "${list//$i}" == "$list" ]] && uci add_list dhcp.@dnsmasq[0].address="/${i}/${wwwIP}"
 		done
 			;;
 	esac
