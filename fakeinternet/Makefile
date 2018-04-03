@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fakeinternet
 PKG_VERSION:=0.0.5
-PKG_RELEASE:=2
+PKG_RELEASE:=4
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -47,6 +47,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_CONF) ./files/fakeinternet.conf $(1)/etc/config/fakeinternet
 	$(INSTALL_DIR) $(1)/www_fakeinternet
 	$(INSTALL_BIN) ./files/fakeinternet.cgi $(1)/www_fakeinternet/error.cgi
+	chmod 0755 $(1)/www_fakeinternet/error.cgi
 endef
 
 define Package/$(PKG_NAME)/postinst
