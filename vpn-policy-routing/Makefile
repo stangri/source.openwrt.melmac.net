@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpn-policy-routing
 PKG_VERSION:=0.0.1
-PKG_RELEASE:=19b01
+PKG_RELEASE:=20
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -15,7 +15,7 @@ define Package/$(PKG_NAME)
 	SECTION:=net
 	CATEGORY:=Network
 	DEPENDS:=+ipset +iptables +resolveip +kmod-ipt-ipset +!BUSYBOX_CONFIG_IP:ip-full
-	CONFLICTS:=vpnbypass openvpn-policy-routing
+	CONFLICTS:=vpnbypass
 	TITLE:=VPN Policy-Based Routing Service
 	PKGARCH:=all
 endef
