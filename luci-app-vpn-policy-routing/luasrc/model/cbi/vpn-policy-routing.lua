@@ -5,6 +5,8 @@ readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/vpn-policy-
 -- 	if obj ~= nil then if type(obj) == "table" then luci.util.dumptable(obj) else luci.util.perror(obj) end else luci.util.perror("Empty object") end
 -- end
 
+uci = require "uci"
+
 t = uci.cursor():get("vpn-policy-routing", "config", "supported_interface")
 if not t then
 	supportedIfaces = ""
