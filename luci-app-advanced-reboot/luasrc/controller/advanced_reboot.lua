@@ -3,6 +3,8 @@
 
 module("luci.controller.advanced_reboot", package.seeall)
 
+uci = require "uci"
+
 -- device_name, board_name, part1, part2, offset, env_var_1, value_1_1, value_1_2, env_var_2, value_2_1, value_2_2
 devices = {
   {"Linksys EA3500", "linksys-audi", "mtd3", "mtd5", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
