@@ -3,8 +3,6 @@
 
 module("luci.controller.advanced_reboot", package.seeall)
 
-uci = require "uci"
-
 -- device_name, board_name, part1, part2, offset, env_var_1, value_1_1, value_1_2, env_var_2, value_2_1, value_2_2
 devices = {
   {"Linksys EA3500", "linksys-audi", "mtd3", "mtd5", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
@@ -86,7 +84,7 @@ function action_reboot()
   luci.template.render("admin_system/applyreboot", {
         title = luci.i18n.translate("Rebooting..."),
         msg   = luci.i18n.translate("The system is rebooting now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."),
-        addr  = luci.ip.new(uci.cursor():get("network", "lan", "ipaddr")) or "192.168.1.1"
+        addr  = luci.ip.new(luci.model.uci.cursor():get("network", "lan", "ipaddr")) or "192.168.1.1"
       })
   luci.sys.reboot()
 end
@@ -165,7 +163,7 @@ function action_altreboot()
       luci.template.render("admin_system/applyreboot", {
             title = luci.i18n.translate("Rebooting..."),
             msg   = luci.i18n.translate("The system is rebooting to an alternative partition now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."),
-            addr  = luci.ip.new(uci.cursor():get("network", "lan", "ipaddr")) or "192.168.1.1"
+            addr  = luci.ip.new(luci.model.uci.cursor():get("network", "lan", "ipaddr")) or "192.168.1.1"
           })
       luci.sys.reboot()
     else
@@ -197,7 +195,7 @@ function action_poweroff()
     luci.template.render("admin_system/applyreboot", {
           title = luci.i18n.translate("Shutting down..."),
           msg   = luci.i18n.translate("The system is shutting down now.<br /> DO NOT POWER OFF THE DEVICE!<br /> It might be necessary to renew the address of your computer to reach the device again, depending on your settings."),
-          addr  = luci.ip.new(uci.cursor():get("network", "lan", "ipaddr")) or "192.168.1.1"
+          addr  = luci.ip.new(luci.model.uci.cursor():get("network", "lan", "ipaddr")) or "192.168.1.1"
         })
     luci.sys.call("/sbin/poweroff")
   end
