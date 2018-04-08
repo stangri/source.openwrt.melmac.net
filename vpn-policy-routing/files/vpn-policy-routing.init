@@ -33,7 +33,7 @@ output_fail() { s=1; case $verbosity in 1) output "$_FAIL_";; 2) output "$__FAIL
 output_failn() { case $verbosity in 1) output "$_FAIL_\n";; 2) output "$__FAIL__\n";; esac; }
 output() { [ $# -ne 1 ] && { [ ! $((verbosity & $1)) -gt 0 ] && return 0 || shift; }; local msg; msg=$(echo -n "${1/$serviceName /service }" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g'); [ -t 1 ] && echo -e -n "$1"; [ "$(echo -e -n $msg | wc -l)" -gt 0 ] && logger -t "${packageName:-service} [$$]" "$(echo -e -n ${logmsg}${msg})" && logmsg='' || logmsg=${logmsg}${msg}; }
 
-export serviceEnabled verbosity strictMode wanTableID wanMark fwMask ipv6Enabled ipsetEnabled dnsmasqEnabled udpProtoEnabled icmpIface forwardChainEnabled=0 inputChainEnabled=0 outputChainEnabled=0 ignoredIfaces="" supportedIfaces=""
+export serviceEnabled verbosity strictMode wanTableID wanMark fwMask ipv6Enabled ipsetEnabled ipruleEnabled dnsmasqEnabled udpProtoEnabled icmpIface forwardChainEnabled=0 inputChainEnabled=0 outputChainEnabled=0 ignoredIfaces="" supportedIfaces=""
 export wanIface4 wanIface6 ifaceMark ifaceTableID ifacesListAll ifacesListSupported wanGW4 wanGW6
 
 _build_ifaces_lists() { [ "$1" != "loopback" ] && ifacesListAll="${ifacesListAll}${1} "; is_supported_interface "$1" && ifacesListSupported="${ifacesListSupported}${1} "; }
@@ -45,6 +45,7 @@ load_package_config() {
 	config_get_bool strictMode          'config' 'strict_enforcement' 1
 	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' 1
 	config_get_bool ipsetEnabled        'config' 'ipset_enabled' 1
+	config_get_bool ipruleEnabled       'config' 'iprule_enabled' 0
 	config_get_bool dnsmasqEnabled      'config' 'dnsmasq_enabled' 0
 	config_get_bool udpProtoEnabled     'config' 'udp_proto_enabled' 0
 	config_get_bool forwardChainEnabled 'config' 'forward_chain_enabled' 0
@@ -163,6 +164,19 @@ ips() {
 	esac
 }
 
+ipr()
+{
+	local comment="$1" tid=$(eval echo "\$tid_$2") laddr="$3" failFlagIpv4=0 failFlagIpv6=1
+	[ $ipruleEnabled -ne 0 ] || return 1
+	ip -4 rule del from "$laddr" table "$tid" >/dev/null 2>&1
+	ip -4 rule add from "$laddr" table "$tid" >/dev/null 2>&1 || failFlagIpv4=1
+	if [ $ipv6Enabled -ne 0 ]; then
+		ip -6 rule del from "$laddr" table "$tid" >/dev/null 2>&1
+		ip -6 rule add from "$laddr" table "$tid" >/dev/null 2>&1 && failFlagIpv6=0
+	fi
+	if [[ $failFlagIpv4 -eq 0 || $failFlagIpv6 -eq 0 ]]; then return 0; else return 1; fi
+}
+
 insert_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}" mark
 	mark=$(eval echo "\$mark_$iface")
@@ -198,7 +212,9 @@ r_process_policy(){
 		if is_netmask "$laddr" || is_netmask "$raddr"; then
 			insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport"
 		elif [[ -n "$laddr" && -z "$lport" && -z "$raddr" && -z "$rport" ]]; then
-			for i in $(resolveip $laddr); do insert_policy "$comment" "$iface" "$i" "$lport" "$raddr" "$rport"; done
+			for i in $(resolveip $laddr); do
+				ipr "$comment" "$iface" "$i" || insert_policy "$comment" "$iface" "$i"
+			done
 		elif [[ -z "$laddr" && -z "$lport" && -n "$raddr" && -z "$rport" ]]; then
 			if is_ipv6 "$raddr"; then
 				ips "add" "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1;
@@ -269,8 +285,10 @@ process_policy(){
 }
 
 table_destroy(){
-	local tid="$1" iface="$2"
-	if [[ -n "$tid" && -n "$iface" ]]; then
+	local tid="$1" iface="$2" mark="$3"
+	if [[ -n "$tid" && -n "$iface" && -n "$mark" ]]; then
+		ip -4 rule del fwmark "$mark" table "$tid" >/dev/null 2>&1
+		ip -6 rule del fwmark "$mark" table "$tid" >/dev/null 2>&1
 	 	ip -4 rule del table "$tid" >/dev/null 2>&1
 		ip -6 rule del table "$tid" >/dev/null 2>&1
 		ip -4 route flush table "$tid";
@@ -288,7 +306,7 @@ table_create(){
 	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" dscp s=0 i
 
 	if [[ -n "$tid" && -n "$mark" && -n "$iface" ]]; then
-		table_destroy "$tid" "$iface"
+		table_destroy "$tid" "$iface" "$mark"
 
 		if [ $strictMode -ne 0 ]; then
 			if [ -z "$gw4" ]; then
@@ -347,9 +365,8 @@ process_interface(){
 
 	case "$action" in
 		destroy)
-			table_destroy "${ifaceTableID}" "${iface}"
-			unset mark_${iface}
-			ifaceTableID="$((ifaceTableID + 1))"
+			table_destroy "${ifaceTableID}" "${iface}" "${ifaceMark}"
+			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
 			;;
 
 		create)
@@ -361,7 +378,7 @@ process_interface(){
 						[ "$gw6" == "default" ] && gw6=$(ip -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}');
 					fi
 					if [ -z "$(eval echo "\$mark_wan")" ]; then
-						eval "mark_wan=$ifaceMark"
+						eval "mark_wan=$ifaceMark"; eval "tid_wan=$ifaceTableID";
 					else
 						return
 					fi
@@ -373,7 +390,7 @@ process_interface(){
 				# fallback when OpenVPN routing is not pulled from the server
 				! is_ipv4 "$gw4" && gw4=$(ifconfig "$dev" 2>/dev/null | grep 'inet addr:' | grep 'P-t-P' | awk '{print $3}' | awk -F ":" '{print $2}');
 				! is_ipv6 "$gw6" && { gw6=$(ifconfig "$dev" 2>/dev/null | grep 'inet6 addr:' | awk '{print $3}'); gw6=${gw6:+"${gw6%:*}:1"}; }
-				eval "mark_${iface}=$ifaceMark"
+				eval "mark_${iface}=$ifaceMark"; eval "tid_${iface}=$ifaceTableID";
 			fi
 
 			table_destroy "${ifaceTableID}" "${iface}"
