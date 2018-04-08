@@ -5,7 +5,8 @@ readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/vpn-policy-
 -- 	if obj ~= nil then if type(obj) == "table" then luci.util.dumptable(obj) else luci.util.perror(obj) end else luci.util.perror("Empty object") end
 -- end
 
-t = luci.model.uci.cursor():get("vpn-policy-routing", "config", "supported_interface")
+uci = require "luci.model.uci".cursor()
+t = uci:get("vpn-policy-routing", "config", "supported_interface")
 if not t then
 	supportedIfaces = ""
 elseif type(t) == "table" then
@@ -14,7 +15,7 @@ elseif type(t) == "string" then
 	supportedIfaces = t
 end
 
-t = luci.model.uci.cursor():get("vpn-policy-routing", "config", "ignored_interface")
+t = uci:get("vpn-policy-routing", "config", "ignored_interface")
 if not t then
 	ignoredIfaces = ""
 elseif type(t) == "table" then
@@ -23,8 +24,8 @@ elseif type(t) == "string" then
 	ignoredIfaces = t
 end
 
-lanIPAddr = luci.model.uci.cursor():get("network", "lan", "ipaddr")
-lanNetmask = luci.model.uci.cursor():get("network", "lan", "netmask")
+lanIPAddr = uci:get("network", "lan", "ipaddr")
+lanNetmask = uci:get("network", "lan", "netmask")
 if lanIPAddr and lanNetmask then
 	laPlaceholder = luci.ip.new(lanIPAddr .. "/" .. lanNetmask )
 end
@@ -142,7 +143,7 @@ icmp = s1:taboption("advanced", ListValue, "icmp_interface", translate("Default 
 icmp:depends({output_chain_enabled="1"})
 icmp:value("", translate("No Change"))
 icmp:value("wan", translate("WAN"))
-luci.model.uci.cursor():foreach("network", "interface", function(s)
+uci:foreach("network", "interface", function(s)
 	local name=s['.name']
 	if is_supported_interface(s) then icmp:value(name, string.upper(name)) end
 end)
@@ -197,7 +198,7 @@ gw = s3:option(ListValue, "interface", translate("Interface"))
 gw.rmempty = false
 gw.default = "wan"
 gw:value("wan","WAN")
-luci.model.uci.cursor():foreach("network", "interface", function(s)
+uci:foreach("network", "interface", function(s)
 	local name=s['.name']
 	if is_supported_interface(s) then gw:value(name, string.upper(name)) end
 end)
@@ -207,7 +208,7 @@ s6 = dscp:section(NamedSection, "config", "vpn-policy-routing", translate("DSCP 
 wan = s6:option(Value, "wan_dscp", translate("WAN DSCP Tag"))
 wan.datatype = "range(1,63)"
 wan.rmempty = true
-luci.model.uci.cursor():foreach("network", "interface", function(s)
+uci:foreach("network", "interface", function(s)
 	local name=s['.name']
 	if is_supported_interface(s) then s6:option(Value, name .. "_dscp", string.upper(name) .. " " .. translate("DSCP Tag")).rmempty = true end
 end)
