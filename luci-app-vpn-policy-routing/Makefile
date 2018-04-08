@@ -10,7 +10,7 @@ LUCI_TITLE:=VPN Policy-Based Routing Service Web UI
 LUCI_DESCRIPTION:=Provides Web UI for vpn-policy-routing service.
 LUCI_DEPENDS:=+luci +vpn-policy-routing
 LUCI_PKGARCH:=all
-PKG_RELEASE:=20
+PKG_RELEASE:=21
 
 include ../../luci.mk
 
