@@ -31,9 +31,11 @@ echo -e -n 'untrusted comment: LEDE usign key of Stan Grishin\nRWR//HUXxMwMVnx7f
 opkg update
 ```
 
-###### LEDE Project and OpenWrt DD trunk
+###### LEDE Project and OpenWrt 18.xx or later
 ```sh
-opkg update; opkg install uclient-fetch libustream-mbedtls
+opkg update
+opkg list-installed | grep -q uclient-fetch || opkg install uclient-fetch
+opkg list-installed | grep -q libustream || opkg install libustream-mbedtls
 echo -e -n 'untrusted comment: LEDE usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /tmp/stangri-repo.pub && opkg-key add /tmp/stangri-repo.pub
 ! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://raw.githubusercontent.com/stangri/openwrt-repo/master' >> /etc/opkg/customfeeds.conf
 opkg update

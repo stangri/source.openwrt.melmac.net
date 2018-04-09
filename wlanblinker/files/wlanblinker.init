@@ -1,0 +1,61 @@
+#!/bin/sh /etc/rc.common
+PKG_VERSION=
+
+export START=94
+export USE_PROCD=1
+export PROG=/usr/sbin/blink
+
+readonly packageName='wlanblinker'
+readonly serviceName="$packageName $PKG_VERSION"
+
+export mode LED display on_time off_time sleep_time
+
+is_enabled() {
+	local serviceEnabled
+	config_load "$packageName"
+	config_get_bool serviceEnabled 'config' 'enabled' 0
+	config_get mode    'config' 'mode'
+	config_get LED     'config' 'led'
+	config_get display    "$mode" 'display'
+	config_get on_time    "$mode" 'on_time' 1
+	config_get off_time   "$mode" 'off_time' 1
+	config_get sleep_time "$mode" 'sleep_time' 1
+
+	[ $serviceEnabled -gt 0 ] || return 1
+	[ -n "$display" ] || return 1
+	[ -e "/sys/class/leds/${LED}/brightness" ] || return 1
+	source /lib/functions.sh
+	return 0
+}
+
+find_sta_ssid(){ [[ "$(uci -q get wireless.${1}.mode)" == "sta" && "$(uci -q get wireless.${1}.disabled)" != "1" && -z "$(eval echo \$$2)" ]] && eval "$2=$(uci -q get wireless.${1}.ssid)"; }
+find_radio(){
+	local sta_ssid
+	case $1 in
+		channel)
+			echo 'radio0'
+			;;
+		link_quality)
+			config_load 'wireless'
+			config_foreach find_sta_ssid 'wifi-iface' 'sta_ssid'
+			echo "$(iwinfo | grep $sta_ssid | awk '{print $1;}')"
+			;;
+	esac
+}
+
+start_service() {
+	local radio
+	is_enabled || return 0
+	radio="$(find_radio $display)"
+	procd_open_instance
+		procd_set_param command $PROG "-d" "$LED" "$display" "$radio" "$on_time" "$off_time" "$sleep_time"
+		procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
+	procd_close_instance
+	logger -t "blinker" "wlan blinker service: ${mode}/${radio}/${display} started"
+}
+
+stop_service() {
+	is_enabled
+	logger -t "blinker" "wlan blinker service stopped"
+	[ -f "$LED" ] && echo "0" > "$LED"
+}
