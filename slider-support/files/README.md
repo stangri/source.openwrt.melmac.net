@@ -1,16 +1,16 @@
 # Slider Support for select routers
-This service enables switching between ```Router```, ```Access Point``` and ```Wireless Repeater``` modes of operation for supported routers equipped with slider switch. It also sets the correct ```current mode``` setting for the [```WLAN Blinker``` service](https://github.com/stangri/openwrt_packages/blob/master/wlanblinker/files/README.md).
+This service enables switching between ```Router```, ```Access Point``` and ```Wireless Repeater``` modes of operation for supported routers equipped with the slider switch. It also sets the correct ```current mode``` setting for the [```WLAN Blinker``` service](https://github.com/stangri/openwrt_packages/blob/master/wlanblinker/files/README.md).
 
 ## Supported Routers
  - GL-Inet AR300M (also AR300MD, AR300M16 and the ```-Ext```, but not ```-Lite``` models).
  - GL-Inet MT300N (also MT300Nv2).
 
 ## Features
- - If the slider is in the left position (closes to ```reset``` button), ```Router``` mode is enabled.
+ - If the slider is in the left position (closest to ```reset``` button), ```Router``` mode is enabled.
  - If the slider is in the right position and the WAN port is in use, ```Access Point``` mode is enabled.
  - If the slider is in the right position and the WAN port is not in use, ```Wireless Repeater``` mode is enabled.
  - Mode switches on toggling the slider.
- - Mode switches on boot, but with about 10 seconds delay.
+ - Mode switches on boot, with configurable delay (10 seconds by default).
 
 ## How to install
 Please make sure that the [requirements](#requirements) are satisfied and install the appropriate package from Web UI or connect to your router via ssh and run the following commands:
