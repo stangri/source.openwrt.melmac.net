@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/sh /etc/rc.common
+
 PKG_VERSION=
 
 export START=94

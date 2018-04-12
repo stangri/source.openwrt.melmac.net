@@ -5,13 +5,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=slider-support
 PKG_VERSION:=0.0.1
-PKG_RELEASE:=7
+PKG_RELEASE:=10
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/slider-support/default
+define Package/$(PKG_NAME)/default
 	SECTION:=net
 	CATEGORY:=Network
 	DEPENDS:=+relayd
@@ -19,27 +19,27 @@ define Package/slider-support/default
 	TITLE:=Slider support
 endef
 
-define Package/slider-support-ar300m
-$(call Package/slider-support/default)
+define Package/$(PKG_NAME)-ar300m
+$(call Package/$(PKG_NAME)/default)
   VARIANT:=ar300m
 	USEBUTTON:=BTN_1
 	TITLE+= for GL-Inet AR300M
 endef
 
-define Package/slider-support-mt300n
-$(call Package/slider-support/default)
+define Package/$(PKG_NAME)-mt300n
+$(call Package/$(PKG_NAME)/default)
   VARIANT:=mt300n
 	USEBUTTON:=BTN_0
 	TITLE+= for GL-Inet MT300N/v2
 endef
 
-define Package/slider-support/description
+define Package/$(PKG_NAME)/description
 This service enables switching between Router, Access Point and Wireless Repeater
 modes of operation for supported routers equipped with slider switch.
 Please see the README for further information.
 endef
 
-define Package/slider-support/conffiles
+define Package/$(PKG_NAME)/conffiles
 /etc/config/slider-support
 endef
 
@@ -70,12 +70,12 @@ define Package/$(PKG_NAME)/install
 endef
 
 define Package/$(PKG_NAME)-ar300m/install
-$(call Package/slider-support/install,$(1))
+$(call Package/$(PKG_NAME)/install,$(1))
 endef
 
 define Package/$(PKG_NAME)-mt300n/install
-$(call Package/slider-support/install,$(1))
+$(call Package/$(PKG_NAME)/install,$(1))
 endef
 
-$(eval $(call BuildPackage,slider-support-ar300m))
-$(eval $(call BuildPackage,slider-support-mt300n))
+$(eval $(call BuildPackage,$(PKG_NAME)-ar300m))
+$(eval $(call BuildPackage,$(PKG_NAME)-mt300n))
