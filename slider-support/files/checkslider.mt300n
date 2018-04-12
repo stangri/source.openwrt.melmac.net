@@ -1,0 +1,2 @@
+#!/bin/sh
+checkslider() { grep -q 'BTN_0.*hi' /sys/kernel/debug/gpio && return 0 || return 1; }

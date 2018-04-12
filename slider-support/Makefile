@@ -5,32 +5,45 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=slider-support
 PKG_VERSION:=0.0.1
-PKG_RELEASE:=1
+PKG_RELEASE:=5
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/slider-support
+define Package/slider-support/default
 	SECTION:=net
 	CATEGORY:=Network
-	DEPENDS:=+ethtool +swconfig +relayd
-	TITLE:=Slider support for GL-Inet AR300M and MT300N/v2
+	DEPENDS:=+relayd
 	PKGARCH:=all
 endef
 
+define Package/slider-support-ar300m
+$(call Package/slider-support/default)
+  VARIANT:=ar300m
+	TITLE:=Slider support for GL-Inet AR300M
+endef
+
+define Package/slider-support-mt300n
+$(call Package/slider-support/default)
+  VARIANT:=mt300n
+	TITLE:=Slider support for GL-Inet MT300N/v2
+endef
+
 define Package/slider-support/description
-This service can be used to signal WLAN status by the unused LED.
+This service enables switching between Router, Access Point and Wireless Repeater
+modes of operation for supported routers equipped with slider switch.
 Please see the README for further information.
 endef
 
 define Package/slider-support/conffiles
+/etc/config/slider-support
 endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)/files/
-	$(CP) ./files/slider.sh $(PKG_BUILD_DIR)/files/slider.sh
-	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/slider.sh
+	$(CP) ./files/slider-support.init $(PKG_BUILD_DIR)/files/slider-support.init
+	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/slider-support.init
 endef
 
 define Build/Configure
@@ -39,64 +52,33 @@ endef
 define Build/Compile
 endef
 
-define Package/slider-support/install
+define Package/$(PKG_NAME)-ar300m/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/slider-support.init $(1)/etc/init.d/slider-support
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_CONF) ./files/slider-support.conf $(1)/etc/config/slider-support
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_DATA) ./files/stabridge.hotplug $(1)/etc/hotplug.d/iface/99-stabridge
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_DATA) ./files/slider.sh $(1)/usr/sbin/slider
-	chmod 0755 $(1)/usr/sbin/slider
+	$(INSTALL_DIR) $(1)/lib/functions
+	$(INSTALL_DATA) ./files/checkslider.ar300m $(1)/lib/functions/checkslider.sh
+	$(INSTALL_DIR) $(1)/etc/rc.button
+	$(INSTALL_DATA) ./files/slider-support.button $(1)/etc/rc.button/BTN_1
+	chmod 0755 $(1)/etc/rc.button/BTN_1
 endef
 
-
-define Package/$(PKG_NAME)/postinst
-	#!/bin/sh
-	# check if we are on real system
-	if [ -z "$${IPKG_INSTROOT}" ]; then
-		sed -i '\|sleep 10; /usr/sbin/slider &|d' /etc/rc.local
-		sed -i '$i \sleep 10; /usr/sbin/slider &' /etc/rc.local
-	fi
-	source /usr/share/libubox/jshn.sh
-	json_load "$(/bin/ubus call system board)"
-	json_get_vars model
-	model="$(echo $model | tr '[A-Z]' '[a-z]')"
-	case $model in
-	    gl-mt300n*)
-				[ ! -s /etc/rc.button/BTN_0 ] && echo '#!/bin/sh' > /etc/rc.button/BTN_0
-				echo '/usr/sbin/slider' >> /etc/rc.button/BTN_0
-				chmod +x /etc/rc.button/BTN_0
-	       ;;
-	    gl-ar300m*)
-				[ ! -s /etc/rc.button/BTN_1 ] && echo '#!/bin/sh' > /etc/rc.button/BTN_1
-				echo '/usr/sbin/slider' >> /etc/rc.button/BTN_1
-				chmod +x /etc/rc.button/BTN_1
-        ;;
-	    *)
-				echo "$(PKG_NAME) Unknown router model: $model"
-				logger -t "$(PKG_NAME)" "Unknown router model: $model"
-        ;;
-	esac
-	exit 0
+define Package/$(PKG_NAME)-mt300n/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/slider-support.init $(1)/etc/init.d/slider-support
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_CONF) ./files/slider-support.conf $(1)/etc/config/slider-support
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_DATA) ./files/stabridge.hotplug $(1)/etc/hotplug.d/iface/99-stabridge
+	$(INSTALL_DIR) $(1)/lib/functions
+	$(INSTALL_DATA) ./files/checkslider.mt300n $(1)/lib/functions/checkslider.sh
+	$(INSTALL_DIR) $(1)/etc/rc.button
+	$(INSTALL_DATA) ./files/slider-support.button $(1)/etc/rc.button/BTN_0
+	chmod 0755 $(1)/etc/rc.button/BTN_0
 endef
 
-define Package/$(PKG_NAME)/prerm
-	#!/bin/sh
-	# check if we are on real system
-	if [ -z "$${IPKG_INSTROOT}" ]; then
-		sed -i '\|sleep 10; /usr/sbin/slider &|d' /etc/rc.local
-		source /usr/share/libubox/jshn.sh
-		json_load "$(/bin/ubus call system board)"
-		json_get_vars model
-		model="$(echo $model | tr '[A-Z]' '[a-z]')"
-		case $model in
-				gl-mt300n*)
-					rm -f /etc/rc.button/BTN_0
-					 ;;
-				gl-ar300m*)
-					rm -f /etc/rc.button/BTN_1
-					;;
-		esac
-	fi
-	exit 0
-endef
-
-$(eval $(call BuildPackage,slider-support))
+$(eval $(call BuildPackage,slider-support-ar300m))
+$(eval $(call BuildPackage,slider-support-mt300n))
