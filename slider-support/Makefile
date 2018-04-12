@@ -71,6 +71,7 @@ define Package/$(PKG_NAME)/postinst
 				chmod +x /etc/rc.button/BTN_1
         ;;
 	    *)
+				echo "$(PKG_NAME) Unknown router model: $model"
 				logger -t "$(PKG_NAME)" "Unknown router model: $model"
         ;;
 	esac

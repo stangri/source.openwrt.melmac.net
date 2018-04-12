@@ -22,7 +22,7 @@ case $model in
         ;;
 esac
 if checkslider; then mode='router'; elif checkports; then mode='wr'; else mode='ap'; fi
-oldIP="$(uci get network.lan.ipaddrold)"; uci -q del dhcp.lan.dhcpv6; uci -q del dhcp.lan.ra;
+oldIP="$(uci get network.lan.ipaddrold)"
 logger -t "$packageName" "$mode mode ($serviceName)"
 uci -q set wlanblinker.config.mode="$mode"
 case $mode in
