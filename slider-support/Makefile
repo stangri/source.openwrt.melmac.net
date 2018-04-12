@@ -16,20 +16,21 @@ define Package/slider-support/default
 	CATEGORY:=Network
 	DEPENDS:=+relayd
 	PKGARCH:=all
+	TITLE:=Slider support
 endef
 
 define Package/slider-support-ar300m
 $(call Package/slider-support/default)
   VARIANT:=ar300m
 	USEBUTTON:=BTN_1
-	TITLE:=Slider support for GL-Inet AR300M
+	TITLE+= for GL-Inet AR300M
 endef
 
 define Package/slider-support-mt300n
 $(call Package/slider-support/default)
   VARIANT:=mt300n
 	USEBUTTON:=BTN_0
-	TITLE:=Slider support for GL-Inet MT300N/v2
+	TITLE+= for GL-Inet MT300N/v2
 endef
 
 define Package/slider-support/description
