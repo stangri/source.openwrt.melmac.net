@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=slider-support
 PKG_VERSION:=0.0.1
-PKG_RELEASE:=5
+PKG_RELEASE:=7
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -21,12 +21,14 @@ endef
 define Package/slider-support-ar300m
 $(call Package/slider-support/default)
   VARIANT:=ar300m
+	USEBUTTON:=BTN_1
 	TITLE:=Slider support for GL-Inet AR300M
 endef
 
 define Package/slider-support-mt300n
 $(call Package/slider-support/default)
   VARIANT:=mt300n
+	USEBUTTON:=BTN_0
 	TITLE:=Slider support for GL-Inet MT300N/v2
 endef
 
@@ -52,7 +54,7 @@ endef
 define Build/Compile
 endef
 
-define Package/$(PKG_NAME)-ar300m/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/slider-support.init $(1)/etc/init.d/slider-support
 	$(INSTALL_DIR) $(1)/etc/config
@@ -60,24 +62,18 @@ define Package/$(PKG_NAME)-ar300m/install
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_DATA) ./files/stabridge.hotplug $(1)/etc/hotplug.d/iface/99-stabridge
 	$(INSTALL_DIR) $(1)/lib/functions
-	$(INSTALL_DATA) ./files/checkslider.ar300m $(1)/lib/functions/checkslider.sh
+	$(INSTALL_DATA) ./files/checkslider.$(VARIANT) $(1)/lib/functions/checkslider.sh
 	$(INSTALL_DIR) $(1)/etc/rc.button
-	$(INSTALL_DATA) ./files/slider-support.button $(1)/etc/rc.button/BTN_1
-	chmod 0755 $(1)/etc/rc.button/BTN_1
+	$(INSTALL_DATA) ./files/slider-support.button $(1)/etc/rc.button/$(USEBUTTON)
+	chmod 0755 $(1)/etc/rc.button/$(USEBUTTON)
+endef
+
+define Package/$(PKG_NAME)-ar300m/install
+$(call Package/slider-support/install,$(1))
 endef
 
 define Package/$(PKG_NAME)-mt300n/install
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/slider-support.init $(1)/etc/init.d/slider-support
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/slider-support.conf $(1)/etc/config/slider-support
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
-	$(INSTALL_DATA) ./files/stabridge.hotplug $(1)/etc/hotplug.d/iface/99-stabridge
-	$(INSTALL_DIR) $(1)/lib/functions
-	$(INSTALL_DATA) ./files/checkslider.mt300n $(1)/lib/functions/checkslider.sh
-	$(INSTALL_DIR) $(1)/etc/rc.button
-	$(INSTALL_DATA) ./files/slider-support.button $(1)/etc/rc.button/BTN_0
-	chmod 0755 $(1)/etc/rc.button/BTN_0
+$(call Package/slider-support/install,$(1))
 endef
 
 $(eval $(call BuildPackage,slider-support-ar300m))

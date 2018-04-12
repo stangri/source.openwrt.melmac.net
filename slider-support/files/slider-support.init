@@ -22,11 +22,13 @@ is_enabled() { load_package_config; [ $serviceEnabled -gt 0 ] && return 0 || ret
 set_enabled() { uci -q set "${packageName}.config.enabled"="$1"; uci commit "${packageName}"; }
 randomip(){ local a=300 b=300 n; while [[ "$a" -gt 255 || "$b" -gt 255 ]]; do n=$(grep -m10 -ao '[0-9]' /dev/urandom | tr -d '\n'); a="$(echo ${n:0:3} | sed 's/^0*//;s/^0*$/0/')"; b="$(echo ${n:4:3} | sed 's/^0*//;s/^0*$/0/')"; done; echo "192.168.$a.$b"; }
 
-set_wwan_iface_fw() {
-  config_get name "$1" 'name'
-  if [ "$name" == "$2" ]; then
-    uci -q del_list firewall.${1}.network="$wwanIface";
-    [ "$3" == "add" ] && uci -q add_list firewall.${1}.network="$wwanIface";
+modify_fwzone() {
+  local cfg="$1" iface="$2" action="$3" wwanIface="$4"
+  [[ -z "$cfg" || -z "$iface" || -z "$action" || -z "$wwanIface" ]] && return 1
+  config_get name "$cfg" 'name'
+  if [ "$name" == "$iface" ]; then
+    uci -q del_list firewall.${cfg}.network="$wwanIface";
+    [ "$action" == "add" ] && uci -q add_list firewall.${cfg}.network="$wwanIface";
   fi
 }
 
@@ -42,7 +44,7 @@ checkports() {
   return $r
 }
 
-#boot() { load_package_config; sleep $bootDelay && rc_procd start_service; }
+boot() { load_package_config; sleep $bootDelay && rc_procd start_service &; }
 start_service() { set_enabled '1'; load_package_config; slider_action; }
 stop_service() { set_enabled '0'; }
 restart_service() { is_enabled && slider_action; }
@@ -56,8 +58,8 @@ slider_action() {
   case $mode in
   	router)
   		config_load firewall
-      set_wwan_iface_fw 'zone' 'wan' 'add'
-      set_wwan_iface_fw 'zone' 'lan' 'del'
+      modify_fwzone 'zone' 'wan' 'add' "$wwanIface"
+      modify_fwzone 'zone' 'lan' 'del' "$wwanIface"
   		uci set dhcp.@dnsmasq[-1].rebind_protection=1
   		uci -q del network.stabridge
   		uci -q del dhcp.lan.ignore
@@ -81,8 +83,8 @@ slider_action() {
   		;;
   	ap)
       config_load firewall
-      set_wwan_iface_fw 'zone' 'wan' 'add'
-      set_wwan_iface_fw 'zone' 'lan' 'del'
+      modify_fwzone 'zone' 'wan' 'add' "$wwanIface"
+      modify_fwzone 'zone' 'lan' 'del' "$wwanIface"
   		uci set dhcp.lan.ignore=1
   		uci set dhcp.@dnsmasq[-1].rebind_protection=0
   		[ -z "$oldIP" ] && uci set network.lan.ipaddrold="$(uci -q get network.lan.ipaddr)"
@@ -107,8 +109,8 @@ slider_action() {
   		;;
   	wr)
       config_load firewall
-      set_wwan_iface_fw 'zone' 'lan' 'add'
-      set_wwan_iface_fw 'zone' 'wan' 'del'
+      modify_fwzone 'zone' 'lan' 'add' "$wwanIface"
+      modify_fwzone 'zone' 'wan' 'del' "$wwanIface"
   		uci set network.stabridge=interface
   		uci set network.stabridge.proto=relay
   		uci set network.stabridge.network="lan $wwanIface"
