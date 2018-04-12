@@ -51,11 +51,11 @@ start_service() {
 		procd_set_param command $PROG "-d" "$LED" "$display" "$radio" "$on_time" "$off_time" "$sleep_time"
 		procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
 	procd_close_instance
-	logger -t "blinker" "wlan blinker service: ${mode}/${radio}/${display} started"
+	logger -t "$packageName" "$serviceName: ${mode}/${radio}/${display} started"
 }
 
 stop_service() {
 	is_enabled
-	logger -t "blinker" "wlan blinker service stopped"
+	logger -t "$packageName" "$serviceName: stopped"
 	[ -f "$LED" ] && echo "0" > "$LED"
 }
