@@ -16,6 +16,22 @@ function e.write(self, section, value)
 	return Flag.write(self, section, value)
 end
 
+local sysfs_path = "/sys/class/leds/"
+local leds = {}
+if nixio.fs.access(sysfs_path) then
+	leds = nixio.util.consume((nixio.fs.dir(sysfs_path)))
+end
+if #leds ~= 0 then
+	o3 = s:option(Value, "led", translate("LED to indicate status"), translate("Pick the LED not already used in")
+		.. [[ <a href="]] .. luci.dispatcher.build_url("admin/system/leds") .. [[">]]
+		.. translate("System LED Configuration") .. [[</a>]])
+	o3.rmempty = true
+	o3:value("", translate("none"))
+	for k, v in ipairs(leds) do
+		o3:value(v)
+	end
+end
+
 cm = s:option(ListValue, "mode", translate("Current Mode"))
 cm.rmempty = false
 cm.default = uci:get("wlanblinker", "config", "mode")
@@ -37,9 +53,9 @@ off.datatype = "range(1,60)"
 sleep = mode:option(Value, "sleep_time", translate("LED sleep time (in sec)"))
 sleep.rmempty = false
 sleep.datatype = "range(1,60)"
-disp = mode:option(ListValue, "display", translate("Indication"))
-disp:value("","none")
-disp:value("channel")
-disp:value("link_quality")
+disp = mode:option(ListValue, "display", translate("LED indication"))
+disp:value("", translate("none"))
+disp:value("channel", translate("channel"))
+disp:value("link_quality", translate("link quality"))
 
 return m
