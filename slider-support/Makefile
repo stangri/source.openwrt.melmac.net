@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=slider-support
-PKG_VERSION:=0.0.1
-PKG_RELEASE:=12
+PKG_VERSION:=0.0.2
+PKG_RELEASE:=1
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 

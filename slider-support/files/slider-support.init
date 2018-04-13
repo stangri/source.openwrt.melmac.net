@@ -18,6 +18,7 @@ load_package_config() {
   config_get bootDelay           'config' 'boot_delay' '10'
 	config_get wwanIface           'config' 'wwan_interface' 'trm_wwan'
 }
+
 is_enabled() { load_package_config; [ $serviceEnabled -gt 0 ] && return 0 || return 1; }
 set_enabled() { uci -q set "${packageName}.config.enabled"="$1"; uci commit "${packageName}"; }
 randomip(){ local a=300 b=300 n; while [[ "$a" -gt 255 || "$b" -gt 255 ]]; do n=$(grep -m10 -ao '[0-9]' /dev/urandom | tr -d '\n'); a="$(echo ${n:0:3} | sed 's/^0*//;s/^0*$/0/')"; b="$(echo ${n:4:3} | sed 's/^0*//;s/^0*$/0/')"; done; echo "192.168.$a.$b"; }
@@ -32,18 +33,7 @@ modify_fwzone() {
   fi
 }
 
-checkports() {
-  local r=0 carrier
-  for i in $(uci -q get network.wan.ifname); do
-    if [ -n "$i" ]; then
-      json_load "$(/bin/ubus call network.device status)"
-      json_select "$i"; json_get_vars carrier;
-      [[ -n "$carrier" && $carrier -gt $r ]] && r=$carrier
-    fi
-  done
-  return $r
-}
-
+checkports() { local up; json_load "$(/bin/ubus call network.interface.wan status)"; json_get_vars up; [ $up -ne 0 ] && return 1 || return 0; }
 boot() { load_package_config; ( sleep $bootDelay && rc_procd start_service & ); }
 start_service() { set_enabled '1'; load_package_config; slider_action; }
 stop_service() { set_enabled '0'; }
