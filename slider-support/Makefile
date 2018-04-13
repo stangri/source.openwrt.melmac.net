@@ -40,13 +40,13 @@ Please see the README for further information.
 endef
 
 define Package/$(PKG_NAME)/conffiles
-/etc/config/slider-support
+/etc/config/$(PKG_NAME)
 endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)/files/
-	$(CP) ./files/slider-support.init $(PKG_BUILD_DIR)/files/slider-support.init
-	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/slider-support.init
+	$(CP) ./files/$(PKG_NAME).init $(PKG_BUILD_DIR)/files/$(PKG_NAME).init
+	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/$(PKG_NAME).init
 endef
 
 define Build/Configure
@@ -57,15 +57,15 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/slider-support.init $(1)/etc/init.d/slider-support
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/$(PKG_NAME).init $(1)/etc/init.d/$(PKG_NAME)
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/slider-support.conf $(1)/etc/config/slider-support
+	$(INSTALL_CONF) ./files/$(PKG_NAME).conf $(1)/etc/config/$(PKG_NAME)
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_DATA) ./files/stabridge.hotplug $(1)/etc/hotplug.d/iface/99-stabridge
 	$(INSTALL_DIR) $(1)/lib/functions
 	$(INSTALL_DATA) ./files/checkslider.$(VARIANT) $(1)/lib/functions/checkslider.sh
 	$(INSTALL_DIR) $(1)/etc/rc.button
-	$(INSTALL_DATA) ./files/slider-support.button $(1)/etc/rc.button/$(USEBUTTON)
+	$(INSTALL_DATA) ./files/$(PKG_NAME).button $(1)/etc/rc.button/$(USEBUTTON)
 	chmod 0755 $(1)/etc/rc.button/$(USEBUTTON)
 endef
 
