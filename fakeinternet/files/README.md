@@ -6,7 +6,7 @@ This service requires the following package to be installed on your router: ```u
 
 To satisfy the requirements, connect to your router via ssh and run the following commands:
 ```sh
-opkg update; opkg install uhttpd dnsmasq
+opkg update; opkg install uhttpd dnsmasq;
 ```
 
 #### Unmet dependencies
