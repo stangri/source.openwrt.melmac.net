@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=slider-support
 PKG_VERSION:=0.0.1
-PKG_RELEASE:=11
+PKG_RELEASE:=12
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -69,13 +69,8 @@ define Package/$(PKG_NAME)/install
 	chmod 0755 $(1)/etc/rc.button/$(USEBUTTON)
 endef
 
-define Package/$(PKG_NAME)-ar300m/install
-$(call Package/$(PKG_NAME)/install,$(1))
-endef
-
-define Package/$(PKG_NAME)-mt300n/install
-$(call Package/$(PKG_NAME)/install,$(1))
-endef
+Package/$(PKG_NAME)-ar300m/install = $(Package/$(PKG_NAME)/install)
+Package/$(PKG_NAME)-mt300n/install = $(Package/$(PKG_NAME)/install)
 
 $(eval $(call BuildPackage,$(PKG_NAME)-ar300m))
 $(eval $(call BuildPackage,$(PKG_NAME)-mt300n))
