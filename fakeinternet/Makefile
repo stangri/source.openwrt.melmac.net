@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fakeinternet
-PKG_VERSION:=0.0.5
-PKG_RELEASE:=7
+PKG_VERSION:=0.0.7
+PKG_RELEASE:=1
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
