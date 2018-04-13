@@ -5,13 +5,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fakeinternet
 PKG_VERSION:=0.0.5
-PKG_RELEASE:=5
+PKG_RELEASE:=7
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/$(PKG_NAME)
+define Package/fakeinternet
 	SECTION:=net
 	CATEGORY:=Network
 	DEPENDS:=+uhttpd
@@ -19,12 +19,12 @@ define Package/$(PKG_NAME)
 	PKGARCH:=all
 endef
 
-define Package/$(PKG_NAME)/description
+define Package/fakeinternet/description
 This service can be used to fake internet connectivity for local devices.
 Can be used on routers with no internet access to suppress warnings on local devices of no internet connectivity.
 endef
 
-define Package/$(PKG_NAME)/conffiles
+define Package/fakeinternet/conffiles
 /etc/config/fakeinternet
 endef
 
@@ -40,7 +40,7 @@ endef
 define Build/Compile
 endef
 
-define Package/$(PKG_NAME)/install
+define Package/fakeinternet/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/fakeinternet.init $(1)/etc/init.d/fakeinternet
 	$(INSTALL_DIR) $(1)/etc/config
@@ -50,7 +50,7 @@ define Package/$(PKG_NAME)/install
 	chmod 0755 $(1)/www_fakeinternet/error.cgi
 endef
 
-define Package/$(PKG_NAME)/postinst
+define Package/fakeinternet/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -70,7 +70,7 @@ define Package/$(PKG_NAME)/postinst
 	exit 0
 endef
 
-define Package/$(PKG_NAME)/prerm
+define Package/fakeinternet/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -85,4 +85,4 @@ define Package/$(PKG_NAME)/prerm
 	exit 0
 endef
 
-$(eval $(call BuildPackage,$(PKG_NAME)))
+$(eval $(call BuildPackage,fakeinternet))
