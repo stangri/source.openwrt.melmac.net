@@ -2,7 +2,7 @@
 Fake Internet service for OpenWrt/LEDE Project routers.
 
 ## Requirements
-This service requires the following package to be installed on your router: ```uhttpd``` and ```dnsmasq```.
+This service requires the following package to be installed on your router: ```uhttpd``` and ```dnsmasq``` or ```dnsmasq-full``` .
 
 To satisfy the requirements, connect to your router via ssh and run the following commands:
 ```sh
@@ -40,3 +40,16 @@ echo -e -n 'untrusted comment: LEDE usign key of Stan Grishin\nRWR//HUXxMwMVnx7f
 ! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://raw.githubusercontent.com/stangri/openwrt-repo/master' >> /etc/opkg/customfeeds.conf
 opkg update
 ```
+
+#### Default Settings
+Default configuration has service disabled (run ```uci set fakeinternet.config.enabled=1```) and includes domains which are used by Android OS, iOS and Fire OS mobile devices to check for the internet connectivity.
+
+
+## How to customize
+You can add more domains to be hijacked, check ```/etc/config/fakeinternet``` for examples. To hijack everything, use the single ```#``` symbol instead of the domain name in config. Deep customization might require modifications/extra code in ```/www_fakeinternet/error.cgi``` as well.
+
+## How does it work
+This service hijacks requests to domains listed in the ```/etc/config/fakeinternet``` config file and serves replies which mobile devices expect if the internet connection is available.
+
+## Documentation / Discussion
+Please head to [LEDE Project Forum](https://forum.lede-project.org/t/fakeinternet-service-package/924/) for discussion of this package.
