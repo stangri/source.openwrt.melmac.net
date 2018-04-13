@@ -5,13 +5,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=slider-support
 PKG_VERSION:=0.0.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/$(PKG_NAME)/default
+define Package/slider-support/default
 	SECTION:=net
 	CATEGORY:=Network
 	DEPENDS:=+relayd
@@ -19,34 +19,34 @@ define Package/$(PKG_NAME)/default
 	TITLE:=Slider support
 endef
 
-define Package/$(PKG_NAME)-ar300m
-$(call Package/$(PKG_NAME)/default)
+define Package/slider-support-ar300m
+$(call Package/slider-support/default)
   VARIANT:=ar300m
 	USEBUTTON:=BTN_1
 	TITLE+= for GL-Inet AR300M
 endef
 
-define Package/$(PKG_NAME)-mt300n
-$(call Package/$(PKG_NAME)/default)
+define Package/slider-support-mt300n
+$(call Package/slider-support/default)
   VARIANT:=mt300n
 	USEBUTTON:=BTN_0
 	TITLE+= for GL-Inet MT300N/v2
 endef
 
-define Package/$(PKG_NAME)/description
+define Package/slider-support/description
 This service enables switching between Router, Access Point and Wireless Repeater
 modes of operation for supported routers equipped with slider switch.
 Please see the README for further information.
 endef
 
-define Package/$(PKG_NAME)/conffiles
-/etc/config/$(PKG_NAME)
+define Package/slider-support/conffiles
+/etc/config/slider-support
 endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)/files/
-	$(CP) ./files/$(PKG_NAME).init $(PKG_BUILD_DIR)/files/$(PKG_NAME).init
-	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/$(PKG_NAME).init
+	$(CP) ./files/slider-support.init $(PKG_BUILD_DIR)/files/slider-support.init
+	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/slider-support.init
 endef
 
 define Build/Configure
@@ -55,22 +55,22 @@ endef
 define Build/Compile
 endef
 
-define Package/$(PKG_NAME)/install
+define Package/slider-support/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/$(PKG_NAME).init $(1)/etc/init.d/$(PKG_NAME)
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/slider-support.init $(1)/etc/init.d/slider-support
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/$(PKG_NAME).conf $(1)/etc/config/$(PKG_NAME)
+	$(INSTALL_CONF) ./files/slider-support.conf $(1)/etc/config/slider-support
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_DATA) ./files/stabridge.hotplug $(1)/etc/hotplug.d/iface/99-stabridge
 	$(INSTALL_DIR) $(1)/lib/functions
 	$(INSTALL_DATA) ./files/checkslider.$(VARIANT) $(1)/lib/functions/checkslider.sh
 	$(INSTALL_DIR) $(1)/etc/rc.button
-	$(INSTALL_DATA) ./files/$(PKG_NAME).button $(1)/etc/rc.button/$(USEBUTTON)
+	$(INSTALL_DATA) ./files/slider-support.button $(1)/etc/rc.button/$(USEBUTTON)
 	chmod 0755 $(1)/etc/rc.button/$(USEBUTTON)
 endef
 
-Package/$(PKG_NAME)-ar300m/install = $(Package/$(PKG_NAME)/install)
-Package/$(PKG_NAME)-mt300n/install = $(Package/$(PKG_NAME)/install)
+Package/slider-support-ar300m/install = $(Package/slider-support/install)
+Package/slider-support-mt300n/install = $(Package/slider-support/install)
 
-$(eval $(call BuildPackage,$(PKG_NAME)-ar300m))
-$(eval $(call BuildPackage,$(PKG_NAME)-mt300n))
+$(eval $(call BuildPackage,slider-support-ar300m))
+$(eval $(call BuildPackage,slider-support-mt300n))
