@@ -11,7 +11,7 @@ PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/$(PKG_NAME)
+define Package/vpn-policy-routing
 	SECTION:=net
 	CATEGORY:=Network
 	DEPENDS:=+ipset +iptables +resolveip +kmod-ipt-ipset +!BUSYBOX_CONFIG_IP:ip-full
@@ -20,19 +20,19 @@ define Package/$(PKG_NAME)
 	PKGARCH:=all
 endef
 
-define Package/$(PKG_NAME)/description
+define Package/vpn-policy-routing/description
 This service allows policy-based routing for L2TP, Openconnect, OpenVPN, PPTP and Wireguard tunnels and WAN interface.
 Policies can specify domains, local IPs/subnets and ports, as well as remote IPs/subnets and ports.
 endef
 
-define Package/$(PKG_NAME)/conffiles
-/etc/config/$(PKG_NAME)
+define Package/vpn-policy-routing/conffiles
+/etc/config/vpn-policy-routing
 endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)/files/
-	$(CP) ./files/$(PKG_NAME).init $(PKG_BUILD_DIR)/files/$(PKG_NAME).init
-	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/$(PKG_NAME).init
+	$(CP) ./files/vpn-policy-routing.init $(PKG_BUILD_DIR)/files/vpn-policy-routing.init
+	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/vpn-policy-routing.init
 endef
 
 define Build/Configure
@@ -41,16 +41,16 @@ endef
 define Build/Compile
 endef
 
-define Package/$(PKG_NAME)/install
+define Package/vpn-policy-routing/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/$(PKG_NAME).init $(1)/etc/init.d/$(PKG_NAME)
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/vpn-policy-routing.init $(1)/etc/init.d/vpn-policy-routing
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/$(PKG_NAME).conf $(1)/etc/config/$(PKG_NAME)
+	$(INSTALL_CONF) ./files/vpn-policy-routing.conf $(1)/etc/config/vpn-policy-routing
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/firewall
-	$(INSTALL_DATA) ./files/$(PKG_NAME).hotplug $(1)/etc/hotplug.d/firewall/99-$(PKG_NAME)
+	$(INSTALL_DATA) ./files/vpn-policy-routing.hotplug $(1)/etc/hotplug.d/firewall/99-vpn-policy-routing
 endef
 
-define Package/$(PKG_NAME)/postinst
+define Package/vpn-policy-routing/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -76,7 +76,7 @@ define Package/$(PKG_NAME)/postinst
 	exit 0
 endef
 
-define Package/$(PKG_NAME)/prerm
+define Package/vpn-policy-routing/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -97,4 +97,4 @@ define Package/$(PKG_NAME)/prerm
 	exit 0
 endef
 
-$(eval $(call BuildPackage,$(PKG_NAME)))
+$(eval $(call BuildPackage,vpn-policy-routing))

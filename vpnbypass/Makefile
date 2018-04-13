@@ -54,7 +54,7 @@ define Package/vpnbypass/install
 endef
 
 
-define Package/$(PKG_NAME)/postinst
+define Package/vpnbypass/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -76,7 +76,7 @@ define Package/$(PKG_NAME)/postinst
 	exit 0
 endef
 
-define Package/$(PKG_NAME)/prerm
+define Package/vpnbypass/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then

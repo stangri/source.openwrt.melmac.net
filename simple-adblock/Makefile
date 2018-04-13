@@ -11,20 +11,20 @@ PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/$(PKG_NAME)
+define Package/simple-adblock
 	SECTION:=net
 	CATEGORY:=Network
 	TITLE:=Simple AdBlock Service
 	PKGARCH:=all
 endef
 
-define Package/$(PKG_NAME)/description
+define Package/simple-adblock/description
 This service provides dnsmasq-based ad blocking.
 Please see the README for further information.
 
 endef
 
-define Package/$(PKG_NAME)/conffiles
+define Package/simple-adblock/conffiles
 /etc/config/simple-adblock
 endef
 
@@ -40,14 +40,14 @@ endef
 define Build/Compile
 endef
 
-define Package/$(PKG_NAME)/install
+define Package/simple-adblock/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/simple-adblock.init $(1)/etc/init.d/simple-adblock
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/simple-adblock.conf $(1)/etc/config/simple-adblock
 endef
 
-define Package/$(PKG_NAME)/postinst
+define Package/simple-adblock/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -66,7 +66,7 @@ define Package/$(PKG_NAME)/postinst
 	exit 0
 endef
 
-define Package/$(PKG_NAME)/prerm
+define Package/simple-adblock/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -82,4 +82,4 @@ define Package/$(PKG_NAME)/prerm
 	exit 0
 endef
 
-$(eval $(call BuildPackage,$(PKG_NAME)))
+$(eval $(call BuildPackage,simple-adblock))
