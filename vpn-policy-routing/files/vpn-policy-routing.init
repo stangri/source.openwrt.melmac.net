@@ -359,8 +359,10 @@ process_interface(){
 	is_supported_interface "$iface" || return 0
 	[ $((ifaceMark)) -gt $((fwMask)) ] && return 1
 
-#	config_get dev "$iface" 'ifname'; dev6="$dev";
-	network_get_device dev "$iface"; dev6="$dev";
+	network_get_device dev "$iface"
+	[ -z "$dev" ] && config_get dev "$iface" 'ifname'
+	dev6="$dev"
+
 	[ -z "$ifaceTableID" ] && ifaceTableID="$wanTableID"; [ -z "$ifaceMark" ] && ifaceMark="$wanMark";
 
 	case "$action" in
