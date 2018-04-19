@@ -60,6 +60,7 @@ define Package/antminer-monitor/postinst
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/antminer-monitor enable
 		/usr/bin/python -m pip install -r /usr/sbin/antminer-monitor/requirements.txt
+		[ -s /tmp/antminer-monitor-backup.db ] && mv /tmp/antminer-monitor-backup.db /usr/sbin/antminer-monitor/app/db/app.db || true
 		/usr/bin/python /usr/sbin/antminer-monitor/create_db.py
 		/usr/bin/python /usr/sbin/antminer-monitor/update_db.py
 	fi
@@ -72,7 +73,8 @@ define Package/antminer-monitor/prerm
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/antminer-monitor stop || true
 		/etc/init.d/antminer-monitor disable
-		rm -rf /usr/sbin/antminer-monitor
+		[ -s /usr/sbin/antminer-monitor/app/db/app.db ] && cp /usr/sbin/antminer-monitor/app/db/app.db /tmp/antminer-monitor-backup.db || true
+		rm -rf /usr/sbin/antminer-monitor || true
 	fi
 	exit 0
 endef
