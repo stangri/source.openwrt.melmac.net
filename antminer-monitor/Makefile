@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=antminer-monitor
-PKG_VERSION:=1
-PKG_RELEASE:=0.4.0
+PKG_VERSION:=0.4.0
+PKG_RELEASE:=4
 PKG_LICENSE:=GPL-3.0
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -23,7 +23,7 @@ define Package/antminer-monitor/description
 This service can be used to monitor Antminers on local network.
 endef
 
-AMSRC=v$(PKG_RELEASE)
+AMSRC=v$(PKG_VERSION)
 define Download/antminer-monitor
   URL:=https://github.com/anselal/$(PKG_NAME)/archive/
   FILE:=$(AMSRC).tar.gz
@@ -34,6 +34,8 @@ $(eval $(call Download,antminer-monitor))
 define Build/Prepare
 	$(PKG_UNPACK)
 	tar -C $(PKG_BUILD_DIR) -xvzf $(DL_DIR)/$(AMSRC).tar.gz
+	sed -i '/logger\./d' $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_VERSION)/app/views/antminer.py
+	sed -i "s/app.config\['DEBUG'\] = True/app.config\['DEBUG'\] = False/" $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_VERSION)/app/__init__.py
 	mkdir -p $(PKG_BUILD_DIR)/files/
 	$(CP) ./files/antminer-monitor.init $(PKG_BUILD_DIR)/files/antminer-monitor.init
 	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/antminer-monitor.init
@@ -49,7 +51,7 @@ define Package/antminer-monitor/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/antminer-monitor.init $(1)/etc/init.d/antminer-monitor
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(CP) $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_RELEASE) $(1)/usr/sbin/antminer-monitor
+	$(CP) $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_VERSION) $(1)/usr/sbin/antminer-monitor
 endef
 
 define Package/antminer-monitor/postinst
