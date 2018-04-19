@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=antminer-monitor
 PKG_VERSION:=0.4.0
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 PKG_LICENSE:=GPL-3.0
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -70,7 +70,9 @@ define Package/antminer-monitor/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
+		/etc/init.d/antminer-monitor stop || true
 		/etc/init.d/antminer-monitor disable
+		rm -rf /usr/sbin/antminer-monitor
 	fi
 	exit 0
 endef
