@@ -39,6 +39,3 @@ opkg update
 
 ## How to use
 Use WebUI to start the ```antminer-monitor``` service or run ```/etc/init.d/antminer-monitor start``` in the ssh session to the router.
-
-## Known Issues
- 1. Service doesn't actually stop on ```/etc/init.d/antminer-monitor stop```. Lookup the PID with ```ps w``` and then ```kill -SIGTERM ${PID}``` if you want to stop the service.
