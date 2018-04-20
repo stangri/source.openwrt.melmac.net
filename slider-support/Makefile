@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=slider-support
 PKG_VERSION:=0.0.2
-PKG_RELEASE:=2
+PKG_RELEASE:=5
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -39,9 +39,15 @@ modes of operation for supported routers equipped with slider switch.
 Please see the README for further information.
 endef
 
+Package/slider-support-ar300m/description = $(Package/slider-support/description)
+Package/slider-support-mt300n/description = $(Package/slider-support/description)
+
 define Package/slider-support/conffiles
 /etc/config/slider-support
 endef
+
+Package/slider-support-ar300m/conffiles = $(Package/slider-support/conffiles)
+Package/slider-support-mt300n/conffiles = $(Package/slider-support/conffiles)
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)/files/
@@ -71,6 +77,30 @@ endef
 
 Package/slider-support-ar300m/install = $(Package/slider-support/install)
 Package/slider-support-mt300n/install = $(Package/slider-support/install)
+
+define Package/slider-support/postinst
+	#!/bin/sh
+	# check if we are on real system
+	if [ -z "$${IPKG_INSTROOT}" ]; then
+		/etc/init.d/slider-support enable
+	fi
+	exit 0
+endef
+
+Package/slider-support-ar300m/postinst = $(Package/slider-support/postinst)
+Package/slider-support-mt300n/postinst = $(Package/slider-support/postinst)
+
+define Package/slider-support/prerm
+	#!/bin/sh
+	# check if we are on real system
+	if [ -z "$${IPKG_INSTROOT}" ]; then
+		/etc/init.d/slider-support disable
+	fi
+	exit 0
+endef
+
+Package/slider-support-ar300m/prerm = $(Package/slider-support/prerm)
+Package/slider-support-mt300n/prerm = $(Package/slider-support/prerm)
 
 $(eval $(call BuildPackage,slider-support-ar300m))
 $(eval $(call BuildPackage,slider-support-mt300n))
