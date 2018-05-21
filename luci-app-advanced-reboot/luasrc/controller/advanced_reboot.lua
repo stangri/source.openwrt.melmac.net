@@ -3,17 +3,18 @@
 
 module("luci.controller.advanced_reboot", package.seeall)
 
--- device_name, board_name, part1, part2, offset, env_var_1, value_1_1, value_1_2, env_var_2, value_2_1, value_2_2
+-- deviceName, boardName, partition1, partition2, offset, envVar1, envVar1Value1, envVar1Value2, envVar2, envVar2Value1, envVar2Value2
 devices = {
   {"Linksys EA3500", "linksys-audi", "mtd3", "mtd5", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
   {"Linksys E4200v2/EA4500", "linksys-viper", "mtd3", "mtd5", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
   {"Linksys EA8500", "ea8500", "mtd13", "mtd15", 32, "boot_part", 1, 2},
---  {"Linksys EA9500", "linksys,panamera", "mtd3", "mtd6", 28, "boot_part", 1, 2},
+--  {"Linksys EA9500", "linksys-panamera", "mtd3", "mtd6", 28, "boot_part", 1, 2},
   {"Linksys WRT1200AC", "linksys-caiman", "mtd4", "mtd6", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
   {"Linksys WRT1900AC", "linksys-mamba", "mtd4", "mtd6", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
   {"Linksys WRT1900ACv2", "linksys-cobra", "mtd4", "mtd6", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
   {"Linksys WRT1900ACS", "linksys-shelby", "mtd4", "mtd6", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
   {"Linksys WRT3200ACM", "linksys-rango", "mtd5", "mtd7", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
+  {"Linksys WRT32X", "linksys-venom", "mtd5", "mtd7", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
   {"ZyXEL NBG6817","nbg6817","mmcblk0p4","mmcblk0p7",32,nil,255,1}
 }
 
