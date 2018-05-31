@@ -1,0 +1,10 @@
+#!/bin/sh
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@template[-1]
+	add ucitrack template
+	set ucitrack.@template[-1].init=template
+	commit ucitrack
+EOF
+
+rm -f /tmp/luci-indexcache
+exit 0
