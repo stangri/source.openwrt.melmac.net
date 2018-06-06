@@ -25,24 +25,38 @@ is_enabled() {
 	if [[ -z "$ip" || -z "$range" ]]; then return 1; else return 0; fi
 }
 
+process_policy() {
+	local i a ip
+	config_get i "$1" 'address'
+	config_get a "$1" 'action' 'fake'
+
+	[ -z "$i" ] && return 1
+	uci -q del_list dhcp.@dnsmasq[0].address="/${i}/127.0.0.1"
+	uci -q del_list dhcp.@dnsmasq[0].address="/${i}/${wwwIP}"
+
+	if [ "$2" == "Add" ]; then
+		[ "$a" == "block" ] && ip='127.0.0.1' || ip="$wwwIP"
+		uci -q add_list dhcp.@dnsmasq[0].address="/${i}/${ip}" || return 1
+	fi
+}
+
 dns_forward() {
 	local i list="$(uci -q get dhcp.@dnsmasq[0].address)"
-	case "$1" in
-		Rem*)
-		 for i in ${domainsList}; do
-			[ -n "$i" ] && uci -q del_list dhcp.@dnsmasq[0].address="/${i}/${wwwIP}"
-		 done
-		 ;;
-		Add*)
-		for i in ${domainsList}; do
-			[[ -n "$i" && "${list//$i}" == "$list" ]] && uci add_list dhcp.@dnsmasq[0].address="/${i}/${wwwIP}"
-		done
-			;;
-	esac
+	# first process old-style settings, then new policy-style settings
+	for i in ${list}; do [ "$i" != "${i//$wwwIP}" ] && uci -q del_list dhcp.@dnsmasq[0].address="${i}"; done
+	config_foreach process_policy 'policy' 'Remov';
+
+	if [ "$1" == "Add" ]; then
+		# first process old-style settings, then new policy-style settings
+		for i in ${domainsList}; do [[ -n "$i" && "${list//$i}" == "$list" ]] && uci -q add_list dhcp.@dnsmasq[0].address="/${i}/${wwwIP}"; done
+		config_foreach process_policy 'policy' 'Add';
+	fi
+
 	if [ -n "$(uci changes)" ]; then
 		uci commit dhcp
 		logger -t "fakeinternet" "${1}ed dnsmasq address entries"
-		/etc/init.d/dnsmasq restart >/dev/null 2>&1
+		# /etc/init.d/dnsmasq restart >/dev/null 2>&1
+		killall -HUP dnsmasq
 	fi
 	return 0
 }

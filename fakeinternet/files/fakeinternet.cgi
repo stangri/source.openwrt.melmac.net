@@ -78,12 +78,3 @@ Content-Type: text/html
 EOF
 logger -t 'fakeinternet' "$REQUEST_URI: Generic 200 OK/Success"
 exit
-
-
-# Status: 200 OK
-# Content-Type: text/html
-#
-## <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
-## <HTML><HEAD><TITLE>$REQUEST_URI</TITLE></HEAD><BODY>Requested page: $REQUEST_URI</BODY></HTML>
-# <HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>
-#

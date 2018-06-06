@@ -2,7 +2,7 @@
 Fake Internet service for OpenWrt/LEDE Project routers.
 
 ## Requirements
-This service requires the following package to be installed on your router: ```uhttpd``` and ```dnsmasq``` or ```dnsmasq-full``` .
+This service requires the following packages to be installed on your router: ```uhttpd``` and ```dnsmasq``` or ```dnsmasq-full```.
 
 To satisfy the requirements, connect to your router via ssh and run the following commands:
 ```sh
