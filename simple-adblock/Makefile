@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=simple-adblock
 PKG_VERSION:=1.6.0
-PKG_RELEASE:=3
+PKG_RELEASE:=6
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -45,6 +45,8 @@ define Package/simple-adblock/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/simple-adblock.init $(1)/etc/init.d/simple-adblock
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/simple-adblock.conf $(1)/etc/config/simple-adblock
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_BIN) ./files/simple-adblock.hotplug $(1)/etc/hotplug.d/iface/80-simple-adblock
 endef
 
 define Package/simple-adblock/postinst
@@ -77,7 +79,7 @@ define Package/simple-adblock/prerm
 		echo "Stopping service and removing rc.d symlink for simple-adblock"
 		/etc/init.d/simple-adblock stop || true
 		/etc/init.d/simple-adblock killcache || true
-		/etc/init.d/simple-adblock disable
+		/etc/init.d/simple-adblock disable || true
 	fi
 	exit 0
 endef

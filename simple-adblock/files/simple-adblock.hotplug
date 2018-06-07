@@ -1,0 +1,6 @@
+#!/bin/sh
+
+source /lib/functions/network.sh; network_flush_cache; network_find_wan wan_if;
+if [[ "$ACTION" == "ifup" && "$INTERFACE" == "$wan_if" ]]; then
+  sleep 10 && /etc/init.d/simple-adblock start
+fi
