@@ -3,8 +3,8 @@
 
 module("luci.controller.advanced_reboot", package.seeall)
 
--- deviceName, boardName, partition1, partition2, offset, envVar1, envVar1Value1, envVar1Value2, envVar2, envVar2Value1, envVar2Value2
 devices = {
+  -- deviceName, boardName, partition1, partition2, offset, envVar1, envVar1Value1, envVar1Value2, envVar2, envVar2Value1, envVar2Value2
   {"Linksys EA3500", "linksys-audi", "mtd3", "mtd5", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
   {"Linksys E4200v2/EA4500", "linksys-viper", "mtd3", "mtd5", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
   {"Linksys EA8500", "ea8500", "mtd13", "mtd15", 32, "boot_part", 1, 2},
@@ -18,7 +18,7 @@ devices = {
   {"ZyXEL NBG6817","nbg6817","mmcblk0p4","mmcblk0p7", 32, nil, 255, 1}
 }
 
-errorMessage = ""
+errorMessage = nil
 rom_board_name = luci.util.trim(luci.sys.exec("cat /tmp/sysinfo/board_name"))
 for i=1, #devices do
   device_board_name = devices[i][2]:gsub('%p','')
@@ -51,6 +51,10 @@ for i=1, #devices do
       if not partition_one_os then partition_one_os = "ZyXEL" end
       if not partition_two_os then partition_two_os = "ZyXEL" end
     end
+    if device_name and device_name == "Linksys WRT32X" then
+      if not partition_one_os then partition_one_os = "Unknown/Compressed" end
+      if not partition_two_os then partition_two_os = "Unknown/Compressed" end
+    end
     if not partition_one_os then partition_one_os = "Unknown" end
     if not partition_two_os then partition_two_os = "Unknown" end
     if partition_one_os and partition_one_version then partition_one_os = partition_one_os .. " (Linux " .. partition_one_version .. ")" end
@@ -76,7 +80,6 @@ end
 function index()
   entry({"admin", "system", "advanced_reboot"}, template("advanced_reboot/advanced_reboot"), _("Advanced Reboot"), 90)
   entry({"admin", "system", "advanced_reboot", "reboot"}, post("action_reboot"))
---  if device_name then entry({"admin", "system", "advanced_reboot", "altreboot"}, post("action_altreboot")) end
   entry({"admin", "system", "advanced_reboot", "alternative_reboot"}, post("action_altreboot"))
   entry({"admin", "system", "advanced_reboot", "power_off"}, post("action_poweroff"))
 end
@@ -94,18 +97,10 @@ end
 function action_altreboot()
   local uci = require "luci.model.uci".cursor()
   local zyxelFlagPartition, zyxelBootFlag, zyxelNewBootFlag, errorCode, curEnvSetting, newEnvSetting
-  errorMessage = ""
+  errorMessage = nil
   errorCode = 0
   if luci.http.formvalue("cancel") then
     luci.http.redirect(luci.dispatcher.build_url('admin/system/advanced_reboot'))
---    luci.template.render("advanced_reboot/advanced_reboot",{
---      device_name=device_name,
---      boot_envvar1_partition_one=boot_envvar1_partition_one,
---      partition_one_os=partition_one_os,
---      boot_envvar1_partition_two=boot_envvar1_partition_two,
---      partition_two_os=partition_two_os,
---      current_partition=current_partition,
---      errorMessage = luci.i18n.translate("Alternative reboot cancelled.")})
     return
   end
   local step = tonumber(luci.http.formvalue("step") or 1)
@@ -162,7 +157,7 @@ function action_altreboot()
         end
       end
     end
-    if errorMessage == "" then
+    if not errorMessage then
       luci.template.render("admin_system/applyreboot", {
             title = luci.i18n.translate("Rebooting..."),
             msg   = luci.i18n.translate("The system is rebooting to an alternative partition now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."),
@@ -171,6 +166,7 @@ function action_altreboot()
       luci.sys.reboot()
     else
       luci.template.render("advanced_reboot/advanced_reboot",{
+        rom_board_name=rom_board_name,
         device_name=device_name,
         boot_envvar1_partition_one=boot_envvar1_partition_one,
         partition_one_os=partition_one_os,
