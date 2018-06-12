@@ -250,6 +250,7 @@ start_service() {
 			json_add_string src 'lan'
 			json_add_string proto 'tcpudp'
 			json_add_string src_dport '53'
+			json_add_string dest_port '53'
 			json_add_string dest_ip "$ip"
 			json_add_string name 'simple_adblock_dns'
 			json_add_string reflection '0'
