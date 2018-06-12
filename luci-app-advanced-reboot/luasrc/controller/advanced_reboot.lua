@@ -14,15 +14,15 @@ devices = {
   {"Linksys WRT1900ACv2", "linksys-cobra", "mtd4", "mtd6", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
   {"Linksys WRT1900ACS", "linksys-shelby", "mtd4", "mtd6", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
   {"Linksys WRT3200ACM", "linksys-rango", "mtd5", "mtd7", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
-  {"Linksys WRT32X", "linksys-venom", "mtd5", "mtd7", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
-  {"ZyXEL NBG6817","nbg6817","mmcblk0p4","mmcblk0p7",32,nil,255,1}
+  {"Linksys WRT32X", "linksys-venom", "mtd5", "mtd7", nil, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
+  {"ZyXEL NBG6817","nbg6817","mmcblk0p4","mmcblk0p7", 32, nil, 255, 1}
 }
 
 errorMessage = ""
-device_board_name = luci.util.trim(luci.sys.exec("cat /tmp/sysinfo/board_name"))
+rom_board_name = luci.util.trim(luci.sys.exec("cat /tmp/sysinfo/board_name"))
 for i=1, #devices do
-  table_board_name = devices[i][2]:gsub('%p','')
-  if device_board_name and device_board_name:gsub('%p',''):match(table_board_name) then
+  device_board_name = devices[i][2]:gsub('%p','')
+  if rom_board_name and rom_board_name:gsub('%p',''):match(device_board_name) then
     device_name = devices[i][1]
     partition_one_mtd = devices[i][3] or nil
     partition_two_mtd = devices[i][4] or nil
@@ -41,12 +41,12 @@ for i=1, #devices do
       partition_two_label = luci.util.trim(luci.sys.exec("dd if=/dev/" .. partition_two_mtd .. " bs=1 skip=" .. partition_skip .. " count=25" .. "  2>/dev/null"))
       n, partition_two_version = string.match(partition_two_label, '(Linux)-([%d|.]+)')
     end
-    if string.find(partition_one_label, "LEDE") then partition_one_os = "LEDE" end
-    if string.find(partition_one_label, "OpenWrt") then partition_one_os = "OpenWrt" end
-    if string.find(partition_one_label, "Linksys") then partition_one_os = "Linksys" end
-    if string.find(partition_two_label, "LEDE") then partition_two_os = "LEDE" end
-    if string.find(partition_two_label, "OpenWrt") then partition_two_os = "OpenWrt" end
-    if string.find(partition_two_label, "Linksys") then partition_two_os = "Linksys" end
+    if partition_one_label and string.find(partition_one_label, "LEDE") then partition_one_os = "LEDE" end
+    if partition_one_label and string.find(partition_one_label, "OpenWrt") then partition_one_os = "OpenWrt" end
+    if partition_one_label and string.find(partition_one_label, "Linksys") then partition_one_os = "Linksys" end
+    if partition_two_label and string.find(partition_two_label, "LEDE") then partition_two_os = "LEDE" end
+    if partition_two_label and string.find(partition_two_label, "OpenWrt") then partition_two_os = "OpenWrt" end
+    if partition_two_label and string.find(partition_two_label, "Linksys") then partition_two_os = "Linksys" end
     if device_name and device_name == "ZyXEL NBG6817" then
       if not partition_one_os then partition_one_os = "ZyXEL" end
       if not partition_two_os then partition_two_os = "ZyXEL" end
