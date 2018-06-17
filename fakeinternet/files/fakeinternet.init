@@ -14,124 +14,235 @@ load_package_config() {
 	config_get wwwIP               'config' 'www_ip' '192.18.1.1'
 	config_get wwwPort             'config' 'www_port' '65530'
 	config_get domainsList         'config' 'address'
+	config_get dnsmasqFile  	     'config' 'dnsmasqFile' "/var/dnsmasq.d/${packageName}"
 }
 
 is_enabled() {
 	load_package_config
 	[ $serviceEnabled -gt 0 ] || return 1
 	source /lib/functions/network.sh
+	[ ! -d "${dnsmasqFile%/*}" ] && mkdir -p "${dnsmasqFile%/*}"
 	network_get_subnet range 'lan'
 	network_get_ipaddr ip 'lan'
 	if [[ -z "$ip" || -z "$range" ]]; then return 1; else return 0; fi
 }
 
+is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
+
+ipt() {
+  local d
+	d="${*//-A/-D}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1;
+	d="${*//-I/-D}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1;
+	d="${*//-N/-F}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1;
+	d="${*//-N/-X}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1;
+	d="$*"; iptables $d >/dev/null 2>&1;
+}
+
+ipt_rules(){
+	case "$1" in
+		stop)
+			iptables-save | grep -Fv -- "fakeinternet_rule" | iptables-restore
+			logger -t "fakeinternet" "Removed iptables rules for fakeinternet uhttpd instances"
+			;;
+		start)
+			ipt -t nat -A prerouting_rule -i br-lan -p udp --dport 53 -j DNAT --to $ip -m comment --comment "fakeinternet_rule"
+			ipt -t nat -A prerouting_rule -i br-lan -p tcp --dport 53 -j DNAT --to $ip -m comment --comment "fakeinternet_rule"
+			ipt -w -A forwarding_rule -d $wwwIP -p tcp -j REJECT --reject-with tcp-reset -m comment --comment "fakeinternet_rule"
+			ipt -w -A forwarding_rule -d $wwwIP -j REJECT --reject-with icmp-host-unreachable -m comment --comment "fakeinternet_rule"
+			ipt -w -A output_rule -d $wwwIP -p tcp -j REJECT --reject-with tcp-reset -m comment --comment "fakeinternet_rule"
+			ipt -w -A output_rule -d $wwwIP -j REJECT --reject-with icmp-host-unreachable -m comment --comment "fakeinternet_rule"
+			ipt -w -t nat -A prerouting_rule -p tcp -d $wwwIP --dport 80 -j DNAT --to-destination ${ip}:${wwwPort} -m comment --comment "fakeinternet_rule"
+			ipt -w -t nat -A prerouting_rule -p tcp -d $wwwIP --dport 443 -j DNAT --to-destination ${ip}:${wwwPort} -m comment --comment "fakeinternet_rule"
+			logger -t "fakeinternet" "Added iptables rules for fakeinternet uhttpd instances"
+			;;
+	esac
+	return 0
+}
+
+remove_fw3_redirect() {
+	config_get name "$1" 'name'
+	if [[ -n "$name" && "$name" != "${name//fakeinternet}" ]]; then
+		uci -q del "firewall.$1"
+	fi
+}
+
+fw3_setup() {
+	config_load 'firewall'
+	config_foreach remove_fw3_redirect 'redirect'
+	if [ "$1" == "start" ]; then
+		uci -q add firewall redirect >/dev/null 2>&1
+		uci set firewall.@redirect[-1].name='fakeinternet #01'
+		uci set firewall.@redirect[-1].target='DNAT'
+		uci set firewall.@redirect[-1].src='lan'
+		uci set firewall.@redirect[-1].proto='tcpudp'
+		uci set firewall.@redirect[-1].src_dport='53'
+		uci set firewall.@redirect[-1].dest_port='53'
+		uci set firewall.@redirect[-1].dest_ip="$ip"
+		uci set firewall.@redirect[-1].reflection='0'
+		uci -q add firewall redirect >/dev/null 2>&1
+		uci set firewall.@redirect[-1].name='fakeinternet #03'
+		uci set firewall.@redirect[-1].target='DNAT'
+		uci set firewall.@redirect[-1].src='lan'
+		uci set firewall.@redirect[-1].proto='tcp'
+		uci set firewall.@redirect[-1].src_dport='80'
+		uci set firewall.@redirect[-1].src_dip="!$range"
+		uci set firewall.@redirect[-1].dest_ip="$ip"
+		uci set firewall.@redirect[-1].dest_port="${wwwPort}"
+		uci set firewall.@redirect[-1].reflection='0'
+		uci -q add firewall redirect >/dev/null 2>&1
+		uci set firewall.@redirect[-1].name='fakeinternet #04'
+		uci set firewall.@redirect[-1].target='DNAT'
+		uci set firewall.@redirect[-1].src='lan'
+		uci set firewall.@redirect[-1].proto='tcp'
+		uci set firewall.@redirect[-1].src_dport='443'
+		uci set firewall.@redirect[-1].src_dip="!$range"
+		uci set firewall.@redirect[-1].dest_ip="$ip"
+		uci set firewall.@redirect[-1].dest_port="${wwwPort}"
+		uci set firewall.@redirect[-1].reflection='0'
+		uci -q add firewall redirect >/dev/null 2>&1
+		uci set firewall.@redirect[-1].name='fakeinternet #09'
+		uci set firewall.@redirect[-1].target='DNAT'
+		uci set firewall.@redirect[-1].src='lan'
+		uci set firewall.@redirect[-1].proto='tcp'
+		uci set firewall.@redirect[-1].src_dport='80'
+		uci set firewall.@redirect[-1].src_dip="$wwwIP"
+		uci set firewall.@redirect[-1].dest_ip="$ip"
+		uci set firewall.@redirect[-1].dest_port="${wwwPort}"
+		uci set firewall.@redirect[-1].reflection='0'
+		uci -q add firewall redirect >/dev/null 2>&1
+		uci set firewall.@redirect[-1].name='fakeinternet #10'
+		uci set firewall.@redirect[-1].target='DNAT'
+		uci set firewall.@redirect[-1].src='lan'
+		uci set firewall.@redirect[-1].proto='tcp'
+		uci set firewall.@redirect[-1].src_dport='443'
+		uci set firewall.@redirect[-1].src_dip="$wwwIP"
+		uci set firewall.@redirect[-1].dest_ip="$ip"
+		uci set firewall.@redirect[-1].dest_port="${wwwPort}"
+		uci set firewall.@redirect[-1].reflection='0'
+	fi
+
+	if [ -n "$(uci changes firewall)" ]; then
+		uci commit firewall
+		/etc/init.d/firewall restart >/dev/null 2>&1
+	fi
+}
+
 process_policy() {
-	local i a ip
-	config_get i "$1" 'address'
-	config_get a "$1" 'action' 'fake'
-
-	[ -z "$i" ] && return 1
-	uci -q del_list dhcp.@dnsmasq[0].address="/${i}/127.0.0.1"
-	uci -q del_list dhcp.@dnsmasq[0].address="/${i}/${wwwIP}"
-
-	if [ "$2" == "Add" ]; then
-		[ "$a" == "block" ] && ip='127.0.0.1' || ip="$wwwIP"
-		uci -q add_list dhcp.@dnsmasq[0].address="/${i}/${ip}" || return 1
+	local address action
+	config_get address "$1" 'address'
+	config_get action  "$1" 'action' 'fake'
+	[ -z "$address" ] && return 1
+	if [ "$action" == "block" ]; then
+		echo "local=/$address/" >> $dnsmasqFile
+	else
+		echo "address=/$address/$wwwIP" >> $dnsmasqFile
 	fi
 }
 
 dns_forward() {
-	local i list="$(uci -q get dhcp.@dnsmasq[0].address)"
-	# first process old-style settings, then new policy-style settings
-	for i in ${list}; do [ "$i" != "${i//$wwwIP}" ] && uci -q del_list dhcp.@dnsmasq[0].address="${i}"; done
-	config_foreach process_policy 'policy' 'Remov';
-
-	if [ "$1" == "Add" ]; then
-		# first process old-style settings, then new policy-style settings
-		for i in ${domainsList}; do [[ -n "$i" && "${list//$i}" == "$list" ]] && uci -q add_list dhcp.@dnsmasq[0].address="/${i}/${wwwIP}"; done
-		config_foreach process_policy 'policy' 'Add';
-	fi
-
-	if [ -n "$(uci changes)" ]; then
-		uci commit dhcp
-		logger -t "fakeinternet" "${1}ed dnsmasq address entries"
-		# /etc/init.d/dnsmasq restart >/dev/null 2>&1
-		killall -HUP dnsmasq
-	fi
+	local i t=0
+	case "$1" in
+		remove)
+			if [ -s "$dnsmasqFile" ]; then
+				rm -f "$dnsmasqFile"
+				/etc/init.d/dnsmasq restart >/dev/null 2>&1
+			fi
+			;;
+		add)
+			if is_chaos_calmer; then
+				for i in $(uci -q get dhcp.@dnsmasq[0].addnhosts); do [[ -n "$i" && "$i" == "${dnsmasqFile%/*}" ]] && t=1; done
+				[ $t -eq 0 ] && uci add_list dhcp.@dnsmasq[0].addnhosts="${dnsmasqFile%/*}" && uci commit dhcp
+			fi
+			if [ -s "$dnsmasqFile" ]; then
+				rm -f "$dnsmasqFile"
+			fi
+			for i in ${domainsList}; do [ -n "$i" ] && echo "address=/$i/$wwwIP" >> $dnsmasqFile; done
+			config_foreach process_policy 'policy'
+			if [ -s "$dnsmasqFile" ]; then
+				logger -t "fakeinternet" "Created dnsmasq config file $dnsmasqFile."
+				/etc/init.d/dnsmasq restart >/dev/null 2>&1
+			fi
+			;;
+	esac
 	return 0
 }
 
 start_service() {
 	is_enabled || return 1
-	dns_forward 'Add' || return 1
+	dns_forward 'add' || return 1
 	procd_open_instance
 	procd_set_param command /usr/sbin/uhttpd -f -h /www_fakeinternet -r fakeinternet -x /cgi-bin -u /ubus -t 60 -T 30 -k 20 -E /error.cgi -n 3 -N 100 -R -p 0.0.0.0:${wwwPort} -p "[::]:${wwwPort}" -i .cgi=/bin/ash
 	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
 	procd_set_param stdout 1
 	procd_set_param stderr 1
-	procd_open_data
-	json_add_array firewall
-	json_add_object ""
-	json_add_string type redirect
-	json_add_string target 'DNAT'
-	json_add_string src 'lan'
-	json_add_string proto 'tcpudp'
-	json_add_string src_dport '53'
-	json_add_string dest_port '53'
-	json_add_string dest_ip "$ip"
-	json_add_string name 'PROCD_rule_01'
-	json_add_string reflection '0'
-	json_close_object
-	json_add_object ""
-	json_add_string type redirect
-	json_add_string target 'DNAT'
-	json_add_string src 'lan'
-	json_add_string proto 'tcp'
-	json_add_string src_dport '80'
-	json_add_string src_dip "!$range"
-	json_add_string dest_ip "$ip"
-	json_add_string dest_port "${wwwPort}"
-	json_add_string name 'PROCD_rule_03'
-	json_add_string reflection '0'
-	json_close_object
-	json_add_object ""
-	json_add_string type redirect
-	json_add_string target 'DNAT'
-	json_add_string src 'lan'
-	json_add_string proto 'tcp'
-	json_add_string src_dport '443'
-	json_add_string src_dip "!$range"
-	json_add_string dest_ip "$ip"
-	json_add_string dest_port "${wwwPort}"
-	json_add_string name 'PROCD_rule_04'
-	json_add_string reflection '0'
-	json_close_object
-	json_add_object ""
-	json_add_string type redirect
-	json_add_string target 'DNAT'
-	json_add_string src 'lan'
-	json_add_string proto 'tcp'
-	json_add_string src_dport '80'
-	json_add_string src_dip "$wwwIP"
-	json_add_string dest_ip "$ip"
-	json_add_string dest_port "${wwwPort}"
-	json_add_string name 'PROCD_rule_09'
-	json_add_string reflection '0'
-	json_close_object
-	json_add_object ""
-	json_add_string type redirect
-	json_add_string target 'DNAT'
-	json_add_string src 'lan'
-	json_add_string proto 'tcp'
-	json_add_string src_dport '443'
-	json_add_string src_dip "$wwwIP"
-	json_add_string dest_ip "$ip"
-	json_add_string dest_port "${wwwPort}"
-	json_add_string name 'PROCD_rule_10'
-	json_add_string reflection '0'
-	json_close_object
-	json_close_array
-	procd_close_data
+	if is_chaos_calmer; then
+		fw3_setup 'start'
+#		ipt_rules 'start'
+	else
+		procd_open_data
+		json_add_array firewall
+		json_add_object ""
+		json_add_string type redirect
+		json_add_string target 'DNAT'
+		json_add_string src 'lan'
+		json_add_string proto 'tcpudp'
+		json_add_string src_dport '53'
+		json_add_string dest_port '53'
+		json_add_string dest_ip "$ip"
+		json_add_string name 'PROCD_rule_01'
+		json_add_string reflection '0'
+		json_close_object
+		json_add_object ""
+		json_add_string type redirect
+		json_add_string target 'DNAT'
+		json_add_string src 'lan'
+		json_add_string proto 'tcp'
+		json_add_string src_dport '80'
+		json_add_string src_dip "!$range"
+		json_add_string dest_ip "$ip"
+		json_add_string dest_port "${wwwPort}"
+		json_add_string name 'PROCD_rule_03'
+		json_add_string reflection '0'
+		json_close_object
+		json_add_object ""
+		json_add_string type redirect
+		json_add_string target 'DNAT'
+		json_add_string src 'lan'
+		json_add_string proto 'tcp'
+		json_add_string src_dport '443'
+		json_add_string src_dip "!$range"
+		json_add_string dest_ip "$ip"
+		json_add_string dest_port "${wwwPort}"
+		json_add_string name 'PROCD_rule_04'
+		json_add_string reflection '0'
+		json_close_object
+		json_add_object ""
+		json_add_string type redirect
+		json_add_string target 'DNAT'
+		json_add_string src 'lan'
+		json_add_string proto 'tcp'
+		json_add_string src_dport '80'
+		json_add_string src_dip "$wwwIP"
+		json_add_string dest_ip "$ip"
+		json_add_string dest_port "${wwwPort}"
+		json_add_string name 'PROCD_rule_09'
+		json_add_string reflection '0'
+		json_close_object
+		json_add_object ""
+		json_add_string type redirect
+		json_add_string target 'DNAT'
+		json_add_string src 'lan'
+		json_add_string proto 'tcp'
+		json_add_string src_dport '443'
+		json_add_string src_dip "$wwwIP"
+		json_add_string dest_ip "$ip"
+		json_add_string dest_port "${wwwPort}"
+		json_add_string name 'PROCD_rule_10'
+		json_add_string reflection '0'
+		json_close_object
+		json_close_array
+		procd_close_data
+	fi
 	procd_close_instance
 	logger -t "$serviceName" "Service started"
 }
@@ -142,7 +253,12 @@ service_started() {
 
 stop_service () {
 	load_package_config
-	dns_forward 'Remov'
-	procd_set_config_changed firewall
+	dns_forward 'remove'
+	if is_chaos_calmer; then
+		fw3_setup 'stop'
+#		ipt_rules 'stop'
+	else
+		procd_set_config_changed firewall
+	fi
 	logger -t "$serviceName" "Service stopped"
 }
