@@ -112,13 +112,13 @@ process_policy() {
 dns_forward() {
 	local i t=0
 	case "$1" in
-		remove)
+		stop)
 			if [ -s "$dnsmasqFile" ]; then
 				rm -f "$dnsmasqFile"
 				/etc/init.d/dnsmasq restart >/dev/null 2>&1
 			fi
 			;;
-		add)
+		start)
 			if is_chaos_calmer; then
 				for i in $(uci -q get dhcp.@dnsmasq[0].addnhosts); do [[ -n "$i" && "$i" == "${dnsmasqFile%/*}" ]] && t=1; done
 				[ $t -eq 0 ] && uci add_list dhcp.@dnsmasq[0].addnhosts="${dnsmasqFile%/*}" && uci commit dhcp
@@ -139,7 +139,7 @@ dns_forward() {
 
 start_service() {
 	is_enabled || return 1
-	dns_forward 'add' || return 1
+	dns_forward 'start' || return 1
 	procd_open_instance
 	procd_set_param command /usr/sbin/uhttpd -f -h /www_fakeinternet -r fakeinternet -x /cgi-bin -u /ubus -t 60 -T 30 -k 20 -E /error.cgi -n 3 -N 100 -R -p 0.0.0.0:${wwwPort} -p "[::]:${wwwPort}" -i .cgi=/bin/ash
 	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
@@ -222,7 +222,7 @@ service_started() {
 
 stop_service () {
 	load_package_config
-	dns_forward 'remove'
+	dns_forward 'stop'
 	if is_chaos_calmer; then
 		fw3_setup 'stop'
 	else
