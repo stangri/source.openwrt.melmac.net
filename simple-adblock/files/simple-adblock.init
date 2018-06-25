@@ -31,7 +31,6 @@ output_ok() { case $verbosity in 1) output 1 "$_OK_";; 2) output 2 "$__OK__\n";;
 output_okn() { case $verbosity in 1) output 1 "$_OK_\n";; 2) output 2 "$__OK__\n";; esac; }
 output_fail() { case $verbosity in 1) output 1 "$_FAIL_";; 2) output 2 "$__FAIL__\n";; esac; }
 output_failn() { case $verbosity in 1) output 1 "$_FAIL_\n";; 2) output 2 "$__FAIL__\n";; esac; }
-# output() { [[ $# -ne 1 ]] && { [[ ! $((verbosity & $1)) -gt 0 ]] && return 0 || shift; }; local msg; msg=$(echo -n "${1/$serviceName /service }" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g'); [[ -t 1 ]] && echo -e -n "$1"; [[ $(echo -e -n "$msg" | wc -l) -gt 0 ]] && logger -t "${packageName:-service} [$$]" "$(echo -e -n ${logmsg}${msg})" && logmsg='' || logmsg=${logmsg}${msg}; }
 export logmsg
 output() {
 # Can take a single parameter (text) to be output at any verbosity
@@ -41,7 +40,7 @@ output() {
 	fi
 	[[ -t 1 ]] && echo -e -n "$1" # if we're running in console, echo text
 	# strip text of ASCII control characters and send completed lines to log
-	local msg=$(echo -n "${1/$serviceName /service }" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g');
+	local msg="$(echo -n ${1/$serviceName /service } | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g')";
 	if [[ $(echo -e -n "$msg" | wc -l) -gt 0 ]]; then
 		logger -t "${packageName:-service} [$$]" "$(echo -e -n ${logmsg}${msg})"
 		logmsg=''
@@ -134,8 +133,8 @@ ubus_status(){
 			ubus_status set "$(ubus_status get)${2}"
 			;;
 		del | set)
-			# ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"\/bin\/echo\" ],  \"data\": { \"status\": \"${2}\" }}}}"
-			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"data\": { \"status\": \"${2}\" }}}}"
+			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"\" ],  \"data\": { \"status\": \"${2}\" }}}}"
+			# ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"data\": { \"status\": \"${2}\" }}}}"
 			;;
 		get)
 			echo "$(ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']")"
