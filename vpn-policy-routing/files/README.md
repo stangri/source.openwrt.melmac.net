@@ -166,9 +166,12 @@ config policy
 Please head to [LEDE Project Forum](https://forum.lede-project.org/t/vpn-policy-based-routing-web-ui-discussion/10389) for discussions of this service.
 
 #### Getting help
-If things are not working as intended, please include the content of ```/etc/config/vpn-policy-routing``` and the output of ```/etc/init.d/vpn-policy-routing support``` with your post, as well as the output of ```/etc/init.d/vpn-policy-routing reload``` with verbosity setting set to 2.
-If you don't want to post the ```/etc/init.d/vpn-policy-routing support``` output in a public forum, there's a way to have the support details automatically uploaded to my account at paste.ee by running ```/etc/init.d/vpn-policy-routing support -p```. You need to have the following packages installed to enable paste.ee upload functionality: ```curl libopenssl ca-bundle```.
-WARNING: while paste.ee uploads are unlisted, they are still publicly available.
+If things are not working as intended, please include the following in your post:
+ - content of ```/etc/config/vpn-policy-routing```
+ - the output of ```/etc/init.d/vpn-policy-routing status```
+ - the output of ```/etc/init.d/vpn-policy-routing reload``` with verbosity setting set to 2
+
+If you don't want to post the ```/etc/init.d/vpn-policy-routing status``` output in a public forum, there's a way to have the support details automatically uploaded to my account at paste.ee by running: ```/etc/init.d/vpn-policy-routing status -p```. You need to have the following packages installed to enable paste.ee upload functionality: ```curl libopenssl ca-bundle```. WARNING: while paste.ee uploads are unlisted, they are still publicly available.
 
 
 ## What's New
