@@ -41,11 +41,13 @@ function is_supported_interface(arg)
 			for key,value in pairs(ifname) do
 				if value and value:sub(1,3) == "tun" then return true end
 				if value and value:sub(1,3) == "tap" then return true end
+				if value and value:sub(1,3) == "tor" then return true end
 				if value and nixio.fs.access("/sys/devices/virtual/net/" .. value .. "/tun_flags") then return true end
 			end
 		elseif type(ifname) == "string" then
 			if ifname and ifname:sub(1,3) == "tun" then return true end
 			if ifname and ifname:sub(1,3) == "tap" then return true end
+			if ifname and ifname:sub(1,3) == "tor" then return true end
 			if ifname and nixio.fs.access("/sys/devices/virtual/net/" .. ifname .. "/tun_flags") then return true end
 		end
 		if proto and proto:sub(1,11) == "openconnect" then return true end
@@ -118,6 +120,11 @@ supported.rmempty = true
 ignored = s1:taboption("advanced", DynamicList, "ignored_interface", translate("Ignored Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be ignored by the service. Can be useful if running both VPN server and VPN client on the router."))
 ignored.optional = false
 ignored.rmempty = true
+
+iprule = s1:taboption("advanced", ListValue, "iprule_enabled", translate("IP Rules Support"), translate("Add an ip rule, not an iptables entry for policies with just the local address. Use with caution to manipulte policies priorities."))
+iprule:value("", translate("Disabled"))
+iprule:value("1", translate("Enabled"))
+iprule.rmempty = true
 
 udp = s1:taboption("advanced", ListValue, "udp_proto_enabled", translate("UDP Protocol Support"), translate("Add UDP protocol iptables rules for protocol policies with unset local addresses and either local or remote port set. By default (unless this is enabled) only TCP protocol iptables rules are added."))
 udp:value("", translate("Disabled"))
