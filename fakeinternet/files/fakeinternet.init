@@ -22,6 +22,7 @@ is_enabled() {
 	[ $serviceEnabled -gt 0 ] || return 1
 	source /lib/functions/network.sh
 	[ ! -d "${dnsmasqFile%/*}" ] && mkdir -p "${dnsmasqFile%/*}"
+	network_flush_cache
 	network_get_subnet range 'lan'
 	network_get_ipaddr ip 'lan'
 	if [[ -z "$ip" || -z "$range" ]]; then return 1; else return 0; fi
@@ -119,17 +120,13 @@ dns_forward() {
 			fi
 			;;
 		start)
-			if is_chaos_calmer; then
-				for i in $(uci -q get dhcp.@dnsmasq[0].addnhosts); do [[ -n "$i" && "$i" == "${dnsmasqFile%/*}" ]] && t=1; done
-				[ $t -eq 0 ] && uci add_list dhcp.@dnsmasq[0].addnhosts="${dnsmasqFile%/*}" && uci commit dhcp
-			fi
 			if [ -s "$dnsmasqFile" ]; then
 				rm -f "$dnsmasqFile"
 			fi
 			for i in ${domainsList}; do [ -n "$i" ] && echo "address=/$i/$wwwIP" >> $dnsmasqFile; done
 			config_foreach process_policy 'policy'
 			if [ -s "$dnsmasqFile" ]; then
-				logger -t "fakeinternet" "Created dnsmasq config file $dnsmasqFile."
+				logger -t "$serviceName" "Created dnsmasq config file $dnsmasqFile."
 				/etc/init.d/dnsmasq restart >/dev/null 2>&1
 			fi
 			;;
@@ -213,7 +210,7 @@ start_service() {
 		procd_close_data
 	fi
 	procd_close_instance
-	logger -t "$serviceName" "Service started"
+	logger -t "$serviceName" "Service started (${ip})."
 }
 
 service_started() {
@@ -228,5 +225,5 @@ stop_service () {
 	else
 		procd_set_config_changed firewall
 	fi
-	logger -t "$serviceName" "Service stopped"
+	logger -t "$serviceName" "Service stopped."
 }
