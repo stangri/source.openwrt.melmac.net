@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpn-policy-routing
-PKG_VERSION:=0.0.1
-PKG_RELEASE:=23
+PKG_VERSION:=0.0.2
+PKG_RELEASE:=3
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -82,7 +82,7 @@ define Package/vpn-policy-routing/prerm
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		echo "Stopping service and removing rc.d symlink for vpn-policy-routing"
 		/etc/init.d/vpn-policy-routing stop || true
-		/etc/init.d/vpn-policy-routing disable
+		/etc/init.d/vpn-policy-routing disable || true
 
 		while [ ! -z "$(uci -q get ucitrack.@vpn-policy-routing[-1] 2>/dev/null)" ] ; do
 			uci -q delete ucitrack.@vpn-policy-routing[-1]
