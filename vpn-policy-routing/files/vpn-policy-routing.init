@@ -588,9 +588,9 @@ support() {
 		echo "============================================================"
 			echo "Routes/IP Rules"
 			tableCount=$(ip rule list | grep -c 'fwmark') || tableCount=0
-			[ -z "$set_d" ] && route | grep '^default' || route
-			[ -z "$set_d" ] && ip rule list | grep 'fwmark' || ip rule list
-			i=0; while [ $i -lt $tableCount ]; do echo "IPv4 Table $((wanTableID + $i)): $(ip route show table $((wanTableID + $i)))"; let i++; done
+			[ -n "$set_d" ] && route || route | grep '^default'
+			[ -n "$set_d" ] && ip rule list # || ip rule list | grep 'fwmark'
+			i=0; while [ $i -lt $tableCount ]; do echo "IPv4 Table $((wanTableID + $i)): $(ip route show table $((wanTableID + $i)))"; echo "IPv4 Table $((wanTableID + $i)) Rules:"; echo "$(ip rule list | grep $((wanTableID + $i)))"; let i++; done
 			[ $ipv6Enabled -ne 0 ] && {
 				i=0; while [ $i -lt $tableCount ]; do
 					ip -6 route show table $((wanTableID + $i)) | while read -r param; do echo "IPv6 Table $((wanTableID + $i)): $param"; done
