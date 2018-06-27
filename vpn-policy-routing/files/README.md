@@ -182,7 +182,7 @@ WARNING: while paste.ee uploads are unlisted, they are still publicly available.
   ```
   option route_nopull '1'
   ```
-<!-- option route '0.0.0.0 0.0.0.0'  -->
+  <!-- option route '0.0.0.0 0.0.0.0'  -->
   or set the following option for your Wireguard tunnel config:
   ```
   option route_allowed_ips '0'
