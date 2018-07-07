@@ -8,9 +8,9 @@ PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 LUCI_TITLE:=VPN Bypass Web UI
 LUCI_DESCRIPTION:=Provides Web UI for VPNBypass service.
-LUCI_DEPENDS:=+luci +vpnbypass
+LUCI_DEPENDS:=+luci-mod-admin-full +vpnbypass
 LUCI_PKGARCH:=all
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 include ../../luci.mk
 

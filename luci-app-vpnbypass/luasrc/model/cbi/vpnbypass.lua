@@ -30,7 +30,7 @@ p2.optional = false
 -- Local Subnets
 r1 = s:option(DynamicList, "localsubnet", translate("Local IP Addresses to Bypass"), translate("Local IP addresses or subnets with direct internet access (outside of the VPN tunnel)"))
 r1.datatype    = "ip4addr"
--- r1.placeholder = luci.ip.new(luci.model.uci.cursor():get("network", "lan", "ipaddr") .. "/" .. uci.cursor():get("network", "lan", "netmask"))
+-- r1.placeholder = luci.ip.new(m.uci:get("network", "lan", "ipaddr"), m.uci:get("network", "lan", "netmask"))
 r1.addremove = false
 r1.optional = false
 
