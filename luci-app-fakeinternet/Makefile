@@ -8,9 +8,9 @@ PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 LUCI_TITLE:=Fakeinternet Web UI
 LUCI_DESCRIPTION:=Provides Web UI for Fakeinternet.
-LUCI_DEPENDS:=+luci +fakeinternet
+LUCI_DEPENDS:=+luci-mod-admin-full +fakeinternet
 LUCI_PKGARCH:=all
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 include ../../luci.mk
 
