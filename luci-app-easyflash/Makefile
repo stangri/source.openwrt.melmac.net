@@ -7,9 +7,9 @@ PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 LUCI_TITLE:=Easy Flash Web UI
-LUCI_DEPENDS:=+luci
+LUCI_DEPENDS:=+luci-mod-admin-full
 LUCI_PKGARCH:=all
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 define Package/luci/luci-app-easyflash/description
 Provides Web UI for quickly updating your router firmware if you use automated snapshots\
