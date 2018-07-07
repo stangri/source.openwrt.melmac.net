@@ -8,9 +8,9 @@ PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 LUCI_TITLE:= WLAN Blinker Web UI
 LUCI_DESCRIPTION:=Provides Web UI for WLAN Blinker service.
-LUCI_DEPENDS:=+luci +wlanblinker
+LUCI_DEPENDS:=+luci-mod-admin-full +wlanblinker
 LUCI_PKGARCH:=all
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 include ../../luci.mk
 
