@@ -39,17 +39,6 @@ modify_fwzone() {
   fi
 }
 
-checkports() {
-  local up i r=0;
-  for i in wan; do
-    if /bin/ubus list | grep -q "network.interface.${i}"; then
-      json_load "$(/bin/ubus call network.interface.${i} status)"; json_get_vars up;
-      [[ "$up" == "1" && $up -gt $r ]] && r=$up
-    fi
-  done
-  return $r
-}
-
 router_services() {
   local s command="${1:-stop}"
   for s in $routerServicesList; do

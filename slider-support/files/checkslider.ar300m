@@ -1,2 +1,12 @@
 #!/bin/sh
-checkslider() { grep -q 'button left.*hi' /sys/kernel/debug/gpio && return 0 || return 1; }
+checkslider() { grep -q 'button left.*hi' /sys/kernel/debug/gpio; }
+checkports() {
+  local up i r=0;
+  for i in wan; do
+    if /bin/ubus list | grep -q "network.interface.${i}"; then
+      json_load "$(/bin/ubus call network.interface.${i} status)"; json_get_vars up;
+      [[ "$up" == "1" && $up -gt $r ]] && r=$up
+    fi
+  done
+  return $r
+}
