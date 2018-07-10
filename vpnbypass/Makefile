@@ -58,6 +58,8 @@ define Package/vpnbypass/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
+		/etc/init.d/vpnbypass enable
+
 		while [ ! -z "$(uci -q get ucitrack.@vpnbypass[-1] 2>/dev/null)" ] ; do
 			uci -q delete ucitrack.@vpnbypass[-1]
 		done
@@ -82,7 +84,7 @@ define Package/vpnbypass/prerm
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		echo "Stopping service and removing rc.d symlink for vpnbypass"
 		/etc/init.d/vpnbypass stop || true
-		/etc/init.d/vpnbypass disable
+		/etc/init.d/vpnbypass disable || true
 
 		while [ ! -z "$(uci -q get ucitrack.@vpnbypass[-1] 2>/dev/null)" ] ; do
 			uci -q delete ucitrack.@vpnbypass[-1]

@@ -7,6 +7,9 @@ msgstr ""
 msgid "Domains to be accessed directly (outside of the VPN tunnel), see"
 msgstr ""
 
+msgid "Enable/Start"
+msgstr ""
+
 msgid "Local IP Addresses to Bypass"
 msgstr ""
 
@@ -38,7 +41,13 @@ msgstr ""
 msgid "Remote ports to trigger VPN Bypass"
 msgstr ""
 
-msgid "Start VPNBypass service"
+msgid "Service is disabled/stopped"
+msgstr ""
+
+msgid "Service is enabled/started"
+msgstr ""
+
+msgid "Stop/Disable"
 msgstr ""
 
 msgid "VPN Bypass"

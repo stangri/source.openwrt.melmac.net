@@ -1,0 +1,89 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+msgid "<abbr title=\"Light Emitting Diode\">LED</abbr> Configuration"
+msgstr ""
+
+msgid "Administration"
+msgstr ""
+
+msgid "Device is powering off..."
+msgstr ""
+
+msgid "Device is rebooting..."
+msgstr ""
+
+msgid "Device unreachable"
+msgstr ""
+
+msgid "Erasing..."
+msgstr ""
+
+msgid "Flash Firmware"
+msgstr ""
+
+msgid "Flashing..."
+msgstr ""
+
+msgid "Loading"
+msgstr ""
+
+msgid "Mount Points"
+msgstr ""
+
+msgid "Partition"
+msgstr ""
+
+msgid "Perform power off"
+msgstr ""
+
+msgid "Perform reboot"
+msgstr ""
+
+msgid "Perform reboot to partition:"
+msgstr ""
+
+msgid "Reboot"
+msgstr ""
+
+msgid "Reboots the operating system of your device."
+msgstr ""
+
+msgid "Scheduled Tasks"
+msgstr ""
+
+msgid "Software"
+msgstr ""
+
+msgid "Startup"
+msgstr ""
+
+msgid "System"
+msgstr ""
+
+msgid ""
+"The system is erasing the configuration partition now and will reboot itself "
+"when finished."
+msgstr ""
+
+msgid ""
+"The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a "
+"few minutes before you try to reconnect. It might be necessary to renew the "
+"address of your computer to reach the device again, depending on your "
+"settings."
+msgstr ""
+
+msgid "This device"
+msgstr ""
+
+msgid "Waiting for device..."
+msgstr ""
+
+msgid "Warning: There are unsaved changes that will get lost on reboot!"
+msgstr ""
+
+msgid "active"
+msgstr ""
+
+msgid "has following partitions:"
+msgstr ""
