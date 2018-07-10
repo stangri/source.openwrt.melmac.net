@@ -1,12 +1,12 @@
-readmeURL = "https://github.com/openwrt/packages/tree/master/net/vpn-policy-routing/files/README.md"
-readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/vpn-policy-routing/files/README.md"
+-- local readmeURL = "https://github.com/openwrt/packages/tree/master/net/vpn-policy-routing/files/README.md"
+local readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/vpn-policy-routing/files/README.md"
 
 -- function log(obj)
 -- 	if obj ~= nil then if type(obj) == "table" then luci.util.dumptable(obj) else luci.util.perror(obj) end else luci.util.perror("Empty object") end
 -- end
 
-uci = require "luci.model.uci".cursor()
-t = uci:get("vpn-policy-routing", "config", "supported_interface")
+local uci = require "luci.model.uci".cursor()
+local t = uci:get("vpn-policy-routing", "config", "supported_interface")
 if not t then
 	supportedIfaces = ""
 elseif type(t) == "table" then
@@ -24,8 +24,8 @@ elseif type(t) == "string" then
 	ignoredIfaces = t
 end
 
-lanIPAddr = uci:get("network", "lan", "ipaddr")
-lanNetmask = uci:get("network", "lan", "netmask")
+local lanIPAddr = uci:get("network", "lan", "ipaddr")
+local lanNetmask = uci:get("network", "lan", "netmask")
 if lanIPAddr and lanNetmask then
 	laPlaceholder = luci.ip.new(lanIPAddr .. "/" .. lanNetmask )
 end
@@ -64,16 +64,30 @@ s1.override_values = true
 s1.override_depends = true
 
 s1:tab("basic", translate("Basic Configuration"))
-
-e = s1:taboption("basic", Flag, "enabled", translate("Start VPN Policy Routing service"))
-e.rmempty = false
-function e.write(self, section, value)
-	if value == "1" then
-		luci.sys.init.enable("vpn-policy-routing")
+local serviceName = "vpn-policy-routing"
+local enabledFlag = uci:get(serviceName, "config", "enabled")
+en = s1:taboption("basic", Button, "__toggle")
+if enabledFlag == "0" then
+	en.title      = translate("Service is disabled/stopped")
+	en.inputtitle = translate("Enable/Start")
+	en.inputstyle = "apply"
+else
+	en.title      = translate("Service is enabled/started")
+	en.inputtitle = translate("Stop/Disable")
+	en.inputstyle = "reset"
+end
+function en.write()
+	enabledFlag = enabledFlag == "1" and "0" or "1"
+	uci:set(serviceName, "config", "enabled", enabledFlag)
+	uci:save(serviceName)
+	uci:commit(serviceName)
+	if enabledFlag == "0" then
+		luci.sys.init.stop(serviceName)
 	else
-		luci.sys.init.stop("vpn-policy-routing")
+		luci.sys.init.enable(serviceName)
+		luci.sys.init.start(serviceName)
 	end
-	return Flag.write(self, section, value)
+	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
 end
 
 v = s1:taboption("basic", ListValue, "verbosity", translate("Output verbosity"),translate("Controls both system log and console output verbosity"))
