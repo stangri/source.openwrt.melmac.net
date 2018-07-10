@@ -1,14 +1,35 @@
+-- Copyright 2016-2018 Stan Grishin <stangri@melmac.net>
+-- Licensed to the public under the Apache License 2.0.
+
 m = Map("simple-adblock", translate("Simple AdBlock Settings"))
 s = m:section(NamedSection, "config", "simple-adblock")
 
 -- General options
-e = s:option(Flag, "enabled", translate("Start Simple Adblock service"))
-e.rmempty  = false
-function e.write(self, section, value)
-	if value ~= "1" then
-		luci.sys.init.stop("simple-adblock")
+local serviceName = "simple-adblock"
+local uci = require("luci.model.uci").cursor()
+local enabledFlag = uci:get(serviceName, "config", "enabled")
+en = s:option(Button, "__toggle")
+if enabledFlag == "0" then
+	en.title      = translate("Service is disabled/stopped")
+	en.inputtitle = translate("Enable/Start")
+	en.inputstyle = "apply"
+else
+	en.title      = translate("Service is enabled/started")
+	en.inputtitle = translate("Stop/Disable")
+	en.inputstyle = "reset"
+end
+function en.write()
+	enabledFlag = enabledFlag == "1" and "0" or "1"
+	uci:set(serviceName, "config", "enabled", enabledFlag)
+	uci:save(serviceName)
+	uci:commit(serviceName)
+	if enabledFlag == "0" then
+		luci.sys.init.stop(serviceName)
+	else
+		luci.sys.init.enable(serviceName)
+		luci.sys.init.start(serviceName)
 	end
-	return Flag.write(self, section, value)
+	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
 end
 
 o2 = s:option(ListValue, "verbosity", translate("Output Verbosity Setting"),translate("Controls system log and console output verbosity"))
@@ -40,7 +61,7 @@ if #leds ~= 0 then
 	end
 end
 
-s2 = m:section(NamedSection, "config", "simple-adblock")
+s2 = m:section(NamedSection, "config", serviceName)
 -- Whitelisted Domains
 d1 = s2:option(DynamicList, "whitelist_domain", translate("Whitelisted Domains"), translate("Individual domains to be whitelisted"))
 d1.addremove = false
