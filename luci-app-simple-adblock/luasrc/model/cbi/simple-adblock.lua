@@ -8,28 +8,49 @@ s = m:section(NamedSection, "config", "simple-adblock")
 local serviceName = "simple-adblock"
 local uci = require("luci.model.uci").cursor()
 local enabledFlag = uci:get(serviceName, "config", "enabled")
-en = s:option(Button, "__toggle")
-if enabledFlag == "0" then
-	en.title      = translate("Service is disabled/stopped")
-	en.inputtitle = translate("Enable/Start")
-	en.inputstyle = "apply"
+local status = luci.util.trim(luci.sys.exec("/bin/ubus call service list \"{'name': 'simple-adblock'}\" | /usr/bin/jsonfilter -l1 -e \"@['simple-adblock']['instances']['status']['data']['status']\""))  or "Stopped"
+if status:match("Reloading") then
+	ds = s:option(DummyValue, "_dummy", translate("Service Status"))
+	ds.template = "simple-adblock/status"
+	ds.value = status
 else
-	en.title      = translate("Service is enabled/started")
-	en.inputtitle = translate("Stop/Disable")
-	en.inputstyle = "reset"
-end
-function en.write()
-	enabledFlag = enabledFlag == "1" and "0" or "1"
-	uci:set(serviceName, "config", "enabled", enabledFlag)
-	uci:save(serviceName)
-	uci:commit(serviceName)
-	if enabledFlag == "0" then
-		luci.sys.init.stop(serviceName)
+	en = s:option(Button, "__toggle")
+	if enabledFlag ~= "1" or status:match("Stopped") then
+		en.title      = translate("Service is disabled/stopped")
+		en.inputtitle = translate("Enable/Start")
+		en.inputstyle = "apply"
 	else
-		luci.sys.init.enable(serviceName)
-		luci.sys.init.start(serviceName)
+		en.title      = translate("Service is enabled/started")
+		en.inputtitle = translate("Stop/Disable")
+		en.inputstyle = "reset"
+		ds = s:option(DummyValue, "_dummy", translate("Service Status"))
+		ds.template = "simple-adblock/status"
+		ds.value = status
+		if not status:match("Success") then
+			reload = s:option(Button, "__toggle")
+			reload.title      = translate("Service started with error")
+			reload.inputtitle = translate("Reload")
+			reload.inputstyle = "apply"
+			function reload.write()
+				luci.sys.exec("/etc/init.d/simple-adblock reload")
+				luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
+			end
+		end
 	end
-	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
+	function en.write()
+		enabledFlag = enabledFlag == "1" and "0" or "1"
+		uci:set(serviceName, "config", "enabled", enabledFlag)
+		uci:save(serviceName)
+		uci:commit(serviceName)
+		if enabledFlag == "0" then
+			luci.sys.init.stop(serviceName)
+			luci.sys.exec("/etc/init.d/simple-adblock killcache")
+		else
+			luci.sys.init.enable(serviceName)
+			luci.sys.init.start(serviceName)
+		end
+		luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
+	end
 end
 
 o2 = s:option(ListValue, "verbosity", translate("Output Verbosity Setting"),translate("Controls system log and console output verbosity"))
