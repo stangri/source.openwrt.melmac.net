@@ -22,7 +22,7 @@ If you want a more robust AdBlocking, supporting free memory detection and compl
 
 
 ## Screenshot (luci-app-simple-adblock)
-![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/simple-adblock/screenshot04.png "screenshot")
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/simple-adblock/screenshot05.png "screenshot")
 
 
 ## Requirements
@@ -54,12 +54,12 @@ If you are running a development (trunk/snapshot) build of OpenWrt/LEDE Project 
 
 
 ## How to install
-Install ```simple-adblock``` and  ```luci-app-simple-adblock``` packages from Web UI or run the following in the command line:
+Install ```simple-adblock``` and ```luci-app-simple-adblock``` packages from Web UI or run the following in the command line:
 ```sh
 opkg update; opkg install simple-adblock luci-app-simple-adblock
 ```
 
-If ```simple-adblock``` and  ```luci-app-simple-adblock``` packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](#add-custom-repo-to-your-router) first.
+If ```simple-adblock``` and ```luci-app-simple-adblock``` packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](#add-custom-repo-to-your-router) first.
 
 
 #### Add custom repo to your router
@@ -108,7 +108,7 @@ If you specify ```google.com``` as a domain to be whitelisted, you will have acc
 In general, whatever domain is specified to be whitelisted; it, along with with its subdomains will be whitelisted, but not any fake domains containing it.
 
 ## Documentation / Discussion
-Please head to [OpenWrt Forum](https://forum.openwrt.org/viewtopic.php?pid=307950) or [LEDE Project Forum](https://forum.lede-project.org/t/simple-adblock-fast-lean-and-fully-uci-luci-configurable-adblocking/1327/) for discussion of this package.
+Please head [LEDE Project Forum](https://forum.lede-project.org/t/simple-adblock-fast-lean-and-fully-uci-luci-configurable-adblocking/1327/) for discussion of this package.
 
 ## What's New
 1.5.8:
