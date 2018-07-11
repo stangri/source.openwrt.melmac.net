@@ -451,7 +451,7 @@ process_interface(){
 			eval "mark_${iface}=$ifaceMark"; eval "tid_${iface}=$ifaceTableID";
 
 			table_destroy "${ifaceTableID}" "${iface}"
-			[ $ipv6Enabled -ne 0 ] && displayText="${iface}/${dev}/${gw4:-0.0.0.0}/${gw6:-::/0}" || displayText="${iface}/${dev}/${gw4:-0.0.0.0}"
+			[ $ipv6Enabled -ne 0 ] && displayText="${iface}/${gw4:-0.0.0.0}/${gw6:-::/0}" || displayText="${iface}/${gw4:-0.0.0.0}"
 			output 2 "Creating table '$displayText' "
 			if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then
 				serviceStatusSummary="${serviceStatusSummary}${displayText} "
@@ -466,6 +466,21 @@ process_interface(){
 		*) return 1;;
 	esac
 	return $s
+}
+
+ubus_status(){
+	case "$1" in
+		add)
+			ubus_status set "$(ubus_status get)${2}"
+			;;
+		del | set)
+			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"\" ],  \"data\": { \"status\": \"${2}\" }}}}"
+			# ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"data\": { \"status\": \"${2}\" }}}}"
+			;;
+		get)
+			echo "$(ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']")"
+			;;
+	esac
 }
 
 start_service() {
@@ -496,15 +511,23 @@ start_service() {
 		config_load $packageName; config_foreach process_policy 'policy';
 		output 1 '\n'
 		if [ -s "$dnsmasqFile" ]; then
-			[ "$(md5sum $dnsmasqFile)" != "$dnsmasqFileHash" ] && dnsmasq_kill
+			[ "$(md5sum $dnsmasqFile)" != "$dnsmasqFileHash" ] && dnsmasq_restart
 		fi
 
 		if [ -z "$serviceStatusSummary" ]; then
-			output "$_ERROR_: $serviceName failed to set up any interface!\n"; return 1;
+			output "$_ERROR_: $serviceName failed to set up any interface!\n"
+			ubus_status 'set' "Fail: $serviceName failed to set up any interface!"
+			return 1
 		else
 			[[ "$strictMode" -ne 0 && "${serviceStatusSummary//0.0.0.0}" != "${serviceStatusSummary}" ]] && serviceStatusSummary="(strict mode): ${serviceStatusSummary}"
 			output "$serviceName started on ${serviceStatusSummary}"
-			[ -z "$errorStatusSummary" ] && output_okn || { output "with errors "; output_failn; output "${errorStatusSummary}"; }
+			if [ -z "$errorStatusSummary" ]; then
+				ubus_status 'set' "Success: ${serviceStatusSummary}"
+				output_okn
+			else
+				ubus_status 'set' "Started on ${serviceStatusSummary} with error(s): ${errorStatusSummary}"
+				output "with errors "; output_failn; output "${errorStatusSummary}";
+			fi
 		fi
 		remove_lock
 	else
@@ -531,6 +554,7 @@ stop_service() {
 			dnsmasq_kill
 		fi
 		output "$serviceName stopped "; output_okn;
+		ubus_status 'set' "Stopped"
 		remove_lock
 	else
 		output "$serviceName: another instance of ${packageName} is already running "; output_failn;
