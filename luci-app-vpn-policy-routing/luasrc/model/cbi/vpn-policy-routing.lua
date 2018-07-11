@@ -66,8 +66,9 @@ s1.override_depends = true
 s1:tab("basic", translate("Basic Configuration"))
 local serviceName = "vpn-policy-routing"
 local enabledFlag = uci:get(serviceName, "config", "enabled")
+local status = luci.util.trim(luci.sys.exec("/bin/ubus call service list \"{'name': 'vpn-policy-routing'}\" | /usr/bin/jsonfilter -l1 -e \"@['vpn-policy-routing']['instances']['status']['data']['status']\"")) or "Stopped"
 en = s1:taboption("basic", Button, "__toggle")
-if enabledFlag == "0" then
+if enabledFlag ~= "1" or status:match("Stopped") then
 	en.title      = translate("Service is disabled/stopped")
 	en.inputtitle = translate("Enable/Start")
 	en.inputstyle = "apply"
@@ -75,6 +76,19 @@ else
 	en.title      = translate("Service is enabled/started")
 	en.inputtitle = translate("Stop/Disable")
 	en.inputstyle = "reset"
+	ds = s1:taboption("basic", DummyValue, "_dummy", translate("Service Status"))
+	ds.template = "vpn-policy-routing/status"
+	ds.value = status
+	if not status:match("Success") then
+		reload = s1:taboption("basic", Button, "__toggle")
+		reload.title      = translate("Service started with error")
+		reload.inputtitle = translate("Reload")
+		reload.inputstyle = "apply"
+		function reload.write()
+			luci.sys.exec("/etc/init.d/vpn-policy-routing reload")
+			luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
+		end
+	end
 end
 function en.write()
 	enabledFlag = enabledFlag == "1" and "0" or "1"
