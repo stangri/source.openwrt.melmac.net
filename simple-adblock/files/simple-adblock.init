@@ -26,7 +26,7 @@ readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 
 create_lock() { [ -e "$PID" ] && return 1; touch "$PID"; }
-remove_lock() { [ -e "$PID" ] && rm -f "$PID"; rm -f simple-adblock_tmp_* >/dev/null 2>&1; }
+remove_lock() { [ -e "$PID" ] && rm -f "$PID"; rm -f /var/simple-adblock_tmp_* >/dev/null 2>&1; }
 trap remove_lock EXIT
 output_ok() { case $verbosity in 1) output 1 "$_OK_";; 2) output 2 "$__OK__\n";; esac; }
 output_okn() { case $verbosity in 1) output 1 "$_OK_\n";; 2) output 2 "$__OK__\n";; esac; }
@@ -98,12 +98,12 @@ reload_dnsmasq() {
 				else
 					output_failn
 					output "$_ERROR_: $serviceName failed to restart dnsmasq!\n"
-					serviceStatus="${serviceStatus:-dnsmasq-restart-error}"
+					serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
 					return 1
 				fi
 			else
 				output "$_ERROR_: $serviceName failed to create its data file!\n"
-				serviceStatus="${serviceStatus:-blockfile-error}"
+				serviceStatus="${serviceStatus:-'Failed to create data file'}"
 				return 1
 			fi
 			;;
@@ -193,7 +193,7 @@ process_url() {
 	if ! $dl_command "$1" > "$R_TMP" 2>/dev/null; then
 		output 2 "[DL] $type $label $__FAIL__\n"
 		output 1 "$_FAIL_"
-		ubus_status add 'n'
+		ubus_status add '-'
 		return 1
 	fi
 	sed -i "$filter" "$R_TMP"
@@ -201,7 +201,7 @@ process_url() {
 	rm -f "$R_TMP" >/dev/null 2>/dev/null
 	output 2 "[DL] $type $label $__OK__\n"
 	output 1 "$_OK_"
-	ubus_status add 'y'
+	ubus_status add '+'
 	return 0
 }
 
@@ -213,7 +213,7 @@ download_lists() {
 	config_get blacklist_domains_urls     'config' 'blacklist_domains_url'
 	config_get blacklist_hosts_urls       'config' 'blacklist_hosts_url'
 
-	ubus_status set ''
+	ubus_status set 'Reloading '
 	[ ! -d ${dnsmasqFile%/*} ] && mkdir -p ${dnsmasqFile%/*}
 	for i in $A_TMP $B_TMP $T_TMP $dnsmasqFile; do [ -f $i ] && rm -f $i; done
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
@@ -239,9 +239,10 @@ download_lists() {
 	fi
 	wait
 	i="$(ubus_status get)"
-	[ "${i//n}" != "$i" ] && serviceStatus='download-error' || unset serviceStatus
-	i="${i//n/$xmark}"
-	i="${i//y/$checkmark}"
+	[ "${i//-}" != "$i" ] && serviceStatus="${serviceStatus:-'Download error'}" || unset serviceStatus
+	i="${i//Reloading }"
+	i="${i//-/$xmark}"
+	i="${i//+/$checkmark}"
 	[ "$verbosity" == "1" ] && logmsg="${logmsg}${i}"
 	output 1 '\n'
 
@@ -255,43 +256,44 @@ download_lists() {
 				output_ok
 			else
 				output_fail
-				serviceStatus="${serviceStatus:-sort-error}"
+				serviceStatus="${serviceStatus:-'Sorting error'}"
 			fi
 			output 2 'Whitelisting domains '
 			if sed -i "$w_filter" $T_TMP; then
 				output_ok
 			else
 				output_fail
-				serviceStatus="${serviceStatus:-whitelist-error}"
+				serviceStatus="${serviceStatus:-'Whitelist processing error'}"
 			fi
 			output 2 'Formatting merged file '
 			if sed "$f_filter" $T_TMP > $B_TMP; then
 				output_ok
 			else
 				output_fail
-				serviceStatus="${serviceStatus:-format-error}"
+				serviceStatus="${serviceStatus:-'Data file formatting error'}"
 			fi
 			output 2 'Creating dnsmasq config '
 			if mv $B_TMP $dnsmasqFile; then
 				output_ok
 			else
 				output_fail
-				serviceStatus="${serviceStatus:-mv-error}"
+				serviceStatus="${serviceStatus:-'Error moving data file'}"
 			fi
 			output 2 'Removing temporary files '
+			rm -f /var/simple-adblock_tmp_* >/dev/null 2>&1;
 			for i in $A_TMP $B_TMP $T_TMP; do if [ -s $i ]; then rm -f $i || j=1; fi; done
 			if [ $j -eq 0 ]; then
 				output_ok
 			else
 				output_fail
-				serviceStatus="${serviceStatus:-rm-error}"
+				serviceStatus="${serviceStatus:-'Error removing temporary files'}"
 			fi
 			output 1 '\n'
 	fi
 }
 
 start_service() {
-	local ip
+	local ip status
 	if create_lock; then
 		is_enabled || return 1
 		procd_open_instance
@@ -320,28 +322,31 @@ start_service() {
 			fi
 		fi
 		procd_close_instance
+		status="$(ubus_status get)"
 		if [ -s "$T_TMP" ]; then
 			output "Starting $serviceName...\n"
 			output 3 'Found existing data file, reusing it... '
 			mv $T_TMP $dnsmasqFile && output_okn || output_failn
-			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-dnsmasq-error}"
-		elif [[ "$1" == "reload" || "$(ubus_status get)" != "success" ]]; then
+			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
+		elif [[ "$1" == "reload" || "$status" == "${status//Success}" ]]; then
 			output "Reloading $serviceName...\n"
 			download_lists
-			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-dnsmasq-error}"
+			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
 		elif [ ! -s "$dnsmasqFile" ]; then
 			output "Starting $serviceName...\n"
 			download_lists
-			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-dnsmasq-error}"
+			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
 		fi
 		if [ -s "$dnsmasqFile" ]; then
 			if [ -z "$serviceStatus" ]; then
 				output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains $_OK_ \n"
+				serviceStatus="Success: $(wc -l < $dnsmasqFile) domains blocked"
 			else
 				output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains with error: $serviceStatus $_FAIL_ \n"
+				serviceStatus="$(wc -l < $dnsmasqFile) domains blocked with error: $serviceStatus"
 			fi
 		fi
-		ubus_status set "${serviceStatus:-success}"
+		ubus_status set "$serviceStatus"
 		remove_lock
 	else
 		output "$serviceName: another instance is starting up "; output_failn;
@@ -357,6 +362,7 @@ stop_service() {
 	load_package_config
 	output "Stopping $serviceName...\n"
 	reload_dnsmasq 'on_stop'
+	ubus_status set 'Stopped'
 	procd_set_config_changed firewall
 }
 
