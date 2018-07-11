@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpn-policy-routing
 PKG_VERSION:=0.0.2
-PKG_RELEASE:=6
+PKG_RELEASE:=10
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -55,7 +55,6 @@ define Package/vpn-policy-routing/postinst
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/vpn-policy-routing enable
-
 		while [ ! -z "$(uci -q get ucitrack.@vpn-policy-routing[-1] 2>/dev/null)" ] ; do
 			uci -q delete ucitrack.@vpn-policy-routing[-1]
 			uci commit ucitrack
@@ -86,12 +85,12 @@ define Package/vpn-policy-routing/prerm
 
 		while [ ! -z "$(uci -q get ucitrack.@vpn-policy-routing[-1] 2>/dev/null)" ] ; do
 			uci -q delete ucitrack.@vpn-policy-routing[-1]
-			uci commit ucitrack
+			uci -q commit ucitrack
 		done
 
 		while [ ! -z "$(uci -q get ucitrack.@firewall[-1].affects 2>/dev/null | awk '/vpn-policy-routing/')" ] ; do
 			uci -q del_list ucitrack.@firewall[-1].affects='vpn-policy-routing'
-			uci commit ucitrack
+			uci -q commit ucitrack
 		done
 	fi
 	exit 0

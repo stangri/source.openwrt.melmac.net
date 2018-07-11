@@ -69,6 +69,8 @@ get_device_gw() { echo "$ip4RouteOutput" | grep -Eso -m1 "^([0-9]{1,3}\.){3}[0-9
 get_device_gw6() { echo "$ip6RouteOutput" | grep -Eso -m1 "^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}(/([0-9]){0,2}){0,2} dev $1" | awk -F "/" '{print $1}'; }
 get_tunnel_gw() { echo "$ifconfigOutput" | grep "^${1}" -A 3 | grep 'P-t-P' | awk '{print $3}' | awk -F ":" '{print $2}'; }
 get_tunnel_gw6() { local gw6=$(echo "$ifconfigOutput" | grep "^${1}" -A 3 | grep 'inet6 addr:' | awk '{print $3}'); echo ${gw6:+"${gw6%:*}:1"}; }
+dnsmasq_kill() { killall -q -HUP dnsmasq; }
+dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
 
 load_package_config() {
 	config_load "$packageName"
@@ -494,8 +496,7 @@ start_service() {
 		config_load $packageName; config_foreach process_policy 'policy';
 		output 1 '\n'
 		if [ -s "$dnsmasqFile" ]; then
-			# [ "$(md5sum $dnsmasqFile)" != "$dnsmasqFileHash" ] && /etc/init.d/dnsmasq restart >/dev/null 2>&1 &
-			[ "$(md5sum $dnsmasqFile)" != "$dnsmasqFileHash" ] && killall -q -HUP dnsmasq
+			[ "$(md5sum $dnsmasqFile)" != "$dnsmasqFileHash" ] && dnsmasq_kill
 		fi
 
 		if [ -z "$serviceStatusSummary" ]; then
@@ -527,8 +528,7 @@ stop_service() {
 		unset ifaceTableID; unset ifaceMark;
 		if [ -s "$dnsmasqFile" ]; then
 			rm -f "$dnsmasqFile"
-			# /etc/init.d/dnsmasq restart >/dev/null 2>&1 &
-			killall -q -HUP dnsmasq
+			dnsmasq_kill
 		fi
 		output "$serviceName stopped "; output_okn;
 		remove_lock
