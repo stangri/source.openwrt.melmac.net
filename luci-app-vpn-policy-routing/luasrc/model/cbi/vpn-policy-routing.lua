@@ -6,6 +6,7 @@ local readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/vpn-p
 -- end
 
 local uci = require "luci.model.uci".cursor()
+local util = require "luci.util"
 local t = uci:get("vpn-policy-routing", "config", "supported_interface")
 if not t then
 	supportedIfaces = ""
@@ -66,7 +67,7 @@ s1.override_depends = true
 s1:tab("basic", translate("Basic Configuration"))
 local serviceName = "vpn-policy-routing"
 local enabledFlag = uci:get(serviceName, "config", "enabled")
-local status = luci.util.trim(luci.sys.exec("/bin/ubus call service list \"{'name': 'vpn-policy-routing'}\" | /usr/bin/jsonfilter -l1 -e \"@['vpn-policy-routing']['instances']['status']['data']['status']\"")) or "Stopped"
+local status = util.ubus('service', 'list', { name = serviceName })[serviceName]['instances']['status']['data']['status'] or "Stopped"
 en = s1:taboption("basic", Button, "__toggle")
 if enabledFlag ~= "1" or status:match("Stopped") then
 	en.title      = translate("Service is disabled/stopped")
