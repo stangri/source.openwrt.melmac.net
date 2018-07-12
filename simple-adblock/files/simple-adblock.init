@@ -54,16 +54,15 @@ led_on(){ [[ -n "${1}" && -e "${1}/trigger" ]] && echo "default-on" > "${1}/trig
 led_off(){ [[ -n "${1}" && -e "${1}/trigger" ]] && echo "none" > "${1}/trigger" 2>&1; }
 boot() { load_package_config; ( sleep $bootDelay && rc_procd start_service && rc_procd service_triggers | cat & ); }
 
-export serviceEnabled verbosity forceDNS debug optimize led wan_if wan_gw wanphysdev bootDelay dl_command serviceStatus
+export serviceEnabled verbosity forceDNS debug led wan_if wan_gw wanphysdev bootDelay dl_command serviceStatus
 
 load_package_config() {
 	config_load "$packageName"
 	config_get_bool serviceEnabled 'config' 'enabled' 1
 	config_get_bool forceDNS       'config' 'force_dns' 1
 	config_get_bool debug          'config' 'debug' 0
-	config_get_bool optimize       'config' 'optimization_enabled' 0
 	config_get bootDelay           'config' 'boot_delay' '120'
-	config_get dlTimeout           'config' 'download_timeout' '10'
+	config_get dlTimeout           'config' 'download_timeout' '20'
 	config_get verbosity           'config' 'verbosity' '2'
 	config_get led        	       'config' 'led'
 	source /lib/functions/network.sh
@@ -254,7 +253,7 @@ download_lists() {
 	if [ -s $B_TMP ]; then
 			output 1 'Processing downloads '
 			output 2 'Sorting combined list '
-			if sort $B_TMP > $A_TMP; then
+			if sort $B_TMP | uniq > $A_TMP; then
 				output_ok
 			else
 				output_fail
