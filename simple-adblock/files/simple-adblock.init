@@ -403,7 +403,7 @@ check() {
 	if [ ! -f $dnsmasqFile ]; then
 		echo "No local blacklist ($dnsmasqFile) found."
 	elif [ -z "$string" ]; then
-		echo "Usage: /etc/init.d/${serviceName} check 'domain'"
+		echo "Usage: /etc/init.d/${packageName} check 'domain'"
 	elif grep -m1 -q $string $dnsmasqFile; then
 		echo "Found $(grep $string $dnsmasqFile | wc -l) matches for $string in $dnsmasqFile:"
 		grep $string $dnsmasqFile | sed 's|local=/||;s|/$||;'
