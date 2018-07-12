@@ -6,9 +6,10 @@ s = m:section(NamedSection, "config", "simple-adblock")
 
 -- General options
 local serviceName = "simple-adblock"
-local uci = require("luci.model.uci").cursor()
+local uci = require "luci.model.uci".cursor()
+local util = require "luci.util"
 local enabledFlag = uci:get(serviceName, "config", "enabled")
-local status = luci.util.trim(luci.sys.exec("/bin/ubus call service list \"{'name': 'simple-adblock'}\" | /usr/bin/jsonfilter -l1 -e \"@['simple-adblock']['instances']['status']['data']['status']\""))  or "Stopped"
+local status = util.ubus('service', 'list', { name = serviceName })[serviceName]['instances']['status']['data']['status'] or "Stopped"
 if status:match("Reloading") then
 	ds = s:option(DummyValue, "_dummy", translate("Service Status"))
 	ds.template = "simple-adblock/status"
