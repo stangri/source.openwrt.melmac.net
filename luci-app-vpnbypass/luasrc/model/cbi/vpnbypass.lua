@@ -1,13 +1,12 @@
 local readmeURL = "https://github.com/openwrt/packages/blob/master/net/vpnbypass/files/README.md"
 
 m = Map("vpnbypass", translate("VPN Bypass Settings"))
-s = m:section(NamedSection, "config", "vpnbypass")
 
--- General options
+h = m:section(NamedSection, "config", "vpnbypass", translate("Service Status"))
 local serviceName = "vpnbypass"
 local uci = require("luci.model.uci").cursor()
 local enabledFlag = uci:get(serviceName, "config", "enabled")
-en = s:option(Button, "__toggle")
+en = h:option(Button, "__toggle")
 if enabledFlag == "0" then
 	en.title      = translate("Service is disabled/stopped")
 	en.inputtitle = translate("Enable/Start")
@@ -30,6 +29,8 @@ function en.write()
 	end
 	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
 end
+
+s = m:section(NamedSection, "config", "vpnbypass", translate("VPN Bypass Rules"))
 
 -- Local Ports
 p1 = s:option(DynamicList, "localport", translate("Local Ports to Bypass"), translate("Local ports to trigger VPN Bypass"))
@@ -67,5 +68,8 @@ di = s4:option(DynamicList, "ipset", translate("Domains to Bypass"),
     translate("Domains to be accessed directly (outside of the VPN tunnel), see ")
 		.. [[<a href="]] .. readmeURL .. [[#bypass-domains-formatsyntax" target="_blank">]]
     .. translate("README") .. [[</a> ]] .. translate("for syntax"))
+function d.on_after_commit(map)
+    luci.sys.init.restart("dnsmasq")
+end
 
 return m, d
