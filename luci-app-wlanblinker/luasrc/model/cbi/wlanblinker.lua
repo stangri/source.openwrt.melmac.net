@@ -2,13 +2,12 @@
 local readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/wlanblinker/files/README.md"
 
 m = Map("wlanblinker", translate("WLAN Blinker Settings"))
-s = m:section(NamedSection, "config", "wlanblinker")
+h = m:section(NamedSection, "config", "wlanblinker", translate("Service Status"))
 
--- General options
 local serviceName = "wlanblinker"
 local uci = require("luci.model.uci").cursor()
 local enabledFlag = uci:get(serviceName, "config", "enabled")
-en = s:option(Button, "__toggle")
+en = h:option(Button, "__toggle")
 if enabledFlag == "0" then
 	en.title      = translate("Service is disabled/stopped")
 	en.inputtitle = translate("Enable/Start")
@@ -32,6 +31,8 @@ function en.write()
 	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
 end
 
+s = m:section(NamedSection, "config", "wlanblinker", translate("Configuration"))
+-- General options
 local sysfs_path = "/sys/class/leds/"
 local leds = {}
 if nixio.fs.access(sysfs_path) then
