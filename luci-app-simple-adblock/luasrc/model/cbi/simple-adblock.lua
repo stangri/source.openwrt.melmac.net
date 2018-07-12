@@ -5,11 +5,11 @@ m = Map("simple-adblock", translate("Simple AdBlock Settings"))
 s = m:section(NamedSection, "config", "simple-adblock")
 
 -- General options
-local serviceName = "simple-adblock"
+local packageName = "simple-adblock"
 local uci = require "luci.model.uci".cursor()
 local util = require "luci.util"
-local enabledFlag = uci:get(serviceName, "config", "enabled")
-local status = util.ubus('service', 'list', { name = serviceName })[serviceName]['instances']['status']['data']['status'] or "Stopped"
+local enabledFlag = uci:get(packageName, "config", "enabled")
+local status = util.ubus('service', 'list', { name = packageName })[packageName]['instances']['status']['data']['status'] or "Stopped"
 if status:match("Reloading") then
 	ds = s:option(DummyValue, "_dummy", translate("Service Status"))
 	ds.template = "simple-adblock/status"
@@ -34,23 +34,23 @@ else
 			reload.inputstyle = "apply"
 			function reload.write()
 				luci.sys.exec("/etc/init.d/simple-adblock reload")
-				luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
+				luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. packageName))
 			end
 		end
 	end
 	function en.write()
 		enabledFlag = enabledFlag == "1" and "0" or "1"
-		uci:set(serviceName, "config", "enabled", enabledFlag)
-		uci:save(serviceName)
-		uci:commit(serviceName)
+		uci:set(packageName, "config", "enabled", enabledFlag)
+		uci:save(packageName)
+		uci:commit(packageName)
 		if enabledFlag == "0" then
-			luci.sys.init.stop(serviceName)
-			luci.sys.exec("/etc/init.d/simple-adblock killcache")
+			luci.sys.init.stop(packageName)
+--			luci.sys.exec("/etc/init.d/simple-adblock killcache")
 		else
-			luci.sys.init.enable(serviceName)
-			luci.sys.init.start(serviceName)
+			luci.sys.init.enable(packageName)
+			luci.sys.init.start(packageName)
 		end
-		luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
+		luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. packageName))
 	end
 end
 
@@ -83,7 +83,7 @@ if #leds ~= 0 then
 	end
 end
 
-s2 = m:section(NamedSection, "config", serviceName)
+s2 = m:section(NamedSection, "config", packageName)
 -- Whitelisted Domains
 d1 = s2:option(DynamicList, "whitelist_domain", translate("Whitelisted Domains"), translate("Individual domains to be whitelisted"))
 d1.addremove = false
