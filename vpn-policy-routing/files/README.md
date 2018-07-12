@@ -40,9 +40,9 @@ You can also set policies for traffic with specific DSCP tag. On Windows 10, for
 
 ## Screenshot (luci-app-vpn-policy-routing)
 Basic Settings
-![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot02-basic.png "screenshot")
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot03-basic.png "screenshot")
 Advanced Settings
-![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot02-advanced.png "screenshot")
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot03-advanced.png "screenshot")
 
 ## How it works
 On start, this service creates routing tables for each supported interface (WAN/WAN6 and VPN tunnels) which are used to route specially marked packets. Service adds new ```VPR_PREROUTING``` chain in the ```mangle``` table's ```PREROUTING``` chain (can be optionally set to create chains in the ```FORWARD```, ```INPUT``` and ```OUTPUT``` chains of ```mangle``` table, see [Additional settings](#additional-settings) for details). Evaluation and marking of packets happens in the ```VPR_PREROUTING``` (and if enabled, also in ```VPR_FORWARD```, ```VPR_INPUT``` and ```VPR_OUTPUT```) chains. If enabled, the service also creates the ```ipset``` per each supported interface and the corresponding ```iptables``` rule for marking packets matching the ```ipset```. The service then processes the user-created policies.
