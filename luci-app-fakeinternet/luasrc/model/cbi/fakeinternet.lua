@@ -4,13 +4,12 @@
 local readmeURL = "https://github.com/openwrt/packages/blob/master/net/fakeinternet/files/README.md"
 
 m = Map("fakeinternet", translate("Fakeinternet Settings"))
-s1 = m:section(NamedSection, "config", "fakeinternet")
+h = m:section(NamedSection, "config", "fakeinternet", translate("Service Status"))
 
--- General options
 local serviceName = "fakeinternet"
 local uci = require("luci.model.uci").cursor()
 local enabledFlag = uci:get(serviceName, "config", "enabled")
-en = s1:option(Button, "__toggle")
+en = h:option(Button, "__toggle")
 if enabledFlag ~= "1" then
 	en.title      = translate("Service is disabled/stopped")
 	en.inputtitle = translate("Enable/Start")
@@ -34,6 +33,9 @@ function en.write()
 	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
 end
 
+s1 = m:section(NamedSection, "config", "fakeinternet", translate("Configuration"))
+
+-- General options
 dl1 = s1:option(DynamicList, "address", translate("Addresses"), translate("Addresses to fake."))
 dl1.datatype = "string"
 
