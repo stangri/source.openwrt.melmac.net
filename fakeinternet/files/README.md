@@ -16,7 +16,7 @@ If you are running a development (trunk/snapshot) build of OpenWrt/LEDE Project 
 Please make sure that the [requirements](#requirements) are satisfied and install ```fakeinternet``` from Web UI or connect to your router via ssh and run the following commands:
 ```sh
 opkg update
-opkg install fakeinternet
+opkg install fakeinternet luci-app-fakeinternet
 ```
 If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](#add-custom-repo-to-your-router) first.
 
