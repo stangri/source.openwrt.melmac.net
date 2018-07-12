@@ -11,7 +11,7 @@ local serviceName = "fakeinternet"
 local uci = require("luci.model.uci").cursor()
 local enabledFlag = uci:get(serviceName, "config", "enabled")
 en = s1:option(Button, "__toggle")
-if enabledFlag == "0" then
+if enabledFlag ~= "1" then
 	en.title      = translate("Service is disabled/stopped")
 	en.inputtitle = translate("Enable/Start")
 	en.inputstyle = "apply"
