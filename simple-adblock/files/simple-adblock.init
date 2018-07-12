@@ -1,4 +1,5 @@
 #!/bin/sh /etc/rc.common
+# TLD optimization written by Dirk Brenken (dev@brenken.org)
 PKG_VERSION=
 
 export START=94
@@ -11,9 +12,9 @@ readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
 export EXTRA_COMMANDS="check killcache"
 export EXTRA_HELP="	check	Checks if specified domain is found in current blacklist"
 
-readonly A_TMP='/var/hosts.allowed.tmp'
-readonly B_TMP='/var/hosts.blocked.tmp'
-readonly T_TMP='/var/simple-adblock.hosts'
+readonly A_TMP='/var/simple-adblock.hosts.a.tmp'
+readonly B_TMP='/var/simple-adblock.hosts.b.tmp'
+readonly CACHE_TMP='/var/simple-adblock.cache'
 readonly h_filter='/localhost/d;/^#/d;/^[^0-9]/d;s/^0\.0\.0\.0.//;s/^127\.0\.0\.1.//;s/[[:space:]]*#.*$//;s/[[:cntrl:]]$//;s/[[:space:]]//g;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;'
 readonly d_filter='/^#/d;s/[[:space:]]*#.*$//;s/[[:space:]]*$//;s/[[:cntrl:]]$//;/[[:space:]]/d;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;'
 readonly f_filter='s|^|local=/|;s|$|/|'
@@ -53,13 +54,14 @@ led_on(){ [[ -n "${1}" && -e "${1}/trigger" ]] && echo "default-on" > "${1}/trig
 led_off(){ [[ -n "${1}" && -e "${1}/trigger" ]] && echo "none" > "${1}/trigger" 2>&1; }
 boot() { load_package_config; ( sleep $bootDelay && rc_procd start_service && rc_procd service_triggers | cat & ); }
 
-export serviceEnabled verbosity forceDNS debug led wan_if wan_gw wanphysdev bootDelay dl_command serviceStatus
+export serviceEnabled verbosity forceDNS debug optimize led wan_if wan_gw wanphysdev bootDelay dl_command serviceStatus
 
 load_package_config() {
 	config_load "$packageName"
 	config_get_bool serviceEnabled 'config' 'enabled' 1
 	config_get_bool forceDNS       'config' 'force_dns' 1
 	config_get_bool debug          'config' 'debug' 0
+	config_get_bool optimize       'config' 'optimization_enabled' 0
 	config_get bootDelay           'config' 'boot_delay' '120'
 	config_get dlTimeout           'config' 'download_timeout' '10'
 	config_get verbosity           'config' 'verbosity' '2'
@@ -108,7 +110,7 @@ reload_dnsmasq() {
 			fi
 			;;
 		on_stop)
-			[ -f $dnsmasqFile ] && mv $dnsmasqFile $T_TMP
+			[ -f $dnsmasqFile ] && mv $dnsmasqFile $CACHE_TMP
 			output 3 'Restarting dnsmasq '
 			if dnsmasq_restart; then
 				led_off "$led"
@@ -215,12 +217,12 @@ download_lists() {
 
 	ubus_status set 'Reloading '
 	[ ! -d ${dnsmasqFile%/*} ] && mkdir -p ${dnsmasqFile%/*}
-	for i in $A_TMP $B_TMP $T_TMP $dnsmasqFile; do [ -f $i ] && rm -f $i; done
+	for i in $A_TMP $B_TMP $CACHE_TMP $dnsmasqFile; do [ -f $i ] && rm -f $i; done
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
 		output 3 'Low free memory, restarting dnsmasq...'
 		reload_dnsmasq 'quiet' && output_okn || output_failn
 	fi
-	touch $A_TMP; touch $B_TMP; touch $T_TMP;
+	touch $A_TMP; touch $B_TMP;
 	output 1 'Downloading lists '
 	if [ -n "$blacklist_hosts_urls" ]; then
 		for hf in ${blacklist_hosts_urls}; do
@@ -251,29 +253,59 @@ download_lists() {
 	[ -n "$whitelist_domains" ] && for hf in ${whitelist_domains}; do hf=$(echo $hf | sed 's/\./\\./g'); w_filter="$w_filter/^${hf}$/d;/\\.${hf}$/d;"; done
 	if [ -s $B_TMP ]; then
 			output 1 'Processing downloads '
-			output 2 'Sorting merged file '
-			if sort $B_TMP | uniq > $T_TMP; then
+			output 2 'Sorting combined list '
+			if sort $B_TMP > $A_TMP; then
 				output_ok
 			else
 				output_fail
 				serviceStatus="${serviceStatus:-'Sorting error'}"
 			fi
+			output 2 'Optimizing combined list '
+			if awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$A_TMP" > "$B_TMP"; then
+				if sort "$B_TMP" > "$A_TMP"; then
+					if awk '{if(NR==1){tld=$NF};while(getline){if($NF!~tld"\\."){print tld;tld=$NF}}print tld}' "$A_TMP" > "$B_TMP"; then
+						if awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$B_TMP" > "$A_TMP"; then
+							if sort "$A_TMP" | uniq > "$B_TMP"; then
+								output_ok
+							else
+								output_fail
+								serviceStatus="${serviceStatus:-'Data file optimization error'}"
+								mv $A_TMP $B_TMP
+							fi
+						else
+							output_fail
+							serviceStatus="${serviceStatus:-'Data file optimization error'}"
+						fi
+					else
+						output_fail
+						serviceStatus="${serviceStatus:-'Data file optimization error'}"
+						mv $A_TMP $B_TMP
+					fi
+				else
+					output_fail
+					serviceStatus="${serviceStatus:-'Data file optimization error'}"
+				fi
+			else
+				output_fail
+				serviceStatus="${serviceStatus:-'Data file optimization error'}"
+				mv $A_TMP $B_TMP
+			fi
 			output 2 'Whitelisting domains '
-			if sed -i "$w_filter" $T_TMP; then
+			if sed -i "$w_filter" $B_TMP; then
 				output_ok
 			else
 				output_fail
 				serviceStatus="${serviceStatus:-'Whitelist processing error'}"
 			fi
 			output 2 'Formatting merged file '
-			if sed "$f_filter" $T_TMP > $B_TMP; then
+			if sed "$f_filter" $B_TMP > $A_TMP; then
 				output_ok
 			else
 				output_fail
 				serviceStatus="${serviceStatus:-'Data file formatting error'}"
 			fi
 			output 2 'Creating dnsmasq config '
-			if mv $B_TMP $dnsmasqFile; then
+			if mv $A_TMP $dnsmasqFile; then
 				output_ok
 			else
 				output_fail
@@ -281,7 +313,7 @@ download_lists() {
 			fi
 			output 2 'Removing temporary files '
 			rm -f /var/simple-adblock_tmp_* >/dev/null 2>&1;
-			for i in $A_TMP $B_TMP $T_TMP; do if [ -s $i ]; then rm -f $i || j=1; fi; done
+			for i in $A_TMP $B_TMP $CACHE_TMP; do if [ -s $i ]; then rm -f $i || j=1; fi; done
 			if [ $j -eq 0 ]; then
 				output_ok
 			else
@@ -323,12 +355,12 @@ start_service() {
 		fi
 		procd_close_instance
 		status="$(ubus_status get)"
-		if [ -s "$T_TMP" ]; then
+		if [ -s "$CACHE_TMP" ] && [ "$1" != "reload" ]; then
 			output "Starting $serviceName...\n"
-			output 3 'Found existing data file, reusing it... '
-			mv $T_TMP $dnsmasqFile && output_okn || output_failn
+			output 3 'Found existing data file, reusing it '
+			mv $CACHE_TMP $dnsmasqFile && output_okn || output_failn
 			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
-		elif [[ "$1" == "reload" || "$status" == "${status//Success}" ]]; then
+		elif [ "$1" == "reload" ] || [ "$status" == "${status//Success}" ]; then
 			output "Reloading $serviceName...\n"
 			download_lists
 			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
@@ -340,13 +372,13 @@ start_service() {
 		if [ -s "$dnsmasqFile" ]; then
 			if [ -z "$serviceStatus" ]; then
 				output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains $_OK_ \n"
-				serviceStatus="Success: $(wc -l < $dnsmasqFile) domains blocked"
+				ubus_status set "Success: $(wc -l < $dnsmasqFile) domains blocked"
 			else
 				output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains with error: $serviceStatus $_FAIL_ \n"
-				serviceStatus="$(wc -l < $dnsmasqFile) domains blocked with error: $serviceStatus"
+				ubus_status set "$(wc -l < $dnsmasqFile) domains blocked with error: $serviceStatus"
 			fi
 		fi
-		ubus_status set "$serviceStatus"
+		[ -n "$serviceStatus" ] && ubus_status set "$serviceStatus"
 		remove_lock
 	else
 		output "$serviceName: another instance is starting up "; output_failn;
@@ -356,7 +388,7 @@ start_service() {
 
 service_started() { procd_set_config_changed firewall; }
 reload_service() { start_service 'reload'; }
-killcache() { [ -s $T_TMP ] && rm -f $T_TMP; }
+killcache() { [ -s $CACHE_TMP ] && rm -f $CACHE_TMP >/dev/null 2>/dev/null; }
 
 stop_service() {
 	load_package_config
