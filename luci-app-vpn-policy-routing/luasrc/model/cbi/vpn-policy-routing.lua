@@ -58,17 +58,17 @@ function is_supported_interface(arg)
 	end
 end
 
--- General options
 c = Map("vpn-policy-routing", translate("Openconnect, OpenVPN, PPTP, Wireguard and WAN Policy-Based Routing"))
-s1 = c:section(NamedSection, "config", "vpn-policy-routing", translate("Configuration"))
-s1.override_values = true
-s1.override_depends = true
-
-s1:tab("basic", translate("Basic Configuration"))
+h = c:section(NamedSection, "config", "vpn-policy-routing", translate("Service Status"))
 local packageName = "vpn-policy-routing"
 local enabledFlag = uci:get(packageName, "config", "enabled")
-local status = util.ubus('service', 'list', { name = packageName })[packageName]['instances']['status']['data']['status'] or "Stopped"
-en = s1:taboption("basic", Button, "__toggle")
+local status = util.ubus('service', 'list', { name = packageName })
+if status and status[packageName] and status[packageName]['instances'] and status[packageName]['instances']['status'] and status[packageName]['instances']['status']['data'] and status[packageName]['instances']['status']['data']['status'] then
+	status = status[packageName]['instances']['status']['data']['status']
+else
+	status =  "Stopped"
+end
+en = h:option(Button, "__toggle")
 if enabledFlag ~= "1" or status:match("Stopped") then
 	en.title      = translate("Service is disabled/stopped")
 	en.inputtitle = translate("Enable/Start")
@@ -77,11 +77,11 @@ else
 	en.title      = translate("Service is enabled/started")
 	en.inputtitle = translate("Stop/Disable")
 	en.inputstyle = "reset"
-	ds = s1:taboption("basic", DummyValue, "_dummy", translate("Service Status"))
+	ds = h:option(DummyValue, "_dummy", translate("Service Status"))
 	ds.template = "vpn-policy-routing/status"
 	ds.value = status
 	if not status:match("Success") then
-		reload = s1:taboption("basic", Button, "__toggle")
+		reload = h:option(Button, "__toggle")
 		reload.title      = translate("Service started with error")
 		reload.inputtitle = translate("Reload")
 		reload.inputstyle = "apply"
@@ -104,6 +104,12 @@ function en.write()
 	end
 	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. packageName))
 end
+
+-- General options
+s1 = c:section(NamedSection, "config", "vpn-policy-routing", translate("Configuration"))
+s1.override_values = true
+s1.override_depends = true
+s1:tab("basic", translate("Basic Configuration"))
 
 v = s1:taboption("basic", ListValue, "verbosity", translate("Output verbosity"),translate("Controls both system log and console output verbosity"))
 v:value("0", translate("Suppress/No output"))
