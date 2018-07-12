@@ -99,12 +99,6 @@ end
 
 s:tab("advanced", translate("Advanced Configuration"))
 
-o5 = s:taboption("advanced", ListValue, "optimization_enabled", translate("Enable DNSMASQ File Optimization"), translate("Remove duplicate domains from DNSMASQ file"))
-o5:value("", translate("Disable Optimization"))
-o5:value("1", translate("Enable Optimization"))
-o5.rmempty = true
-o5.default = 1
-
 o6 = s:taboption("advanced", Value, "boot_delay", translate("Delay (in seconds) for on-boot start"), translate("Run service after set delay on boot"))
 o6.default = 120
 o6.datatype = "range(1,600)"
