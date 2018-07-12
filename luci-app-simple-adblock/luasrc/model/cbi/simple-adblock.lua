@@ -20,6 +20,11 @@ else
 		en.title      = translate("Service is disabled/stopped")
 		en.inputtitle = translate("Enable/Start")
 		en.inputstyle = "apply"
+		if nixio.fs.access("/var/simple-adblock.cache") then
+			ds = s:option(DummyValue, "_dummy", translate("Service Status"))
+			ds.template = "simple-adblock/status"
+			ds.value = "Cache file containing " .. luci.util.trim(luci.sys.exec("wc -l < /var/simple-adblock.cache")) .. " domains found"
+		end
 	else
 		en.title      = translate("Service is enabled/started")
 		en.inputtitle = translate("Stop/Disable")
