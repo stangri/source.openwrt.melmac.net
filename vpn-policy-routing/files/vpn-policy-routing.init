@@ -1,4 +1,5 @@
 #!/bin/sh /etc/rc.common
+# Copyright 2017-2018 Stan Grishin (stangri@melmac.net)
 PKG_VERSION=
 
 export START=94
