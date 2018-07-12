@@ -65,9 +65,9 @@ s1.override_values = true
 s1.override_depends = true
 
 s1:tab("basic", translate("Basic Configuration"))
-local serviceName = "vpn-policy-routing"
-local enabledFlag = uci:get(serviceName, "config", "enabled")
-local status = util.ubus('service', 'list', { name = serviceName })[serviceName]['instances']['status']['data']['status'] or "Stopped"
+local packageName = "vpn-policy-routing"
+local enabledFlag = uci:get(packageName, "config", "enabled")
+local status = util.ubus('service', 'list', { name = packageName })[packageName]['instances']['status']['data']['status'] or "Stopped"
 en = s1:taboption("basic", Button, "__toggle")
 if enabledFlag ~= "1" or status:match("Stopped") then
 	en.title      = translate("Service is disabled/stopped")
@@ -87,22 +87,22 @@ else
 		reload.inputstyle = "apply"
 		function reload.write()
 			luci.sys.exec("/etc/init.d/vpn-policy-routing reload")
-			luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
+			luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. packageName))
 		end
 	end
 end
 function en.write()
 	enabledFlag = enabledFlag == "1" and "0" or "1"
-	uci:set(serviceName, "config", "enabled", enabledFlag)
-	uci:save(serviceName)
-	uci:commit(serviceName)
+	uci:set(packageName, "config", "enabled", enabledFlag)
+	uci:save(packageName)
+	uci:commit(packageName)
 	if enabledFlag == "0" then
-		luci.sys.init.stop(serviceName)
+		luci.sys.init.stop(packageName)
 	else
-		luci.sys.init.enable(serviceName)
-		luci.sys.init.start(serviceName)
+		luci.sys.init.enable(packageName)
+		luci.sys.init.start(packageName)
 	end
-	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
+	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. packageName))
 end
 
 v = s1:taboption("basic", ListValue, "verbosity", translate("Output verbosity"),translate("Controls both system log and console output verbosity"))
