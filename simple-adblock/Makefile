@@ -55,8 +55,6 @@ define Package/simple-adblock/postinst
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/simple-adblock enable
-		mkdir -p /var/simple-adblock.d || true
-		touch /var/simple-adblock.d/dnsmasq || true
 		while [ ! -z "$(uci -q get ucitrack.@simple-adblock[-1] 2>/dev/null)" ] ; do
 			uci -q delete ucitrack.@simple-adblock[-1]
 			uci commit ucitrack
