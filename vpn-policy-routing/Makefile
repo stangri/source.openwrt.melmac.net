@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpn-policy-routing
 PKG_VERSION:=0.0.2
-PKG_RELEASE:=11
+PKG_RELEASE:=12
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -47,7 +47,9 @@ define Package/vpn-policy-routing/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/vpn-policy-routing.conf $(1)/etc/config/vpn-policy-routing
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/firewall
-	$(INSTALL_DATA) ./files/vpn-policy-routing.hotplug $(1)/etc/hotplug.d/firewall/99-vpn-policy-routing
+	$(INSTALL_DATA) ./files/vpn-policy-routing.firewall.hotplug $(1)/etc/hotplug.d/firewall/99-vpn-policy-routing
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_DATA) ./files/vpn-policy-routing.iface.hotplug $(1)/etc/hotplug.d/iface/70-vpn-policy-routing
 endef
 
 define Package/vpn-policy-routing/postinst
@@ -55,6 +57,13 @@ define Package/vpn-policy-routing/postinst
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/vpn-policy-routing enable
+		# remove iface hotplug if not on old Turris Omnia boards
+		if ubus -S call system board | grep 'Turris' | grep -q '15.05' ; then
+			echo "Turris Omnia 15.05 detected, some features may not work!"
+		else
+			rm -rf /etc/hotplug.d/iface/70-vpn-policy-routing
+		fi
+
 		while [ ! -z "$(uci -q get ucitrack.@vpn-policy-routing[-1] 2>/dev/null)" ] ; do
 			uci -q delete ucitrack.@vpn-policy-routing[-1]
 			uci commit ucitrack
