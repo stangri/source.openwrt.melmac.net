@@ -328,6 +328,7 @@ start_service() {
 	if create_lock; then
 		is_enabled || return 1
 		procd_open_instance
+		procd_set_param command /bin/true
 		procd_set_param stdout 1
 		procd_set_param stderr 1
 		network_get_ipaddr ip 'lan'
