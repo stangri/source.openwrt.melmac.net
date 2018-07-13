@@ -6,7 +6,11 @@ local readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/vpn-p
 -- end
 
 local uci = require "luci.model.uci".cursor()
+local sys = require "luci.sys"
 local util = require "luci.util"
+local ip = require "luci.ip"
+local fs = require "nixio.fs"
+
 local t = uci:get("vpn-policy-routing", "config", "supported_interface")
 if not t then
 	supportedIfaces = ""
@@ -28,7 +32,7 @@ end
 local lanIPAddr = uci:get("network", "lan", "ipaddr")
 local lanNetmask = uci:get("network", "lan", "netmask")
 if lanIPAddr and lanNetmask then
-	laPlaceholder = luci.ip.new(lanIPAddr .. "/" .. lanNetmask )
+	laPlaceholder = ip.new(lanIPAddr .. "/" .. lanNetmask )
 end
 
 function is_supported_interface(arg)
@@ -43,13 +47,13 @@ function is_supported_interface(arg)
 				if value and value:sub(1,3) == "tun" then return true end
 				if value and value:sub(1,3) == "tap" then return true end
 				if value and value:sub(1,3) == "tor" then return true end
-				if value and nixio.fs.access("/sys/devices/virtual/net/" .. value .. "/tun_flags") then return true end
+				if value and fs.access("/sys/devices/virtual/net/" .. value .. "/tun_flags") then return true end
 			end
 		elseif type(ifname) == "string" then
 			if ifname and ifname:sub(1,3) == "tun" then return true end
 			if ifname and ifname:sub(1,3) == "tap" then return true end
 			if ifname and ifname:sub(1,3) == "tor" then return true end
-			if ifname and nixio.fs.access("/sys/devices/virtual/net/" .. ifname .. "/tun_flags") then return true end
+			if ifname and fs.access("/sys/devices/virtual/net/" .. ifname .. "/tun_flags") then return true end
 		end
 		if proto and proto:sub(1,11) == "openconnect" then return true end
 		if proto and proto:sub(1,4) == "pptp" then return true end
@@ -66,7 +70,12 @@ local status = util.ubus('service', 'list', { name = packageName })
 if status and status[packageName] and status[packageName]['instances'] and status[packageName]['instances']['status'] and status[packageName]['instances']['status']['data'] and status[packageName]['instances']['status']['data']['status'] then
 	status = status[packageName]['instances']['status']['data']['status']
 else
-	status =  "Stopped"
+	local ipt_status = util.trim(sys.exec("iptables-save | grep -m1 'VPR_PREROUTING'"))
+	if ipt_status and ipt_status ~= "" then
+		status = "Started without PROCD support"
+	else
+		status =  "Stopped"
+	end
 end
 en = h:option(Button, "__toggle")
 if enabledFlag ~= "1" or status:match("Stopped") then
