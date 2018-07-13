@@ -371,10 +371,10 @@ start_service() {
 		fi
 		if [ -s "$dnsmasqFile" ]; then
 			if [ -z "$serviceStatus" ]; then
-				output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains $_OK_ \n"
+				output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains "; output_okn;
 				ubus_status set "Success: $(wc -l < $dnsmasqFile) domains blocked"
 			else
-				output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains with error: $serviceStatus $_FAIL_ \n"
+				output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains with error: $serviceStatus "; output_failn;
 				ubus_status set "$(wc -l < $dnsmasqFile) domains blocked with error: $serviceStatus"
 			fi
 		fi
