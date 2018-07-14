@@ -534,7 +534,9 @@ start_service() {
 			ubus_status 'set' "Fail: $serviceName failed to set up any interface!"
 			return 1
 		else
-			[[ "$strictMode" -ne 0 && "${serviceStatusSummary//0.0.0.0}" != "${serviceStatusSummary}" ]] && serviceStatusSummary="(strict mode): ${serviceStatusSummary}"
+			if [ "$strictMode" -ne 0 ] && [ "${serviceStatusSummary//0.0.0.0}" != "${serviceStatusSummary}" ]; then
+				serviceStatusSummary="(strict mode): ${serviceStatusSummary}"
+			fi
 			output "$serviceName started on ${serviceStatusSummary}"
 			if [ -z "$errorStatusSummary" ]; then
 				output_okn
@@ -548,7 +550,8 @@ start_service() {
 		fi
 		remove_lock
 	else
-		output "$serviceName: another instance of ${packageName} is currently running "; output_failn;
+		output "$serviceName: another instance of ${packageName} is currently running "
+		output_failn
 		return 1
 	fi
 }
