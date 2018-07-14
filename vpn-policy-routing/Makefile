@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpn-policy-routing
 PKG_VERSION:=0.0.2
-PKG_RELEASE:=12
+PKG_RELEASE:=17
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -57,10 +57,7 @@ define Package/vpn-policy-routing/postinst
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/vpn-policy-routing enable
-		# remove iface hotplug if not on old Turris Omnia boards
-		if ubus -S call system board | grep 'Turris' | grep -q '15.05' ; then
-			echo "Turris Omnia 15.05 detected, some features may not work!"
-		else
+		if ! /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05' ; then
 			rm -rf /etc/hotplug.d/iface/70-vpn-policy-routing
 		fi
 

@@ -99,7 +99,21 @@ is_enabled() {
 		local sleepCount=1
 		load_package_config
 
-		[ $serviceEnabled -gt 0 ] || return 1
+		# remove iface hotplug if not on old Turris Omnia boards
+#		if [ -e '/etc/hotplug.d/iface/70-vpn-policy-routing' ]; then
+#			if ! /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05' ; then
+#				rm -rf /etc/hotplug.d/iface/70-vpn-policy-routing
+#			fi
+#		fi
+
+		if [ $serviceEnabled -eq 0 ]; then
+			if [ "$1" == "on_start" ]; then
+				output "$packageName is currently disabled.\n"
+				output "Run the following commands before starting service again:\n"
+				output "uci set $packageName.config.enabled='1'; uci commit;\n"
+			fi
+			return 1
+		fi
 		if [ $dnsmasqEnabled -ne 0 ]; then
 			if ! dnsmasq --version | grep -q " ipset "; then
 				output "$_ERROR_: dnsmasq support is enabled in $packageName, but installed dnsmasq does not support ipsets!\n"
@@ -486,7 +500,7 @@ ubus_status(){
 
 start_service() {
 	local serviceStatusSummary errorStatusSummary dnsmasqFileHash
-	is_enabled || return 1
+	is_enabled 'on_start' || return 1
 	if create_lock; then
 		if [ -s "$dnsmasqFile" ]; then
 			dnsmasqFileHash="$(md5sum $dnsmasqFile)"
@@ -523,16 +537,18 @@ start_service() {
 			[[ "$strictMode" -ne 0 && "${serviceStatusSummary//0.0.0.0}" != "${serviceStatusSummary}" ]] && serviceStatusSummary="(strict mode): ${serviceStatusSummary}"
 			output "$serviceName started on ${serviceStatusSummary}"
 			if [ -z "$errorStatusSummary" ]; then
-				ubus_status 'set' "Success: ${serviceStatusSummary}"
 				output_okn
+				ubus_status 'set' "Success: ${serviceStatusSummary}"
 			else
-				ubus_status 'set' "Started on ${serviceStatusSummary} with error(s): ${errorStatusSummary}"
-				output "with errors "; output_failn; output "${errorStatusSummary}";
+				output "with errors "
+				output_failn
+				output "${errorStatusSummary}"
+				ubus_status 'set' "Started on ${serviceStatusSummary} with error(s)"
 			fi
 		fi
 		remove_lock
 	else
-		output "$serviceName: another instance of ${packageName} is already running "; output_failn;
+		output "$serviceName: another instance of ${packageName} is currently running "; output_failn;
 		return 1
 	fi
 }
@@ -554,11 +570,13 @@ stop_service() {
 			rm -f "$dnsmasqFile"
 			dnsmasq_kill
 		fi
-		output "$serviceName stopped "; output_okn;
+		if [ $serviceEnabled -ne 0 ]; then
+			output "$serviceName stopped "; output_okn;
+		fi
 		ubus_status 'set' "Stopped"
 		remove_lock
 	else
-		output "$serviceName: another instance of ${packageName} is already running "; output_failn;
+		output "$serviceName: another instance of ${packageName} is currently running "; output_failn;
 		return 1
 	fi
 }
