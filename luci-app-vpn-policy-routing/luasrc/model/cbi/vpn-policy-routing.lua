@@ -71,10 +71,13 @@ if status and status[packageName] and status[packageName]['instances'] and statu
 	status = status[packageName]['instances']['status']['data']['status']
 else
 	local ipt_status = util.trim(sys.exec("iptables-save | grep -m1 'VPR_PREROUTING'"))
-	if ipt_status and ipt_status ~= "" then
-		status = "Started without PROCD support"
-	else
-		status =  "Stopped"
+	status = util.trim(sys.exec("/bin/ubus call service list \"{'name': 'vpn-policy-routing'}\" | /usr/bin/jsonfilter -l1 -e \"@['vpn-policy-routing']['instances']['status']['data']['status']\""))
+	if not status or status == "" then
+		if ipt_status and ipt_status ~= "" then
+			status = "Started without PROCD support"
+		else
+			status =  "Stopped"
+		end
 	end
 end
 en = h:option(Button, "__toggle")
