@@ -21,7 +21,7 @@ load_package_config() {
 	config_load "$packageName"
 	config_get_bool serviceEnabled 'config' 'enabled' 1
 	config_get verbosity           'config' 'verbosity' '2'
-	if [ -z "$verbosity"] || [ -n "${verbosity##[0-9]*}" ] || [ $verbosity -lt 0 ] || [ $verbosity -gt 2 ]; then
+	if [ -z "${verbosity##*[!0-9]*}" ] || [ $verbosity -lt 0 ] || [ $verbosity -gt 2 ]; then
 		verbosity=1
 	fi
 	source 	/lib/functions/network.sh
