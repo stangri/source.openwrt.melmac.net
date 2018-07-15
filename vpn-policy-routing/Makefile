@@ -11,7 +11,7 @@ PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/vpn-policy-routing/default
+define Package/vpn-policy-routing
 	SECTION:=net
 	CATEGORY:=Network
 	DEPENDS:=+ipset +iptables +resolveip +kmod-ipt-ipset +!BUSYBOX_CONFIG_IP:ip-full
@@ -19,8 +19,6 @@ define Package/vpn-policy-routing/default
 	TITLE:=VPN Policy-Based Routing Service
 	PKGARCH:=all
 endef
-
-Package/vpn-policy-routing = $(Package/vpn-policy-routing/default)
 
 define Package/vpn-policy-routing/description
 This service allows policy-based routing for L2TP, Openconnect, OpenVPN, PPTP and Wireguard tunnels and WAN interface.
