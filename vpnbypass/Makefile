@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpnbypass
 PKG_VERSION:=1.3.1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -60,18 +60,13 @@ define Package/vpnbypass/postinst
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/vpnbypass enable
 
-		while [ ! -z "$(uci -q get ucitrack.@vpnbypass[-1] 2>/dev/null)" ] ; do
-			uci -q delete ucitrack.@vpnbypass[-1]
-		done
-
-		while [ ! -z "$(uci -q get ucitrack.@firewall[-1].affects 2>/dev/null | awk '/vpnbypass/')" ] ; do
-			uci -q del_list ucitrack.@firewall[-1].affects='vpnbypass'
-		done
+		while uci -q del ucitrack.@vpnbypass[-1]; do :; done
 
 		uci -q batch <<-EOF >/dev/null
 			add ucitrack vpnbypass
-			set ucitrack.@vpnbypass[-1].init='vpnbypass'
-			add_list ucitrack.@firewall[-1].affects='vpnbypass'
+			set ucitrack.@vpnbypass[0].init='vpnbypass'
+			del_list ucitrack.@firewall[0].affects='vpnbypass'
+			add_list ucitrack.@firewall[0].affects='vpnbypass'
 			commit ucitrack
 	EOF
 	fi
@@ -82,17 +77,11 @@ define Package/vpnbypass/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
+		while uci -q delete ucitrack.@vpnbypass[-1]; do :; done
+		uci -q del_list ucitrack.@firewall[0].affects='vpnbypass'
 		echo "Stopping service and removing rc.d symlink for vpnbypass"
 		/etc/init.d/vpnbypass stop || true
 		/etc/init.d/vpnbypass disable || true
-
-		while [ ! -z "$(uci -q get ucitrack.@vpnbypass[-1] 2>/dev/null)" ] ; do
-			uci -q delete ucitrack.@vpnbypass[-1]
-		done
-
-		while [ ! -z "$(uci -q get ucitrack.@firewall[-1].affects 2>/dev/null | awk '/vpnbypass/')" ] ; do
-			uci -q del_list ucitrack.@firewall[-1].affects='vpnbypass'
-		done
 	fi
 	exit 0
 endef
