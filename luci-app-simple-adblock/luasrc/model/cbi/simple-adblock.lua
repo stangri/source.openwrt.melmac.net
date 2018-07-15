@@ -38,7 +38,7 @@ else
 		ds.template = "simple-adblock/status"
 		ds.value = status
 		if not status:match("Success") then
-			reload = h:option(Button, "__toggle")
+			reload = h:option(Button, "__reload")
 			reload.title      = translate("Service started with error")
 			reload.inputtitle = translate("Reload")
 			reload.inputstyle = "apply"
