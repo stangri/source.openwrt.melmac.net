@@ -71,7 +71,7 @@ if status and status[packageName] and status[packageName]['instances'] and statu
 	status = status[packageName]['instances']['status']['data']['status']
 else
 	local ipt_status = util.trim(sys.exec("iptables-save | grep -m1 'VPR_PREROUTING'"))
-	status = util.trim(sys.exec("/bin/ubus call service list \"{'name': 'vpn-policy-routing'}\" | /usr/bin/jsonfilter -l1 -e \"@['vpn-policy-routing']['instances']['status']['data']['status']\""))
+	status = status or util.trim(sys.exec("/bin/ubus call service list \"{'name': 'vpn-policy-routing'}\" | /usr/bin/jsonfilter -l1 -e \"@['vpn-policy-routing']['instances']['status']['data']['status']\""))
 	if not status or status == "" then
 		if ipt_status and ipt_status ~= "" then
 			status = "Started without PROCD support"
@@ -92,9 +92,9 @@ else
 	ds = h:option(DummyValue, "_dummy", translate("Service Status"))
 	ds.template = "vpn-policy-routing/status"
 	ds.value = status
-	if not status:match("Success") then
-		reload = h:option(Button, "__toggle")
-		reload.title      = translate("Service started with error")
+	if not status:match("Success") and not status:match("Started without PROCD support") then
+		reload = h:option(Button, "__reload")
+		reload.title      = translate("Service started with error(s)")
 		reload.inputtitle = translate("Reload")
 		reload.inputstyle = "apply"
 		function reload.write()
