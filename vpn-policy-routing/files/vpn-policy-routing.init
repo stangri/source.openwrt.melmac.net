@@ -99,13 +99,6 @@ is_enabled() {
 		local sleepCount=1
 		load_package_config
 
-		# remove iface hotplug if not on old Turris Omnia boards
-#		if [ -e '/etc/hotplug.d/iface/70-vpn-policy-routing' ]; then
-#			if ! /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05' ; then
-#				rm -rf /etc/hotplug.d/iface/70-vpn-policy-routing
-#			fi
-#		fi
-
 		if [ $serviceEnabled -eq 0 ]; then
 			if [ "$1" == "on_start" ]; then
 				output "$packageName is currently disabled.\n"
@@ -708,16 +701,23 @@ support() {
 # shellcheck disable=SC2120
 validate_config() {
 	uci_validate_section "${packageName}" config "${1}" \
-		'enabled:integer' \
-		'verbosity:integer' \
-		'ipv6_enabled:integer' \
-		'dnsmasq_enabled:integer' \
-		'strict_enforcement:integer' \
-		'ignored_interface:string' \
-		'ipset_enabled:integer' \
-		'wan_tid:integer' \
+		'enabled:bool:0' \
+		'strict_enforcement:bool:1' \
+		'ipv6_enabled:bool:1' \
+		'ipset_enabled:bool:1' \
+		'iprule_enabled:bool:0' \
+		'dnsmasq_enabled:bool:0' \
+		'udp_proto_enabled:bool:0' \
+		'forward_chain_enabled:bool:0' \
+		'input_chain_enabled:bool:0' \
+		'output_chain_enabled:bool:0' \
+		'verbosity:range(0,2):1' \
+		'wan_tid:integer:201' \
 		'wan_fw_mark:string' \
-		'fw_mask:string'
+		'fw_mask:string' \
+		'icmp_interface:string' \
+		'ignored_interface:list(string)' \
+		'supported_interface:list(string)'
 }
 
 # shellcheck disable=SC2120
