@@ -92,7 +92,7 @@ load_package_config() {
 	config_get icmpIface                'config' 'icmp_interface'
 	config_get ignoredIfaces            'config' 'ignored_interface'
 	config_get supportedIfaces          'config' 'supported_interface'
-	if [ -z "$verbosity"] || [ -n "${verbosity##[0-9]*}" ] || [ $verbosity -lt 0 ] || [ $verbosity -gt 2 ]; then
+	if [ -z "${verbosity##*[!0-9]*}" ] || [ $verbosity -lt 0 ] || [ $verbosity -gt 2 ]; then
 		verbosity=1
 	fi
 	source /lib/functions/network.sh
