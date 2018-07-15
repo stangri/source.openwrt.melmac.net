@@ -65,7 +65,7 @@ load_package_config() {
 	config_get dlTimeout           'config' 'download_timeout' '20'
 	config_get verbosity           'config' 'verbosity' '2'
 	config_get led        	       'config' 'led'
-	if ! [ "$verbosity" -eq "$verbosity" ] 2>/dev/null || [[ $verbosity -lt 0 || $verbosity -gt 2 ]]; then
+	if [ -z "$verbosity"] || [ -n "${verbosity##[0-9]*}" ] || [ $verbosity -lt 0 ] || [ $verbosity -gt 2 ]; then
 		verbosity=1
 	fi
 	source /lib/functions/network.sh
