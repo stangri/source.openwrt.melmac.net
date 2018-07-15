@@ -518,7 +518,7 @@ start_service() {
 		output 1 'Processing interfaces '
 		config_load 'network'; config_foreach process_interface 'interface' 'create';
 		output 1 '\n'
-		output 1 'Routing policies '
+		output 1 'Processing policies '
 		config_load $packageName; config_foreach process_policy 'policy';
 		output 1 '\n'
 		if [ -s "$dnsmasqFile" ]; then

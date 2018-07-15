@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpn-policy-routing
 PKG_VERSION:=0.0.2
-PKG_RELEASE:=19
+PKG_RELEASE:=20
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -61,20 +61,13 @@ define Package/vpn-policy-routing/postinst
 			rm -rf /etc/hotplug.d/iface/70-vpn-policy-routing
 		fi
 
-		while [ ! -z "$(uci -q get ucitrack.@vpn-policy-routing[-1] 2>/dev/null)" ] ; do
-			uci -q delete ucitrack.@vpn-policy-routing[-1]
-			uci commit ucitrack
-		done
-
-		while [ ! -z "$(uci -q get ucitrack.@firewall[-1].affects 2>/dev/null | awk '/vpn-policy-routing/')" ] ; do
-			uci -q del_list ucitrack.@firewall[-1].affects='vpn-policy-routing'
-			uci commit ucitrack
-		done
+		while uci -q del ucitrack.@vpn-policy-routing[-1]; do :; done
 
 		uci -q batch <<-EOF >/dev/null
 			add ucitrack vpn-policy-routing
-			set ucitrack.@vpn-policy-routing[-1].init='vpn-policy-routing'
-			add_list ucitrack.@firewall[-1].affects='vpn-policy-routing'
+			set ucitrack.@vpn-policy-routing[0].init='vpn-policy-routing'
+			del_list ucitrack.@firewall[0].affects='vpn-policy-routing'
+			add_list ucitrack.@firewall[0].affects='vpn-policy-routing'
 			commit ucitrack
 	EOF
 	fi
@@ -85,19 +78,11 @@ define Package/vpn-policy-routing/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
+		while uci -q delete ucitrack.@vpn-policy-routing[-1]; do :; done
+		uci -q del_list ucitrack.@firewall[0].affects='vpn-policy-routing'
 		echo "Stopping service and removing rc.d symlink for vpn-policy-routing"
 		/etc/init.d/vpn-policy-routing stop || true
 		/etc/init.d/vpn-policy-routing disable || true
-
-		while [ ! -z "$(uci -q get ucitrack.@vpn-policy-routing[-1] 2>/dev/null)" ] ; do
-			uci -q delete ucitrack.@vpn-policy-routing[-1]
-			uci -q commit ucitrack
-		done
-
-		while [ ! -z "$(uci -q get ucitrack.@firewall[-1].affects 2>/dev/null | awk '/vpn-policy-routing/')" ] ; do
-			uci -q del_list ucitrack.@firewall[-1].affects='vpn-policy-routing'
-			uci -q commit ucitrack
-		done
 	fi
 	exit 0
 endef
