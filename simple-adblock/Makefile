@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=simple-adblock
 PKG_VERSION:=1.6.3
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -55,13 +55,10 @@ define Package/simple-adblock/postinst
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/simple-adblock enable
-		while [ ! -z "$(uci -q get ucitrack.@simple-adblock[-1] 2>/dev/null)" ] ; do
-			uci -q delete ucitrack.@simple-adblock[-1]
-			uci commit ucitrack
-		done
+		while uci -q del ucitrack.@simple-adblock[-1]; do :; done
 		uci -q batch <<-EOF >/dev/null
 			add ucitrack simple-adblock
-			set ucitrack.@simple-adblock[-1].init='simple-adblock'
+			set ucitrack.@simple-adblock[0].init='simple-adblock'
 			commit ucitrack
 	EOF
 	fi
@@ -72,10 +69,7 @@ define Package/simple-adblock/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
-		while [ ! -z "$(uci -q get ucitrack.@simple-adblock[-1] 2>/dev/null)" ] ; do
-			uci -q delete ucitrack.@simple-adblock[-1]
-			uci -q commit ucitrack
-		done
+		while uci -q del ucitrack.@simple-adblock[-1]; do :; done
 		echo "Stopping service and removing rc.d symlink for simple-adblock"
 		/etc/init.d/simple-adblock stop || true
 		/etc/init.d/simple-adblock killcache || true
