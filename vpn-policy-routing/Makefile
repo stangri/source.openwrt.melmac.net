@@ -5,13 +5,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpn-policy-routing
 PKG_VERSION:=0.0.2
-PKG_RELEASE:=20
+PKG_RELEASE:=21
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/vpn-policy-routing
+define Package/vpn-policy-routing/default
 	SECTION:=net
 	CATEGORY:=Network
 	DEPENDS:=+ipset +iptables +resolveip +kmod-ipt-ipset +!BUSYBOX_CONFIG_IP:ip-full
@@ -19,6 +19,8 @@ define Package/vpn-policy-routing
 	TITLE:=VPN Policy-Based Routing Service
 	PKGARCH:=all
 endef
+
+Package/vpn-policy-routing = $(Package/vpn-policy-routing/default)
 
 define Package/vpn-policy-routing/description
 This service allows policy-based routing for L2TP, Openconnect, OpenVPN, PPTP and Wireguard tunnels and WAN interface.
@@ -48,8 +50,6 @@ define Package/vpn-policy-routing/install
 	$(INSTALL_CONF) ./files/vpn-policy-routing.conf $(1)/etc/config/vpn-policy-routing
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/firewall
 	$(INSTALL_DATA) ./files/vpn-policy-routing.firewall.hotplug $(1)/etc/hotplug.d/firewall/99-vpn-policy-routing
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
-	$(INSTALL_DATA) ./files/vpn-policy-routing.iface.hotplug $(1)/etc/hotplug.d/iface/70-vpn-policy-routing
 endef
 
 define Package/vpn-policy-routing/postinst
@@ -57,9 +57,6 @@ define Package/vpn-policy-routing/postinst
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/vpn-policy-routing enable
-		if ! /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05' ; then
-			rm -rf /etc/hotplug.d/iface/70-vpn-policy-routing
-		fi
 
 		while uci -q del ucitrack.@vpn-policy-routing[-1]; do :; done
 
@@ -87,4 +84,20 @@ define Package/vpn-policy-routing/prerm
 	exit 0
 endef
 
+define Package/vpn-policy-routing-turris
+$(call Package/vpn-policy-routing/default)
+	TITLE+= for Turris Omnia devices
+endef
+Package/vpn-policy-routing-turris/description = $(Package/vpn-policy-routing/description)
+Package/vpn-policy-routing-turris/conffiles = $(Package/vpn-policy-routing/conffiles)
+define Package/vpn-policy-routing-turris/install
+$(call Package/vpn-policy-routing/install)
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_DATA) ./files/vpn-policy-routing.iface.hotplug $(1)/etc/hotplug.d/iface/70-vpn-policy-routing
+endef
+Package/vpn-policy-routing-turris/install = $(Package/vpn-policy-routing/install)
+Package/vpn-policy-routing-turris/postinst = $(Package/vpn-policy-routing/postinst)
+Package/vpn-policy-routing-turris/prerm = $(Package/vpn-policy-routing/prerm)
+
 $(eval $(call BuildPackage,vpn-policy-routing))
+$(eval $(call BuildPackage,vpn-policy-routing-turris))
