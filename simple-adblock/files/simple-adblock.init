@@ -200,8 +200,7 @@ process_url() {
 	while [[ -z "$R_TMP" || -e "$R_TMP" ]]; do
 		R_TMP="/var/${packageName}_tmp_$(head -c40 /dev/urandom 2>/dev/null | tr -dc 'A-Za-z0-9' 2>/dev/null)"
 	done
-	touch "$R_TMP"
-	if ! $dl_command "$1" > "$R_TMP" 2>/dev/null; then
+	if ! touch "$R_TMP" || ! $dl_command "$1" > "$R_TMP" 2>/dev/null; then
 		output 2 "[DL] $type $label $__FAIL__\n"
 		output 1 "$_FAIL_"
 		ubus_status add '-'
