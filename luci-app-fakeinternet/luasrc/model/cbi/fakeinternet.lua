@@ -13,11 +13,11 @@ en = h:option(Button, "__toggle")
 if enabledFlag ~= "1" then
 	en.title      = translate("Service is disabled/stopped")
 	en.inputtitle = translate("Enable/Start")
-	en.inputstyle = "apply"
+	en.inputstyle = "apply important"
 else
 	en.title      = translate("Service is enabled/started")
 	en.inputtitle = translate("Stop/Disable")
-	en.inputstyle = "reset"
+	en.inputstyle = "reset important"
 end
 function en.write()
 	enabledFlag = enabledFlag == "1" and "0" or "1"
