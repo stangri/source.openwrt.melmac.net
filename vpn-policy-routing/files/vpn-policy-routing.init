@@ -380,53 +380,65 @@ table_destroy(){
 }
 
 table_create(){
-	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" dscp s=0 i
+	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" dscp s=0 i ipv4_set=0 ipv6_set=0 ipv4_error=0 ipv6_error=0
 
 	if [[ -n "$tid" && -n "$mark" && -n "$iface" ]]; then
 		table_destroy "$tid" "$iface" "$mark"
 
-		if [ $strictMode -ne 0 ]; then
-			if [ -z "$gw4" ]; then
-				ip -4 route add unreachable default table $tid || s=1
+		if [[ -n "$gw4" && "$gw4" != "0.0.0.0" ]] || [ $strictMode -ne 0 ]; then
+			if [ -z "$gw4" ] || [ "$gw4" == "0.0.0.0" ]; then
+				ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
+			else
+				ip -4 route add default via "$gw4" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 			fi
-			if [[ $ipv6Enabled -ne 0 && -z "$gw6" ]]; then
-				ip -6 route add unreachable default table $tid || s=1
-			fi
+			ip -4 route flush cache || ipv4_error=1
+			ip -4 rule add fwmark "$mark" table "$tid" || ipv4_error=1
+			[ $ipv4_error -eq 0 ] && ipv4_set=1 || s=$ipv4_error
 		fi
-		dscp=$(uci -q get ${packageName}.config.${iface}_dscp)
-		if [ ${dscp:-0} -ge 1 ] && [ ${dscp:-0} -le 63 ]; then
-			ipt -t mangle -I VPR_PREROUTING 1 -m dscp --dscp ${dscp} -j MARK --set-xmark ${mark}/${fwMask} || s=1
-		fi
-		if [ $ipsetEnabled -ne 0 ]; then
-			ips 'create' ${iface} 'hash:net family inet comment' && ips 'flush' ${iface} || s=1
-			ipt -t mangle -I VPR_PREROUTING 1 -m set --match-set ${iface} dst -j MARK --set-xmark ${mark}/${fwMask} || s=1
-			[ $ipv6Enabled -ne 0 ] && { ipt -t mangle -I VPR_PREROUTING 1 -m set --match-set ${iface}6 dst -j MARK --set-xmark ${mark}/${fwMask} || s=1; }
-			if [ $forwardChainEnabled -ne 0 ]; then
-				ipt -t mangle -I VPR_FORWARD 1 -m set --match-set ${iface} dst -j MARK --set-xmark ${mark}/${fwMask} || s=1
-				[ $ipv6Enabled -ne 0 ] && { ipt -t mangle -I VPR_FORWARD 1 -m set --match-set ${iface}6 dst -j MARK --set-xmark ${mark}/${fwMask} || s=1; }
-			fi
-			if [ $inputChainEnabled -ne 0 ]; then
-				ipt -t mangle -I VPR_INPUT 1 -m set --match-set ${iface} dst -j MARK --set-xmark ${mark}/${fwMask} || s=1
-				[ $ipv6Enabled -ne 0 ] && { ipt -t mangle -I VPR_INPUT 1 -m set --match-set ${iface}6 dst -j MARK --set-xmark ${mark}/${fwMask} || s=1; }
-			fi
-			if [ $outputChainEnabled -ne 0 ]; then
-				ipt -t mangle -I VPR_OUTPUT 1 -m set --match-set ${iface} dst -j MARK --set-xmark ${mark}/${fwMask} || s=1
-				[ $ipv6Enabled -ne 0 ] && { ipt -t mangle -I VPR_OUTPUT 1 -m set --match-set ${iface}6 dst -j MARK --set-xmark ${mark}/${fwMask} || s=1; }
-			fi
-		fi
-		if [[ "$iface" == "$icmpIface" && $outputChainEnabled -ne 0 ]]; then
-			ipt -t mangle -I VPR_OUTPUT 1 -p icmp -j MARK --set-xmark ${mark}/${fwMask} || s=1
-		fi
-		[ -n "$gw4" ] && ip -4 route add default via "$gw4" table "$tid" >/dev/null 2>&1 || s=1
-		ip -4 route flush cache || s=1
-		ip -4 rule add fwmark "$mark" table "$tid" || s=1
+
 		if [ $ipv6Enabled -ne 0 ]; then
-			[ -n "$gw6" ] && ip -6 route show | grep " dev $dev6 " | while read -r i; do ip -6 route add $i table "$tid" >/dev/null 2>&1 || s=1; done
-			ip -6 route flush cache || s=1
-			ip -6 rule add fwmark "$mark" table "$tid" || s=1
+			if [[ -n "$gw6" && "$gw6" != "::/0" ]] || [ $strictMode -ne 0 ]; then
+				if [ -z "$gw6" ] || [ "$gw6" == "::/0" ]; then
+					ip -6 route add unreachable default table $tid || ipv6_error=1
+				else
+					ip -6 route show | grep " dev $dev6 " | while read -r i; do
+						ip -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+					done
+				fi
+				ip -6 route flush cache || ipv6_error=1
+				ip -6 rule add fwmark "$mark" table "$tid" || ipv6_error=1
+				s=$ipv6_error
+				[ $ipv6_error -eq 0 ] && ipv6_set=1 || s=$ipv6_error
+			fi
+		fi
+
+		if [ $ipv4_set -ne 0 ] || [ $ipv6_set -ne 0 ]; then
+			dscp=$(uci -q get ${packageName}.config.${iface}_dscp)
+			if [ ${dscp:-0} -ge 1 ] && [ ${dscp:-0} -le 63 ]; then
+				ipt -t mangle -I VPR_PREROUTING 1 -m dscp --dscp ${dscp} -j MARK --set-xmark ${mark}/${fwMask} || s=1
+			fi
+			if [ $ipsetEnabled -ne 0 ]; then
+				ips 'create' ${iface} 'hash:net family inet comment' && ips 'flush' ${iface} || s=1
+				[ $ipv4_set -ne 0 ] && { ipt -t mangle -I VPR_PREROUTING 1 -m set --match-set ${iface} dst -j MARK --set-xmark ${mark}/${fwMask} || s=1; }
+				[ $ipv6_set -ne 0 ] && { ipt -t mangle -I VPR_PREROUTING 1 -m set --match-set ${iface}6 dst -j MARK --set-xmark ${mark}/${fwMask} || s=1; }
+				if [ $forwardChainEnabled -ne 0 ]; then
+					[ $ipv4_set -ne 0 ] && { ipt -t mangle -I VPR_FORWARD 1 -m set --match-set ${iface} dst -j MARK --set-xmark ${mark}/${fwMask} || s=1; }
+					[ $ipv6_set -ne 0 ] && { ipt -t mangle -I VPR_FORWARD 1 -m set --match-set ${iface}6 dst -j MARK --set-xmark ${mark}/${fwMask} || s=1; }
+				fi
+				if [ $inputChainEnabled -ne 0 ]; then
+					[ $ipv4_set -ne 0 ] && { ipt -t mangle -I VPR_INPUT 1 -m set --match-set ${iface} dst -j MARK --set-xmark ${mark}/${fwMask} || s=1; }
+					[ $ipv6_set -ne 0 ] && { ipt -t mangle -I VPR_INPUT 1 -m set --match-set ${iface}6 dst -j MARK --set-xmark ${mark}/${fwMask} || s=1; }
+				fi
+				if [ $outputChainEnabled -ne 0 ]; then
+					[ $ipv4_set -ne 0 ] && { ipt -t mangle -I VPR_OUTPUT 1 -m set --match-set ${iface} dst -j MARK --set-xmark ${mark}/${fwMask} || s=1; }
+					[ $ipv6_set -ne 0 ] && { ipt -t mangle -I VPR_OUTPUT 1 -m set --match-set ${iface}6 dst -j MARK --set-xmark ${mark}/${fwMask} || s=1; }
+				fi
+			fi
+			if [ "$iface" == "$icmpIface" ] && [ $outputChainEnabled -ne 0 ]; then
+				ipt -t mangle -I VPR_OUTPUT 1 -p icmp -j MARK --set-xmark ${mark}/${fwMask} || s=1
+			fi
 		fi
 	fi
-
 	return $s
 }
 
