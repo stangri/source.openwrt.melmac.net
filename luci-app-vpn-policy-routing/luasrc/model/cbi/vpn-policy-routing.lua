@@ -71,12 +71,12 @@ if status and status[packageName] and status[packageName]['instances'] and statu
 	status = status[packageName]['instances']['status']['data']['status']
 else
 	local ipt_status = util.trim(sys.exec("iptables-save | grep -m1 'VPR_PREROUTING'"))
-	status = status or util.trim(sys.exec("/bin/ubus call service list \"{'name': 'vpn-policy-routing'}\" | /usr/bin/jsonfilter -l1 -e \"@['vpn-policy-routing']['instances']['status']['data']['status']\""))
+	status = util.trim(sys.exec("/bin/ubus call service list \"{'name': 'vpn-policy-routing'}\" | /usr/bin/jsonfilter -l1 -e \"@['vpn-policy-routing']['instances']['status']['data']['status']\""))
 	if not status or status == "" then
 		if ipt_status and ipt_status ~= "" then
 			status = "Started without PROCD support"
 		else
-			status =  "Stopped"
+			status = "Stopped"
 		end
 	end
 end
@@ -84,11 +84,11 @@ en = h:option(Button, "__toggle")
 if enabledFlag ~= "1" or status:match("Stopped") then
 	en.title      = translate("Service is disabled/stopped")
 	en.inputtitle = translate("Enable/Start")
-	en.inputstyle = "apply"
+	en.inputstyle = "apply important"
 else
 	en.title      = translate("Service is enabled/started")
 	en.inputtitle = translate("Stop/Disable")
-	en.inputstyle = "reset"
+	en.inputstyle = "reset important"
 	ds = h:option(DummyValue, "_dummy", translate("Service Status"))
 	ds.template = "vpn-policy-routing/status"
 	ds.value = status
@@ -96,7 +96,7 @@ else
 		reload = h:option(Button, "__reload")
 		reload.title      = translate("Service started with error(s)")
 		reload.inputtitle = translate("Reload")
-		reload.inputstyle = "apply"
+		reload.inputstyle = "apply important"
 		function reload.write()
 			luci.sys.exec("/etc/init.d/vpn-policy-routing reload")
 			luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. packageName))
