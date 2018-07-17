@@ -10,7 +10,7 @@ LUCI_TITLE:= WLAN Blinker Web UI
 LUCI_DESCRIPTION:=Provides Web UI for WLAN Blinker service.
 LUCI_DEPENDS:=+luci-mod-admin-full +wlanblinker
 LUCI_PKGARCH:=all
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 
 include ../../luci.mk
 
