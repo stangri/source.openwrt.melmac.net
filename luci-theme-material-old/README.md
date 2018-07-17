@@ -1,7 +1,7 @@
 # Luci Theme Material (Old Style)
 
 ## Description
-This package brings back colorful buttons back to OpenWrt 18.06.0-rc2 and later.
+This package brings colorful buttons back to OpenWrt 18.06.0-rc2 and later.
 
 ## How to install
 Install ```luci-theme-material-old``` from Web UI or connect to your router via ssh and run the following commands:
