@@ -3,7 +3,7 @@
 ## Description
 This package brings colorful buttons back to OpenWrt 18.06.0-rc2 and later.
 
-## Screenshot (luci-app-simple-adblock)
+## Screenshot
 Before (on OpenWrt 18.06.0-rc2):
 ![Before](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/luci-theme-material-old/screenshot01-before.png "before")
 
