@@ -11,6 +11,9 @@ opkg install luci-theme-material-old
 ```
 If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](#add-custom-repo-to-your-router) first.
 
+## How to use
+Open the WebUI System->System page (usually at http://192.168.1.1/cgi-bin/luci/admin/system/system), select ```Language and Style``` tab and select ```Material_Old``` from ```Design``` drop-down.
+
 #### Add custom repo to your router
 If your router is not set up with the access to repository containing these packages you will need to add custom repository to your router by connecting to your router via ssh and running the following commands:
 
