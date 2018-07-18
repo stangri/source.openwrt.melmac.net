@@ -647,13 +647,11 @@ td > table > tbody > tr > td,
     text-decoration: none;
 }
 
-.btn:hover,
 .btn:focus,
 .btn:active,
-.cbi-button:hover,
 .cbi-button:focus,
 .cbi-button:active,
-.cbi-page-actions .cbi-button-apply + .cbi-button-save:hover,
+.cbi-page-actions .cbi-button-apply,
 .cbi-page-actions .cbi-button-apply + .cbi-button-save:focus,
 .cbi-page-actions .cbi-button-apply + .cbi-button-save:active {
     outline: 0;
@@ -661,9 +659,7 @@ td > table > tbody > tr > td,
     background-color: rgba(250, 250, 250, 0.7);
 }
 
-.btn:hover,
 .btn:focus,
-.cbi-button:hover,
 .cbi-button:focus {
     box-shadow: 0 0px 2px rgba(0, 0, 0, 0.12), 0 2px 2px rgba(0, 0, 0, 0.2);
 }
