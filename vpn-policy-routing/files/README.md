@@ -164,6 +164,43 @@ config policy
 	option local_addresses '192.168.1.70'
 ```
 
+#### Multiple OpenVPN Clients
+If you use multiple OpenVPN clients on your router, the order in which their devices are named (tun0, tun1, etc) is not guaranteed by OpenWrt/LEDE Project. The following settings are recommended in this case.
+
+For ```/etc/config/network```:
+```
+config interface 'vpnclient0'
+	option proto 'none'
+	option ifname 'ovpnc0'
+
+config interface 'vpnclient1'
+	option proto 'none'
+	option ifname 'ovpnc1'
+```
+
+For ```/etc/config/openvpn```:
+```
+config openvpn 'vpnclient0'
+	option client '1'
+	option dev_type 'tun'
+	option dev 'ovpnc0'
+	...
+
+config openvpn 'vpnclient1'
+	option client '1'
+	option dev_type 'tun'
+	option dev 'ovpnc1'
+	...
+```
+
+For ```/etc/config/vpn-policy-routing```:
+```
+config vpn-policy-routing 'config'
+	list supported_interface 'vpnclient0 vpnclient1'
+	...
+```
+
+
 ## Discussion
 Please head to [LEDE Project Forum](https://forum.lede-project.org/t/vpn-policy-based-routing-web-ui-discussion/10389) for discussions of this service.
 
@@ -175,10 +212,6 @@ If things are not working as intended, please include the following in your post
 
 If you don't want to post the ```/etc/init.d/vpn-policy-routing status``` output in a public forum, there's a way to have the support details automatically uploaded to my account at paste.ee by running: ```/etc/init.d/vpn-policy-routing status -p```. You need to have the following packages installed to enable paste.ee upload functionality: ```curl libopenssl ca-bundle```. WARNING: while paste.ee uploads are unlisted, they are still publicly available.
 
-
-## What's New
-0.0.1:
-- Initial release.
 
 ## Notes/Known Issues
 - While you can select some down/inactive VPN tunnel in Web UI, the appropriate tunnel must be up/active for the policies to properly work without errors on service start.
