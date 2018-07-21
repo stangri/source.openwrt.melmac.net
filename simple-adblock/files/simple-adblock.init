@@ -144,8 +144,7 @@ ubus_status(){
 			ubus_status set "$(ubus_status get)${2}"
 			;;
 		del | set)
-			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"\" ],  \"data\": { \"status\": \"${2}\" }}}}"
-			# ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"data\": { \"status\": \"${2}\" }}}}"
+			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"/bin/true\" ],  \"data\": { \"status\": \"${2}\" }}}}"
 			;;
 		get)
 			echo "$(ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']")"
