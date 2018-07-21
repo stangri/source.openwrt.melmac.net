@@ -34,8 +34,11 @@ output_fail() { s=1; case $verbosity in 1) output "$_FAIL_";; 2) output "$__FAIL
 output_failn() { case $verbosity in 1) output "$_FAIL_\n";; 2) output "$__FAIL__\n";; esac; }
 output() { [ $# -ne 1 ] && { [ ! $((verbosity & $1)) -gt 0 ] && return 0 || shift; }; local msg; msg=$(echo -n "${1/$serviceName /service }" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g'); [ -t 1 ] && echo -e -n "$1"; [ "$(echo -e -n $msg | wc -l)" -gt 0 ] && logger -t "${packageName:-service} [$$]" "$(echo -e -n ${logmsg}${msg})" && logmsg='' || logmsg=${logmsg}${msg}; }
 
-export serviceEnabled verbosity strictMode wanTableID wanMark fwMask ipv6Enabled ipsetEnabled ipruleEnabled dnsmasqEnabled udpProtoEnabled icmpIface forwardChainEnabled=0 inputChainEnabled=0 outputChainEnabled=0 ignoredIfaces="" supportedIfaces=""
-export wanIface4 wanIface6 ifaceMark ifaceTableID ifacesListAll ifacesListSupported wanGW4 wanGW6 ifconfigOutput ip4RouteOutput ip6RouteOutput
+export serviceEnabled verbosity strictMode wanTableID wanMark fwMask
+export ipv6Enabled ipsetEnabled ipruleEnabled dnsmasqEnabled udpProtoEnabled icmpIface
+export forwardChainEnabled=0 inputChainEnabled=0 outputChainEnabled=0 ignoredIfaces="" supportedIfaces=""
+export wanIface4 wanIface6 ifaceMark ifaceTableID ifacesListAll ifacesListSupported wanGW4 wanGW6
+export ifconfigOutput ip4RouteOutput ip6RouteOutput
 
 list_iface() { ifacesListAll="${ifacesListAll}${1} "; }
 list_supported_iface() { is_supported_interface "$1" && ifacesListSupported="${ifacesListSupported}${1} "; }
@@ -63,7 +66,8 @@ is_ipv4() { if expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$'
 is_ipv6() { if [ "${1//:}" != "$1" ]; then return 0; else return 1; fi; }
 is_netmask() { local ip="${1%/*}"; if [ "$ip" != "$1" ] && is_ipv4 $ip; then return 0; else return 1; fi; }
 is_domain() { if [ "${1//[a-zA-Z-]}" != "$1" ]; then return 0; else return 1; fi; }
-is_phys_dev () { if [[ -n "$1" && -n "$ifconfigOutput" ]] && echo "$ifconfigOutput" | grep -q "^${1}"; then return 0; else return 1; fi; }
+is_phys_dev() { if [[ -n "$1" && -n "$ifconfigOutput" ]] && echo "$ifconfigOutput" | grep -q "^${1}"; then return 0; else return 1; fi; }
+is_turris() { /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05'; }
 get_device_default_gw() { echo "$ip4RouteOutput" | grep -Eso -m1 "via ([0-9]{1,3}\.){3}[0-9]{1,3} dev $1" | awk '{print $2}'; }
 get_device_default_gw6() { echo "$ip6RouteOutput" | grep -Eso -m1 "via ([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}(/([0-9]){0,2}){0,2} dev $1" | awk '{print $2}' | awk -F "/" '{print $1}'; }
 get_device_gw() { echo "$ip4RouteOutput" | grep -Eso -m1 "^([0-9]{1,3}\.){3}[0-9]{1,3} dev $1" | awk '{print $1}'; }
@@ -214,8 +218,8 @@ ipr()
 }
 
 insert_tor_policy() {
-	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}" mark
-	mark=$(eval echo "\$mark_$iface")
+	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
+	local mark=$(eval echo "\$mark_$iface")
 	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\n"
 	param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
 	[ -n "$laddr" ] && param="$param -s $laddr"
@@ -228,8 +232,8 @@ insert_tor_policy() {
 }
 
 insert_policy() {
-	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}" mark
-	mark=$(eval echo "\$mark_$iface")
+	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
+	local mark=$(eval echo "\$mark_$iface")
 	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\n"
 #	param="-t mangle -A VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask}"
 	param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
@@ -249,23 +253,13 @@ insert_policy() {
 }
 
 insert_phys_dev_policy() {
-	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}" mark
+	local comment="$1" iface="$2" phys_dev="$3" proto="${7:-tcp}" chain="${8:-PREROUTING}" mark
 	mark=$(eval echo "\$mark_$iface")
 	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\n"
-#	param="-t mangle -A VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask}"
 	param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
-	[ -n "$laddr" ] && param="$param -i $laddr"
-	[ -n "$lport" ] && param="$param -p tcp -m multiport --sport ${lport//-/:}"
-	[ -n "$raddr" ] && param="$param -d $raddr"
-	[ -n "$rport" ] && param="$param -p $proto -m multiport --dport ${rport//-/:}"
+	[ -n "$phys_dev" ] && param="$param -i $phys_dev"
 	[ -n "$comment" ] && param="$param -m comment --comment $(echo $comment | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
 	ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: ipt $param\n"
-	if [[ $outputChainEnabled -ne 0 && "$chain" == "PREROUTING" && "$proto" == "tcp" && -z "$laddr" ]] && [[ -n "$lport" || -n "$rport" ]]; then
-		insert_policy "$1" "$2" "$3" "$4" "$5" "$6" "$proto" 'OUTPUT'
-	fi
-	if [[ $udpProtoEnabled -ne 0 && "$proto" == "tcp" ]] && [[ -n "$lport" || -n "$rport" ]]; then
-		insert_policy "$1" "$2" "$3" "$4" "$5" "$6" 'udp' "$chain"
-	fi
 	return 0
 }
 
@@ -389,7 +383,12 @@ table_create(){
 			if [ -z "$gw4" ] || [ "$gw4" == "0.0.0.0" ]; then
 				ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 			else
-				ip -4 route add default via "$gw4" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+#				if [ "$serviceStatusSummary" != "${serviceStatusSummary//$gw4}" ]; then
+				if ! is_turris; then
+					ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+				else
+					ip -4 route add default via "$gw4" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+				fi
 			fi
 			ip -4 route flush cache || ipv4_error=1
 			ip -4 rule add fwmark "$mark" table "$tid" || ipv4_error=1
@@ -474,6 +473,7 @@ process_interface(){
 			eval "mark_${iface}=$ifaceMark"; eval "tid_${iface}=$ifaceTableID";
 
 			table_destroy "${ifaceTableID}" "${iface}"
+#			[ $ipv6Enabled -ne 0 ] && displayText="${iface}/${dev}/${gw4:-0.0.0.0}/${gw6:-::/0}" || displayText="${iface}/${dev}/${gw4:-0.0.0.0}"
 			[ $ipv6Enabled -ne 0 ] && displayText="${iface}/${gw4:-0.0.0.0}/${gw6:-::/0}" || displayText="${iface}/${gw4:-0.0.0.0}"
 			output 2 "Creating table '$displayText' "
 			if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then
@@ -497,7 +497,7 @@ ubus_status(){
 			ubus_status set "$(ubus_status get)${2}"
 			;;
 		del | set)
-			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"\" ],  \"data\": { \"status\": \"${2}\" }}}}"
+			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"/bin/true\" ],  \"data\": { \"status\": \"${2}\" }}}}"
 			# ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"data\": { \"status\": \"${2}\" }}}}"
 			;;
 		get)
