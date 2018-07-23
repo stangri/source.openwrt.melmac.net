@@ -383,12 +383,7 @@ table_create(){
 			if [ -z "$gw4" ] || [ "$gw4" == "0.0.0.0" ]; then
 				ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 			else
-#				if [ "$serviceStatusSummary" != "${serviceStatusSummary//$gw4}" ]; then
-				if ! is_turris; then
-					ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
-				else
-					ip -4 route add default via "$gw4" table "$tid" >/dev/null 2>&1 || ipv4_error=1
-				fi
+				ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 			fi
 			ip -4 route flush cache || ipv4_error=1
 			ip -4 rule add fwmark "$mark" table "$tid" || ipv4_error=1
