@@ -1,14 +1,22 @@
 -- Copyright 2016-2018 Stan Grishin <stangri@melmac.net>
 -- Licensed to the public under the Apache License 2.0.
 
-m = Map("simple-adblock", translate("Simple AdBlock Settings"))
-
-h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status"))
-
 local packageName = "simple-adblock"
 local uci = require "luci.model.uci".cursor()
 local util = require "luci.util"
+local sys = require "luci.sys"
 local enabledFlag = uci:get(packageName, "config", "enabled")
+
+
+m = Map("simple-adblock", translate("Simple AdBlock Settings"))
+m.on_after_commit = function(self)
+	if self.changed then
+		sys.call('/etc/init.d/simple-adblock reload')
+	end
+end
+
+h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status"))
+
 local status = util.ubus('service', 'list', { name = packageName })
 if status and status[packageName] and status[packageName]['instances'] and status[packageName]['instances']['status'] and status[packageName]['instances']['status']['data'] and status[packageName]['instances']['status']['data']['status'] then
 	status = status[packageName]['instances']['status']['data']['status']
