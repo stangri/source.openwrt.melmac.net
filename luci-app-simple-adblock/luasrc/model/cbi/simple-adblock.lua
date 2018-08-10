@@ -6,7 +6,7 @@ local uci = require "luci.model.uci".cursor()
 local util = require "luci.util"
 local sys = require "luci.sys"
 local enabledFlag = uci:get(packageName, "config", "enabled")
-local reload
+local command
 
 m = Map("simple-adblock", translate("Simple AdBlock Settings"))
 m.on_before_commit = function(self)
@@ -14,7 +14,8 @@ m.on_before_commit = function(self)
 	local changes = uci:changes()
 	if changes and changes[packageName] and changes[packageName]["config"] then
 		for r, tbl in pairs(changes[packageName]["config"]) do
-			if r:match("whitelist_domain") or
+			if r:match("hosts_file") or
+			r:match("whitelist_domain") or
 			r:match("blacklist_domain") or
 			r:match("blacklist_hosts_url") or
 			r:match("blacklist_domains_url") or
@@ -22,18 +23,19 @@ m.on_before_commit = function(self)
 			r:match("parallel_downloads") or
 			r:match("download_timeout") or
 			r:match("enabled") then
-				reload = true
+				command = "reload"
+			elseif r:match("force_dns") or
+			r:match("led") then
+				command = "restart"
 			end
 		end
 	end
 end
 m.on_before_apply = function(self)
+	if command then
 		uci:commit(packageName)
-		if reload then
-			sys.call("/etc/init.d/simple-adblock reload")
-		else
-			sys.call("/etc/init.d/simple-adblock restart")
-		end
+		sys.call("/etc/init.d/simple-adblock " .. command)
+	end
 end
 
 h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status"))
