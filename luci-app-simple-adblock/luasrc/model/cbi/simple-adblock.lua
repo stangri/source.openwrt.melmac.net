@@ -15,15 +15,13 @@ m.on_before_commit = function(self)
 	local changes = uci:changes()
 	if changes and changes[packageName] and changes[packageName]["config"] then
 		for r, tbl in pairs(changes[packageName]["config"]) do
-			if r:match("hosts_file") or
-			r:match("whitelist_domain") or
+			if r:match("whitelist_domain") or
 			r:match("blacklist_domain") or
 			r:match("blacklist_hosts_url") or
 			r:match("blacklist_domains_url") or
 			r:match("debug") or
 			r:match("parallel_downloads") or
-			r:match("download_timeout") or
-			r:match("enabled") then
+			r:match("download_timeout") then
 				command = "reload"
 			elseif r:match("force_dns") or
 			r:match("led") then
