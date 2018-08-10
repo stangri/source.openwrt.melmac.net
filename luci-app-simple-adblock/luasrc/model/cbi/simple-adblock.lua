@@ -6,20 +6,41 @@ local uci = require "luci.model.uci".cursor()
 local util = require "luci.util"
 local sys = require "luci.sys"
 local enabledFlag = uci:get(packageName, "config", "enabled")
-
+local reload
 
 m = Map("simple-adblock", translate("Simple AdBlock Settings"))
-m.on_after_commit = function(self)
-	if self.changed then
-		sys.call('/etc/init.d/simple-adblock reload')
+m.on_before_commit = function(self)
+	local r, tbl, changes
+	local changes = uci:changes()
+	if changes and changes[packageName] and changes[packageName]["config"] then
+		for r, tbl in pairs(changes[packageName]["config"]) do
+			if r:match("whitelist_domain") or
+			r:match("blacklist_domain") or
+			r:match("blacklist_hosts_url") or
+			r:match("blacklist_domains_url") or
+			r:match("debug") or
+			r:match("parallel_downloads") or
+			r:match("download_timeout") or
+			r:match("enabled") then
+				reload = true
+			end
+		end
 	end
+end
+m.on_before_apply = function(self)
+		uci:commit(packageName)
+		if reload then
+			sys.call("/etc/init.d/simple-adblock reload")
+		else
+			sys.call("/etc/init.d/simple-adblock restart")
+		end
 end
 
 h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status"))
 
-local status = util.ubus('service', 'list', { name = packageName })
-if status and status[packageName] and status[packageName]['instances'] and status[packageName]['instances']['status'] and status[packageName]['instances']['status']['data'] and status[packageName]['instances']['status']['data']['status'] then
-	status = status[packageName]['instances']['status']['data']['status']
+local status = util.ubus("service", "list", { name = packageName })
+if status and status[packageName] and status[packageName]["instances"] and status[packageName]["instances"]["status"] and status[packageName]["instances"]["status"]["data"] and status[packageName]["instances"]["status"]["data"]["status"] then
+	status = status[packageName]["instances"]["status"]["data"]["status"]
 else
 	status =  "Stopped"
 end
@@ -95,13 +116,13 @@ if nixio.fs.access(sysfs_path) then
 	leds = nixio.util.consume((nixio.fs.dir(sysfs_path)))
 end
 if #leds ~= 0 then
-	o3 = s:taboption("basic", Value, "led", translate("LED to indicate status"), translate("Pick the LED not already used in")
+	o4 = s:taboption("basic", Value, "led", translate("LED to indicate status"), translate("Pick the LED not already used in")
 		.. [[ <a href="]] .. luci.dispatcher.build_url("admin/system/leds") .. [[">]]
 		.. translate("System LED Configuration") .. [[</a>]])
-	o3.rmempty = true
-	o3:value("", translate("none"))
+	o4.rmempty = true
+	o4:value("", translate("none"))
 	for k, v in ipairs(leds) do
-		o3:value(v)
+		o4:value(v)
 	end
 end
 
@@ -115,11 +136,17 @@ o7 = s:taboption("advanced", Value, "download_timeout", translate("Download time
 o7.default = 10
 o7.datatype = "range(1,60)"
 
+o5 = s:taboption("advanced", ListValue, "parallel_downloads", translate("Simultaneous processing"), translate("Launch all lists downloads and processing simultaneously, reducing service start time"))
+o5:value("0", translate("Do not use simultaneous processing"))
+o5:value("1", translate("Use simultaneous processing"))
+o5.rmempty = false
+o5.default = 1
+
 o8 = s:taboption("advanced", ListValue, "debug", translate("Enable Debugging"), translate("Enables debug output to /tmp/simple-adblock.log"))
 o8:value("", translate("Disable Debugging"))
 o8:value("1", translate("Enable Debugging"))
 o8.rmempty = true
-o8.default = 0
+o8.default = ""
 
 
 s2 = m:section(NamedSection, "config", "simple-adblock", translate("Whitelist and Blocklist Management"))
