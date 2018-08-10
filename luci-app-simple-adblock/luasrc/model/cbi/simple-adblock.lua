@@ -9,6 +9,7 @@ local enabledFlag = uci:get(packageName, "config", "enabled")
 local command
 
 m = Map("simple-adblock", translate("Simple AdBlock Settings"))
+m.apply_on_parse = true
 m.on_before_commit = function(self)
 	local r, tbl, changes
 	local changes = uci:changes()
@@ -31,9 +32,8 @@ m.on_before_commit = function(self)
 		end
 	end
 end
-m.on_before_apply = function(self)
+m.on_after_apply = function(self)
 	if command then
-		uci:commit(packageName)
 		sys.call("/etc/init.d/simple-adblock " .. command)
 	end
 end
