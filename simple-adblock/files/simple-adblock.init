@@ -146,7 +146,7 @@ ubus_status(){
 			ubus_status set "$(ubus_status get)${2}"
 			;;
 		del | set)
-			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"/bin/true\" ],  \"data\": { \"status\": \"${2}\" }}}}"
+			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"/bin/true\" ], \"data\": { \"status\": \"${2}\" }}}}"
 			;;
 		get)
 			echo "$(ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']")"
@@ -177,7 +177,6 @@ fw3_setup() {
 		uci -q set firewall.@redirect[-1].dest_ip="$ip"
 		uci -q set firewall.@redirect[-1].reflection='0'
 	fi
-
 	if [ -n "$(uci changes firewall)" ]; then
 		uci -q commit firewall
 		/etc/init.d/firewall restart >/dev/null 2>&1
@@ -219,6 +218,7 @@ process_url() {
 
 download_lists() {
 	local i hf w_filter whitelist_domains blacklist_domains whitelist_domains_urls blacklist_domains_urls blacklist_hosts_urls j=0
+	config_load "$packageName"
 	config_get whitelist_domains          'config' 'whitelist_domain'
 	config_get blacklist_domains          'config' 'blacklist_domain'
 	config_get whitelist_domains_urls     'config' 'whitelist_domains_url'
@@ -236,7 +236,7 @@ download_lists() {
 	output 1 'Downloading lists '
 	if [ -n "$blacklist_hosts_urls" ]; then
 		for hf in ${blacklist_hosts_urls}; do
-			if [ $parallelDL -ne 0 ]; then
+			if [ $parallelDL -gt 0 ]; then
 				process_url "$hf" 'hosts' 'blocked' &
 			else
 				process_url "$hf" 'hosts' 'blocked'
@@ -245,7 +245,7 @@ download_lists() {
 	fi
 	if [ -n "$blacklist_domains_urls" ]; then
 		for hf in ${blacklist_domains_urls}; do
-			if [ $parallelDL -ne 0 ]; then
+			if [ $parallelDL -gt 0 ]; then
 				process_url "$hf" 'domains' 'blocked' &
 			else
 				process_url "$hf" 'domains' 'blocked'
@@ -254,7 +254,7 @@ download_lists() {
 	fi
 	if [ -n "$whitelist_domains_urls" ]; then
 		for hf in ${whitelist_domains_urls}; do
-			if [ $parallelDL -ne 0 ]; then
+			if [ $parallelDL -gt 0 ]; then
 				process_url "$hf" 'domains' 'allowed' &
 			else
 				process_url "$hf" 'domains' 'allowed'
@@ -355,6 +355,7 @@ start_service() {
 		procd_set_param stdout 1
 		procd_set_param stderr 1
 		network_get_ipaddr ip 'lan'
+		fw3_setup 'stop'
 		if [[ $forceDNS -ne 0 && -n "$ip" ]]; then
 			if is_chaos_calmer; then
 				fw3_setup 'start'
@@ -383,7 +384,7 @@ start_service() {
 			output 3 'Found existing data file, reusing it '
 			mv $CACHE_TMP $dnsmasqFile && output_okn || output_failn
 			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
-		elif [ "$1" == "reload" ] || [ "$status" == "${status//Success}" ]; then
+		elif [ "$1" == "reload" ] || [ "$status" != "${status//rror}" ]; then
 			output "Reloading $serviceName...\n"
 			download_lists
 			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
@@ -410,20 +411,25 @@ start_service() {
 }
 
 service_started() { procd_set_config_changed firewall; }
-reload_service() { start_service 'reload'; }
+service_stopped() { procd_set_config_changed firewall; }
+restart_service() { rc_procd stop_service 'restart'; rc_procd start_service 'restart'; }
+reload_service() { rc_procd stop_service 'reload'; rc_procd start_service 'reload'; }
 killcache() { [ -s $CACHE_TMP ] && rm -f $CACHE_TMP >/dev/null 2>/dev/null; }
 
 stop_service() {
 	load_package_config
 	if [ $serviceEnabled -gt 0 ]; then
-		output "Stopping $serviceName...\n"
-		reload_dnsmasq 'on_stop'
+		if [[ -n "$1" && "$1" != "restart" && "$1" != "reload" ]] && [ -s "$dnsmasqFile" ]; then
+			output "Stopping $serviceName...\n"
+			reload_dnsmasq 'on_stop'
+		fi
 	else
 		reload_dnsmasq 'quiet'
 	fi
+	if is_chaos_calmer; then
+		fw3_setup 'stop'
+	fi
 	ubus_status set 'Stopped'
-	ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"instance1\": { \"command\": [ \"/bin/true\" ],  \"data\": { \"firewall\": \"\" }}}}"
-	procd_set_config_changed firewall
 }
 
 check() {

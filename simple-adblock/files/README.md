@@ -18,7 +18,7 @@ A simple DNSMASQ-based AdBlocking service for OpenWrt/LEDE Project. Loosely base
 - Blocks ads served over https.
 - Proudly made in Canada, using locally-sourced electrons.
 
-If you want a more robust AdBlocking, supporting free memory detection and complex block lists, check out [@dibdot's adblock](https://github.com/openwrt/packages/tree/master/net/adblock/files).
+If you want a more robust AdBlocking, supporting free memory detection and complex block lists, supporting IDN, check out [@dibdot's adblock](https://github.com/openwrt/packages/tree/master/net/adblock/files).
 
 
 ## Screenshot (luci-app-simple-adblock)
@@ -109,22 +109,3 @@ In general, whatever domain is specified to be whitelisted; it, along with with 
 
 ## Documentation / Discussion
 Please head [LEDE Project Forum](https://forum.lede-project.org/t/simple-adblock-fast-lean-and-fully-uci-luci-configurable-adblocking/1327/) for discussion of this package.
-
-## What's New
-1.5.8:
-- Better start/stop/reload logic.
-- Better uninstall logic.
-- Better start/stop/reload from Web UI.
-- New command-line ```check``` command.
-
-1.5.7:
-- Much stricter filters for hosts and domains lists resulting in better garbage removal.
-- Better handling of service start/enable from Web UI and enabled flag management.
-- Implemented support to set one of the router LEDs on/off based on the AdBlocking status.
-- Fixed the output bug when verbosity=1.
-- No longer using enabled in config file, Simple AdBlocking Web UI now enables/disables service directly.
-- Reworked console/system log output logic and formatting.
-- Processes already downloaded lists in the background while downloading next list from config, dramatically increasing overall speed.
-
-1.0.0:
-- Initial release
