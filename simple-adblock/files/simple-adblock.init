@@ -10,12 +10,14 @@ readonly packageName='simple-adblock'
 readonly serviceName="$packageName $PKG_VERSION"
 readonly PID="/var/run/${packageName}.pid"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
-export EXTRA_COMMANDS="check killcache"
-export EXTRA_HELP="	check	Checks if specified domain is found in current blacklist"
+export EXTRA_COMMANDS="check download killcache"
+export EXTRA_HELP="	check	Checks if specified domain is found in current blacklist
+	download	Force-redownloads all the lists, even if the last download was successful and no config changes were made"
 
 readonly A_TMP='/var/simple-adblock.hosts.a.tmp'
 readonly B_TMP='/var/simple-adblock.hosts.b.tmp'
-readonly CACHE_TMP='/var/simple-adblock.cache'
+readonly CACHE_TMP='/var/run/simple-adblock.cache'
+readonly stateFile='/var/run/simple-adblock.state'
 readonly h_filter='/localhost/d;/^#/d;/^[^0-9]/d;s/^0\.0\.0\.0.//;s/^127\.0\.0\.1.//;s/[[:space:]]*#.*$//;s/[[:cntrl:]]$//;s/[[:space:]]//g;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
 readonly d_filter='/^#/d;s/[[:space:]]*#.*$//;s/[[:space:]]*$//;s/[[:cntrl:]]$//;/[[:space:]]/d;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
 readonly f_filter='s|^|local=/|;s|$|/|'
@@ -56,17 +58,24 @@ led_off(){ [[ -n "${1}" && -e "${1}/trigger" ]] && echo "none" > "${1}/trigger" 
 boot() { load_package_config; ( sleep $bootDelay && rc_procd start_service && rc_procd service_triggers | cat & ); }
 
 export serviceEnabled verbosity forceDNS parallelDL debug led wan_if wan_gw wanphysdev bootDelay dl_command serviceStatus
+export whitelist_domains blacklist_domains whitelist_domains_urls blacklist_domains_urls blacklist_hosts_urls
 
 load_package_config() {
 	config_load "$packageName"
-	config_get_bool serviceEnabled 'config' 'enabled' 1
-	config_get_bool forceDNS       'config' 'force_dns' 1
-	config_get_bool parallelDL     'config' 'parallel_downloads' 1
-	config_get_bool debug          'config' 'debug' 0
-	config_get bootDelay           'config' 'boot_delay' '120'
-	config_get dlTimeout           'config' 'download_timeout' '20'
-	config_get verbosity           'config' 'verbosity' '2'
-	config_get led        	       'config' 'led'
+	config_get_bool serviceEnabled        'config' 'enabled' 1
+	config_get_bool forceDNS              'config' 'force_dns' 1
+	config_get_bool parallelDL            'config' 'parallel_downloads' 1
+	config_get_bool debug                 'config' 'debug' 0
+	config_get bootDelay                  'config' 'boot_delay' '120'
+	config_get dlTimeout                  'config' 'download_timeout' '20'
+	config_get verbosity                  'config' 'verbosity' '2'
+	config_get led        	              'config' 'led'
+	config_get whitelist_domains          'config' 'whitelist_domain'
+	config_get blacklist_domains          'config' 'blacklist_domain'
+	config_get whitelist_domains_urls     'config' 'whitelist_domains_url'
+	config_get blacklist_domains_urls     'config' 'blacklist_domains_url'
+	config_get blacklist_hosts_urls       'config' 'blacklist_hosts_url'
+
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ $verbosity -lt 0 ] || [ $verbosity -gt 2 ]; then
 		verbosity=1
 	fi
@@ -93,9 +102,38 @@ is_enabled() {
 		fi
 		return 1
 	fi
+	[ ! -d ${dnsmasqFile%/*} ] && mkdir -p ${dnsmasqFile%/*}
+	[ ! -d ${stateFile%/*} ] && mkdir -p ${stateFile%/*}
 	network_flush_cache; network_find_wan wan_if;	network_get_gateway wan_gw $wan_if;
 	[ -n "$wan_gw" ] && return 0
 	output "$_ERROR_: $serviceName failed to discover WAN gateway.\n"; return 1;
+}
+
+state() {
+	local reloadCurrent reloadStored restartCurrent restartStored ret
+	case "$1" in
+		store)
+			[ -s "$stateFile" ] && rm "$stateFile"
+			echo "reloadStored=\"$parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls\"" >> "$stateFile"
+			echo "restartStored=\"$forceDNS $led\"" >> "$stateFile"
+			;;
+		remove) [ -s "$stateFile" ] && rm "$stateFile";;
+		check|*)
+			if [ ! -s "$stateFile" ]; then
+				ret=''
+			else
+				source "$stateFile"
+				reloadCurrent="$parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls"
+				restartCurrent="$forceDNS $led"
+				if [ "$reloadCurrent" != "$reloadStored" ]; then
+					ret='download'
+				elif [ "$restartCurrent" != "$restartStored" ]; then
+					ret='restart'
+				fi
+			fi
+			echo "$ret"
+			;;
+	esac
 }
 
 dnsmasq_kill() { killall -q -HUP dnsmasq; }
@@ -217,16 +255,9 @@ process_url() {
 }
 
 download_lists() {
-	local i hf w_filter whitelist_domains blacklist_domains whitelist_domains_urls blacklist_domains_urls blacklist_hosts_urls j=0
-	config_load "$packageName"
-	config_get whitelist_domains          'config' 'whitelist_domain'
-	config_get blacklist_domains          'config' 'blacklist_domain'
-	config_get whitelist_domains_urls     'config' 'whitelist_domains_url'
-	config_get blacklist_domains_urls     'config' 'blacklist_domains_url'
-	config_get blacklist_hosts_urls       'config' 'blacklist_hosts_url'
+	local i hf w_filter j=0
 
 	ubus_status set 'Reloading '
-	[ ! -d ${dnsmasqFile%/*} ] && mkdir -p ${dnsmasqFile%/*}
 	for i in $A_TMP $B_TMP $CACHE_TMP $dnsmasqFile; do [ -f $i ] && rm -f $i; done
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
 		output 3 'Low free memory, restarting dnsmasq...'
@@ -347,15 +378,19 @@ download_lists() {
 }
 
 start_service() {
-	local ip status
+	is_enabled 'on_start' || return 1
+	local ip status action="$(state 'check')"
+	case "$1" in
+		download) action='download';;
+		restart) [ -z "$action" ] && return 0;;
+	esac
 	if create_lock; then
-		is_enabled 'on_start' || return 1
+		state 'store'
 		procd_open_instance
 		procd_set_param command /bin/true
 		procd_set_param stdout 1
 		procd_set_param stderr 1
 		network_get_ipaddr ip 'lan'
-		fw3_setup 'stop'
 		if [[ $forceDNS -ne 0 && -n "$ip" ]]; then
 			if is_chaos_calmer; then
 				fw3_setup 'start'
@@ -379,13 +414,13 @@ start_service() {
 		fi
 		procd_close_instance
 		status="$(ubus_status get)"
-		if [ -s "$CACHE_TMP" ] && [ "$1" != "reload" ]; then
+		if [ -s "$CACHE_TMP" ] && [ "$action" != "download" ]; then
 			output "Starting $serviceName...\n"
 			output 3 'Found existing data file, reusing it '
 			mv $CACHE_TMP $dnsmasqFile && output_okn || output_failn
 			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
-		elif [ "$1" == "reload" ] || [ "$status" != "${status//rror}" ]; then
-			output "Reloading $serviceName...\n"
+		elif [ "$action" == "download" ] || [ "$status" != "${status//rror}" ]; then
+			output "Force-reloading $serviceName...\n"
 			download_lists
 			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
 		elif [ ! -s "$dnsmasqFile" ]; then
@@ -413,23 +448,28 @@ start_service() {
 service_started() { procd_set_config_changed firewall; }
 service_stopped() { procd_set_config_changed firewall; }
 restart_service() { rc_procd stop_service 'restart'; rc_procd start_service 'restart'; }
-reload_service() { rc_procd stop_service 'reload'; rc_procd start_service 'reload'; }
+reload_service() { restart_service; }
+restart() { restart_service; }
+reload() { restart_service; }
+download() { rc_procd stop_service 'restart'; rc_procd start_service 'download'; }
 killcache() { [ -s $CACHE_TMP ] && rm -f $CACHE_TMP >/dev/null 2>/dev/null; }
 
 stop_service() {
 	load_package_config
 	if [ $serviceEnabled -gt 0 ]; then
-		if [[ -n "$1" && "$1" != "restart" && "$1" != "reload" ]] && [ -s "$dnsmasqFile" ]; then
+		if [ -z "$1" ] && [ -s "$dnsmasqFile" ]; then
 			output "Stopping $serviceName...\n"
+			state 'remove'
 			reload_dnsmasq 'on_stop'
+			ubus_status set 'Stopped'
 		fi
 	else
 		reload_dnsmasq 'quiet'
+		ubus_status set 'Stopped'
 	fi
 	if is_chaos_calmer; then
 		fw3_setup 'stop'
 	fi
-	ubus_status set 'Stopped'
 }
 
 check() {

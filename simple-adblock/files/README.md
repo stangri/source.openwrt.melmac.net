@@ -100,6 +100,13 @@ You can also use Web UI to add individual domains to be blocked or whitelisted.
 
 If you want to use CLI to customize simple-adblock config, you can probably figure out how to do it by looking at the contents of ```/etc/config/simple-adblock``` or output of the ```uci show simple-adblock``` command.
 
+## How to use
+Once the service is enabled in the [config file](#default-settings), run ```/etc/init.d/simple-adblock start``` to start the service. Either ```/etc/init.d/simple-adblock restart``` or ```/etc/init.d/simple-adblock reload``` will only restart the service and/or re-donwload the lists if there were relevant changes in the config file since the last successful start. Had the previous start resulted in any error, either ```/etc/init.d/simple-adblock start```, ```/etc/init.d/simple-adblock restart``` or ```/etc/init.d/simple-adblock reload``` will attempt to re-download the lists.
+
+If you want to force simple-adblock to re-download the lists, run ```/etc/init.d/simple-adblock download```.
+
+If you want to check if the specific domain (or part of the domain name) is being blocked, run ```/etc/init.d/simple-adblock check test-domain.com```.
+
 ## How does it work
 This service downloads (and processes in the background, removing comments and other useless data) lists of hosts and domains to be blocked, combines those lists into one big block list, removes duplicates and sorts it and then removes your whitelisted domains from the block list before converting to to dnsmasq-compatible file and restarting dnsmasq. The result of the process is that dnsmasq returns "domain not found" for the blocked domains.
 
