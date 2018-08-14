@@ -68,6 +68,29 @@ logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK/HTML"
 exit
 fi
 
+if [ "$REQUEST_URI" == "/check_network_status.txt" ]; then
+cat << 'EOF'
+Status: 200 OK
+Content-Type: text/plain
+
+NetworkManager is online
+
+EOF
+logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK"
+exit
+fi
+
+if [ "$REQUEST_URI" == "/success.txt" ]; then
+cat << 'EOF'
+Status: 200 OK
+Content-Type: text/plain
+
+success
+
+EOF
+logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK"
+exit
+fi
 
 cat << 'EOF'
 Status: 200 OK
