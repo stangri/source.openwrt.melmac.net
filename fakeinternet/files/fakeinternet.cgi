@@ -1,5 +1,5 @@
 #!/bin/sh
-if [ "$REQUEST_URI" == "/generate_204" ]; then
+if [ "$REQUEST_URI" = "/generate_204" ]; then
 cat << 'EOF'
 Status: 204 No Content
 
@@ -8,7 +8,7 @@ exit
 logger -t 'fakeinternet' "$REQUEST_URI: Served 204 No Content"
 fi
 
-if [ "$REQUEST_URI" == "/blank.html" ]; then
+if [ "$REQUEST_URI" = "/blank.html" ]; then
 cat << 'EOF'
 Status: 200 OK
 Content-Type: text/html
@@ -18,7 +18,7 @@ logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK"
 exit
 fi
 
-if [ "$REQUEST_URI" == "/library/test/success.html" -o "$REQUEST_URI" == "/hotspot-detect.html" ]; then
+if [ "$REQUEST_URI" = "/library/test/success.html" ] || [ "$REQUEST_URI" = "/hotspot-detect.html" ]; then
 cat << 'EOF'
 Status: 200 OK
 Content-Type: text/html
@@ -30,7 +30,7 @@ logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK/Success"
 exit
 fi
 
-if [ "$REQUEST_URI" == "/kindle-wifi/wifistub.html" ]; then
+if [ "$REQUEST_URI" = "/kindle-wifi/wifistub.html" ]; then
 cat << 'EOF'
 Status: 200 OK
 Content-Type: text/html
@@ -51,7 +51,7 @@ logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK/HTML"
 exit
 fi
 
-if [ "$REQUEST_URI" == "/kindle-wifi/wifiredirect.html" ]; then
+if [ "$REQUEST_URI" = "/kindle-wifi/wifiredirect.html" ]; then
 cat << 'EOF'
 Status: 200 OK
 Content-Type: text/html
