@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# TLD optimization written by Dirk Brenken (dev@brenken.org)
+# TLD optimization by Dirk Brenken (dev@brenken.org)
 PKG_VERSION=
 
 export START=94
@@ -32,33 +32,44 @@ readonly _ERROR_='\033[0;31mERROR\033[0m'
 create_lock() { [ -e "$PID" ] && return 1; touch "$PID"; }
 remove_lock() { [ -e "$PID" ] && rm -f "$PID"; } # rm -f /var/simple-adblock_tmp_* >/dev/null 2>&1; }
 trap remove_lock EXIT
-output_ok() { case $verbosity in 1) output 1 "$_OK_";; 2) output 2 "$__OK__\n";; esac; }
-output_okn() { case $verbosity in 1) output 1 "$_OK_\n";; 2) output 2 "$__OK__\n";; esac; }
-output_fail() { case $verbosity in 1) output 1 "$_FAIL_";; 2) output 2 "$__FAIL__\n";; esac; }
-output_failn() { case $verbosity in 1) output 1 "$_FAIL_\n";; 2) output 2 "$__FAIL__\n";; esac; }
+output_ok() { case $verbosity in 1) output 1 "$_OK_";; 2) output 2 "$__OK__\\n";; esac; }
+output_okn() { case $verbosity in 1) output 1 "$_OK_\\n";; 2) output 2 "$__OK__\\n";; esac; }
+output_fail() { case $verbosity in 1) output 1 "$_FAIL_";; 2) output 2 "$__FAIL__\\n";; esac; }
+output_failn() { case $verbosity in 1) output 1 "$_FAIL_\\n";; 2) output 2 "$__FAIL__\\n";; esac; }
 export logmsg
 output() {
 # Can take a single parameter (text) to be output at any verbosity
 # Or target verbosity level and text to be output at specifc verbosity
-	if [[ $# -ne 1 ]]; then
-		[[ ! $((verbosity & $1)) -gt 0 ]] && return 0 || shift
+	if [ $# -ne 1 ]; then
+		if [ ! $((verbosity & $1)) -gt 0 ]; then return 0; else shift; fi
 	fi
-	[[ -t 1 ]] && echo -e -n "$1" # if we're running in console, echo text
-	# strip text of ASCII control characters and send completed lines to log
+	[ -t 1 ] && echo -e -n "$1"
 	local msg=$(echo -n "${1/$serviceName /service }" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g');
-	if [[ $(echo -e -n "$msg" | wc -l) -gt 0 ]]; then
-		logger -t "${packageName:-service} [$$]" "$(echo -e -n ${logmsg}${msg})"
+	if [ "$(echo -e -n "$msg" | wc -l)" -gt 0 ]; then
+		logger -t "${packageName:-service} [$$]" "$(echo -e -n "${logmsg}${msg}")"
 		logmsg=''
 	else
-		logmsg=${logmsg}${msg}
+		logmsg="${logmsg}${msg}"
 	fi
 }
-led_on(){ [[ -n "${1}" && -e "${1}/trigger" ]] && echo "default-on" > "${1}/trigger" 2>&1; }
-led_off(){ [[ -n "${1}" && -e "${1}/trigger" ]] && echo "none" > "${1}/trigger" 2>&1; }
-boot() { load_package_config; ( sleep $bootDelay && rc_procd start_service && rc_procd service_triggers | cat & ); }
+led_on(){ if [ -n "${1}" ] && [ -e "${1}/trigger" ]; then echo "default-on" > "${1}/trigger" 2>&1; fi; }
+led_off(){ if [ -n "${1}" ] &&  [ -e "${1}/trigger" ]; then echo "none" > "${1}/trigger" 2>&1; fi; }
+boot() { load_package_config; ( sleep "$bootDelay" && rc_procd start_service && rc_procd service_triggers | cat & ); }
 
-export serviceEnabled verbosity forceDNS parallelDL debug led wan_if wan_gw wanphysdev bootDelay dl_command serviceStatus
-export whitelist_domains blacklist_domains whitelist_domains_urls blacklist_domains_urls blacklist_hosts_urls
+export serviceEnabled
+export forceDNS
+export parallelDL
+export debug
+export bootDelay
+export dlTimeout
+export verbosity
+export led
+export whitelist_domains
+export blacklist_domains
+export whitelist_domains_urls
+export blacklist_domains_urls
+export blacklist_hosts_urls
+export wan_if wan_gw wanphysdev dl_command serviceStatus
 
 load_package_config() {
 	config_load "$packageName"
@@ -76,16 +87,15 @@ load_package_config() {
 	config_get blacklist_domains_urls     'config' 'blacklist_domains_url'
 	config_get blacklist_hosts_urls       'config' 'blacklist_hosts_url'
 
-	if [ -z "${verbosity##*[!0-9]*}" ] || [ $verbosity -lt 0 ] || [ $verbosity -gt 2 ]; then
+	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
 	fi
-	source /lib/functions/network.sh
+	. /lib/functions/network.sh
 	dl_command="wget --no-check-certificate --timeout $dlTimeout -q"
 	led="${led:+/sys/class/leds/$led}"
 }
 
 is_enabled() {
-	local sleepCount=1
 	load_package_config
 
 	if [ "$debug" -ne 0 ]; then
@@ -94,19 +104,19 @@ is_enabled() {
 		set -x
 	fi
 
-	if [ $serviceEnabled -eq 0 ]; then
-		if [ "$1" == "on_start" ]; then
-			output "$packageName is currently disabled.\n"
-			output "Run the following commands before starting service again:\n"
-			output "uci set $packageName.config.enabled='1'; uci commit;\n"
+	if [ "$serviceEnabled" -eq 0 ]; then
+		if [ "$1" = "on_start" ]; then
+			output "$packageName is currently disabled.\\n"
+			output "Run the following commands before starting service again:\\n"
+			output "uci set $packageName.config.enabled='1'; uci commit;\\n"
 		fi
 		return 1
 	fi
 	[ ! -d ${dnsmasqFile%/*} ] && mkdir -p ${dnsmasqFile%/*}
 	[ ! -d ${stateFile%/*} ] && mkdir -p ${stateFile%/*}
-	network_flush_cache; network_find_wan wan_if;	network_get_gateway wan_gw $wan_if;
+	network_flush_cache; network_find_wan wan_if; network_get_gateway wan_gw "$wan_if";
 	[ -n "$wan_gw" ] && return 0
-	output "$_ERROR_: $serviceName failed to discover WAN gateway.\n"; return 1;
+	output "$_ERROR_: $serviceName failed to discover WAN gateway.\\n"; return 1;
 }
 
 state() {
@@ -122,7 +132,7 @@ state() {
 			if [ ! -s "$stateFile" ]; then
 				ret=''
 			else
-				source "$stateFile"
+				. "$stateFile"
 				reloadCurrent="$parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls"
 				restartCurrent="$forceDNS $led"
 				if [ "$reloadCurrent" != "$reloadStored" ]; then
@@ -148,12 +158,12 @@ reload_dnsmasq() {
 					output_okn
 				else
 					output_failn
-					output "$_ERROR_: $serviceName failed to restart dnsmasq!\n"
+					output "$_ERROR_: $serviceName failed to restart dnsmasq!\\n"
 					serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
 					return 1
 				fi
 			else
-				output "$_ERROR_: $serviceName failed to create its data file!\n"
+				output "$_ERROR_: $serviceName failed to create its data file!\\n"
 				serviceStatus="${serviceStatus:-'Failed to create data file'}"
 				return 1
 			fi
@@ -164,11 +174,11 @@ reload_dnsmasq() {
 			if dnsmasq_restart; then
 				led_off "$led"
 				output_okn
-				output "$serviceName stopped.\n"
+				output "$serviceName stopped.\\n"
 				return 0
 			else
 				output_failn;
-				output "$_ERROR_: $serviceName failed to restart dnsmasq!\n"
+				output "$_ERROR_: $serviceName failed to restart dnsmasq!\\n"
 				return 1
 			fi
 			;;
@@ -187,7 +197,7 @@ ubus_status(){
 			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"/bin/true\" ], \"data\": { \"status\": \"${2}\" }}}}"
 			;;
 		get)
-			echo "$(ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']")"
+			ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']"
 			;;
 	esac
 }
@@ -195,8 +205,9 @@ ubus_status(){
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
 
 remove_fw3_redirect() {
+	local name
 	config_get name "$1" 'name'
-	if [[ -n "$name" && "$name" != "${name//simple_adblock}" ]]; then
+	if [ -n "$name" ] && [ "$name" != "${name//simple_adblock}" ]; then
 		uci -q del "firewall.$1"
 	fi
 }
@@ -204,7 +215,7 @@ remove_fw3_redirect() {
 fw3_setup() {
 	config_load 'firewall'
 	config_foreach remove_fw3_redirect 'redirect'
-	if [ "$1" == "start" ]; then
+	if [ "$1" = "start" ]; then
 		uci -q add firewall redirect >/dev/null 2>&1
 		uci -q set firewall.@redirect[-1].name='simple_adblock_dns_hijack'
 		uci -q set firewall.@redirect[-1].target='DNAT'
@@ -223,24 +234,24 @@ fw3_setup() {
 
 process_url() {
 	local label type D_TMP R_TMP
-	[[ -n "$1" && -n "$2" && -n "$3" ]] || return 1
+	if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then return 1; fi
 	#	ping -W5 -c1 "$(echo $1 | awk -F '/' '{print $3}')" 1>/dev/null 2>/dev/null || { output_fail; return 1; }
 	label="${1##*//}"; label="${label%%/*}";
-	if [ "$2" == "hosts" ]; then
+	if [ "$2" = "hosts" ]; then
 		label="Hosts: $label"; filter="$h_filter";
 	else
 		label="Domains: $label"; filter="$d_filter";
 	fi
-	if [ "$3" == "blocked" ]; then
+	if [ "$3" = "blocked" ]; then
 		type='Blocked'; D_TMP="$B_TMP";
 	else
 		type='Allowed'; D_TMP="$A_TMP";
 	fi
-	while [[ -z "$R_TMP" || -e "$R_TMP" ]]; do
+	while [ -z "$R_TMP" ] || [ -e "$R_TMP" ]; do
 		R_TMP="/var/${packageName}_tmp_$(head -c40 /dev/urandom 2>/dev/null | tr -dc 'A-Za-z0-9' 2>/dev/null)"
 	done
 	if ! $dl_command "$1" -O "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
-		output 2 "[DL] $type $label $__FAIL__\n"
+		output 2 "[DL] $type $label $__FAIL__\\n"
 		output 1 "$_FAIL_"
 		ubus_status add '-'
 		return 0
@@ -248,7 +259,7 @@ process_url() {
 	sed -i "$filter" "$R_TMP"
 	cat "${R_TMP}" >> "$D_TMP"
 	rm -f "${R_TMP}" >/dev/null 2>/dev/null
-	output 2 "[DL] $type $label $__OK__\n"
+	output 2 "[DL] $type $label $__OK__\\n"
 	output 1 "$_OK_"
 	ubus_status add '+'
 	return 0
@@ -261,13 +272,13 @@ download_lists() {
 	for i in $A_TMP $B_TMP $CACHE_TMP $dnsmasqFile; do [ -f $i ] && rm -f $i; done
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
 		output 3 'Low free memory, restarting dnsmasq...'
-		reload_dnsmasq 'quiet' && output_okn || output_failn
+		if reload_dnsmasq 'quiet'; then output_okn; else output_failn; fi
 	fi
 	touch $A_TMP; touch $B_TMP;
 	output 1 'Downloading lists '
 	if [ -n "$blacklist_hosts_urls" ]; then
 		for hf in ${blacklist_hosts_urls}; do
-			if [ $parallelDL -gt 0 ]; then
+			if [ "$parallelDL" -gt 0 ]; then
 				process_url "$hf" 'hosts' 'blocked' &
 			else
 				process_url "$hf" 'hosts' 'blocked'
@@ -276,7 +287,7 @@ download_lists() {
 	fi
 	if [ -n "$blacklist_domains_urls" ]; then
 		for hf in ${blacklist_domains_urls}; do
-			if [ $parallelDL -gt 0 ]; then
+			if [ "$parallelDL" -gt 0 ]; then
 				process_url "$hf" 'domains' 'blocked' &
 			else
 				process_url "$hf" 'domains' 'blocked'
@@ -285,7 +296,7 @@ download_lists() {
 	fi
 	if [ -n "$whitelist_domains_urls" ]; then
 		for hf in ${whitelist_domains_urls}; do
-			if [ $parallelDL -gt 0 ]; then
+			if [ "$parallelDL" -gt 0 ]; then
 				process_url "$hf" 'domains' 'allowed' &
 			else
 				process_url "$hf" 'domains' 'allowed'
@@ -294,16 +305,21 @@ download_lists() {
 	fi
 	wait
 	i="$(ubus_status get)"
-	[ "${i//-}" != "$i" ] && serviceStatus="${serviceStatus:-'Download error'}" || unset serviceStatus
+	if [ "${i//-}" != "$i" ]; then
+		serviceStatus="${serviceStatus:-'Download error'}"
+	else
+		unset serviceStatus
+	fi
 	i="${i//Reloading }"
 	i="${i//-/$xmark}"
 	i="${i//+/$checkmark}"
-	[ "$verbosity" == "1" ] && logmsg="${logmsg}${i}"
+	[ "$verbosity" = "1" ] && logmsg="${logmsg}${i}"
 	output 1 '\n'
 
 	[ -n "$blacklist_domains" ] && for hf in ${blacklist_domains}; do echo "$hf" | sed "$d_filter" >> $B_TMP; done
-	whitelist_domains="${whitelist_domains}"$'\n'"$(cat $A_TMP)"
-	[ -n "$whitelist_domains" ] && for hf in ${whitelist_domains}; do hf=$(echo $hf | sed 's/\./\\./g'); w_filter="$w_filter/^${hf}$/d;/\\.${hf}$/d;"; done
+	whitelist_domains="${whitelist_domains}
+$(cat $A_TMP)"
+	[ -n "$whitelist_domains" ] && for hf in ${whitelist_domains}; do hf=$(echo "$hf" | sed 's/\./\\./g'); w_filter="$w_filter/^${hf}$/d;/\\.${hf}$/d;"; done
 	if [ -s $B_TMP ]; then
 			output 1 'Processing downloads '
 			output 2 'Sorting combined list '
@@ -391,7 +407,7 @@ start_service() {
 		procd_set_param stdout 1
 		procd_set_param stderr 1
 		network_get_ipaddr ip 'lan'
-		if [[ $forceDNS -ne 0 && -n "$ip" ]]; then
+		if [ "$forceDNS" -ne 0 ] && [ -n "$ip" ]; then
 			if is_chaos_calmer; then
 				fw3_setup 'start'
 			else
@@ -415,16 +431,16 @@ start_service() {
 		procd_close_instance
 		status="$(ubus_status get)"
 		if [ -s "$CACHE_TMP" ] && [ "$action" != "download" ]; then
-			output "Starting $serviceName...\n"
+			output "Starting $serviceName...\\n"
 			output 3 'Found existing data file, reusing it '
-			mv $CACHE_TMP $dnsmasqFile && output_okn || output_failn
+			if mv $CACHE_TMP $dnsmasqFile; then output_okn; else output_failn; fi
 			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
-		elif [ "$action" == "download" ] || [ "$status" != "${status//rror}" ]; then
-			output "Force-reloading $serviceName...\n"
+		elif [ "$action" = "download" ] || [ "$status" != "${status//rror}" ]; then
+			output "Force-reloading $serviceName...\\n"
 			download_lists
 			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
 		elif [ ! -s "$dnsmasqFile" ]; then
-			output "Starting $serviceName...\n"
+			output "Starting $serviceName...\\n"
 			download_lists
 			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
 		fi
@@ -456,9 +472,9 @@ killcache() { [ -s $CACHE_TMP ] && rm -f $CACHE_TMP >/dev/null 2>/dev/null; }
 
 stop_service() {
 	load_package_config
-	if [ $serviceEnabled -gt 0 ]; then
+	if [ "$serviceEnabled" -gt 0 ]; then
 		if [ -z "$1" ] && [ -s "$dnsmasqFile" ]; then
-			output "Stopping $serviceName...\n"
+			output "Stopping $serviceName...\\n"
 			state 'remove'
 			reload_dnsmasq 'on_stop'
 			ubus_status set 'Stopped'
@@ -475,13 +491,13 @@ stop_service() {
 check() {
 	load_package_config
 	local string="$1"
-	if [ ! -f $dnsmasqFile ]; then
+	if [ ! -f "$dnsmasqFile" ]; then
 		echo "No local blacklist ($dnsmasqFile) found."
 	elif [ -z "$string" ]; then
 		echo "Usage: /etc/init.d/${packageName} check 'domain'"
-	elif grep -m1 -q $string $dnsmasqFile; then
-		echo "Found $(grep $string $dnsmasqFile | wc -l) matches for $string in $dnsmasqFile:"
-		grep $string $dnsmasqFile | sed 's|local=/||;s|/$||;'
+	elif grep -m1 -q "$string" "$dnsmasqFile"; then
+		echo "Found $(grep -c "$string" "$dnsmasqFile") matches for $string in $dnsmasqFile:"
+		grep "$string" "$dnsmasqFile" | sed 's|local=/||;s|/$||;'
 	else
 		echo "The $string is not found in current blacklist."
 	fi
