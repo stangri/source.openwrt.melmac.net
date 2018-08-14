@@ -2,11 +2,11 @@
 checkslider() { grep -q 'button left.*hi' /sys/kernel/debug/gpio; }
 checkports() {
   local up i r=0;
-  for i in wan; do
+  for i in "wan"; do
     if /bin/ubus list | grep -q "network.interface.${i}"; then
       json_load "$(/bin/ubus call network.interface.${i} status)"; json_get_vars up;
-      [[ "$up" == "1" && $up -gt $r ]] && r=$up
+      if [ "$up" -eq 1 ] && [ "$up" -gt "$r" ]; then r="$up"; fi
     fi
   done
-  return $r
+  return "$r"
 }

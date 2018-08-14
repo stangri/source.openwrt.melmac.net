@@ -10,9 +10,9 @@ readonly serviceName="$packageName $PKG_VERSION"
 export serviceEnabled bootDelay wwanIface wifiRestart apIP wrIP routerServicesList
 
 load_package_config() {
-  source /lib/functions.sh
-  source /usr/share/libubox/jshn.sh
-  source /lib/functions/checkslider.sh
+  . /lib/functions.sh
+  . /usr/share/libubox/jshn.sh
+  . /lib/functions/checkslider.sh
 	config_load "$packageName"
   config_get_bool serviceEnabled 'config' 'enabled' 0
   config_get_bool wifiRestart    'config' 'restart_wifi' 0
@@ -23,36 +23,36 @@ load_package_config() {
   config_get routerServicesList  'config' 'router_service'
 }
 
-is_enabled() { load_package_config; [ $serviceEnabled -gt 0 ] && return 0 || return 1; }
-set_enabled() { uci -q set "${packageName}.config.enabled"="$1"; uci commit "${packageName}"; }
+is_enabled() { load_package_config; [ "$serviceEnabled" -gt 0 ] && return 0 || return 1; }
+set_enabled() { uci -q set "${packageName}.config.enabled='$1'"; uci commit "${packageName}"; }
 is_ipv4() { if expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then return 0; else return 1; fi; }
-randomip(){ local a=300 b=300 n; while [[ "$a" -gt 255 || "$b" -gt 255 ]]; do n=$(grep -m10 -ao '[0-9]' /dev/urandom | tr -d '\n'); a="$(echo ${n:0:3} | sed 's/^0*//;s/^0*$/0/')"; b="$(echo ${n:4:3} | sed 's/^0*//;s/^0*$/0/')"; done; echo "192.168.$a.$b"; }
-fix_sta_ssid(){ config_get s $1 'ssid'; if [[ -n "$s" && "$(uci -q get wireless.${1}.mode)" == "sta" ]]; then uci set wireless.${1}.ssid="${s//-err}"; fi; }
+randomip(){ local a=300 b=300 n; while [ "$a" -gt 255 ] || [ "$b" -gt 255 ]; do n=$(grep -m10 -ao '[0-9]' /dev/urandom | tr -d '\n'); a="$(echo "${n:0:3}" | sed 's/^0*//;s/^0*$/0/')"; b="$(echo "${n:4:3}" | sed 's/^0*//;s/^0*$/0/')"; done; echo "192.168.$a.$b"; }
+fix_sta_ssid(){ config_get s "$1" 'ssid'; if [ -n "$s" ] && [ "$(uci -q get wireless."${1}".mode)" = "sta" ]; then uci set wireless."${1}".ssid="${s//-err}"; fi; }
 
+zone_del_network() { [ "$(uci -q get firewall."${1}".name)" = "$2" ] && uci -q del_list firewall."${1}".network="$3"; }
+zone_add_network() { [ "$(uci -q get firewall."${1}".name)" = "$2" ] && uci -q add_list firewall."${1}".network="$3"; }
 modify_fwzone() {
-  local cfg="$1" iface="$2" action="$3" wwanIface="$4"
-  [[ -z "$cfg" || -z "$iface" || -z "$action" || -z "$wwanIface" ]] && return 1
-  config_get name "$cfg" 'name'
-  if [ "$name" == "$iface" ]; then
-    uci -q del_list firewall.${cfg}.network="$wwanIface";
-    [ "$action" == "add" ] && uci -q add_list firewall.${cfg}.network="$wwanIface";
-  fi
+  local iface="$1" action="$2" wwanIface="$3"
+  if [ -z "$iface" ] || [ -z "$action" ] || [ -z "$wwanIface" ]; then return 1; fi
+  config_load 'firewall'
+  config_foreach zone_del_network 'zone' "$iface" "$wwanIface"
+  [ "$action" = "add" ] && config_foreach zone_add_network 'zone' "$iface" "$wwanIface"
 }
 
 router_services() {
   local s command="${1:-stop}"
   for s in $routerServicesList; do
-    if [[ -n "$s" && -e /etc/init.d/${s} ]]; then
+    if [ -n "$s" ] && [ -e "/etc/init.d/${s}" ]; then
       case $command in
         start)
           logger -t "$packageName" "$mode enabling/starting $s"
-          /etc/init.d/${s} enable
-          /etc/init.d/${s} start
+          /etc/init.d/"${s}" enable
+          /etc/init.d/"${s}" start
           ;;
         stop)
           logger -t "$packageName" "$mode stopping/disabling $s"
-          /etc/init.d/${s} stop
-          /etc/init.d/${s} disable
+          /etc/init.d/"${s}" stop
+          /etc/init.d/"${s}" disable
           ;;
       esac
     fi
@@ -66,9 +66,8 @@ slider_action() {
   uci -q set wlanblinker.config.mode="$mode"
   case $mode in
   	router)
-  		config_load firewall
-      modify_fwzone 'zone' 'wan' 'add' "$wwanIface"
-      modify_fwzone 'zone' 'lan' 'del' "$wwanIface"
+      modify_fwzone 'wan' 'add' "$wwanIface"
+      modify_fwzone 'lan' 'del' "$wwanIface"
   		uci set dhcp.@dnsmasq[-1].rebind_protection=1
   		uci -q del network.stabridge
   		uci -q del dhcp.lan.ignore
@@ -85,7 +84,7 @@ slider_action() {
   		;;
   	ap)
       [ -z "$oldIP" ] && uci set network.lan.ipaddrold="$(uci -q get network.lan.ipaddr)"
-      if [ "$apIP" == "random" ]; then
+      if [ "$apIP" = "random" ]; then
         uci set network.lan.ipaddr="$(randomip)"
       elif is_ipv4 "$apIP"; then
         uci set network.lan.ipaddr="$apIP"
@@ -93,9 +92,8 @@ slider_action() {
         logger -t "$packageName" "$mode mode failed, wrong ap_ip: $apIP"
         return 1
       fi
-      config_load firewall
-      modify_fwzone 'zone' 'wan' 'add' "$wwanIface"
-      modify_fwzone 'zone' 'lan' 'del' "$wwanIface"
+      modify_fwzone 'wan' 'add' "$wwanIface"
+      modify_fwzone 'lan' 'del' "$wwanIface"
   		uci set dhcp.lan.ignore=1
   		uci set dhcp.@dnsmasq[-1].rebind_protection=0
   		uci -q del network.lan.gateway
@@ -111,7 +109,7 @@ slider_action() {
   		;;
   	wr)
       [ -z "$oldIP" ] && uci set network.lan.ipaddrold="$(uci -q get network.lan.ipaddr)"
-      if [ "$wrIP" == "random" ]; then
+      if [ "$wrIP" = "random" ]; then
         uci set network.lan.ipaddr="$(randomip)"
       elif is_ipv4 "$wrIP"; then
         uci set network.lan.ipaddr="$wrIP"
@@ -119,9 +117,8 @@ slider_action() {
         logger -t "$packageName" "$mode mode failed, wrong wr_ip: $wrIP"
         return 1
       fi
-      config_load firewall
-      modify_fwzone 'zone' 'lan' 'add' "$wwanIface"
-      modify_fwzone 'zone' 'wan' 'del' "$wwanIface"
+      modify_fwzone 'lan' 'add' "$wwanIface"
+      modify_fwzone 'wan' 'del' "$wwanIface"
   		uci set network.stabridge=interface
   		uci set network.stabridge.proto=relay
   		uci set network.stabridge.network="lan $wwanIface"
@@ -136,19 +133,19 @@ slider_action() {
   		/sbin/reload_config
   		;;
   esac
-  if [ $wifiRestart -ne 0 ]; then
+  if [ "$wifiRestart" -ne 0 ]; then
     config_load 'wireless'
     config_foreach fix_sta_ssid 'wifi-iface'
     if [ -n "$(uci changes wireless)" ]; then
       uci commit wireless
-      /sbin/wifi
     fi
+    /sbin/wifi
   fi
   [ -e /etc/init.d/travelmate ] && /etc/init.d/travelmate restart
   [ -e /etc/init.d/wlanblinker ] && /etc/init.d/wlanblinker restart
 }
 
-boot() { load_package_config; ( sleep $bootDelay && rc_procd start_service & ); }
+boot() { load_package_config; ( sleep "$bootDelay" && rc_procd start_service & ); }
 start_service() { set_enabled '1'; load_package_config; slider_action; }
 stop_service() { set_enabled '0'; }
 restart_service() { is_enabled && slider_action; }
