@@ -139,27 +139,27 @@ The ```vpn-policy-routing``` settings are split into ```basic``` and ```advanced
 #### Example Policies
 ```
 config policy
-	option comment 'Plex Local Server'
+	option name 'Plex Local Server'
 	option interface 'wan'
 	option local_ports '32400'
 
 config policy
-	option comment 'Plex Remote Servers'
+	option name 'Plex Remote Servers'
 	option interface 'wan'
 	option remote_addresses 'plex.tv my.plexapp.com'
 
 config policy
-	option comment 'LogmeIn Hamachi'
+	option name 'LogmeIn Hamachi'
 	option interface 'wan'
 	option remote_addresses '25.0.0.0/8 hamachi.cc hamachi.com logmein.com'
 
 config policy
-	option comment 'Local Subnet'
+	option name 'Local Subnet'
 	option interface 'wan'
 	option local_addresses '192.168.1.81/29'
 
 config policy
-	option comment 'Local IP'
+	option name 'Local IP'
 	option interface 'wan'
 	option local_addresses '192.168.1.70'
 ```
