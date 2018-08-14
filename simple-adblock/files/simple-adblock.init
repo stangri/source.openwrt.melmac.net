@@ -1,5 +1,4 @@
 #!/bin/sh /etc/rc.common
-# TLD optimization by Dirk Brenken (dev@brenken.org)
 PKG_VERSION=
 
 export START=94
@@ -329,6 +328,7 @@ $(cat $A_TMP)"
 				output_fail
 				serviceStatus="${serviceStatus:-'Sorting error'}"
 			fi
+# TLD optimization written by Dirk Brenken (dev@brenken.org)
 			output 2 'Optimizing combined list '
 			if awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$A_TMP" > "$B_TMP"; then
 				if sort "$B_TMP" > "$A_TMP"; then
