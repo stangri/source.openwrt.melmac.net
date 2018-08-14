@@ -21,14 +21,14 @@ is_enabled() {
 	config_get off_time   "$mode" 'off_time' 1
 	config_get sleep_time "$mode" 'sleep_time' 1
 
-	[ $serviceEnabled -gt 0 ] || return 1
+	[ "$serviceEnabled" -gt 0 ] || return 1
 	[ -n "$display" ] || return 1
 	[ -e "/sys/class/leds/${LED}/brightness" ] || return 1
-	source /lib/functions.sh
+	. /lib/functions.sh
 	return 0
 }
 
-find_sta_ssid(){ [[ "$(uci -q get wireless.${1}.mode)" == "sta" && "$(uci -q get wireless.${1}.disabled)" != "1" && -z "$(eval echo \$$2)" ]] && eval "$2=$(uci -q get wireless.${1}.ssid)"; }
+find_sta_ssid(){ if [ "$(uci -q get wireless."${1}".mode)" = "sta" ] && [ "$(uci -q get wireless."${1}".disabled)" != "1" ] && [ -z "$(eval echo \$$2)" ]; then eval "$2=$(uci -q get wireless."${1}".ssid)"; fi; }
 find_radio(){
 	local sta_ssid
 	case $1 in
@@ -38,7 +38,7 @@ find_radio(){
 		link_quality)
 			config_load 'wireless'
 			config_foreach find_sta_ssid 'wifi-iface' 'sta_ssid'
-			[ -n "$sta_ssid" ] && echo "$(iwinfo | grep "$sta_ssid" | awk '{print $1;}')"
+			[ -n "$sta_ssid" ] && iwinfo | grep "$sta_ssid" | awk '{print $1;}'
 			;;
 	esac
 }
@@ -46,10 +46,10 @@ find_radio(){
 start_service() {
 	local radio
 	is_enabled || return 0
-	while [ -z "$radio" ]; do radio="$(find_radio $display)"; [ -z "$radio" ] && sleep 5; done
+	while [ -z "$radio" ]; do radio="$(find_radio "$display")"; [ -z "$radio" ] && sleep 5; done
 	procd_open_instance
 		procd_set_param command $PROG "-d" "$LED" "$display" "$radio" "$on_time" "$off_time" "$sleep_time"
-		procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
+		procd_set_param respawn "${respawn_threshold:-3600}" "${respawn_timeout:-5}" "${respawn_retry:-5}"
 	procd_close_instance
 	logger -t "$packageName" "$serviceName: ${mode}/${radio}/${display} started"
 }
