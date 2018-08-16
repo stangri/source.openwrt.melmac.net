@@ -4,21 +4,17 @@ cat << 'EOF'
 Status: 204 No Content
 
 EOF
-exit
 logger -t 'fakeinternet' "$REQUEST_URI: Served 204 No Content"
-fi
 
-if [ "$REQUEST_URI" = "/blank.html" ]; then
+elif [ "$REQUEST_URI" = "/blank.html" ]; then
 cat << 'EOF'
 Status: 200 OK
 Content-Type: text/html
 
 EOF
 logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK"
-exit
-fi
 
-if [ "$REQUEST_URI" = "/library/test/success.html" ] || [ "$REQUEST_URI" = "/hotspot-detect.html" ]; then
+elif [ "$REQUEST_URI" = "/library/test/success.html" ] || [ "$REQUEST_URI" = "/hotspot-detect.html" ]; then
 cat << 'EOF'
 Status: 200 OK
 Content-Type: text/html
@@ -27,10 +23,8 @@ Content-Type: text/html
 
 EOF
 logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK/Success"
-exit
-fi
 
-if [ "$REQUEST_URI" = "/kindle-wifi/wifistub.html" ]; then
+elif [ "$REQUEST_URI" = "/kindle-wifi/wifistub.html" ]; then
 cat << 'EOF'
 Status: 200 OK
 Content-Type: text/html
@@ -48,10 +42,8 @@ Content-Type: text/html
 </html>
 EOF
 logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK/HTML"
-exit
-fi
 
-if [ "$REQUEST_URI" = "/kindle-wifi/wifiredirect.html" ]; then
+elif [ "$REQUEST_URI" = "/kindle-wifi/wifiredirect.html" ]; then
 cat << 'EOF'
 Status: 200 OK
 Content-Type: text/html
@@ -65,10 +57,8 @@ Content-Type: text/html
 </html>
 EOF
 logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK/HTML"
-exit
-fi
 
-if [ "$REQUEST_URI" == "/check_network_status.txt" ]; then
+elif [ "$REQUEST_URI" == "/check_network_status.txt" ]; then
 cat << 'EOF'
 Status: 200 OK
 Content-Type: text/plain
@@ -77,10 +67,8 @@ NetworkManager is online
 
 EOF
 logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK"
-exit
-fi
 
-if [ "$REQUEST_URI" == "/success.txt" ]; then
+elif [ "$REQUEST_URI" == "/success.txt" ]; then
 cat << 'EOF'
 Status: 200 OK
 Content-Type: text/plain
@@ -89,9 +77,8 @@ success
 
 EOF
 logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK"
-exit
-fi
 
+else
 cat << 'EOF'
 Status: 200 OK
 Content-Type: text/html
@@ -100,4 +87,4 @@ Content-Type: text/html
 
 EOF
 logger -t 'fakeinternet' "$REQUEST_URI: Generic 200 OK/Success"
-exit
+fi
