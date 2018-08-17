@@ -1,19 +1,19 @@
 local uci = require("luci.model.uci").cursor()
 
-p = Map("https_dns_proxy", translate("HTTPS DNS Proxy Settings"))
-p.template="cbi/map"
+m = Map("https_dns_proxy", translate("HTTPS DNS Proxy Settings"))
+m.template="cbi/map"
 
-s3 = p:section(TypedSection, "https_dns_proxy", translate("Instances"))
+s3 = m:section(TypedSection, "https_dns_proxy", translate("Instances"))
 s3.template = "cbi/tblsection"
 s3.sortable  = false
 s3.anonymous = true
 s3.addremove = true
 
-prov = s3:option(ListValue, "provider", translate("Provider"))
-prov:value("Cloudflare","Cloudflare")
-prov:value("Google","Google")
+prov = s3:option(ListValue, "url_prefix", translate("Provider"))
+prov:value("https://cloudflare-dns.com/dns-query?ct=application/dns-json&","Cloudflare")
+prov:value("https://dns.google.com/resolve?","Google")
 prov.write = function(self, section, value)
-  if value and value == "Cloudflare" then
+  if value and value:match("cloudflare") then
     uci:set("https_dns_proxy", section, "bind_addr", "1.1.1.1,1.0.0.1")
     uci:set("https_dns_proxy", section, "url_prefix", "https://cloudflare-dns.com/dns-query?ct=application/dns-json&")
   else
@@ -50,4 +50,4 @@ ps = s3:option(Value, "proxy_server", translate("Proxy server"))
 -- ps.datatype = "or(ipaddr,hostname)"
 ps.rmempty = true
 
-return p
+return m
