@@ -47,7 +47,7 @@ start_service() {
 	local radio
 	is_enabled || return 0
 	while [ -z "$radio" ]; do radio="$(find_radio "$display")"; [ -z "$radio" ] && sleep 5; done
-	procd_open_instance
+	procd_open_instance 'main'
 		procd_set_param command $PROG "-d" "$LED" "$display" "$radio" "$on_time" "$off_time" "$sleep_time"
 		procd_set_param respawn "${respawn_threshold:-3600}" "${respawn_timeout:-5}" "${respawn_retry:-5}"
 	procd_close_instance
