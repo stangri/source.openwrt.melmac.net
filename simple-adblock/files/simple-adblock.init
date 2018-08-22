@@ -402,7 +402,7 @@ start_service() {
 	esac
 	if create_lock; then
 		state 'store'
-		procd_open_instance
+		procd_open_instance 'main'
 		procd_set_param command /bin/true
 		procd_set_param stdout 1
 		procd_set_param stderr 1
