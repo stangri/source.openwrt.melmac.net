@@ -47,10 +47,12 @@ output() {
 		logmsg="${logmsg}${msg}"
 	fi
 }
+is_installed(){ [ -n "$(opkg list-installed "$1")" ]; }
 
 export serviceEnabled verbosity strictMode wanTableID wanMark fwMask
 export ipv6Enabled ipsetEnabled ipruleEnabled dnsmasqEnabled udpProtoEnabled icmpIface
 export forwardChainEnabled=0 inputChainEnabled=0 outputChainEnabled=0 ignoredIfaces="" supportedIfaces=""
+export appendLocalPolicy="" appendRemotePolicy=""
 export wanIface4 wanIface6 ifaceMark ifaceTableID ifacesListAll ifacesListSupported wanGW4 wanGW6
 export ifconfigOutput ip4RouteOutput ip6RouteOutput
 
@@ -104,6 +106,8 @@ load_package_config() {
 	config_get_bool forwardChainEnabled 'config' 'forward_chain_enabled' 0
 	config_get_bool inputChainEnabled   'config' 'input_chain_enabled' 0
 	config_get_bool outputChainEnabled  'config' 'output_chain_enabled' 0
+	config_get appendLocalPolicy        'config' 'append_local_rules'
+	config_get appendRemotePolicy       'config' 'append_remote_rules'
 	config_get verbosity                'config' 'verbosity' '2'
 	config_get wanTableID               'config' 'wan_tid' '201'
 	config_get wanMark                  'config' 'wan_mark' '0x010000'
@@ -241,9 +245,9 @@ insert_policy() {
 	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
 #	param="-t mangle -A VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask}"
 	param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
-	[ -n "$laddr" ] && param="$param -s $laddr"
+	[ -n "$laddr" ] && param="$param -s $laddr $appendLocalPolicy"
 	[ -n "$lport" ] && param="$param -p tcp -m multiport --sport ${lport//-/:}"
-	[ -n "$raddr" ] && param="$param -d $raddr"
+	[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
 	[ -n "$rport" ] && param="$param -p $proto -m multiport --dport ${rport//-/:}"
 	[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
 	ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: ipt $param\\n"
@@ -512,11 +516,11 @@ ubus_status(){
 }
 
 start_service() {
-	local serviceStatusSummary errorStatusSummary dnsmasqFileHash
+	local serviceStatusSummary errorStatusSummary dnsmasqStoredHash dnsmasqNewHash
 	is_enabled 'on_start' || return 1
 	if create_lock; then
 		if [ -s "$dnsmasqFile" ]; then
-			dnsmasqFileHash="$(md5sum $dnsmasqFile)"
+			dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
 			rm -f "$dnsmasqFile"
 		fi
 		{ modprobe xt_set; modprobe ip_set; modprobe ip_set_hash_ip; } >/dev/null 2>&1;
@@ -539,8 +543,9 @@ start_service() {
 		config_load $packageName; config_foreach process_policy 'policy';
 		output 1 '\n'
 		if [ -s "$dnsmasqFile" ]; then
-			[ "$(md5sum $dnsmasqFile)" != "$dnsmasqFileHash" ] && dnsmasq_restart
+			dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
 		fi
+		[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
 
 		if [ -z "$serviceStatusSummary" ]; then
 			output "$_ERROR_: $serviceName failed to set up any interface!\\n"
@@ -597,14 +602,13 @@ stop_service() {
 	fi
 }
 
+# shellcheck disable=SC2119
 service_triggers() {
 		local n
 		is_enabled || return 1
 
 		procd_open_validate
-# shellcheck disable=SC2119
 			validate_config
-# shellcheck disable=SC2119
 			validate_policies
 		procd_close_validate
 
@@ -701,7 +705,7 @@ support() {
 	} | input
 	if [ -n "$set_p" ]; then
 		echo -e -n "Pasting to paste.ee... "
-		if [ -x /usr/bin/curl ] && ls "/usr/lib/libcrypto.so*" >/dev/null 2>&1 && ls "/usr/lib/libssl.so*" >/dev/null 2>&1 && [ -e /etc/ssl/certs/ca-certificates.crt ]; then
+		if is_installed 'curl' && is_installed 'libopenssl' && is_installed 'ca-bundle'; then
 			json_init; json_add_string "description" "${packageName}-support"
 			json_add_array "sections"; json_add_object '0'
 			json_add_string "name" "$(uci -q get system.@system[0].hostname)"
