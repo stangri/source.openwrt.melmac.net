@@ -12,6 +12,6 @@ LUCI_DESCRIPTION:=Provides Web UI for HTTPS DNS Proxy
 LUCI_PKGARCH:=all
 PKG_RELEASE:=2
 
-include ../../luci.mk
+include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature

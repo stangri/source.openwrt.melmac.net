@@ -10,6 +10,6 @@ LUCI_TITLE:=Alternative Partition Reboot Web UI
 LUCI_PKGARCH:=all
 PKG_RELEASE:=11
 
-include ../../luci.mk
+include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature

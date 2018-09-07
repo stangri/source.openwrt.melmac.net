@@ -12,6 +12,6 @@ LUCI_DEPENDS:=+luci-mod-admin-full +fakeinternet
 LUCI_PKGARCH:=all
 PKG_RELEASE:=5
 
-include ../../luci.mk
+include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature

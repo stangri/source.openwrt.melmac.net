@@ -19,6 +19,6 @@ Requires sysupgrade-compatible upgrade file /tmp/firmware.img and a one-line des
 WARNING: does not keep your router settings.
 endef
 
-include ../../luci.mk
+include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature
