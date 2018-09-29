@@ -14,6 +14,6 @@ LUCI_DESCRIPTION:=This is Material Theme with the old style colorful buttons.
 LUCI_DEPENDS:=
 PKG_RELEASE:=2
 
-include ../../luci.mk
+include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature

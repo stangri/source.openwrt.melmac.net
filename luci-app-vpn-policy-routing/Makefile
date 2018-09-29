@@ -12,6 +12,6 @@ LUCI_DEPENDS:=+luci-mod-admin-full +vpn-policy-routing
 LUCI_PKGARCH:=all
 PKG_RELEASE:=32
 
-include ../../luci.mk
+include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature
