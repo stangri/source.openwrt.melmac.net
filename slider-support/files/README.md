@@ -5,6 +5,7 @@ This service enables switching between ```Router```, ```Access Point``` and ```W
 ## Supported Routers
 
 - GL-Inet AR300M (also AR300MD, AR300M16 and the ```-Ext```, but not ```-Lite``` models).
+- GL-Inet AR750.
 - GL-Inet MT300N (also MT300Nv2).
 
 ## Features
@@ -20,6 +21,7 @@ This service enables switching between ```Router```, ```Access Point``` and ```W
 Please make sure that the [requirements](#requirements) are satisfied and install the appropriate package from Web UI or connect to your router via ssh and run the following commands:
 
 - GL-Inet AR300M: ```opkg update; opkg install slider-support-ar300m;```.
+- GL-Inet AR750: ```opkg update; opkg install slider-support-ar750;```.
 - GL-Inet MT300N: ```opkg update; opkg install slider-support-mt300n;```.
 
 If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](#add-custom-repo-to-your-router) first.

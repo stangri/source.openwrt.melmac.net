@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=slider-support
 PKG_VERSION:=0.0.2
-PKG_RELEASE:=8
+PKG_RELEASE:=9
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -26,6 +26,13 @@ $(call Package/slider-support/default)
 	TITLE+= for GL-Inet AR300M
 endef
 
+define Package/slider-support-ar750
+$(call Package/slider-support/default)
+  VARIANT:=ar750
+	USEBUTTON:=BTN_0
+	TITLE+= for GL-Inet AR750
+endef
+
 define Package/slider-support-mt300n
 $(call Package/slider-support/default)
   VARIANT:=mt300n
@@ -40,6 +47,7 @@ Please see the README for further information.
 endef
 
 Package/slider-support-ar300m/description = $(Package/slider-support/description)
+Package/slider-support-ar750/description = $(Package/slider-support/description)
 Package/slider-support-mt300n/description = $(Package/slider-support/description)
 
 define Package/slider-support/conffiles
@@ -47,6 +55,7 @@ define Package/slider-support/conffiles
 endef
 
 Package/slider-support-ar300m/conffiles = $(Package/slider-support/conffiles)
+Package/slider-support-ar750/conffiles = $(Package/slider-support/conffiles)
 Package/slider-support-mt300n/conffiles = $(Package/slider-support/conffiles)
 
 define Build/Prepare
@@ -76,6 +85,7 @@ define Package/slider-support/install
 endef
 
 Package/slider-support-ar300m/install = $(Package/slider-support/install)
+Package/slider-support-ar750/install = $(Package/slider-support/install)
 Package/slider-support-mt300n/install = $(Package/slider-support/install)
 
 define Package/slider-support/postinst
@@ -88,6 +98,7 @@ define Package/slider-support/postinst
 endef
 
 Package/slider-support-ar300m/postinst = $(Package/slider-support/postinst)
+Package/slider-support-ar750/postinst = $(Package/slider-support/postinst)
 Package/slider-support-mt300n/postinst = $(Package/slider-support/postinst)
 
 define Package/slider-support/prerm
@@ -100,7 +111,9 @@ define Package/slider-support/prerm
 endef
 
 Package/slider-support-ar300m/prerm = $(Package/slider-support/prerm)
+Package/slider-support-ar750/prerm = $(Package/slider-support/prerm)
 Package/slider-support-mt300n/prerm = $(Package/slider-support/prerm)
 
 $(eval $(call BuildPackage,slider-support-ar300m))
+$(eval $(call BuildPackage,slider-support-ar750))
 $(eval $(call BuildPackage,slider-support-mt300n))
