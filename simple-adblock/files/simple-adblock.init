@@ -9,9 +9,10 @@ readonly packageName='simple-adblock'
 readonly serviceName="$packageName $PKG_VERSION"
 readonly PID="/var/run/${packageName}.pid"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
-export EXTRA_COMMANDS="check download killcache"
+export EXTRA_COMMANDS="check dl killcache status"
 export EXTRA_HELP="	check	Checks if specified domain is found in current blacklist
-	download	Force-redownloads all the lists, even if the last download was successful and no config changes were made"
+	dl      	Force-redownloads all the lists, even if the last download was successful and no config changes were made
+	status    Shows the service last-run status"
 
 readonly A_TMP='/var/simple-adblock.hosts.a.tmp'
 readonly B_TMP='/var/simple-adblock.hosts.b.tmp'
@@ -395,10 +396,10 @@ $(cat $A_TMP)"
 
 start_service() {
 	is_enabled 'on_start' || return 1
-	local ip status action="$(state 'check')"
+	local ip status action="$(state check)"
 	case "$1" in
 		download) action='download';;
-		restart) [ -z "$action" ] && return 0;;
+#		restart) [ -z "$action" ] && return 0;;
 	esac
 	if create_lock; then
 		state 'store'
@@ -467,8 +468,9 @@ restart_service() { rc_procd stop_service 'restart'; rc_procd start_service 'res
 reload_service() { restart_service; }
 restart() { restart_service; }
 reload() { restart_service; }
-download() { rc_procd stop_service 'restart'; rc_procd start_service 'download'; }
+dl() { rc_procd stop_service 'restart'; rc_procd start_service 'download'; }
 killcache() { [ -s $CACHE_TMP ] && rm -f $CACHE_TMP >/dev/null 2>/dev/null; }
+status() { output "$serviceName last-ran status: $(ubus_status get)\\n"; }
 
 stop_service() {
 	load_package_config
