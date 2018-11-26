@@ -120,6 +120,18 @@ o5:value("1", translate("Use simultaneous processing"))
 o5.rmempty = false
 o5.default = 1
 
+o9 = s:taboption("advanced", ListValue, "allow_non_ascii", translate("Allow Non-ASCII characters in DNSMASQ file"), translate("Only enable if your version of DNSMASQ supports the use of Non-ASCII characters, otherwise DNSMASQ will fail to start."))
+o9:value("", translate("Do not allow Non-ASCII"))
+o9:value("1", translate("Allow Non-ASCII"))
+o9.rmempty = true
+o9.default = ""
+
+o10 = s:taboption("advanced", ListValue, "store_compressed_cache", translate("Store compressed cache file on router"), translate("Attempt to create a compressed cache of final block-list on the router."))
+o10:value("", translate("Do not store compressed cache"))
+o10:value("1", translate("Store compressed cache"))
+o10.rmempty = true
+o10.default = ""
+
 o8 = s:taboption("advanced", ListValue, "debug", translate("Enable Debugging"), translate("Enables debug output to /tmp/simple-adblock.log"))
 o8:value("", translate("Disable Debugging"))
 o8:value("1", translate("Enable Debugging"))
