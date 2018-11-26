@@ -10,30 +10,8 @@ local command
 
 m = Map("simple-adblock", translate("Simple AdBlock Settings"))
 m.apply_on_parse = true
-m.on_before_commit = function(self)
-	local r, tbl, changes
-	local changes = uci:changes()
-	if changes and changes[packageName] and changes[packageName]["config"] then
-		for r, tbl in pairs(changes[packageName]["config"]) do
-			if r:match("whitelist_domain") or
-			r:match("blacklist_domain") or
-			r:match("blacklist_hosts_url") or
-			r:match("blacklist_domains_url") or
-			r:match("debug") or
-			r:match("parallel_downloads") or
-			r:match("download_timeout") then
-				command = "reload"
-			elseif r:match("force_dns") or
-			r:match("led") then
-				command = "restart"
-			end
-		end
-	end
-end
 m.on_after_apply = function(self)
-	if command then
-		sys.call("/etc/init.d/simple-adblock " .. command)
-	end
+ 	sys.call("/etc/init.d/simple-adblock restart")
 end
 
 h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status"))
