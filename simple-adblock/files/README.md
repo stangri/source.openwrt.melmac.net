@@ -108,7 +108,7 @@ You can use Web UI (found in Services/Simple AdBlock) to add/remove/edit links t
 - domains lists (one domain name per line) to be blocked.
 - domains lists (one domain name per line) to be whitelisted. It is useful if you want to run simple-adblock on multiple routers and maintain one centralized whitelist which you can publish on a web-server.
 
-Please note that these lists **have** to include either ```http://``` or ```https://``` prefix. Some of the top block lists (both hosts files and domains lists) suitable for routers with at least 8MB RAM are used in the default simple-adblock installation.
+Please note that these lists **have** to include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix. Some of the top block lists (both hosts files and domains lists) suitable for routers with at least 8MB RAM are used in the default simple-adblock installation.
 
 You can also use Web UI to add individual domains to be blocked or whitelisted.
 
