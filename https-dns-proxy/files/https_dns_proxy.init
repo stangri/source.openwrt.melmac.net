@@ -23,12 +23,12 @@ start_instance() {
 
 	append_parm "$cfg" 'listen_addr' '-a' '127.0.0.1'
 	append_parm "$cfg" 'listen_port' '-p' '5053'
-	append_parm "$cfg" 'bind_addr' '-b'
+	append_parm "$cfg" 'bootstrap_dns' '-b'
+	append_parm "$cfg" 'url_prefix' '-r'
 	append_parm "$cfg" 'user' '-u' 'nobody'
 	append_parm "$cfg" 'group' '-g' 'nogroup'
 	append_parm "$cfg" 'subnet_addr' '-e'
 	append_parm "$cfg" 'proxy_server' '-t'
-	append_parm "$cfg" 'url_prefix' '-r'
 
 	procd_open_instance
 	procd_set_param command ${PROG} ${param}

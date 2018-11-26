@@ -41,6 +41,9 @@ msgstr ""
 msgid "Remote ports to trigger VPN Bypass"
 msgstr ""
 
+msgid "Service Status"
+msgstr ""
+
 msgid "Service is disabled/stopped"
 msgstr ""
 
@@ -51,6 +54,9 @@ msgid "Stop/Disable"
 msgstr ""
 
 msgid "VPN Bypass"
+msgstr ""
+
+msgid "VPN Bypass Rules"
 msgstr ""
 
 msgid "VPN Bypass Settings"

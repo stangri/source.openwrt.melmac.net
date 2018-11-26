@@ -14,10 +14,10 @@ prov:value("https://cloudflare-dns.com/dns-query?ct=application/dns-json&","Clou
 prov:value("https://dns.google.com/resolve?","Google")
 prov.write = function(self, section, value)
   if value and value:match("cloudflare") then
-    uci:set("https_dns_proxy", section, "bind_addr", "1.1.1.1,1.0.0.1")
+    uci:set("https_dns_proxy", section, "bootstrap_dns", "1.1.1.1,1.0.0.1")
     uci:set("https_dns_proxy", section, "url_prefix", "https://cloudflare-dns.com/dns-query?ct=application/dns-json&")
   else
-    uci:set("https_dns_proxy", section, "bind_addr", "8.8.8.8,8.8.4.4")
+    uci:set("https_dns_proxy", section, "bootstrap_dns", "8.8.8.8,8.8.4.4")
     uci:set("https_dns_proxy", section, "url_prefix", "https://dns.google.com/resolve?")
   end
   uci:set("https_dns_proxy", section, "user", "nobody")

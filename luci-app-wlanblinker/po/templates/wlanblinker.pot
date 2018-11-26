@@ -1,6 +1,9 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
+msgid "Configuration"
+msgstr ""
+
 msgid "Current Mode"
 msgstr ""
 
@@ -26,6 +29,9 @@ msgid "Modes"
 msgstr ""
 
 msgid "Pick the LED not already used in"
+msgstr ""
+
+msgid "Service Status"
 msgstr ""
 
 msgid "Service is disabled/stopped"
