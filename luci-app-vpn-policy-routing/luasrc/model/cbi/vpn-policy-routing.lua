@@ -32,14 +32,14 @@ end
 local lanIPAddr = uci:get("network", "lan", "ipaddr")
 local lanNetmask = uci:get("network", "lan", "netmask")
 -- if multiple ip addresses on lan interface, will be return as table of CIDR notations i.e. {"10.0.0.1/24","10.0.0.2/24"}
-if (type(lanIPAddr) == "table") then                                                                                         
-        first = true                                                                                                   
-        for i,line in ipairs(lanIPAddr) do                                                                        
-                lanIPAddr = lanIPAddr[i]                                                                          
+if (type(lanIPAddr) == "table") then                                                                                   
+        first = true                                                                                             
+        for i,line in ipairs(lanIPAddr) do                                                                  
+                lanIPAddr = lanIPAddr[i]                                                                    
                 break                                           
         end                                                     
-        lanIPAddr = string.match(lanIPAddr,"[0-9.]+")                                                                  
-end
+        lanIPAddr = string.match(lanIPAddr,"[0-9.]+")                                                            
+end          
 if lanIPAddr and lanNetmask then
 	laPlaceholder = ip.new(lanIPAddr .. "/" .. lanNetmask )
 end
