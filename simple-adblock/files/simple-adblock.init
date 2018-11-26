@@ -397,7 +397,7 @@ $(cat $A_TMP)"
 			serviceStatus="${serviceStatus:-'Whitelist processing error'}"
 		fi
 		output 2 'Formatting merged file '
-		if [ $AllowNonAscii -gt 0 ]; then
+		if [ "$AllowNonAscii" -gt 0 ]; then
 			if sed "$f_filter" $B_TMP > $A_TMP; then
 				output_ok
 			else
@@ -405,8 +405,7 @@ $(cat $A_TMP)"
 				serviceStatus="${serviceStatus:-'Data file formatting error'}"
 			fi
 		else
-		# this egrep filters out non-ascii characters which make dnsmasq sad
-			if sed "$f_filter" $B_TMP | egrep -v '[^a-zA-Z0-9=/.-]' > $A_TMP; then
+			if sed "$f_filter" $B_TMP | grep -E -v '[^a-zA-Z0-9=/.-]' > $A_TMP; then
 				output_ok
 			else
 				output_fail
@@ -415,18 +414,6 @@ $(cat $A_TMP)"
 		fi
 
 		output 2 'Creating dnsmasq config '
-#			# If you have a list of blacklisted domains (maybe even TLDs) this
-#			# bit will filter all of them out of the block files. It does this
-#			# by building converting the "blacklist_domain" list to a regex to
-#			# excludes lines matching the blacklisted domains. These domains
-#			# are then used to begin the dnsmasq config, followed by blocked
-#			# domains that passed the local filter.
-#			#
-#			# So you can efficiently block all of .com/.org/.net if you want...
-#			RGX=$(uci -X show simple-adblock.config.blacklist_domain | cut -d = -f 2 | sed -e 's/ /\n/g'| grep -v '[.]' | tr -d "'" | xargs | tr " "  "|" )
-#			echo $RGX | tr '|' '\n' | sed -e "s,^,local=/," -e 's,$,/,' > $B_TMP
-#			egrep -v "[.]($RGX)/" $A_TMP >> $B_TMP
-#			mv $B_TMP $A_TMP
 		if mv $A_TMP $dnsmasqFile; then
 			output_ok
 		else
@@ -434,7 +421,7 @@ $(cat $A_TMP)"
 			serviceStatus="${serviceStatus:-'Error moving data file'}"
 		fi
 
-		if [ $StoreCompressedCache -gt 0 ]; then
+		if [ "$StoreCompressedCache" -gt 0 ]; then
 			output 2 'Creating compressed cache '
 			R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
 			if gzip < "$dnsmasqFile" > "$R_TMP" ; then
