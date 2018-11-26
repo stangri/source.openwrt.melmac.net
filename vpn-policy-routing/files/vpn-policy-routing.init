@@ -169,16 +169,15 @@ is_enabled() {
 
 # shellcheck disable=SC2086
 ipt() {
-  local d failFlagIpv4=0 failFlagIpv6=1
-	d="${*//-A/-D}"; [ "$d" != "$*" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
-	d="${*//-I/-D}"; [ "$d" != "$*" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
-	d="${*//-N/-F}"; [ "$d" != "$*" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
-	d="${*//-N/-X}"; [ "$d" != "$*" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
+  local d failFlagIpv4=1 failFlagIpv6=1
+	for d in "${*//-A/-D}" "${*//-I/-D}" "${*//-N/-F}" "${*//-N/-X}"; do 
+		[ "$d" != "$*" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
+	done
 
-	d="$*"; iptables $d >/dev/null 2>&1 || failFlagIpv4=1
-	if [ "$ipv6Enabled" -ne 0 ]; then ip6tables $d >/dev/null 2>&1 && failFlagIpv6=0; fi
+	d="$*"; iptables $d >/dev/null 2>&1 && failFlagIpv4=0;
+	if [ "$ipv6Enabled" -gt 0 ]; then ip6tables $d >/dev/null 2>&1 && failFlagIpv6=0; fi
 
-	if [ "$failFlagIpv4" -eq 0 ] || [ "$failFlagIpv6" -eq 0 ]; then return 0; else return 1; fi
+	[ "$failFlagIpv4" -eq 0 ] || [ "$failFlagIpv6" -eq 0 ]
 }
 
 # shellcheck disable=SC2086
@@ -393,8 +392,10 @@ table_create(){
 	if [ -n "$tid" ] && [ -n "$mark" ] && [ -n "$iface" ]; then
 		table_destroy "$tid" "$iface" "$mark"
 
-		if { [ -n "$gw4" ] && [ "$gw4" != "0.0.0.0" ]; } || [ "$strictMode" -ne 0 ]; then
-			if [ -z "$gw4" ] || [ "$gw4" = "0.0.0.0" ]; then
+#		if { [ -n "$gw4" ] && [ "$gw4" != "0.0.0.0" ]; } || [ "$strictMode" -ne 0 ]; then
+#			if [ -z "$gw4" ] || [ "$gw4" = "0.0.0.0" ]; then
+		if [ -n "$gw4" ] || [ "$strictMode" -ne 0 ]; then
+			if [ -z "$gw4" ]; then
 				ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 			else
 				ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
@@ -516,14 +517,23 @@ ubus_status(){
 }
 
 start_service() {
-	local serviceStatusSummary errorStatusSummary dnsmasqStoredHash dnsmasqNewHash
+	local serviceStatusSummary errorStatusSummary dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0
 	is_enabled 'on_start' || return 1
 	if create_lock; then
 		if [ -s "$dnsmasqFile" ]; then
 			dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
 			rm -f "$dnsmasqFile"
 		fi
-		{ modprobe xt_set; modprobe ip_set; modprobe ip_set_hash_ip; } >/dev/null 2>&1;
+
+		for i in xt_set ip_set ip_set_hash_ip; do
+			modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
+		done
+
+		if [ $modprobeStatus -gt 0 ]; then 
+ 			output "$_ERROR_: $serviceName failed to load kernel modules!\\n"
+			ubus_status 'set' "Fail: $serviceName failed to load kernel modules!"
+			return 1
+		fi
 
 		ipt -t mangle -N VPR_PREROUTING; ipt -t mangle -A PREROUTING -m mark --mark "0x00/${fwMask}" -g VPR_PREROUTING;
 		if [ $forwardChainEnabled -ne 0 ]; then
