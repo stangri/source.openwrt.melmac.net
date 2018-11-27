@@ -416,18 +416,18 @@ $(cat $A_TMP)"
 		fi
 
 		output 2 'Creating dnsmasq config '
-#			# If you have a list of blacklisted domains (maybe even TLDs) this
-#			# bit will filter all of them out of the block files. It does this
-#			# by building converting the "blacklist_domain" list to a regex to
-#			# excludes lines matching the blacklisted domains. These domains
-#			# are then used to begin the dnsmasq config, followed by blocked
-#			# domains that passed the local filter.
-#			#
-#			# So you can efficiently block all of .com/.org/.net if you want...
-#			RGX=$(uci -X show simple-adblock.config.blacklist_domain | cut -d = -f 2 | sed -e 's/ /\n/g'| grep -v '[.]' | tr -d "'" | xargs | tr " "  "|" )
-#			echo $RGX | tr '|' '\n' | sed -e "s,^,local=/," -e 's,$,/,' > $B_TMP
-#			egrep -v "[.]($RGX)/" $A_TMP >> $B_TMP
-#			mv $B_TMP $A_TMP
+		# If you have a list of blacklisted domains (maybe even TLDs) this
+		# bit will filter all of them out of the block files. It does this
+		# by building converting the "blacklist_domain" list to a regex to
+		# excludes lines matching the blacklisted domains. These domains
+		# are then used to begin the dnsmasq config, followed by blocked
+		# domains that passed the local filter.
+		#
+		# So you can efficiently block all of .com/.org/.net if you want...
+		RGX=$(uci -X show simple-adblock.config.blacklist_domain | cut -d = -f 2 | sed -e 's/ /\n/g'| grep -v '[.]' | tr -d "'" | xargs | tr " "  "|" )
+		echo $RGX | tr '|' '\n' | sed -e "s,^,local=/," -e 's,$,/,' > $B_TMP
+		egrep -v "[.]($RGX)/" $A_TMP >> $B_TMP
+		mv $B_TMP $A_TMP
 		if mv $A_TMP $dnsmasqFile; then
 			output_ok
 		else
