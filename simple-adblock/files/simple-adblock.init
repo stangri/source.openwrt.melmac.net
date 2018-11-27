@@ -128,6 +128,7 @@ is_enabled() {
 	[ ! -d ${stateFile%/*} ] && mkdir -p ${stateFile%/*}
 	network_flush_cache; network_find_wan wan_if; network_get_gateway wan_gw "$wan_if";
 	[ -n "$wan_gw" ] && return 0
+	test -f "$compressedBackup" && return 0
 	output "$_ERROR_: $serviceName failed to discover WAN gateway.\\n"; return 1;
 }
 
@@ -500,6 +501,18 @@ start_service() {
 			output "Starting $serviceName...\\n"
 			output 3 'Found existing data file, reusing it '
 			if mv $CACHE_TMP $dnsmasqFile; then output_okn; else output_failn; fi
+			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
+		elif [ -s "$compressedBackup" ] && [ "$action" != "download" ]; then
+			output "Starting $serviceName...\\n"
+			output 3 'Found compressed backup file, reusing it '
+			R_TMP="$(mktemp -u -q -t ${dnsmasqFile}_tmp.XXXXXXXX)"
+			if gzip -dc < "${compressedBackup}" > "$R_TMP"; then
+				mv "$R_TMP" "${dnsmasqFile}"
+				output_okn
+			else
+				rm -f "$R_TMP"
+				output failn
+			fi
 			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
 		elif [ "$action" = "download" ] || [ "$status" != "${status//rror}" ]; then
 			output "Force-reloading $serviceName...\\n"
