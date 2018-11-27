@@ -297,7 +297,7 @@ download_lists() {
 	local i hf w_filter j=0 R_TMP
 
 	ubus_status set 'Reloading '
-	for i in $A_TMP $B_TMP $CACHE_TMP $dnsmasqFile $compressedBackup; do [ -f $i ] && rm -f $i; done
+	for i in $A_TMP $B_TMP $CACHE_TMP $dnsmasqFile; do [ -f $i ] && rm -f $i; done
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
 		output 3 'Low free memory, restarting dnsmasq...'
 		if reload_dnsmasq 'quiet'; then output_okn; else output_failn; fi
@@ -445,6 +445,8 @@ $(cat $A_TMP)"
 				output_fail
 				rm -f "$R_TMP"
 			fi
+		else
+			rm -f "$compressedBackup"
 		fi
 
 		output 2 'Removing temporary files '
