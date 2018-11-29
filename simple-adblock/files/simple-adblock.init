@@ -61,8 +61,8 @@ export serviceEnabled
 export forceDNS
 export parallelDL
 export debug
-export AllowNonAscii
-export StoreCompressedCache
+export allowNonAscii
+export compressedCache     
 export bootDelay
 export dlTimeout
 export verbosity
@@ -80,8 +80,8 @@ load_package_config() {
 	config_get_bool forceDNS              'config' 'force_dns' 1
 	config_get_bool parallelDL            'config' 'parallel_downloads' 1
 	config_get_bool debug                 'config' 'debug' 0
-	config_get_bool AllowNonAscii         'config' 'allow_non_ascii' 0
-	config_get_bool StoreCompressedCache  'config' 'store_compressed_cache' 0
+	config_get_bool allowNonAscii         'config' 'allow_non_ascii' 0
+	config_get_bool compressedCache       'config' 'compressed_cache' 0
 	config_get bootDelay                  'config' 'boot_delay' '120'
 	config_get dlTimeout                  'config' 'download_timeout' '20'
 	config_get verbosity                  'config' 'verbosity' '2'
@@ -126,6 +126,7 @@ is_enabled() {
 	fi
 	[ ! -d ${dnsmasqFile%/*} ] && mkdir -p ${dnsmasqFile%/*}
 	[ ! -d ${stateFile%/*} ] && mkdir -p ${stateFile%/*}
+	gzip -t -c $compressedBackup && return 0
 	network_flush_cache; network_find_wan wan_if; network_get_gateway wan_gw "$wan_if";
 	[ -n "$wan_gw" ] && return 0
 	output "$_ERROR_: $serviceName failed to discover WAN gateway.\\n"; return 1;
@@ -296,7 +297,8 @@ download_lists() {
 	local i hf w_filter j=0 R_TMP
 
 	ubus_status set 'Reloading '
-	for i in $A_TMP $B_TMP $CACHE_TMP $dnsmasqFile $compressedBackup; do [ -f $i ] && rm -f $i; done
+#	for i in $A_TMP $B_TMP $CACHE_TMP $dnsmasqFile $compressedBackup; do [ -f $i ] && rm -f $i; done
+	for i in $A_TMP $B_TMP $CACHE_TMP $dnsmasqFile; do [ -f $i ] && rm -f $i; done
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
 		output 3 'Low free memory, restarting dnsmasq...'
 		if reload_dnsmasq 'quiet'; then output_okn; else output_failn; fi
@@ -397,7 +399,7 @@ $(cat $A_TMP)"
 			serviceStatus="${serviceStatus:-'Whitelist processing error'}"
 		fi
 		output 2 'Formatting merged file '
-		if [ "$AllowNonAscii" -gt 0 ]; then
+		if [ "$allowNonAscii" -gt 0 ]; then
 			if sed "$f_filter" $B_TMP > $A_TMP; then
 				output_ok
 			else
@@ -421,20 +423,22 @@ $(cat $A_TMP)"
 			serviceStatus="${serviceStatus:-'Error moving data file'}"
 		fi
 
-		if [ "$StoreCompressedCache" -gt 0 ]; then
+		if [ "$compressedCache     " -gt 0 ]; then
 			output 2 'Creating compressed cache '
 			R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
-			if gzip < "$dnsmasqFile" > "$R_TMP" ; then
+			if gzip < "$dnsmasqFile" > "$R_TMP"; then
 				mv "$R_TMP" "$compressedBackup"
 				output_ok
 			else
 				output_fail
 				rm -f "$R_TMP"
 			fi
+		else
+			rm -f "$compressedBackup" >/dev/null 2>&1
 		fi
 
 		output 2 'Removing temporary files '
-		rm -f "/tmp/${packageName}_tmp.*" >/dev/null 2>&1;
+		rm -f "/tmp/${packageName}_tmp.*" >/dev/null 2>&1
 		for i in $A_TMP $B_TMP $CACHE_TMP; do if [ -s $i ]; then rm -f $i || j=1; fi; done
 		if [ $j -eq 0 ]; then
 			output_ok
@@ -470,11 +474,12 @@ start_service() {
 				json_add_string type redirect
 				json_add_string target 'DNAT'
 				json_add_string src 'lan'
+				json_add_string dest 'lan'
 				json_add_string proto 'tcpudp'
 				json_add_string src_dport '53'
 				json_add_string dest_port '53'
 				json_add_string dest_ip "$ip"
-				json_add_string name 'simple_adblock_dns_hijack'
+				json_add_string name 'simple-adblock-dns-hijack'
 				json_add_string reflection '0'
 				json_close_object
 				json_close_array
