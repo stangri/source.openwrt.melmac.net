@@ -5,20 +5,20 @@ export START=94
 export USE_PROCD=1
 export LC_ALL=C
 
-readonly packageName='simple-adblock'
+readonly packageName="simple-adblock"
 readonly serviceName="$packageName $PKG_VERSION"
 readonly PID="/var/run/${packageName}.pid"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
-readonly compressedBackup="/etc/${packageName}.gz"
+readonly compressedCacheFile="/etc/${packageName}.gz"
 export EXTRA_COMMANDS="check dl killcache status"
 export EXTRA_HELP="	check	Checks if specified domain is found in current blacklist
 	dl      	Force-redownloads all the lists, even if the last download was successful and no config changes were made
 	status    Shows the service last-run status"
 
-readonly A_TMP='/var/simple-adblock.hosts.a.tmp'
-readonly B_TMP='/var/simple-adblock.hosts.b.tmp'
-readonly CACHE_TMP='/var/run/simple-adblock.cache'
-readonly stateFile='/var/run/simple-adblock.state'
+readonly A_TMP="/var/simple-adblock.hosts.a.tmp"
+readonly B_TMP="/var/simple-adblock.hosts.b.tmp"
+readonly cacheFile="/var/run/simple-adblock.cache"
+readonly stateFile="/var/run/simple-adblock.state"
 readonly h_filter='/localhost/d;/^#/d;/^[^0-9]/d;s/^0\.0\.0\.0.//;s/^127\.0\.0\.1.//;s/[[:space:]]*#.*$//;s/[[:cntrl:]]$//;s/[[:space:]]//g;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
 readonly d_filter='/^#/d;s/[[:space:]]*#.*$//;s/[[:space:]]*$//;s/[[:cntrl:]]$//;/[[:space:]]/d;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
 readonly f_filter='s|^|local=/|;s|$|/|'
@@ -48,13 +48,14 @@ output() {
 	local msg=$(echo -n "${1/$serviceName /service }" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g');
 	if [ "$(echo -e -n "$msg" | wc -l)" -gt 0 ]; then
 		logger -t "${packageName:-service} [$$]" "$(echo -e -n "${logmsg}${msg}")"
-		logmsg=''
+		logmsg=""
 	else
 		logmsg="${logmsg}${msg}"
 	fi
 }
 led_on(){ if [ -n "${1}" ] && [ -e "${1}/trigger" ]; then echo "default-on" > "${1}/trigger" 2>&1; fi; }
 led_off(){ if [ -n "${1}" ] &&  [ -e "${1}/trigger" ]; then echo "none" > "${1}/trigger" 2>&1; fi; }
+testCompressedCache(){ [ "$compressedCache" -gt 0 ] && gzip -t -c $compressedCacheFile; }
 boot() { load_package_config; ( sleep "$bootDelay" && rc_procd start_service && rc_procd service_triggers | cat & ); }
 
 export serviceEnabled
@@ -76,21 +77,21 @@ export wan_if wan_gw wanphysdev dl_command serviceStatus dl_flag
 
 load_package_config() {
 	config_load "$packageName"
-	config_get_bool serviceEnabled        'config' 'enabled' 1
-	config_get_bool forceDNS              'config' 'force_dns' 1
-	config_get_bool parallelDL            'config' 'parallel_downloads' 1
-	config_get_bool debug                 'config' 'debug' 0
-	config_get_bool allowNonAscii         'config' 'allow_non_ascii' 0
-	config_get_bool compressedCache       'config' 'compressed_cache' 0
-	config_get bootDelay                  'config' 'boot_delay' '120'
-	config_get dlTimeout                  'config' 'download_timeout' '20'
-	config_get verbosity                  'config' 'verbosity' '2'
-	config_get led        	              'config' 'led'
-	config_get whitelist_domains          'config' 'whitelist_domain'
-	config_get blacklist_domains          'config' 'blacklist_domain'
-	config_get whitelist_domains_urls     'config' 'whitelist_domains_url'
-	config_get blacklist_domains_urls     'config' 'blacklist_domains_url'
-	config_get blacklist_hosts_urls       'config' 'blacklist_hosts_url'
+	config_get_bool serviceEnabled        "config" "enabled" 1
+	config_get_bool forceDNS              "config" "force_dns" 1
+	config_get_bool parallelDL            "config" "parallel_downloads" 1
+	config_get_bool debug                 "config" "debug" 0
+	config_get_bool allowNonAscii         "config" "allow_non_ascii" 0
+	config_get_bool compressedCache       "config" "compressed_cache" 0
+	config_get bootDelay                  "config" "boot_delay" "120"
+	config_get dlTimeout                  "config" "download_timeout" "20"
+	config_get verbosity                  "config" "verbosity" "2"
+	config_get led        	              "config" "led"
+	config_get whitelist_domains          "config" "whitelist_domain"
+	config_get blacklist_domains          "config" "blacklist_domain"
+	config_get whitelist_domains_urls     "config" "whitelist_domains_url"
+	config_get blacklist_domains_urls     "config" "blacklist_domains_url"
+	config_get blacklist_hosts_urls       "config" "blacklist_hosts_url"
 
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
@@ -126,7 +127,7 @@ is_enabled() {
 	fi
 	[ ! -d ${dnsmasqFile%/*} ] && mkdir -p ${dnsmasqFile%/*}
 	[ ! -d ${stateFile%/*} ] && mkdir -p ${stateFile%/*}
-	if [ "$compressedCache" -gt 0 ] && gzip -t -c $compressedBackup; then return 0; fi
+	testCompressedCache && return 0
 	network_flush_cache; network_find_wan wan_if; network_get_gateway wan_gw "$wan_if";
 	[ -n "$wan_gw" ] && return 0
 	output "$_ERROR_: $serviceName failed to discover WAN gateway.\\n"; return 1;
@@ -137,21 +138,21 @@ state() {
 	case "$1" in
 		store)
 			[ -s "$stateFile" ] && rm "$stateFile"
-			echo "reloadStored=\"$parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls\"" >> "$stateFile"
-			echo "restartStored=\"$forceDNS $led\"" >> "$stateFile"
+			echo "reloadStored=\"$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls\"" >> "$stateFile"
+			echo "restartStored=\"$compressedCache $forceDNS $led\"" >> "$stateFile"
 			;;
 		remove) [ -s "$stateFile" ] && rm "$stateFile";;
 		check|*)
 			if [ ! -s "$stateFile" ]; then
-				ret=''
+				ret=""
 			else
 				. "$stateFile"
-				reloadCurrent="$parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls"
-				restartCurrent="$forceDNS $led"
+				reloadCurrent="$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls"
+				restartCurrent="$compressedCache $forceDNS $led"
 				if [ "$reloadCurrent" != "$reloadStored" ]; then
-					ret='download'
+					ret="download"
 				elif [ "$restartCurrent" != "$restartStored" ]; then
-					ret='restart'
+					ret="restart"
 				fi
 			fi
 			echo "$ret"
@@ -162,43 +163,28 @@ state() {
 dnsmasq_kill() { killall -q -HUP dnsmasq; }
 dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
 reload_dnsmasq() {
-	local R_TMP
 	case $1 in
 		on_start)
-			if [ -s $compressedBackup ] ; then
-				output 3 'Unpacking compressed cache '
-				R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
-				if gzip -dc < "${compressedBackup}" > "$R_TMP"; then
-					mv "$R_TMP" "${dnsmasqFile}"
-					output_ok
-				else
-					rm -f "$R_TMP"
-					output_failn
-					output "$_ERROR_: $serviceName failed to unpack compressed cache!\\n"
-					serviceStatus="${serviceStatus:-'GZIP unpack error'}"
-					return 1
-				fi
-			fi
 			if [ -s $dnsmasqFile ]; then
-				output 3 'Restarting dnsmasq '
+				output 3 "Restarting dnsmasq "
 				if dnsmasq_restart; then
 					led_on "$led"
 					output_okn
 				else
 					output_failn
 					output "$_ERROR_: $serviceName failed to restart dnsmasq!\\n"
-					serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
+					serviceStatus="${serviceStatus:-"DNSMASQ restart error"}"
 					return 1
 				fi
 			else
 				output "$_ERROR_: $serviceName failed to create its data file!\\n"
-				serviceStatus="${serviceStatus:-'Failed to create data file'}"
+				serviceStatus="${serviceStatus:-"Failed to create data file"}"
 				return 1
 			fi
 			;;
 		on_stop)
-			[ -f $dnsmasqFile ] && mv $dnsmasqFile $CACHE_TMP
-			output 3 'Restarting dnsmasq '
+			[ -f $dnsmasqFile ] && mv $dnsmasqFile $cacheFile
+			output 3 "Restarting dnsmasq "
 			if dnsmasq_restart; then
 				led_off "$led"
 				output_okn
@@ -230,29 +216,29 @@ ubus_status(){
 	esac
 }
 
-is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
+is_chaos_calmer() { ubus -S call system board | grep -q "Chaos Calmer"; }
 
 remove_fw3_redirect() {
 	local name
-	config_get name "$1" 'name'
+	config_get name "$1" "name"
 	if [ -n "$name" ] && [ "$name" != "${name//simple_adblock}" ]; then
 		uci -q del "firewall.$1"
 	fi
 }
 
 fw3_setup() {
-	config_load 'firewall'
-	config_foreach remove_fw3_redirect 'redirect'
+	config_load "firewall"
+	config_foreach remove_fw3_redirect "redirect"
 	if [ "$1" = "start" ]; then
 		uci -q add firewall redirect >/dev/null 2>&1
-		uci -q set firewall.@redirect[-1].name='simple_adblock_dns_hijack'
-		uci -q set firewall.@redirect[-1].target='DNAT'
-		uci -q set firewall.@redirect[-1].src='lan'
-		uci -q set firewall.@redirect[-1].proto='tcpudp'
-		uci -q set firewall.@redirect[-1].src_dport='53'
-		uci -q set firewall.@redirect[-1].dest_port='53'
+		uci -q set firewall.@redirect[-1].name="simple_adblock_dns_hijack"
+		uci -q set firewall.@redirect[-1].target="DNAT"
+		uci -q set firewall.@redirect[-1].src="lan"
+		uci -q set firewall.@redirect[-1].proto="tcpudp"
+		uci -q set firewall.@redirect[-1].src_dport="53"
+		uci -q set firewall.@redirect[-1].dest_port="53"
 		uci -q set firewall.@redirect[-1].dest_ip="$ip"
-		uci -q set firewall.@redirect[-1].reflection='0'
+		uci -q set firewall.@redirect[-1].reflection="0"
 	fi
 	if [ -n "$(uci changes firewall)" ]; then
 		uci -q commit firewall
@@ -270,9 +256,9 @@ process_url() {
 		label="Domains: $label"; filter="$d_filter";
 	fi
 	if [ "$3" = "blocked" ]; then
-		type='Blocked'; D_TMP="$B_TMP";
+		type="Blocked"; D_TMP="$B_TMP";
 	else
-		type='Allowed'; D_TMP="$A_TMP";
+		type="Allowed"; D_TMP="$A_TMP";
 	fi
 	while [ -z "$R_TMP" ] || [ -e "$R_TMP" ]; do
 		R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
@@ -280,7 +266,7 @@ process_url() {
 	if ! $dl_command "$1" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 2 "[DL] $type $label $__FAIL__\\n"
 		output 1 "$_FAIL_"
-		ubus_status add '-'
+		ubus_status add "-"
 		return 0
 	fi
 	sed -i "$filter" "$R_TMP"
@@ -288,52 +274,52 @@ process_url() {
 	rm -f "${R_TMP}" >/dev/null 2>/dev/null
 	output 2 "[DL] $type $label $__OK__\\n"
 	output 1 "$_OK_"
-	ubus_status add '+'
+	ubus_status add "+"
 	return 0
 }
 
 download_lists() {
 	local i hf w_filter j=0 R_TMP
 
-	ubus_status set 'Reloading '
-	for i in $A_TMP $B_TMP $CACHE_TMP $dnsmasqFile; do [ -f $i ] && rm -f $i; done
+	ubus_status set "Reloading "
+	for i in $A_TMP $B_TMP $cacheFile $dnsmasqFile; do [ -f $i ] && rm -f $i; done
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
-		output 3 'Low free memory, restarting dnsmasq...'
-		if reload_dnsmasq 'quiet'; then output_okn; else output_failn; fi
+		output 3 "Low free memory, restarting dnsmasq..."
+		if reload_dnsmasq "quiet"; then output_okn; else output_failn; fi
 	fi
 	touch $A_TMP; touch $B_TMP;
-	output 1 'Downloading lists '
+	output 1 "Downloading lists "
 	if [ -n "$blacklist_hosts_urls" ]; then
 		for hf in ${blacklist_hosts_urls}; do
 			if [ "$parallelDL" -gt 0 ]; then
-				process_url "$hf" 'hosts' 'blocked' &
+				process_url "$hf" "hosts" "blocked" &
 			else
-				process_url "$hf" 'hosts' 'blocked'
+				process_url "$hf" "hosts" "blocked"
 			fi
 		done
 	fi
 	if [ -n "$blacklist_domains_urls" ]; then
 		for hf in ${blacklist_domains_urls}; do
 			if [ "$parallelDL" -gt 0 ]; then
-				process_url "$hf" 'domains' 'blocked' &
+				process_url "$hf" "domains" "blocked" &
 			else
-				process_url "$hf" 'domains' 'blocked'
+				process_url "$hf" "domains" "blocked"
 			fi
 		done
 	fi
 	if [ -n "$whitelist_domains_urls" ]; then
 		for hf in ${whitelist_domains_urls}; do
 			if [ "$parallelDL" -gt 0 ]; then
-				process_url "$hf" 'domains' 'allowed' &
+				process_url "$hf" "domains" "allowed" &
 			else
-				process_url "$hf" 'domains' 'allowed'
+				process_url "$hf" "domains" "allowed"
 			fi
 		done
 	fi
 	wait
 	i="$(ubus_status get)"
 	if [ "${i//-}" != "$i" ]; then
-		serviceStatus="${serviceStatus:-'Download error'}"
+		serviceStatus="${serviceStatus:-"Download error"}"
 	else
 		unset serviceStatus
 	fi
@@ -341,24 +327,24 @@ download_lists() {
 	i="${i//-/$xmark}"
 	i="${i//+/$checkmark}"
 	[ "$verbosity" = "1" ] && logmsg="${logmsg}${i}"
-	output 1 '\n'
+	output 1 "\\n"
 
 	[ -n "$blacklist_domains" ] && for hf in ${blacklist_domains}; do echo "$hf" | sed "$d_filter" >> $B_TMP; done
 	whitelist_domains="${whitelist_domains}
 $(cat $A_TMP)"
 	[ -n "$whitelist_domains" ] && for hf in ${whitelist_domains}; do hf=$(echo "$hf" | sed 's/\./\\./g'); w_filter="$w_filter/^${hf}$/d;/\\.${hf}$/d;"; done
 	if [ -s $B_TMP ]; then
-		output 1 'Processing downloads '
-		output 2 'Sorting combined list '
+		output 1 "Processing downloads "
+		output 2 "Sorting combined list "
 		if sort $B_TMP | uniq > $A_TMP; then
 			output_ok
 		else
 			output_fail
-			serviceStatus="${serviceStatus:-'Sorting error'}"
+			serviceStatus="${serviceStatus:-"Sorting error"}"
 		fi
 
 # TLD optimization written by Dirk Brenken (dev@brenken.org)
-		output 2 'Optimizing combined list '
+		output 2 "Optimizing combined list "
 		if awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$A_TMP" > "$B_TMP"; then
 			if sort "$B_TMP" > "$A_TMP"; then
 				if awk '{if(NR==1){tld=$NF};while(getline){if($NF!~tld"\\."){print tld;tld=$NF}}print tld}' "$A_TMP" > "$B_TMP"; then
@@ -367,118 +353,114 @@ $(cat $A_TMP)"
 							output_ok
 						else
 							output_fail
-							serviceStatus="${serviceStatus:-'Data file optimization error'}"
+							serviceStatus="${serviceStatus:-"Data file optimization error"}"
 							mv $A_TMP $B_TMP
 						fi
 					else
 						output_fail
-						serviceStatus="${serviceStatus:-'Data file optimization error'}"
+						serviceStatus="${serviceStatus:-"Data file optimization error"}"
 					fi
 				else
 					output_fail
-					serviceStatus="${serviceStatus:-'Data file optimization error'}"
+					serviceStatus="${serviceStatus:-"Data file optimization error"}"
 					mv $A_TMP $B_TMP
 				fi
 			else
 				output_fail
-				serviceStatus="${serviceStatus:-'Data file optimization error'}"
+				serviceStatus="${serviceStatus:-"Data file optimization error"}"
 			fi
 		else
 			output_fail
-			serviceStatus="${serviceStatus:-'Data file optimization error'}"
+			serviceStatus="${serviceStatus:-"Data file optimization error"}"
 			mv $A_TMP $B_TMP
 		fi
 
-		output 2 'Whitelisting domains '
+		output 2 "Whitelisting domains "
 		if sed -i "$w_filter" $B_TMP; then
 			output_ok
 		else
 			output_fail
-			serviceStatus="${serviceStatus:-'Whitelist processing error'}"
+			serviceStatus="${serviceStatus:-"Whitelist processing error"}"
 		fi
-		output 2 'Formatting merged file '
+		output 2 "Formatting merged file "
 		if [ "$allowNonAscii" -gt 0 ]; then
 			if sed "$f_filter" $B_TMP > $A_TMP; then
 				output_ok
 			else
 				output_fail
-				serviceStatus="${serviceStatus:-'Data file formatting error'}"
+				serviceStatus="${serviceStatus:-"Data file formatting error"}"
 			fi
 		else
 			if sed "$f_filter" $B_TMP | grep -E -v '[^a-zA-Z0-9=/.-]' > $A_TMP; then
 				output_ok
 			else
 				output_fail
-				serviceStatus="${serviceStatus:-'Data file formatting error'}"
+				serviceStatus="${serviceStatus:-"Data file formatting error"}"
 			fi
 		fi
 
-		output 2 'Creating dnsmasq config '
+		output 2 "Creating dnsmasq config "
 		if mv $A_TMP $dnsmasqFile; then
 			output_ok
 		else
 			output_fail
-			serviceStatus="${serviceStatus:-'Error moving data file'}"
+			serviceStatus="${serviceStatus:-"Error moving data file"}"
 		fi
 
-		if [ "$compressedCache     " -gt 0 ]; then
-			output 2 'Creating compressed cache '
+		if [ "$compressedCache" -gt 0 ]; then
+			output 2 "Creating compressed cache "
 			R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
 			if gzip < "$dnsmasqFile" > "$R_TMP"; then
-				mv "$R_TMP" "$compressedBackup"
+				mv "$R_TMP" "$compressedCacheFile"
 				output_ok
 			else
 				output_fail
 				rm -f "$R_TMP"
 			fi
 		else
-			rm -f "$compressedBackup" >/dev/null 2>&1
+			rm -f "$compressedCacheFile" >/dev/null 2>&1
 		fi
 
-		output 2 'Removing temporary files '
+		output 2 "Removing temporary files "
 		rm -f "/tmp/${packageName}_tmp.*" >/dev/null 2>&1
-		for i in $A_TMP $B_TMP $CACHE_TMP; do if [ -s $i ]; then rm -f $i || j=1; fi; done
+		for i in $A_TMP $B_TMP $cacheFile; do if [ -s $i ]; then rm -f $i || j=1; fi; done
 		if [ $j -eq 0 ]; then
 			output_ok
 		else
 			output_fail
-			serviceStatus="${serviceStatus:-'Error removing temporary files'}"
+			serviceStatus="${serviceStatus:-"Error removing temporary files"}"
 		fi
-		output 1 '\n'
+		output 1 "\\n"
 	fi
 }
 
 start_service() {
-	is_enabled 'on_start' || return 1
+	is_enabled "on_start" || return 1
 	local ip status action="$(state check)"
-	case "$1" in
-		download) action='download';;
-#		restart) [ -z "$action" ] && return 0;;
-	esac
 	if create_lock; then
-		state 'store'
-		procd_open_instance 'main'
+		state "store"
+		procd_open_instance "main"
 		procd_set_param command /bin/true
 		procd_set_param stdout 1
 		procd_set_param stderr 1
-		network_get_ipaddr ip 'lan'
+		network_get_ipaddr ip "lan"
 		if [ "$forceDNS" -ne 0 ] && [ -n "$ip" ]; then
 			if is_chaos_calmer; then
-				fw3_setup 'start'
+				fw3_setup "start"
 			else
 				procd_open_data
 				json_add_array firewall
 				json_add_object ""
 				json_add_string type redirect
-				json_add_string target 'DNAT'
-				json_add_string src 'lan'
-				json_add_string dest 'lan'
-				json_add_string proto 'tcpudp'
-				json_add_string src_dport '53'
-				json_add_string dest_port '53'
+				json_add_string target "DNAT"
+				json_add_string src "lan"
+				json_add_string dest "lan"
+				json_add_string proto "tcpudp"
+				json_add_string src_dport "53"
+				json_add_string dest_port "53"
 				json_add_string dest_ip "$ip"
-				json_add_string name 'simple-adblock-dns-hijack'
-				json_add_string reflection '0'
+				json_add_string name "simple-adblock-dns-hijack"
+				json_add_string reflection "0"
 				json_close_object
 				json_close_array
 				procd_close_data
@@ -486,20 +468,57 @@ start_service() {
 		fi
 		procd_close_instance
 		status="$(ubus_status get)"
-		if [ -s "$CACHE_TMP" ] && [ "$action" != "download" ]; then
-			output "Starting $serviceName...\\n"
-			output 3 'Found existing data file, reusing it '
-			if mv $CACHE_TMP $dnsmasqFile; then output_okn; else output_failn; fi
-			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
-		elif [ "$action" = "download" ] || [ "$status" != "${status//rror}" ]; then
-			output "Force-reloading $serviceName...\\n"
-			download_lists
-			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
-		elif [ ! -s "$dnsmasqFile" ]; then
-			output "Starting $serviceName...\\n"
-			download_lists
-			reload_dnsmasq 'on_start' || serviceStatus="${serviceStatus:-'DNSMASQ restart error'}"
-		fi
+
+		case "$1" in
+			download) action="download";;
+			restart|*)
+				if [ ! -s "$dnsmasqFile" ] && [ ! -s "$cacheFile" ] && ! testCompressedCache; then
+					action="download"
+				fi
+				if [ "$status" != "${status//rror}" ]; then 
+					action="download"
+				fi
+				action="${action:-$1}"
+			;;
+		esac
+
+		case $action in
+			download)
+				if [ -s "$dnsmasqFile" ] || [ -s "$cacheFile" ] || testCompressedCache; then
+					output "Force-reloading $serviceName...\\n"
+				else
+					output "Starting $serviceName...\\n"
+				fi
+				download_lists
+				reload_dnsmasq "on_start" || serviceStatus="${serviceStatus:-"DNSMASQ restart error"}"
+			;;
+			restart|*)
+				if [ "$action" == "restart" ]; then
+					output "Retarting $serviceName...\\n"
+				else
+					output "Starting $serviceName...\\n"
+				fi
+				if testCompressedCache && [ ! -s "$cacheFile" ] && [ ! -s "$dnsmasqFile" ]; then
+					output 3 "Found compressed cache file, unpacking it "
+					if gzip -dc < "${compressedCacheFile}" > "$cacheFile"; then
+						output_okn
+					else
+						output_failn
+						output "$_ERROR_: $serviceName failed to unpack compressed cache!\\n"
+						serviceStatus="${serviceStatus:-"GZIP unpack error"}"
+						return 1
+					fi
+				fi
+				if [ -s "$cacheFile" ] &&  [ ! -s "$dnsmasqFile" ]; then
+					output 3 "Found cache file, reusing it "
+					if mv "$cacheFile" "$dnsmasqFile"; then output_okn; else output_failn; fi
+				fi
+				if [ -s "$dnsmasqFile" ]; then
+					reload_dnsmasq "on_start" || serviceStatus="${serviceStatus:-"DNSMASQ (re)start error"}"
+				fi
+			;;
+		esac
+
 		if [ -s "$dnsmasqFile" ]; then
 			if [ -z "$serviceStatus" ]; then
 				output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains "; output_okn;
@@ -519,12 +538,12 @@ start_service() {
 
 service_started() { procd_set_config_changed firewall; }
 service_stopped() { procd_set_config_changed firewall; }
-restart_service() { rc_procd stop_service 'restart'; rc_procd start_service 'restart'; }
+restart_service() { rc_procd stop_service "restart"; rc_procd start_service "restart"; }
 reload_service() { restart_service; }
 restart() { restart_service; }
 reload() { restart_service; }
-dl() { rc_procd stop_service 'restart'; rc_procd start_service 'download'; }
-killcache() { [ -s $CACHE_TMP ] && rm -f $CACHE_TMP >/dev/null 2>/dev/null; }
+dl() { rc_procd stop_service "restart"; rc_procd start_service "download"; }
+killcache() { [ -s $cacheFile ] && rm -f $cacheFile >/dev/null 2>/dev/null; }
 status() { output "$serviceName last-ran status: $(ubus_status get)\\n"; }
 
 stop_service() {
@@ -532,16 +551,16 @@ stop_service() {
 	if [ "$serviceEnabled" -gt 0 ]; then
 		if [ -z "$1" ] && [ -s "$dnsmasqFile" ]; then
 			output "Stopping $serviceName...\\n"
-			state 'remove'
-			reload_dnsmasq 'on_stop'
-			ubus_status set 'Stopped'
+			state "remove"
+			reload_dnsmasq "on_stop"
+			ubus_status set "Stopped"
 		fi
 	else
-		reload_dnsmasq 'quiet'
-		ubus_status set 'Stopped'
+		reload_dnsmasq "quiet"
+		ubus_status set "Stopped"
 	fi
 	if is_chaos_calmer; then
-		fw3_setup 'stop'
+		fw3_setup "stop"
 	fi
 }
 
@@ -551,7 +570,7 @@ check() {
 	if [ ! -f "$dnsmasqFile" ]; then
 		echo "No local blacklist ($dnsmasqFile) found."
 	elif [ -z "$string" ]; then
-		echo "Usage: /etc/init.d/${packageName} check 'domain'"
+		echo "Usage: /etc/init.d/${packageName} check domain"
 	elif grep -m1 -q "$string" "$dnsmasqFile"; then
 		echo "Found $(grep -c "$string" "$dnsmasqFile") matches for $string in $dnsmasqFile:"
 		grep "$string" "$dnsmasqFile" | sed 's|local=/||;s|/$||;'
