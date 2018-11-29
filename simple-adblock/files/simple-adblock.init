@@ -126,7 +126,7 @@ is_enabled() {
 	fi
 	[ ! -d ${dnsmasqFile%/*} ] && mkdir -p ${dnsmasqFile%/*}
 	[ ! -d ${stateFile%/*} ] && mkdir -p ${stateFile%/*}
-	gzip -t -c $compressedBackup && return 0
+	if [ "$compressedCache" -gt 0 ] && gzip -t -c $compressedBackup; then return 0; fi
 	network_flush_cache; network_find_wan wan_if; network_get_gateway wan_gw "$wan_if";
 	[ -n "$wan_gw" ] && return 0
 	output "$_ERROR_: $serviceName failed to discover WAN gateway.\\n"; return 1;
@@ -263,7 +263,6 @@ fw3_setup() {
 process_url() {
 	local label type D_TMP R_TMP
 	if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then return 1; fi
-	#	ping -W5 -c1 "$(echo $1 | awk -F '/' '{print $3}')" 1>/dev/null 2>/dev/null || { output_fail; return 1; }
 	label="${1##*//}"; label="${label%%/*}";
 	if [ "$2" = "hosts" ]; then
 		label="Hosts: $label"; filter="$h_filter";
@@ -297,7 +296,6 @@ download_lists() {
 	local i hf w_filter j=0 R_TMP
 
 	ubus_status set 'Reloading '
-#	for i in $A_TMP $B_TMP $CACHE_TMP $dnsmasqFile $compressedBackup; do [ -f $i ] && rm -f $i; done
 	for i in $A_TMP $B_TMP $CACHE_TMP $dnsmasqFile; do [ -f $i ] && rm -f $i; done
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
 		output 3 'Low free memory, restarting dnsmasq...'
