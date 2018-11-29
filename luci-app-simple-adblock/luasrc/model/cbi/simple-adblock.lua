@@ -126,7 +126,7 @@ o9:value("1", translate("Allow Non-ASCII"))
 o9.rmempty = true
 o9.default = ""
 
-o10 = s:taboption("advanced", ListValue, "store_compressed_cache", translate("Store compressed cache file on router"), translate("Attempt to create a compressed cache of final block-list on the router."))
+o10 = s:taboption("advanced", ListValue, "compressed_cache", translate("Store compressed cache file on router"), translate("Attempt to create a compressed cache of final block-list on the router."))
 o10:value("", translate("Do not store compressed cache"))
 o10:value("1", translate("Store compressed cache"))
 o10.rmempty = true
