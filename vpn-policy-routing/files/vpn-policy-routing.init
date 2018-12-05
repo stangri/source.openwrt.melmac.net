@@ -187,7 +187,8 @@ ips() {
 		add_dnsmasq)
 			[ "$dnsmasqEnabled" -eq 0 ] && return 1
 			[ "$ipv6Enabled" -ne 0 ] && ipset="${ipset},${ipset}6"
-			echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlagIpv4=1
+#			echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlagIpv4=1
+			echo "ipset=/${param}/${ipset}" >> "$dnsmasqFile" || failFlagIpv4=1
 			if [ "$failFlagIpv4" -eq 0 ] && [ "$failFlagIpv6" -eq 0 ]; then return 0; else return 1; fi
 			;;
 		add)
@@ -535,15 +536,15 @@ start_service() {
 			return 1
 		fi
 
-		ipt -t mangle -N VPR_PREROUTING; ipt -t mangle -A PREROUTING -m mark --mark "0x00/${fwMask}" -g VPR_PREROUTING;
+		ipt -t mangle -N VPR_PREROUTING; ipt -t mangle -I 1 PREROUTING -m mark --mark "0x00/${fwMask}" -g VPR_PREROUTING;
 		if [ $forwardChainEnabled -ne 0 ]; then
-			ipt -t mangle -N VPR_FORWARD; ipt -t mangle -A FORWARD -m mark --mark "0x00/${fwMask}" -g VPR_FORWARD;
+			ipt -t mangle -N VPR_FORWARD; ipt -t mangle -I 1 FORWARD -m mark --mark "0x00/${fwMask}" -g VPR_FORWARD;
 		fi
 		if [ $inputChainEnabled -ne 0 ]; then
-			ipt -t mangle -N VPR_INPUT; ipt -t mangle -A INPUT -m mark --mark "0x00/${fwMask}" -g VPR_INPUT;
+			ipt -t mangle -N VPR_INPUT; ipt -t mangle -I 1 INPUT -m mark --mark "0x00/${fwMask}" -g VPR_INPUT;
 		fi
 		if [ $outputChainEnabled -ne 0 ]; then
-			ipt -t mangle -N VPR_OUTPUT; ipt -t mangle -A OUTPUT -m mark --mark "0x00/${fwMask}" -g VPR_OUTPUT;
+			ipt -t mangle -N VPR_OUTPUT; ipt -t mangle -I 1 OUTPUT -m mark --mark "0x00/${fwMask}" -g VPR_OUTPUT;
 		fi
 
 		output 1 'Processing interfaces '
