@@ -124,19 +124,19 @@ o9 = s:taboption("advanced", ListValue, "allow_non_ascii", translate("Allow Non-
 o9:value("0", translate("Do not allow Non-ASCII"))
 o9:value("1", translate("Allow Non-ASCII"))
 o9.rmempty = false
-o9.default = ""
+o9.default = "0"
 
 o10 = s:taboption("advanced", ListValue, "compressed_cache", translate("Store compressed cache file on router"), translate("Attempt to create a compressed cache of final block-list on the router."))
 o10:value("0", translate("Do not store compressed cache"))
 o10:value("1", translate("Store compressed cache"))
 o10.rmempty = false
-o10.default = ""
+o10.default = "0"
 
 o8 = s:taboption("advanced", ListValue, "debug", translate("Enable Debugging"), translate("Enables debug output to /tmp/simple-adblock.log"))
 o8:value("0", translate("Disable Debugging"))
 o8:value("1", translate("Enable Debugging"))
 o8.rmempty = false
-o8.default = ""
+o8.default = "0"
 
 
 s2 = m:section(NamedSection, "config", "simple-adblock", translate("Whitelist and Blocklist Management"))
