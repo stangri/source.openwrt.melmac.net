@@ -187,8 +187,8 @@ ips() {
 		add_dnsmasq)
 			[ "$dnsmasqEnabled" -eq 0 ] && return 1
 			[ "$ipv6Enabled" -ne 0 ] && ipset="${ipset},${ipset}6"
-#			echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlagIpv4=1
-			echo "ipset=/${param}/${ipset}" >> "$dnsmasqFile" || failFlagIpv4=1
+			echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlagIpv4=1
+#			echo "ipset=/${param}/${ipset}" >> "$dnsmasqFile" || failFlagIpv4=1
 			if [ "$failFlagIpv4" -eq 0 ] && [ "$failFlagIpv6" -eq 0 ]; then return 0; else return 1; fi
 			;;
 		add)
@@ -242,6 +242,11 @@ insert_tor_policy() {
 insert_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
 	local mark=$(eval echo "\$mark_$iface")
+	if [ "$ipv6Enabled" -ne 1 ]; then
+		is_ipv6 "$laddr" && return 0
+		is_ipv6 "$raddr" && return 0
+	fi
+
 	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
 #	param="-t mangle -A VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask}"
 	param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
@@ -250,7 +255,7 @@ insert_policy() {
 	[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
 	[ -n "$rport" ] && param="$param -p $proto -m multiport --dport ${rport//-/:}"
 	[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
-	ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: ipt $param\\n"
+	ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
 	if [ "$outputChainEnabled" -ne 0 ] && [ "$chain" = "PREROUTING" ] && [ "$proto" = "tcp" ] && [ -z "$laddr" ]; then
 		if [ -n "$lport" ] || [ -n "$rport" ]; then
 			insert_policy "$1" "$2" "$3" "$4" "$5" "$6" "$proto" 'OUTPUT'
@@ -271,7 +276,7 @@ insert_phys_dev_policy() {
 	param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
 	[ -n "$phys_dev" ] && param="$param -i $phys_dev"
 	[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
-	ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: ipt $param\\n"
+	ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
 	return 0
 }
 
@@ -530,22 +535,33 @@ start_service() {
 			modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
 		done
 
-		if [ $modprobeStatus -gt 0 ]; then 
+		if [ "$modprobeStatus" -gt 0 ] && ! is_turris; then 
  			output "$_ERROR_: $serviceName failed to load kernel modules!\\n"
 			ubus_status 'set' "Fail: $serviceName failed to load kernel modules!"
 			return 1
 		fi
 
-		ipt -t mangle -N VPR_PREROUTING; ipt -t mangle -I 1 PREROUTING -m mark --mark "0x00/${fwMask}" -g VPR_PREROUTING;
+		ipt -t mangle -N VPR_PREROUTING; ipt -t mangle -I PREROUTING 1 -m mark --mark "0x00/${fwMask}" -g VPR_PREROUTING;
 		if [ $forwardChainEnabled -ne 0 ]; then
-			ipt -t mangle -N VPR_FORWARD; ipt -t mangle -I 1 FORWARD -m mark --mark "0x00/${fwMask}" -g VPR_FORWARD;
+			ipt -t mangle -N VPR_FORWARD; ipt -t mangle -I FORWARD 1 -m mark --mark "0x00/${fwMask}" -g VPR_FORWARD;
 		fi
 		if [ $inputChainEnabled -ne 0 ]; then
-			ipt -t mangle -N VPR_INPUT; ipt -t mangle -I 1 INPUT -m mark --mark "0x00/${fwMask}" -g VPR_INPUT;
+			ipt -t mangle -N VPR_INPUT; ipt -t mangle -I INPUT 1 -m mark --mark "0x00/${fwMask}" -g VPR_INPUT;
 		fi
 		if [ $outputChainEnabled -ne 0 ]; then
-			ipt -t mangle -N VPR_OUTPUT; ipt -t mangle -I 1 OUTPUT -m mark --mark "0x00/${fwMask}" -g VPR_OUTPUT;
+			ipt -t mangle -N VPR_OUTPUT; ipt -t mangle -I OUTPUT 1 -m mark --mark "0x00/${fwMask}" -g VPR_OUTPUT;
 		fi
+
+#		ipt -t mangle -N VPR_PREROUTING; ipt -t mangle -A PREROUTING -m mark --mark "0x00/${fwMask}" -g VPR_PREROUTING;
+#		if [ $forwardChainEnabled -ne 0 ]; then
+#			ipt -t mangle -N VPR_FORWARD; ipt -t mangle -A FORWARD -m mark --mark "0x00/${fwMask}" -g VPR_FORWARD;
+#		fi
+#		if [ $inputChainEnabled -ne 0 ]; then
+#			ipt -t mangle -N VPR_INPUT; ipt -t mangle -A INPUT -m mark --mark "0x00/${fwMask}" -g VPR_INPUT;
+#		fi
+#		if [ $outputChainEnabled -ne 0 ]; then
+#			ipt -t mangle -N VPR_OUTPUT; ipt -t mangle -A OUTPUT -m mark --mark "0x00/${fwMask}" -g VPR_OUTPUT;
+#		fi
 
 		output 1 'Processing interfaces '
 		config_load 'network'; config_foreach process_interface 'interface' 'create';
