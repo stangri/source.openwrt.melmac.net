@@ -121,7 +121,11 @@ function action_altreboot()
           newEnvSetting = curEnvSetting == boot_envvar1_partition_one and boot_envvar1_partition_two or boot_envvar1_partition_one
           errorCode = luci.sys.call("/usr/sbin/fw_setenv " .. boot_envvar1 .. " " .. newEnvSetting)
             if errorCode ~= 0 then
-              errorMessage = errorMessage .. luci.i18n.translate("Unable to set firmware environment variable") .. ": " .. boot_envvar1 .. " " .. luci.i18n.translate("to") .. " " .. newEnvSetting .. ". "
+              if errorMessage then
+                errorMessage = errorMessage .. luci.i18n.translate("Unable to set firmware environment variable") .. ": " .. boot_envvar1 .. " " .. luci.i18n.translate("to") .. " " .. newEnvSetting .. ". "
+              else
+                errorMessage =  luci.i18n.translate("Unable to set firmware environment variable") .. ": " .. boot_envvar1 .. " " .. luci.i18n.translate("to") .. " " .. newEnvSetting .. ". "
+              end
               luci.util.perror(luci.i18n.translate("Unable to set firmware environment variable") .. ": " .. boot_envvar1 .. " " .. luci.i18n.translate("to") .. " " .. newEnvSetting .. ".")
             end
         end
