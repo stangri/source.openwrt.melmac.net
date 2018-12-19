@@ -77,8 +77,8 @@ is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" 
 is_tunnel() { is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_tor "$1" || is_wg "$1"; }
 is_wan() { [ -n "$wanIface4" ] && [ "$1" = "$wanIface4" ]; }
 is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ]; }
-is_ignored_interface() { [ "${ignoredIfaces/$1}" != "$ignoredIfaces" ]; }
-is_supported_interface() { [ "${supportedIfaces/$1}" != "$supportedIfaces" ] || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; }; }
+is_ignored_interface() { [ "${ignoredIfaces/"/$1/"}" != "$ignoredIfaces" ]; }
+is_supported_interface() { [ "${supportedIfaces/"/$1/"}" != "$supportedIfaces" ] || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; }; }
 is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; }
 is_ipv6() { [ "${1//:}" != "$1" ]; }
 is_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
@@ -95,6 +95,7 @@ dnsmasq_kill() { killall -q -HUP dnsmasq; }
 dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
 
 load_package_config() {
+	local temp i
 	config_load "$packageName"
 	config_get_bool serviceEnabled      'config' 'enabled' 0
 	config_get_bool strictMode          'config' 'strict_enforcement' 1
@@ -115,6 +116,16 @@ load_package_config() {
 	config_get icmpIface                'config' 'icmp_interface'
 	config_get ignoredIfaces            'config' 'ignored_interface'
 	config_get supportedIfaces          'config' 'supported_interface'
+
+	if [ -n "$ignoredIfaces" ]; then
+		for i in $ignoredIfaces; do temp="$temp/$i/"; done
+		ignoredIfaces="$temp"
+	fi
+	if [ -n "$supportedIfaces" ]; then
+		for i in $supportedIfaces; do temp="$temp/$i/"; done
+		supportedIfaces="$temp"
+	fi
+
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
 	fi
@@ -242,7 +253,7 @@ insert_tor_policy() {
 insert_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
 	local mark=$(eval echo "\$mark_$iface")
-	if [ "$ipv6Enabled" -ne 1 ]; then
+	if [ "$ipv6Enabled" -eq 0 ]; then
 		is_ipv6 "$laddr" && return 0
 		is_ipv6 "$raddr" && return 0
 	fi
