@@ -152,6 +152,7 @@ start_service() {
 		json_add_string type redirect
 		json_add_string target 'DNAT'
 		json_add_string src 'lan'
+		json_add_string dest 'lan'
 		json_add_string proto 'tcpudp'
 		json_add_string src_dport '53'
 		json_add_string dest_port '53'
@@ -163,6 +164,7 @@ start_service() {
 		json_add_string type redirect
 		json_add_string target 'DNAT'
 		json_add_string src 'lan'
+		json_add_string dest 'lan'
 		json_add_string proto 'tcp'
 		json_add_string src_dport '80'
 		json_add_string src_dip "!$range"
@@ -175,6 +177,7 @@ start_service() {
 		json_add_string type redirect
 		json_add_string target 'DNAT'
 		json_add_string src 'lan'
+		json_add_string dest 'lan'
 		json_add_string proto 'tcp'
 		json_add_string src_dport '443'
 		json_add_string src_dip "!$range"
@@ -187,6 +190,7 @@ start_service() {
 		json_add_string type redirect
 		json_add_string target 'DNAT'
 		json_add_string src 'lan'
+		json_add_string dest 'lan'
 		json_add_string proto 'tcp'
 		json_add_string src_dport '80'
 		json_add_string src_dip "$wwwIP"
@@ -199,6 +203,7 @@ start_service() {
 		json_add_string type redirect
 		json_add_string target 'DNAT'
 		json_add_string src 'lan'
+		json_add_string dest 'lan'
 		json_add_string proto 'tcp'
 		json_add_string src_dport '443'
 		json_add_string src_dip "$wwwIP"
