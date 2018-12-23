@@ -49,8 +49,8 @@ function is_supported_interface(arg)
 	local proto=arg['proto']
 	local ifname=arg['ifname']
 
-	if name and supportedIfaces:find(name) then return true end
-	if name and not ignoredIfaces:find(name) then
+	if name and supportedIfaces:match('%f[%w]' .. name .. '%f[%W]') then return true end
+	if name and not ignoredIfaces:match('%f[%w]' .. name .. '%f[%W]') then
 		if type(ifname) == "table" then
 			for key,value in pairs(ifname) do
 				if value and value:sub(1,3) == "tun" then return true end
