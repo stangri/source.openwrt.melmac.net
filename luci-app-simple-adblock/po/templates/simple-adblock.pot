@@ -25,6 +25,9 @@ msgstr ""
 msgid "Blacklisted Hosts URLs"
 msgstr ""
 
+msgid "Collected Errors"
+msgstr ""
+
 msgid "Configuration"
 msgstr ""
 

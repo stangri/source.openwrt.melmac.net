@@ -29,6 +29,15 @@ readonly _FAIL_='\033[0;31m\xe2\x9c\x97\033[0m'
 readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
 readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
+readonly statusSuccess='Success'
+readonly statusFail='Fail'
+readonly statusDownloading='Downloading'
+readonly statusReloading='Reloading'
+readonly statusRestarting='Restarting'
+readonly statusStarting='Starting'
+readonly statusForceReloading='Force-Reloading'
+readonly statusProcessing='Processing'
+readonly statusStopped='Stopped'
 
 create_lock() { [ -e "$PID" ] && return 1; touch "$PID"; }
 remove_lock() { [ -e "$PID" ] && rm -f "$PID"; } # rm -f /var/simple-adblock_tmp_* >/dev/null 2>&1; }
@@ -133,7 +142,7 @@ is_enabled() {
 	output "$_ERROR_: $serviceName failed to discover WAN gateway.\\n"; return 1;
 }
 
-state() {
+settingsState() {
 	local reloadCurrent reloadStored restartCurrent restartStored ret
 	case "$1" in
 		store)
@@ -165,20 +174,25 @@ dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
 reload_dnsmasq() {
 	case $1 in
 		on_start)
-			if [ -s $dnsmasqFile ]; then
-				output 3 "Restarting dnsmasq "
+			if [ -s "$dnsmasqFile" ]; then
+				output 3 "Restarting DNSMASQ "
+				ubus_storage set message "restarting DNSMASQ."
 				if dnsmasq_restart; then
 					led_on "$led"
 					output_okn
-				else
+				else 
 					output_failn
-					output "$_ERROR_: $serviceName failed to restart dnsmasq!\\n"
-					serviceStatus="${serviceStatus:-"DNSMASQ restart error"}"
+					ubus_storage add status "$statusFail"
+					ubus_storage add message "DNSMASQ restart error"
+					ubus_storage add error "DNSMASQ restart error"
+					output "$_ERROR_: $serviceName failed to restart DNSMASQ!\\n"
 					return 1
 				fi
 			else
+				ubus_storage add status "$statusFail"
+				ubus_storage add message "Failed to create $dnsmasqFile file."
+				ubus_storage add error "Failed to create $dnsmasqFile file."
 				output "$_ERROR_: $serviceName failed to create its data file!\\n"
-				serviceStatus="${serviceStatus:-"Failed to create data file"}"
 				return 1
 			fi
 			;;
@@ -189,10 +203,16 @@ reload_dnsmasq() {
 				led_off "$led"
 				output_okn
 				output "$serviceName stopped.\\n"
+				ubus_storage set status "$statusStopped"
+				ubus_storage del message
+				ubus_storage del error
 				return 0
 			else
 				output_failn;
-				output "$_ERROR_: $serviceName failed to restart dnsmasq!\\n"
+				ubus_storage add status "$statusFail"
+				ubus_storage add message "DNSMASQ restart error on stop"
+				ubus_storage add error "DNSMASQ restart error on stop"
+				output "$_ERROR_: $serviceName failed to restart DNSMASQ on stop !\\n"
 				return 1
 			fi
 			;;
@@ -202,16 +222,43 @@ reload_dnsmasq() {
 	esac
 }
 
-ubus_status(){
-	case "$1" in
+ubus_storage(){
+local action="$1" instance="$2" message="$3" curStatus curMessage curError
+	curStatus="$(ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']")"
+	curMessage="$(ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['message']")"
+	curError="$(ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['error']")"
+	case "$action" in
 		add)
-			ubus_status set "$(ubus_status get)${2}"
+			case "$instance" in
+				status)
+					[ -n "$curStatus" ] && curStatus="$curStatus $message" || curStatus="$message";;
+				message) 
+					[ -n "$curMessage" ] && curMessage="$curMessage $message" || curMessage="$message";;
+				error) 
+					[ -n "$curError" ] && curError="$curError $message" || curError="$message";;
+			esac
+			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"/bin/true\" ], \"data\": { \"status\": \"${curStatus}\", \"message\": \"${curMessage}\", \"error\": \"${curError}\" }}}}"
 			;;
 		del | set)
-			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"/bin/true\" ], \"data\": { \"status\": \"${2}\" }}}}"
+			case "$instance" in
+				status)
+					curStatus="$message";;
+				message) 
+					curMessage="$message";;
+				error) 
+					curError="$message";;
+			esac
+			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"/bin/true\" ], \"data\": { \"status\": \"${curStatus}\", \"message\": \"${curMessage}\", \"error\": \"${curError}\" }}}}"
 			;;
 		get)
-			ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']"
+			case "$instance" in
+				status)
+					ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']";;
+				message) 
+					ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['message']";;
+				error) 
+					ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['error']";;
+			esac
 			;;
 	esac
 }
@@ -266,7 +313,8 @@ process_url() {
 	if ! $dl_command "$1" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 2 "[DL] $type $label $__FAIL__\\n"
 		output 1 "$_FAIL_"
-		ubus_status add "-"
+		ubus_storage add message "-"
+		ubus_storage add error "Error downloading ${1}."
 		return 0
 	fi
 	sed -i "$filter" "$R_TMP"
@@ -274,14 +322,14 @@ process_url() {
 	rm -f "${R_TMP}" >/dev/null 2>/dev/null
 	output 2 "[DL] $type $label $__OK__\\n"
 	output 1 "$_OK_"
-	ubus_status add "+"
+	ubus_storage add message "+"
 	return 0
 }
 
 download_lists() {
 	local i hf w_filter j=0 R_TMP
 
-	ubus_status set "Reloading "
+	ubus_storage set status "$statusDownloading"
 	for i in $A_TMP $B_TMP $cacheFile $dnsmasqFile; do [ -f $i ] && rm -f $i; done
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
 		output 3 "Low free memory, restarting dnsmasq..."
@@ -317,13 +365,7 @@ download_lists() {
 		done
 	fi
 	wait
-	i="$(ubus_status get)"
-	if [ "${i//-}" != "$i" ]; then
-		serviceStatus="${serviceStatus:-"Download error"}"
-	else
-		unset serviceStatus
-	fi
-	i="${i//Reloading }"
+	i="$(ubus_storage get message)"
 	i="${i//-/$xmark}"
 	i="${i//+/$checkmark}"
 	[ "$verbosity" = "1" ] && logmsg="${logmsg}${i}"
@@ -335,16 +377,19 @@ $(cat $A_TMP)"
 	[ -n "$whitelist_domains" ] && for hf in ${whitelist_domains}; do hf=$(echo "$hf" | sed 's/\./\\./g'); w_filter="$w_filter/^${hf}$/d;/\\.${hf}$/d;"; done
 	if [ -s $B_TMP ]; then
 		output 1 "Processing downloads "
+		ubus_storage set status "$statusProcessing"
 		output 2 "Sorting combined list "
+		ubus_storage set message "sorting combined list."
 		if sort $B_TMP | uniq > $A_TMP; then
 			output_ok
 		else
 			output_fail
-			serviceStatus="${serviceStatus:-"Sorting error"}"
+			ubus_storage add error "Sorting error."
 		fi
 
 # TLD optimization written by Dirk Brenken (dev@brenken.org)
 		output 2 "Optimizing combined list "
+		ubus_storage set message "optimizing combined list."
 		if awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$A_TMP" > "$B_TMP"; then
 			if sort "$B_TMP" > "$A_TMP"; then
 				if awk '{if(NR==1){tld=$NF};while(getline){if($NF!~tld"\\."){print tld;tld=$NF}}print tld}' "$A_TMP" > "$B_TMP"; then
@@ -353,58 +398,61 @@ $(cat $A_TMP)"
 							output_ok
 						else
 							output_fail
-							serviceStatus="${serviceStatus:-"Data file optimization error"}"
+							ubus_storage add error "Data file optimization error."
 							mv $A_TMP $B_TMP
 						fi
 					else
 						output_fail
-						serviceStatus="${serviceStatus:-"Data file optimization error"}"
+						ubus_storage add error "Data file optimization error."
 					fi
 				else
 					output_fail
-					serviceStatus="${serviceStatus:-"Data file optimization error"}"
+					ubus_storage add error "Data file optimization error."
 					mv $A_TMP $B_TMP
 				fi
 			else
 				output_fail
-				serviceStatus="${serviceStatus:-"Data file optimization error"}"
+				ubus_storage add error "Data file optimization error."
 			fi
 		else
 			output_fail
-			serviceStatus="${serviceStatus:-"Data file optimization error"}"
+			ubus_storage add error "Data file optimization error."
 			mv $A_TMP $B_TMP
 		fi
 
 		output 2 "Whitelisting domains "
+		ubus_storage set message "whitelisting domains."
 		if sed -i "$w_filter" $B_TMP; then
 			output_ok
 		else
 			output_fail
-			serviceStatus="${serviceStatus:-"Whitelist processing error"}"
+			ubus_storage add error "Whitelist processing error."
 		fi
 		output 2 "Formatting merged file "
+		ubus_storage set message "formatting merged file."
 		if [ "$allowNonAscii" -gt 0 ]; then
 			if sed "$f_filter" $B_TMP > $A_TMP; then
 				output_ok
 			else
 				output_fail
-				serviceStatus="${serviceStatus:-"Data file formatting error"}"
+				ubus_storage add error "Data file formatting error."
 			fi
 		else
 			if sed "$f_filter" $B_TMP | grep -E -v '[^a-zA-Z0-9=/.-]' > $A_TMP; then
 				output_ok
 			else
 				output_fail
-				serviceStatus="${serviceStatus:-"Data file formatting error"}"
+				ubus_storage add error "Data file formatting error."
 			fi
 		fi
 
-		output 2 "Creating dnsmasq config "
+		output 2 "Creating DNSMASQ config "
+		ubus_storage set message "creating DNSMASQ config."
 		if mv $A_TMP $dnsmasqFile; then
 			output_ok
 		else
 			output_fail
-			serviceStatus="${serviceStatus:-"Error moving data file"}"
+			ubus_storage add error "Error moving data file ${A_TMP} to ${dnsmasqFile}."
 		fi
 
 		if [ "$compressedCache" -gt 0 ]; then
@@ -422,13 +470,14 @@ $(cat $A_TMP)"
 		fi
 
 		output 2 "Removing temporary files "
+		ubus_storage set message "removing temporary files."
 		rm -f "/tmp/${packageName}_tmp.*" >/dev/null 2>&1
 		for i in $A_TMP $B_TMP $cacheFile; do if [ -s $i ]; then rm -f $i || j=1; fi; done
 		if [ $j -eq 0 ]; then
 			output_ok
 		else
 			output_fail
-			serviceStatus="${serviceStatus:-"Error removing temporary files"}"
+			ubus_storage add error "Error removing temporary files."
 		fi
 		output 1 "\\n"
 	fi
@@ -436,9 +485,9 @@ $(cat $A_TMP)"
 
 start_service() {
 	is_enabled "on_start" || return 1
-	local ip status action="$(state check)"
+	local ip status error action="$(settingsState check)"
 	if create_lock; then
-		state "store"
+		settingsState "store"
 		procd_open_instance "main"
 		procd_set_param command /bin/true
 		procd_set_param stdout 1
@@ -467,7 +516,11 @@ start_service() {
 			fi
 		fi
 		procd_close_instance
-		status="$(ubus_status get)"
+		status="$(ubus_storage get status)"
+		error="$(ubus_storage get error)"
+		ubus_storage del status
+		ubus_storage del message
+		ubus_storage del error
 
 		case "$1" in
 			download) action="download";;
@@ -475,7 +528,7 @@ start_service() {
 				if [ ! -s "$dnsmasqFile" ] && [ ! -s "$cacheFile" ] && ! testCompressedCache; then
 					action="download"
 				fi
-				if [ "$status" != "${status//rror}" ]; then 
+				if [ -n "$error" ]; then 
 					action="download"
 				fi
 				action="${action:-$1}"
@@ -486,49 +539,56 @@ start_service() {
 			download)
 				if [ -s "$dnsmasqFile" ] || [ -s "$cacheFile" ] || testCompressedCache; then
 					output "Force-reloading $serviceName...\\n"
+					ubus_storage set status "$statusForceReloading"
 				else
 					output "Starting $serviceName...\\n"
+					ubus_storage set status "$statusStarting"
 				fi
 				download_lists
-				reload_dnsmasq "on_start" || serviceStatus="${serviceStatus:-"DNSMASQ restart error"}"
+				reload_dnsmasq "on_start"
 			;;
 			restart|*)
 				if [ "$action" == "restart" ]; then
 					output "Retarting $serviceName...\\n"
+					ubus_storage set status "$statusRestarting"
 				else
 					output "Starting $serviceName...\\n"
+					ubus_storage set status "$statusStarting"
 				fi
 				if testCompressedCache && [ ! -s "$cacheFile" ] && [ ! -s "$dnsmasqFile" ]; then
 					output 3 "Found compressed cache file, unpacking it "
+					ubus_storage set message "found compressed cache file, unpacking it."
 					if gzip -dc < "${compressedCacheFile}" > "$cacheFile"; then
 						output_okn
 					else
 						output_failn
 						output "$_ERROR_: $serviceName failed to unpack compressed cache!\\n"
-						serviceStatus="${serviceStatus:-"GZIP unpack error"}"
+						ubus_storage add error "failed to unpack compressed cache!"
 						return 1
 					fi
 				fi
 				if [ -s "$cacheFile" ] &&  [ ! -s "$dnsmasqFile" ]; then
 					output 3 "Found cache file, reusing it "
-					if mv "$cacheFile" "$dnsmasqFile"; then output_okn; else output_failn; fi
+					ubus_storage set message "found cache file, reusing it."
+					if mv "$cacheFile" "$dnsmasqFile"; then 
+						output_okn
+					else 
+						output_failn
+						ubus_storage add error "Error moving $cacheFile to $dnsmasqFile."
+					fi
 				fi
-				if [ -s "$dnsmasqFile" ]; then
-					reload_dnsmasq "on_start" || serviceStatus="${serviceStatus:-"DNSMASQ (re)start error"}"
-				fi
+				reload_dnsmasq "on_start"
 			;;
 		esac
 
-		if [ -s "$dnsmasqFile" ]; then
-			if [ -z "$serviceStatus" ]; then
-				output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains "; output_okn;
-				serviceStatus="Success: $(wc -l < $dnsmasqFile) domains blocked"
-			else
-				output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains with error: $serviceStatus "; output_failn;
-				serviceStatus="$(wc -l < $dnsmasqFile) domains blocked with error: $serviceStatus"
+		if [ -s "$dnsmasqFile" ] && [ "$(ubus_storage add status)" != "$statusFail" ]; then
+			output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains "; output_okn;
+			ubus_storage set status "$statusSuccess"
+			ubus_storage set message "$(wc -l < $dnsmasqFile) domains blocked"
+			if [ -n "$(ubus_storage get error)" ]; then
+				output "Collected errors: $(ubus_storage get error)\\n"
 			fi
 		fi
-		[ -n "$serviceStatus" ] && ubus_status set "$serviceStatus"
 		remove_lock
 	else
 		output "$serviceName: another instance is starting up "; output_failn;
@@ -544,20 +604,24 @@ restart() { restart_service; }
 reload() { restart_service; }
 dl() { rc_procd stop_service "restart"; rc_procd start_service "download"; }
 killcache() { [ -s $cacheFile ] && rm -f $cacheFile >/dev/null 2>/dev/null; }
-status() { output "$serviceName last-ran status: $(ubus_status get)\\n"; }
+status() { 
+	output "$serviceName $(ubus_storage get status): $(ubus_storage get message)\\n"
+	[ -n "$(ubus_storage get error)" ] && output "$_ERROR_: $(ubus_storage get error)\\n"
+}
 
 stop_service() {
 	load_package_config
 	if [ "$serviceEnabled" -gt 0 ]; then
 		if [ -z "$1" ] && [ -s "$dnsmasqFile" ]; then
 			output "Stopping $serviceName...\\n"
-			state "remove"
+			settingsState "remove"
 			reload_dnsmasq "on_stop"
-			ubus_status set "Stopped"
 		fi
 	else
 		reload_dnsmasq "quiet"
-		ubus_status set "Stopped"
+#			ubus_storage set status "$statusStopped"
+#			ubus_storage del message
+#			ubus_storage del error
 	fi
 	if is_chaos_calmer; then
 		fw3_setup "stop"
