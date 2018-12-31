@@ -73,7 +73,11 @@ else
 		end
 	end
 	function en.write()
-		enabledFlag = enabledFlag == "1" and "0" or "1"
+		if status:match("Stopped") then
+			enabledFlag = "1"
+		else
+			enabledFlag = enabledFlag == "1" and "0" or "1"
+		end
 		uci:set(packageName, "config", "enabled", enabledFlag)
 		uci:save(packageName)
 		uci:commit(packageName)
