@@ -16,13 +16,25 @@ end
 
 h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status"))
 
-local status = util.ubus("service", "list", { name = packageName })
-if status and status[packageName] and status[packageName]["instances"] and status[packageName]["instances"]["status"] and status[packageName]["instances"]["status"]["data"] and status[packageName]["instances"]["status"]["data"]["status"] then
-	status = status[packageName]["instances"]["status"]["data"]["status"]
+local status 
+local error
+local ubusStatus = util.ubus("service", "list", { name = packageName })
+if ubusStatus and ubusStatus[packageName] and ubusStatus[packageName]["instances"] and ubusStatus[packageName]["instances"]["status"] and ubusStatus[packageName]["instances"]["status"]["data"] then
+	if ubusStatus[packageName]["instances"]["status"]["data"]["status"] then
+		status = ubusStatus[packageName]["instances"]["status"]["data"]["status"]
+	else
+		status = "Stopped"
+	end
+	if ubusStatus[packageName]["instances"]["status"]["data"]["message"] and ubusStatus[packageName]["instances"]["status"]["data"]["message"] ~= "" then
+		status = status .. ": " .. ubusStatus[packageName]["instances"]["status"]["data"]["message"]
+	end
+	if ubusStatus[packageName]["instances"]["status"]["data"]["error"] and ubusStatus[packageName]["instances"]["status"]["data"]["error"] ~= "" then
+		error = ubusStatus[packageName]["instances"]["status"]["data"]["error"]
+	end
 else
-	status =  "Stopped"
+	status = "Stopped"
 end
-if status:match("Reloading") then
+if status:match("ing") then
 	ds = h:option(DummyValue, "_dummy", translate("Service Status"))
 	ds.template = "simple-adblock/status"
 	ds.value = status
@@ -32,10 +44,10 @@ else
 		en.title      = translate("Service is disabled/stopped")
 		en.inputtitle = translate("Enable/Start")
 		en.inputstyle = "apply important"
-		if nixio.fs.access("/var/simple-adblock.cache") then
+		if nixio.fs.access("/var/run/simple-adblock.cache") then
 			ds = h:option(DummyValue, "_dummy", translate("Service Status"))
 			ds.template = "simple-adblock/status"
-			ds.value = "Cache file containing " .. luci.util.trim(luci.sys.exec("wc -l < /var/simple-adblock.cache")) .. " domains found"
+			ds.value = "Cache file containing " .. luci.util.trim(luci.sys.exec("wc -l < /var/run/simple-adblock.cache")) .. " domains found"
 		end
 	else
 		en.title      = translate("Service is enabled/started")
@@ -44,7 +56,12 @@ else
 		ds = h:option(DummyValue, "_dummy", translate("Service Status"))
 		ds.template = "simple-adblock/status"
 		ds.value = status
-		if not status:match("Success") then
+		if status:match("Fail") or error then
+			if error then
+				es = h:option(DummyValue, "_dummy", translate("Collected Errors"))
+				es.template = "simple-adblock/status"
+				es.value = error
+			end
 			reload = h:option(Button, "__reload")
 			reload.title      = translate("Service started with error")
 			reload.inputtitle = translate("Reload")
