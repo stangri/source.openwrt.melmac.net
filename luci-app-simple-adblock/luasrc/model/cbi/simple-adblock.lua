@@ -47,7 +47,7 @@ else
 		if nixio.fs.access("/var/run/simple-adblock.cache") then
 			ds = h:option(DummyValue, "_dummy", translate("Service Status"))
 			ds.template = "simple-adblock/status"
-			ds.value = "Cache file containing " .. luci.util.trim(luci.sys.exec("wc -l < /var/run/simple-adblock.cache")) .. " domains found"
+			ds.value = "Cache file containing " .. luci.util.trim(luci.sys.exec("wc -l < /var/run/simple-adblock.cache")) .. " domains found."
 		end
 	else
 		en.title      = translate("Service is enabled/started")
