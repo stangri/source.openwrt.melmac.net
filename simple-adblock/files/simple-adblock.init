@@ -618,6 +618,7 @@ status() {
 
 stop_service() {
 	load_package_config
+	[ -s "$dnsmasqFile" ] && mv "$dnsmasqFile" "$cacheFile" >/dev/null 2>/dev/null
 	if [ "$serviceEnabled" -gt 0 ]; then
 		if [ -z "$1" ] && [ -s "$dnsmasqFile" ]; then
 			output "Stopping $serviceName...\\n"
