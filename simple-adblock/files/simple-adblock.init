@@ -584,7 +584,7 @@ start_service() {
 		if [ -s "$dnsmasqFile" ] && [ "$(ubus_storage add status)" != "$statusFail" ]; then
 			output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains "; output_okn;
 			ubus_storage set status "$statusSuccess"
-			ubus_storage set message "$(wc -l < $dnsmasqFile) domains blocked"
+			ubus_storage set message "$(wc -l < $dnsmasqFile) domains blocked."
 			if [ -n "$(ubus_storage get error)" ]; then
 				output "Collected errors: $(ubus_storage get error)\\n"
 			fi
@@ -604,8 +604,15 @@ restart() { restart_service; }
 reload() { restart_service; }
 dl() { rc_procd stop_service "restart"; rc_procd start_service "download"; }
 killcache() { [ -s $cacheFile ] && rm -f $cacheFile >/dev/null 2>/dev/null; }
-status() { 
-	output "$serviceName $(ubus_storage get status): $(ubus_storage get message)\\n"
+status() {
+	local status
+	if [ -n "$(ubus_storage get status)" ]; then 
+		status="$(ubus_storage get status)"
+	fi
+	if [ -n "$status" ] && [ -n "$(ubus_storage get message)" ]; then 
+		status="${status}: $(ubus_storage get message)"
+	fi
+	[ -n "$status" ] && output "$serviceName $status\\n"
 	[ -n "$(ubus_storage get error)" ] && output "$_ERROR_: $(ubus_storage get error)\\n"
 }
 
