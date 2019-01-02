@@ -618,14 +618,15 @@ status() {
 
 stop_service() {
 	load_package_config
-	[ -s "$dnsmasqFile" ] && mv "$dnsmasqFile" "$cacheFile" >/dev/null 2>/dev/null
 	if [ "$serviceEnabled" -gt 0 ]; then
 		if [ -z "$1" ] && [ -s "$dnsmasqFile" ]; then
+			[ -s "$dnsmasqFile" ] && mv "$dnsmasqFile" "$cacheFile" >/dev/null 2>/dev/null
 			output "Stopping $serviceName...\\n"
 			settingsState "remove"
 			reload_dnsmasq "on_stop"
 		fi
 	else
+		[ -s "$dnsmasqFile" ] && mv "$dnsmasqFile" "$cacheFile" >/dev/null 2>/dev/null
 		reload_dnsmasq "quiet"
 #			ubus_storage set status "$statusStopped"
 #			ubus_storage del message
