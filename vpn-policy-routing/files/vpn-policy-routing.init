@@ -92,6 +92,7 @@ get_device_gw() { echo "$ip4RouteOutput" | grep -Eso -m1 "^([0-9]{1,3}\\.){3}[0-
 get_device_gw6() { echo "$ip6RouteOutput" | grep -Eso -m1 "^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}(/([0-9]){0,2}){0,2} dev $1" | awk -F "/" '{print $1}'; }
 get_tunnel_gw() { echo "$ifconfigOutput" | grep "^${1}" -A 3 | grep 'P-t-P' | awk '{print $3}' | awk -F ":" '{print $2}'; }
 get_tunnel_gw6() { local gw6=$(echo "$ifconfigOutput" | grep "^${1}" -A 3 | grep 'inet6 addr:' | awk '{print $3}'); echo ${gw6:+"${gw6%:*}:1"}; }
+get_device_bridge_gw() { echo "$ip4RouteOutput" | grep -m1 "dev $1" | grep -Eso "src ([0-9]{1,3}\\.){3}[0-9]{1,3}" | awk '{print $2}'; }
 dnsmasq_kill() { killall -q -HUP dnsmasq; }
 dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
 
@@ -488,6 +489,7 @@ process_interface(){
 			if ! is_ipv6 "$gw6" || [ "$gw6" = "::/0" ]; then gw6="$(get_device_gw6 "$dev6")"; fi
 			if ! is_ipv4 "$gw4" || [ "$gw4" = "0.0.0.0" ]; then gw4="$(get_tunnel_gw "$dev")"; fi
 			if ! is_ipv6 "$gw6" || [ "$gw6" = "::/0" ]; then gw6="$(get_tunnel_gw6 "$dev6")"; fi
+			if ! is_ipv4 "$gw4" || [ "$gw4" = "0.0.0.0" ]; then gw4="$(get_device_bridge_gw "$dev")"; fi
 			eval "mark_${iface}=$ifaceMark"; eval "tid_${iface}=$ifaceTableID";
 
 			table_destroy "${ifaceTableID}" "${iface}"
