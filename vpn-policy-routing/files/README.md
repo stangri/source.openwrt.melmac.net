@@ -254,7 +254,12 @@ If you don't want to post the ```/etc/init.d/vpn-policy-routing status``` output
   option route_nopull '1'
   ```
 
-  <!-- option route '0.0.0.0 0.0.0.0'  -->
+  or, for newer OpenVPN client/server combinations:
+
+  ```text
+  list pull_filter='ingore "redirect-gateway"'
+  ```
+
   or set the following option for your Wireguard tunnel config:
 
   ```text
