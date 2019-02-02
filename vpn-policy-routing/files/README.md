@@ -170,7 +170,7 @@ Each policy may have a combination of the options below, please note that the ``
 |local_addresses||List of space-separated local/source IP addresses, CIDRs or hostnames. You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
 |local_ports||List of space-separated local/source ports or port-ranges.|
 |remote_addresses||List of space-separated remote/target IP addresses, CIDRs or hostnames/domain names.|
-|local_ports||List of space-separated remote/target ports or port-ranges.|
+|remote_ports||List of space-separated remote/target ports or port-ranges.|
 |proto|tcp|Policy protocol, can be either ```tcp```, ```udp``` or ```tcp udp```. This setting is case-sensitive. To display the ```Protocol``` column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Protocol Column``` in the ```Advanced``` tab.|
 |chain|PREROUTING|Policy chain, can be either ```PREROUTING```, ```FORWARDING```, ```INPUT``` or ```OUTPUT```. This setting is case-sensitive. To display the ```Chain``` column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Chain Column``` in the ```Advanced``` tab.|
 
