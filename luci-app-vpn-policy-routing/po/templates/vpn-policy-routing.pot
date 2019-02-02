@@ -36,6 +36,9 @@ msgstr ""
 msgid "Basic Configuration"
 msgstr ""
 
+msgid "Chain"
+msgstr ""
+
 msgid "Comment"
 msgstr ""
 
@@ -147,6 +150,9 @@ msgstr ""
 msgid "Policies"
 msgstr ""
 
+msgid "Protocol"
+msgstr ""
+
 msgid "README"
 msgstr ""
 
@@ -178,6 +184,22 @@ msgid "Service started with error(s)"
 msgstr ""
 
 msgid "Set DSCP tags (in range between 1 and 63) for specific interfaces."
+msgstr ""
+
+msgid "Show Chain Column"
+msgstr ""
+
+msgid "Show Protocol Column"
+msgstr ""
+
+msgid ""
+"Shows the chain column for policies, allowing you to assign a TCP, UDP or "
+"TCP/UDP protocol to a policy."
+msgstr ""
+
+msgid ""
+"Shows the protocol column for policies, allowing you to assign a TCP, UDP or "
+"TCP/UDP protocol to a policy."
 msgstr ""
 
 msgid ""

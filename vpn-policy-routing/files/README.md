@@ -139,7 +139,7 @@ Default configuration has service disabled (use Web UI to enable/start service o
 
 The ```vpn-policy-routing``` settings are split into ```basic``` and ```advanced``` settings. The full list of configuration parameters of ```vpn-policy-routing.config``` section is:
 
-|Web UI Section|Parameter|Type|Default|Comment|
+|Web UI Section|Parameter|Type|Default|Description|
 | --- | --- | --- | --- | --- |
 |Basic|enabled|boolean|0|Enable/disable the ```vpn-policy-routing``` service.|
 |Basic|verbosity|integer|2|Can be set to 0, 1 or 2 to control the console and system log output verbosity of the ```vpn-policy-routing``` service.|
@@ -150,10 +150,8 @@ The ```vpn-policy-routing``` settings are split into ```basic``` and ```advanced
 |Advanced|supported_interface|list/string||Allows to specify the list of interface names (in lower case) to be explicitly supported by the ```vpn-policy-routing``` service. Can be useful if your OpenVPN tunnels have dev option other than tun\* or tap\*.|
 |Advanced|ignored_interface|list/string||Allows to specify the list of interface names (in lower case) to be ignored by the ```vpn-policy-routing``` service. Can be useful if running both VPN server and VPN client on the router.|
 |Advanced|iprule_enabled|boolean|0|Add an ```ip rule```, not an ```iptables``` entry for policies with just the local address. Use with caution to manipulate policies priorities.|
-|Advanced|udp_proto_enabled|boolean|0|Add ```UDP``` protocol ```iptables``` rules for protocol policies with unset local addresses and either local or remote port set. By default (unless this variable is set to 1) only ```TCP``` protocol iptables rules are added.|
-|Advanced|forward_chain_enabled|boolean|0|Create and use a ```FORWARD``` chain in the mangle table. By default the ```vpn-policy-routing``` only creates and uses the ```PREROUTING``` chain. Use with caution.|
-|Advanced|input_chain_enabled|boolean|0|Create and use an ```INPUT``` chain in the mangle table. By default the ```vpn-policy-routing``` only creates and uses the ```PREROUTING``` chain. Use with caution.|
-|Advanced|output_chain_enabled|boolean|0|Create and use an ```OUTPUT``` chain in the mangle table. By default the ```vpn-policy-routing``` only creates and uses the ```PREROUTING``` chain. Policies in the ```OUTPUT``` chain will affect traffic from the router itself. All policies with unset local address will be duplicated in the ```OUTPUT``` chain. Use with caution.|
+|Advanced|proto_control|boolean|0|Shows ```Protocol``` column for policies, allowing to specify ```TCP``` (default), ```UDP``` or ```TCP/UDP``` protocol for ```iptables``` rules for policies.|
+|Advanced|chain_control|boolean|0|Shows ```Chain``` column for policies, allowing to specify ```PREROUTING``` (default), ```FORWARD```, ```INPUT```, or ```OUTPUT``` chain for ```iptables``` rules for policies.|
 |Advanced|icmp_interface|string||Set the default ICMP protocol interface (interface name in lower case). Requires ```output_chain_enabled=1```. This setting is hidden in Web UI unless ```Create OUTPUT Chain``` is enabled. Use with caution.|
 |Advanced|wan_tid|integer|201|Starting (WAN) Table ID number for tables created by the ```vpn-policy-routing``` service.|
 |Advanced|wan_mark|hexadecimal|0x010000|Starting (WAN) fw mark for marks used by the ```vpn-policy-routing``` service. High starting mark is used to avoid conflict with SQM/QoS, this can be changed by user. Change with caution together with ```fw_mask```.|
@@ -161,33 +159,48 @@ The ```vpn-policy-routing``` settings are split into ```basic``` and ```advanced
 ||wan_dscp|integer||Allows use of [DSCP-tag based policies](#dscp-tag-based-policies) for WAN interface.|
 ||{interface_name}_dscp|integer||Allows use of [DSCP-tag based policies](#dscp-tag-based-policies) for a VPN interface.|
 
+### Policy Options
+
+Each policy may have a combination of the options below, please note that the ```name``` and ```interface```  options are required.
+
+|Option|Default|Description|
+| --- | --- | --- |
+|name||Policy name, it **must** be set.|
+|interface||Policy interface, it **must** be set.|
+|local_addresses||List of space-separated local/source IP addresses, CIDRs or hostnames. You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
+|local_ports||List of space-separated local/source ports or port-ranges.|
+|remote_addresses||List of space-separated remote/target IP addresses, CIDRs or hostnames/domain names.|
+|local_ports||List of space-separated remote/target ports or port-ranges.|
+|proto|tcp|Policy protocol, can be either ```tcp```, ```udp``` or ```tcp udp```. This setting is case-sensitive. To display the ```Protocol``` column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Protocol Column``` in the ```Advanced``` tab.|
+|chain|PREROUTING|Policy chain, can be either ```PREROUTING```, ```FORWARDING```, ```INPUT``` or ```OUTPUT```. This setting is case-sensitive. To display the ```Chain``` column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Chain Column``` in the ```Advanced``` tab.|
+
 ### Example Policies
 
 ```text
 config policy
-	option name 'Plex Local Server'
-	option interface 'wan'
-	option local_ports '32400'
+  option name 'Plex Local Server'
+  option interface 'wan'
+  option local_ports '32400'
 
 config policy
-	option name 'Plex Remote Servers'
-	option interface 'wan'
-	option remote_addresses 'plex.tv my.plexapp.com'
+  option name 'Plex Remote Servers'
+  option interface 'wan'
+  option remote_addresses 'plex.tv my.plexapp.com'
 
 config policy
-	option name 'LogmeIn Hamachi'
-	option interface 'wan'
-	option remote_addresses '25.0.0.0/8 hamachi.cc hamachi.com logmein.com'
+  option name 'LogmeIn Hamachi'
+  option interface 'wan'
+  option remote_addresses '25.0.0.0/8 hamachi.cc hamachi.com logmein.com'
 
 config policy
-	option name 'Local Subnet'
-	option interface 'wan'
-	option local_addresses '192.168.1.81/29'
+  option name 'Local Subnet'
+  option interface 'wan'
+  option local_addresses '192.168.1.81/29'
 
 config policy
-	option name 'Local IP'
-	option interface 'wan'
-	option local_addresses '192.168.1.70'
+  option name 'Local IP'
+  option interface 'wan'
+  option local_addresses '192.168.1.70'
 ```
 
 ### Multiple OpenVPN Clients
@@ -198,36 +211,36 @@ For ```/etc/config/network```:
 
 ```text
 config interface 'vpnclient0'
-	option proto 'none'
-	option ifname 'ovpnc0'
+  option proto 'none'
+  option ifname 'ovpnc0'
 
 config interface 'vpnclient1'
-	option proto 'none'
-	option ifname 'ovpnc1'
+  option proto 'none'
+  option ifname 'ovpnc1'
 ```
 
 For ```/etc/config/openvpn```:
 
 ```text
 config openvpn 'vpnclient0'
-	option client '1'
-	option dev_type 'tun'
-	option dev 'ovpnc0'
-	...
+  option client '1'
+  option dev_type 'tun'
+  option dev 'ovpnc0'
+  ...
 
 config openvpn 'vpnclient1'
-	option client '1'
-	option dev_type 'tun'
-	option dev 'ovpnc1'
-	...
+  option client '1'
+  option dev_type 'tun'
+  option dev 'ovpnc1'
+  ...
 ```
 
 For ```/etc/config/vpn-policy-routing```:
 
 ```text
 config vpn-policy-routing 'config'
-	list supported_interface 'vpnclient0 vpnclient1'
-	...
+  list supported_interface 'vpnclient0 vpnclient1'
+  ...
 ```
 
 ## Discussion
