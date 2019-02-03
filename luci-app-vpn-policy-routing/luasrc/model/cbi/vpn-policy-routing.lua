@@ -169,11 +169,11 @@ s1:tab("advanced", translate("Advanced Configuration"),
 	.. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]] .. translate("README") .. [[</a>]] .. " "
 	.. translate("before changing anything in this section! Change any of the settings below with extreme caution!") .. "<br/><br/>")
 
-supported = s1:taboption("advanced", DynamicList, "supported_interface", translate("Supported Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be explicitly supported by the service. Can be useful if your OpenVPN tunnels have dev option other than tun* or tap*."))
+supported = s1:taboption("advanced", DynamicList, "supported_interfaces", translate("Supported Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be explicitly supported by the service. Can be useful if your OpenVPN tunnels have dev option other than tun* or tap*."))
 supported.optional = false
 supported.rmempty = true
 
-ignored = s1:taboption("advanced", DynamicList, "ignored_interface", translate("Ignored Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be ignored by the service. Can be useful if running both VPN server and VPN client on the router."))
+ignored = s1:taboption("advanced", DynamicList, "ignored_interfaces", translate("Ignored Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be ignored by the service. Can be useful if running both VPN server and VPN client on the router."))
 ignored.optional = false
 ignored.rmempty = true
 
