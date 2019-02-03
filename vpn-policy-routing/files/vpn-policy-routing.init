@@ -112,8 +112,8 @@ load_package_config() {
 	config_get wanMark                  'config' 'wan_mark' '0x010000'
 	config_get fwMask                   'config' 'fw_mask' '0xff0000'
 	config_get icmpIface                'config' 'icmp_interface'
-	config_get ignoredIfaces            'config' 'ignored_interface'
-	config_get supportedIfaces          'config' 'supported_interface'
+	config_get ignoredIfaces            'config' 'ignored_interfaces'
+	config_get supportedIfaces          'config' 'supported_interfaces'
 
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
@@ -769,8 +769,8 @@ validate_config() {
 		'wan_fw_mark:string' \
 		'fw_mask:string' \
 		'icmp_interface:string' \
-		'ignored_interface:list(string)' \
-		'supported_interface:list(string)'
+		'ignored_interfaces:list(string)' \
+		'supported_interfaces:list(string)'
 }
 
 # shellcheck disable=SC2120
