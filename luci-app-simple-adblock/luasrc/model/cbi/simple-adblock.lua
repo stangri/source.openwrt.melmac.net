@@ -83,7 +83,6 @@ else
 		uci:commit(packageName)
 		if enabledFlag == "0" then
 			luci.sys.init.stop(packageName)
---			luci.sys.exec("/etc/init.d/simple-adblock killcache")
 		else
 			luci.sys.init.enable(packageName)
 			luci.sys.init.start(packageName)
