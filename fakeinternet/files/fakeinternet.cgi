@@ -1,31 +1,36 @@
 #!/bin/sh
+
 if [ "$REQUEST_URI" = "/generate_204" ]; then
-cat << 'EOF'
+cat << EOF
 Status: 204 No Content
+Content-Length: 0
+Date: $(date --rfc-2822)
+
+
 
 EOF
-logger -t 'fakeinternet' "$REQUEST_URI: Served 204 No Content"
+logger -t 'fakeinternet' "${HTTP_HOST}${REQUEST_URI}: Served 204 No Content"
 
 elif [ "$REQUEST_URI" = "/blank.html" ]; then
-cat << 'EOF'
+cat << EOF
 Status: 200 OK
 Content-Type: text/html
 
 EOF
-logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK"
+logger -t 'fakeinternet' "${HTTP_HOST}${REQUEST_URI}: Served 200 OK"
 
 elif [ "$REQUEST_URI" = "/library/test/success.html" ] || [ "$REQUEST_URI" = "/hotspot-detect.html" ]; then
-cat << 'EOF'
+cat << EOF
 Status: 200 OK
 Content-Type: text/html
 
 <HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>
 
 EOF
-logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK/Success"
+logger -t 'fakeinternet' "${HTTP_HOST}${REQUEST_URI}: Served 200 OK/Success"
 
 elif [ "$REQUEST_URI" = "/kindle-wifi/wifistub.html" ]; then
-cat << 'EOF'
+cat << EOF
 Status: 200 OK
 Content-Type: text/html
 
@@ -41,10 +46,10 @@ Content-Type: text/html
 </body>
 </html>
 EOF
-logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK/HTML"
+logger -t 'fakeinternet' "${HTTP_HOST}${REQUEST_URI}: Served 200 OK/HTML"
 
 elif [ "$REQUEST_URI" = "/kindle-wifi/wifiredirect.html" ]; then
-cat << 'EOF'
+cat << EOF
 Status: 200 OK
 Content-Type: text/html
 
@@ -53,38 +58,39 @@ Content-Type: text/html
 <head>
 <meta http-equiv="refresh" content="0; url=http://www.amazon.com" />
 </head>
+<body>
 </body>
 </html>
 EOF
-logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK/HTML"
+logger -t 'fakeinternet' "${HTTP_HOST}${REQUEST_URI}: Served 200 OK/HTML"
 
 elif [ "$REQUEST_URI" == "/check_network_status.txt" ]; then
-cat << 'EOF'
+cat << EOF
 Status: 200 OK
 Content-Type: text/plain
 
 NetworkManager is online
 
 EOF
-logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK"
+logger -t 'fakeinternet' "${HTTP_HOST}${REQUEST_URI}: Served 200 OK"
 
 elif [ "$REQUEST_URI" == "/success.txt" ]; then
-cat << 'EOF'
+cat << EOF
 Status: 200 OK
 Content-Type: text/plain
 
 success
 
 EOF
-logger -t 'fakeinternet' "$REQUEST_URI: Served 200 OK"
+logger -t 'fakeinternet' "${HTTP_HOST}${REQUEST_URI}: Served 200 OK"
 
 else
-cat << 'EOF'
+cat << EOF
 Status: 200 OK
 Content-Type: text/html
 
 <HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>
 
 EOF
-logger -t 'fakeinternet' "$REQUEST_URI: Generic 200 OK/Success"
+logger -t 'fakeinternet' "${HTTP_HOST}${REQUEST_URI}: Generic 200 OK/Success"
 fi
