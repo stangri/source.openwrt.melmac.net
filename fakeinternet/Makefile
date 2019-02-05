@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fakeinternet
-PKG_VERSION:=0.1.4
-PKG_RELEASE:=0
+PKG_VERSION:=0.1.3
+PKG_RELEASE:=2
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -14,7 +14,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/fakeinternet
 	SECTION:=net
 	CATEGORY:=Network
-	DEPENDS:=+uhttpd +uhttpd-mod-ubus +netcat
+	DEPENDS:=+uhttpd +uhttpd-mod-ubus
 	TITLE:=Fakeinternet Service
 	PKGARCH:=all
 endef
