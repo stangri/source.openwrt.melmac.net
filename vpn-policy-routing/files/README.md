@@ -328,6 +328,8 @@ If you don't want to post the ```/etc/init.d/vpn-policy-routing status``` output
   option route_allowed_ips '0'
   ```
 
+- Routing Wireguard traffic requires setting `rp_filter = 2`. Please refer to [issue #41](https://github.com/stangri/openwrt_packages/issues/41) for more details.
+
 ## Thanks
 
-I'd like to thank everyone who helped create, test and troubleshoot this service. Without contributions from [@hnyman](https://github.com/hnyman), [@dibdot](https://github.com/dibdot), [@danrl](https://github.com/danrl), [@tohojo](https://github.com/tohojo), [@cybrnook](https://github.com/cybrnook), [@nidstigator](https://github.com/nidstigator), [@AndreBL](https://github.com/AndreBL) and [@dz0ny](https://github.com/dz0ny) and rigorous testing by [@dziny](https://github.com/dziny), [@bluenote73](https://github.com/bluenote73), [@buckaroo](https://github.com/pgera) and [@Alexander-r](https://github.com/Alexander-r) it wouldn't have been possible. Wireguard support is courtesy of [Mullvad](https://www.mullvad.net).
+I'd like to thank everyone who helped create, test and troubleshoot this service. Without contributions from [@hnyman](https://github.com/hnyman), [@dibdot](https://github.com/dibdot), [@danrl](https://github.com/danrl), [@tohojo](https://github.com/tohojo), [@cybrnook](https://github.com/cybrnook), [@nidstigator](https://github.com/nidstigator), [@AndreBL](https://github.com/AndreBL) and [@dz0ny](https://github.com/dz0ny) and rigorous testing by [@dziny](https://github.com/dziny), [@bluenote73](https://github.com/bluenote73), [@buckaroo](https://github.com/pgera), [@Alexander-r](https://github.com/Alexander-r) and [n8v8R](https://github.com/n8v8R) it wouldn't have been possible. Wireguard support is courtesy of [Mullvad](https://www.mullvad.net).
