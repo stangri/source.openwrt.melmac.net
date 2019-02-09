@@ -10,6 +10,8 @@ local sys = require "luci.sys"
 local wa  = require "luci.tools.webadmin"
 local fs  = require "nixio.fs"
 local enabledFlag = uci:get(serviceName, "config", "enabled")
+local monIP = uci:get(serviceName, "config", "monitor_ip")
+local wsIP = uci:get(serviceName, "config", "wireshark_ip")
 
 m = Map("wireshark-helper", translate("Wireshark Helper Settings"))
 h = m:section(NamedSection, "config", "wireshark-helper", translate("Service Status"))
@@ -38,17 +40,28 @@ function en.write()
 	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
 end
 
-s1 = m:section(NamedSection, "config", "wireshark-helper", translate("Configuration"), translate("See the") .. " "
+if monIP and wsIP then
+	if monIP ~= "" and wsIP ~= "" then
+		hintText = translate("Run a Wireshark app on the") .. " " .. wsIP .. " " .. translate("device and set Wireshark filter to") .. ": " .. "(ip.src == " .. monIP .. ") || (ip.dst == " .. monIP .. ")."
+	end
+end
+
+helperText = ( hintText and hintText .. "</br>" or "" ) .. translate("See the") .. " "
   .. [[<a href="]] .. readmeURL .. [[#strict-enforcement" target="_blank">]]
-  .. translate("README") .. [[</a>]] .. " " .. translate("for details"))
+	.. translate("README") .. [[</a>]] .. " " .. translate("for details") .. "."
+
+s1 = m:section(NamedSection, "config", "wireshark-helper", translate("Configuration"), helperText)
+
 mon = s1:option(ListValue, "monitor_ip", translate("IP to Monitor"))
 mon.rmempty = false
 
 ws = s1:option(ListValue, "wireshark_ip", translate("Wireshark IP"))
 ws.rmempty = false
 
-local routerip = uci:get("network", "lan", "ipaddr")
+-- hint = m:section(TypedSection, "_dummy", translate("Hint"), hintText)
+-- hints = hint:option(DummyValue, "_dummy", nil, hintText)
 
+local routerip = uci:get("network", "lan", "ipaddr")
 sys.net.host_hints(function(m, v4, v6, name)
 	if v4 and v4 ~= routerip then
 		mon:value(v4, v4 .. " (" .. name .. ")")
