@@ -1,0 +1,10 @@
+#!/bin/sh
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@wireshark-helper[-1]
+	add ucitrack wireshark-helper
+	set ucitrack.@wireshark-helper[-1].init=wireshark-helper
+	commit ucitrack
+EOF
+
+rm -f /tmp/luci-indexcache
+exit 0
