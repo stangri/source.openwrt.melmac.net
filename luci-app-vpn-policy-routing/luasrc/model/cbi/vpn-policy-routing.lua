@@ -169,11 +169,11 @@ s1:tab("advanced", translate("Advanced Configuration"),
 	.. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]] .. translate("README") .. [[</a>]] .. " "
 	.. translate("before changing anything in this section! Change any of the settings below with extreme caution!") .. "<br/><br/>")
 
-supported = s1:taboption("advanced", DynamicList, "supported_interfaces", translate("Supported Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be explicitly supported by the service. Can be useful if your OpenVPN tunnels have dev option other than tun* or tap*."))
+supported = s1:taboption("advanced", DynamicList, "supported_interface", translate("Supported Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be explicitly supported by the service. Can be useful if your OpenVPN tunnels have dev option other than tun* or tap*."))
 supported.optional = false
 supported.rmempty = true
 
-ignored = s1:taboption("advanced", DynamicList, "ignored_interfaces", translate("Ignored Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be ignored by the service. Can be useful if running both VPN server and VPN client on the router."))
+ignored = s1:taboption("advanced", DynamicList, "ignored_interface", translate("Ignored Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be ignored by the service. Can be useful if running both VPN server and VPN client on the router."))
 ignored.optional = false
 ignored.rmempty = true
 
@@ -257,22 +257,22 @@ else
 	s3:option(Value, "name", translate("Name"))
 end
 
-la = s3:option(Value, "local_addresses", translate("Local addresses/devices"))
+la = s3:option(Value, "local_address", translate("Local addresses/devices"))
 if laPlaceholder then
 	la.placeholder = laPlaceholder
 end
 la.rmempty = true
 
-lp = s3:option(Value, "local_ports", translate("Local ports"))
+lp = s3:option(Value, "local_port", translate("Local ports"))
 lp.datatype    = "list(neg(portrange))"
 lp.placeholder = "0-65535"
 lp.rmempty = true
 
-ra = s3:option(Value, "remote_addresses", translate("Remote addresses/domains"))
+ra = s3:option(Value, "remote_address", translate("Remote addresses/domains"))
 ra.placeholder = "0.0.0.0/0"
 ra.rmempty = true
 
-rp = s3:option(Value, "remote_ports", translate("Remote ports"))
+rp = s3:option(Value, "remote_port", translate("Remote ports"))
 rp.datatype    = "list(neg(portrange))"
 rp.placeholder = "0-65535"
 rp.rmempty = true
