@@ -11,6 +11,7 @@ readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
 readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly __PASS__='\033[0;33m[-]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
+readonly _WARNING_='\033[0;33mWARNING\033[0m'
 # readonly readmeURL="https://github.com/openwrt/packages/tree/master/net/vpn-policy-routing/files/README.md"
 readonly readmeURL="https://github.com/stangri/openwrt-packages/blob/vpn-policy-routing/net/vpn-policy-routing/files/README.md"
 
@@ -112,8 +113,8 @@ load_package_config() {
 	config_get wanMark                  'config' 'wan_mark' '0x010000'
 	config_get fwMask                   'config' 'fw_mask' '0xff0000'
 	config_get icmpIface                'config' 'icmp_interface'
-	config_get ignoredIfaces            'config' 'ignored_interfaces'
-	config_get supportedIfaces          'config' 'supported_interfaces'
+	config_get ignoredIfaces            'config' 'ignored_interface'
+	config_get supportedIfaces          'config' 'supported_interface'
 
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
@@ -188,7 +189,6 @@ ips() {
 			[ "$dnsmasqEnabled" -eq 0 ] && return 1
 			[ "$ipv6Enabled" -ne 0 ] && ipset="${ipset},${ipset}6"
 			echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlagIpv4=1
-#			echo "ipset=/${param}/${ipset}" >> "$dnsmasqFile" || failFlagIpv4=1
 			if [ "$failFlagIpv4" -eq 0 ] && [ "$failFlagIpv6" -eq 0 ]; then return 0; else return 1; fi
 			;;
 		add)
@@ -357,10 +357,10 @@ process_policy(){
 	config_get comment "$1" 'comment'
 	config_get name    "$1" 'name' 'blank'
 	config_get iface   "$1" 'interface'
-	config_get laddr   "$1" 'local_addresses'
-	config_get lport   "$1" 'local_ports'
-	config_get raddr   "$1" 'remote_addresses'
-	config_get rport   "$1" 'remote_ports'
+	config_get laddr   "$1" 'local_address'
+	config_get lport   "$1" 'local_port'
+	config_get raddr   "$1" 'remote_address'
+	config_get rport   "$1" 'remote_port'
 	config_get proto   "$1" 'proto' 'tcp'
 	config_get chain   "$1" 'chain' 'PREROUTING'
 
@@ -454,18 +454,6 @@ table_create(){
 				ips 'create' "${iface}" 'hash:net family inet comment' && ips 'flush' "${iface}" || s=1
 				[ $ipv4_set -ne 0 ] && { ipt -t mangle -I VPR_PREROUTING 1 -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
 				[ $ipv6_set -ne 0 ] && { ipt -t mangle -I VPR_PREROUTING 1 -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
-#				if [ "$forwardChainEnabled" -ne 0 ]; then
-#					[ $ipv4_set -ne 0 ] && { ipt -t mangle -I VPR_FORWARD 1 -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
-#					[ $ipv6_set -ne 0 ] && { ipt -t mangle -I VPR_FORWARD 1 -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
-#				fi
-#				if [ "$inputChainEnabled" -ne 0 ]; then
-#					[ $ipv4_set -ne 0 ] && { ipt -t mangle -I VPR_INPUT 1 -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
-#					[ $ipv6_set -ne 0 ] && { ipt -t mangle -I VPR_INPUT 1 -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
-#				fi
-#				if [ "$outputChainEnabled" -ne 0 ]; then
-#					[ $ipv4_set -ne 0 ] && { ipt -t mangle -I VPR_OUTPUT 1 -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
-#					[ $ipv6_set -ne 0 ] && { ipt -t mangle -I VPR_OUTPUT 1 -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
-#				fi
 			fi
 			if [ "$iface" = "$icmpIface" ]; then
 				ipt -t mangle -I VPR_OUTPUT 1 -p icmp -j MARK --set-xmark "${mark}/${fwMask}" || s=1
@@ -533,7 +521,6 @@ ubus_status(){
 			;;
 		del | set)
 			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"/bin/true\" ],  \"data\": { \"status\": \"${2}\" }}}}"
-			# ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"data\": { \"status\": \"${2}\" }}}}"
 			;;
 		get)
 			ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']"
@@ -541,8 +528,23 @@ ubus_status(){
 	esac
 }
 
+convert_config(){
+	local i
+	[ -s "/etc/config/${packageName}" ] || return 0
+	sed -i 's/ignored_interfaces/ignored_interface/g' "/etc/config/${packageName}"
+	sed -i 's/supported_interfaces/supported_interface/g' "/etc/config/${packageName}"
+	sed -i 's/local_addresses/local_address/g' "/etc/config/${packageName}"
+	sed -i 's/local_ports/local_port/g' "/etc/config/${packageName}"
+	sed -i 's/remote_addresses/remote_address/g' "/etc/config/${packageName}"
+	sed -i 's/remote_ports/remote_port/g' "/etc/config/${packageName}"
+	for i in udp_proto_enabled forward_chain_enabled input_chain_enabled output_chain_enabled; do
+		grep -q "$i" "/etc/config/${packageName}" && output "${_WARNING_}: $i setting is not supported in ${serviceName}.\\n"
+	done
+}
+
 start_service() {
 	local serviceStatusSummary errorStatusSummary dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0
+	convert_config
 	is_enabled 'on_start' || return 1
 	if create_lock; then
 		if [ -s "$dnsmasqFile" ]; then

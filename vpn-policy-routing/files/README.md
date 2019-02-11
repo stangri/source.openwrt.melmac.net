@@ -147,8 +147,8 @@ The ```vpn-policy-routing``` settings are split into ```basic``` and ```advanced
 |Basic|dnsmasq_enabled|boolean|1|Enable/disable use of ```dnsmasq``` for ```ipset``` entries. See [Use DNSMASQ](#use-dnsmasq) for more details. Assumes ```ipset_enabled=1```. Make sure the [requirements](#requirements) are met.|
 |Basic|ipset_enabled|boolean|1|Enable/disable use of ```ipset``` entries for compatible policies. This speeds up service start-up and operation. Make sure the [requirements](#requirements) are met. This setting is hidden in Web UI unless ```Use DNSMASQ for domain policies``` is disabled.|
 |Basic|ipv6_enabled|boolean|1|Enable/disable IPv6 support.|
-|Advanced|supported_interfaces|list/string||Allows to specify the space-separated list of interface names (in lower case) to be explicitly supported by the ```vpn-policy-routing``` service. Can be useful if your OpenVPN tunnels have dev option other than tun\* or tap\*.|
-|Advanced|ignored_interfaces|list/string||Allows to specify the space-separated list of interface names (in lower case) to be ignored by the ```vpn-policy-routing``` service. Can be useful if running both VPN server and VPN client on the router.|
+|Advanced|supported_interface|list/string||Allows to specify the space-separated list of interface names (in lower case) to be explicitly supported by the ```vpn-policy-routing``` service. Can be useful if your OpenVPN tunnels have dev option other than tun\* or tap\*.|
+|Advanced|ignored_interface|list/string||Allows to specify the space-separated list of interface names (in lower case) to be ignored by the ```vpn-policy-routing``` service. Can be useful if running both VPN server and VPN client on the router.|
 |Advanced|iprule_enabled|boolean|0|Add an ```ip rule```, not an ```iptables``` entry for policies with just the local address. Use with caution to manipulate policies priorities.|
 |Advanced|proto_control|boolean|0|Shows ```Protocol``` column for policies, allowing to specify ```TCP``` (default), ```UDP``` or ```TCP/UDP``` protocol for ```iptables``` rules for policies.|
 |Advanced|chain_control|boolean|0|Shows ```Chain``` column for policies, allowing to specify ```PREROUTING``` (default), ```FORWARD```, ```INPUT```, or ```OUTPUT``` chain for ```iptables``` rules for policies.|
@@ -167,10 +167,10 @@ Each policy may have a combination of the options below, please note that the ``
 | --- | --- | --- |
 |name||Policy name, it **must** be set.|
 |interface||Policy interface, it **must** be set.|
-|local_addresses||List of space-separated local/source IP addresses, CIDRs or hostnames. You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
-|local_ports||List of space-separated local/source ports or port-ranges.|
-|remote_addresses||List of space-separated remote/target IP addresses, CIDRs or hostnames/domain names.|
-|remote_ports||List of space-separated remote/target ports or port-ranges.|
+|local_address||List of space-separated local/source IP addresses, CIDRs or hostnames. You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
+|local_port||List of space-separated local/source ports or port-ranges.|
+|remote_address||List of space-separated remote/target IP addresses, CIDRs or hostnames/domain names.|
+|remote_port||List of space-separated remote/target ports or port-ranges.|
 |proto|tcp|Policy protocol, can be either ```tcp```, ```udp``` or ```tcp udp```. This setting is case-sensitive. To display the ```Protocol``` column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Protocol Column``` in the ```Advanced``` tab.|
 |chain|PREROUTING|Policy chain, can be either ```PREROUTING```, ```FORWARDING```, ```INPUT``` or ```OUTPUT```. This setting is case-sensitive. To display the ```Chain``` column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Chain Column``` in the ```Advanced``` tab.|
 
@@ -182,12 +182,12 @@ The following policies route Plex Media Server traffic via WAN. Please note, you
 config policy
   option name 'Plex Local Server'
   option interface 'wan'
-  option local_ports '32400'
+  option local_port '32400'
 
 config policy
   option name 'Plex Remote Servers'
   option interface 'wan'
-  option remote_addresses 'plex.tv my.plexapp.com'
+  option remote_address 'plex.tv my.plexapp.com'
 ```
 
 The following policy route Emby traffic via WAN. Please note, you'd still need to open the port in the firewall either manually or with the UPnP.
@@ -196,12 +196,12 @@ The following policy route Emby traffic via WAN. Please note, you'd still need t
 config policy
   option name 'Emby Local Server'
   option interface 'wan'
-  option local_ports '8096 8920'
+  option local_port '8096 8920'
 
 config policy
   option name 'Emby Remote Servers'
   option interface 'wan'
-  option remote_addresses 'emby.media app.emby.media tv.emby.media'
+  option remote_address 'emby.media app.emby.media tv.emby.media'
 ```
 
 The following policy routes LogMeIn Hamachi zero-setup VPN traffic via WAN.
@@ -210,7 +210,7 @@ The following policy routes LogMeIn Hamachi zero-setup VPN traffic via WAN.
 config policy
   option name 'LogmeIn Hamachi'
   option interface 'wan'
-  option remote_addresses '25.0.0.0/8 hamachi.cc hamachi.com logmein.com'
+  option remote_address '25.0.0.0/8 hamachi.cc hamachi.com logmein.com'
 ```
 
 The following policy routes standard SIP port traffic via WAN for both TCP and UDP protocols.
@@ -219,7 +219,7 @@ The following policy routes standard SIP port traffic via WAN for both TCP and U
 config policy
   option name 'SIP Ports'
   option interface 'wan'
-  option remote_ports '5060'
+  option remote_port '5060'
   option proto 'tcp udp'
 ```
 
@@ -229,7 +229,7 @@ The following policy allows you to run an OpenVPN server on router (at port 1194
 config policy
   option name 'OpenVPN Server'
   option interface 'wan'
-  option local_ports '1194'
+  option local_port '1194'
   option chain 'OUTPUT'
 ```
 
@@ -239,17 +239,17 @@ The following policies route traffice from a single IP address, a range of IP ad
 config policy
   option name 'Local IP'
   option interface 'wan'
-  option local_addresses '192.168.1.70'
+  option local_address '192.168.1.70'
 
 config policy
   option name 'Local Subnet'
   option interface 'wan'
-  option local_addresses '192.168.1.81/29'
+  option local_address '192.168.1.81/29'
 
 config policy
   option name 'Local Machine'
   option interface 'wan'
-  option local_addresses 'dell-ubuntu'
+  option local_address 'dell-ubuntu'
 ```
 
 ### Multiple OpenVPN Clients
