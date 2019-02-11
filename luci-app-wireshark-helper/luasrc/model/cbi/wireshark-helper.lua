@@ -1,7 +1,8 @@
 -- Copyright 2016-2018 Stan Grishin <stangri@melmac.net>
 -- Licensed to the public under the Apache License 2.0.
 
-local readmeURL = "https://github.com/openwrt/packages/blob/master/net/wireshark-helper/files/README.md"
+-- local readmeURL = "https://github.com/openwrt/packages/blob/master/net/wireshark-helper/files/README.md"
+local readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/wireshark-helper/files/README.md"
 
 local serviceName = "wireshark-helper"
 
