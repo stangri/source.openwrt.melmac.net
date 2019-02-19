@@ -35,11 +35,11 @@ for i=1, #devices do
     boot_envvar2_partition_one = devices[i][10] or nil
     boot_envvar2_partition_two = devices[i][11] or nil
     if partition_one_mtd and partition_skip then
-      partition_one_label = luci.util.trim(luci.sys.exec("dd if=/dev/" .. partition_one_mtd .. " bs=1 skip=" .. partition_skip .. " count=25" .. "  2>/dev/null"))
+      partition_one_label = luci.util.trim(luci.sys.exec("dd if=/dev/" .. partition_one_mtd .. " bs=1 skip=" .. partition_skip .. " count=128" .. "  2>/dev/null"))
       n, partition_one_version = string.match(partition_one_label, '(Linux)-([%d|.]+)')
     end
     if partition_two_mtd and partition_skip then
-      partition_two_label = luci.util.trim(luci.sys.exec("dd if=/dev/" .. partition_two_mtd .. " bs=1 skip=" .. partition_skip .. " count=25" .. "  2>/dev/null"))
+      partition_two_label = luci.util.trim(luci.sys.exec("dd if=/dev/" .. partition_two_mtd .. " bs=1 skip=" .. partition_skip .. " count=128" .. "  2>/dev/null"))
       n, partition_two_version = string.match(partition_two_label, '(Linux)-([%d|.]+)')
     end
     if partition_one_label and string.find(partition_one_label, "LEDE") then partition_one_os = "LEDE" end
