@@ -1,0 +1,234 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:127
+msgid "Advanced Configuration"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:145
+msgid "Allow Non-ASCII"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:143
+msgid "Allow Non-ASCII characters in DNSMASQ file"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:149
+msgid "Attempt to create a compressed cache of final block-list on the router."
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:96
+msgid "Basic Configuration"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:179
+msgid "Blacklisted Domain URLs"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:169
+msgid "Blacklisted Domains"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:184
+msgid "Blacklisted Hosts URLs"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:61
+msgid "Collected Errors"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:94
+msgid "Configuration"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:98
+msgid "Controls system log and console output verbosity"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:129
+msgid "Delay (in seconds) for on-boot start"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:156
+msgid "Disable Debugging"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:144
+msgid "Do not allow Non-ASCII"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:150
+msgid "Do not store compressed cache"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:138
+msgid "Do not use simultaneous processing"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:133
+msgid "Download time-out (in seconds)"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:155
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:157
+msgid "Enable Debugging"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:45
+msgid "Enable/Start"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:155
+msgid "Enables debug output to /tmp/simple-adblock.log"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:105
+msgid "Force Router DNS"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:107
+msgid "Force Router DNS server to all local devices"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:105
+msgid "Forces Router DNS use on local devices, also known as DNS Hijacking"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:169
+msgid "Individual domains to be blacklisted"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:164
+msgid "Individual domains to be whitelisted"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:117
+msgid "LED to indicate status"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:137
+msgid ""
+"Launch all lists downloads and processing simultaneously, reducing service "
+"start time"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:106
+msgid "Let local devices use their own DNS servers if set"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:143
+msgid ""
+"Only enable if your version of DNSMASQ supports the use of Non-ASCII "
+"characters, otherwise DNSMASQ will fail to start."
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:98
+msgid "Output Verbosity Setting"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:117
+msgid "Pick the LED not already used in"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:67
+msgid "Reload"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:129
+msgid "Run service after set delay on boot"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:17
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:38
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:48
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:56
+msgid "Service Status"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:44
+msgid "Service is disabled/stopped"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:53
+msgid "Service is enabled/started"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:66
+msgid "Service started with error"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/controller/simple-adblock.lua:6
+msgid "Simple AdBlock"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:11
+msgid "Simple AdBlock Settings"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:137
+msgid "Simultaneous processing"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:100
+msgid "Some output"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:133
+msgid "Stop the download if it is stalled for set number of seconds"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:54
+msgid "Stop/Disable"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:151
+msgid "Store compressed cache"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:149
+msgid "Store compressed cache file on router"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:99
+msgid "Suppress output"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:119
+msgid "System LED Configuration"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:179
+msgid "URLs to lists of domains to be blacklisted"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:174
+msgid "URLs to lists of domains to be whitelisted"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:184
+msgid "URLs to lists of hosts to be blacklisted"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:139
+msgid "Use simultaneous processing"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:101
+msgid "Verbose output"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:162
+msgid "Whitelist and Blocklist Management"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:174
+msgid "Whitelisted Domain URLs"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:164
+msgid "Whitelisted Domains"
+msgstr ""
+
+#: luci-app-simple-adblock//luasrc/model/cbi/simple-adblock.lua:121
+msgid "none"
+msgstr ""

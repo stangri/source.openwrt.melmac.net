@@ -65,8 +65,13 @@ ws.rmempty = false
 local routerip = uci:get("network", "lan", "ipaddr")
 sys.net.host_hints(function(m, v4, v6, name)
 	if v4 and v4 ~= routerip then
-		mon:value(v4, v4 .. " (" .. name .. ")")
-		ws:value(v4, v4 .. " (" .. name .. ")")
+		if name then
+			mon:value(v4, v4 .. " (" .. name .. ")")
+			ws:value(v4, v4 .. " (" .. name .. ")")
+		else
+			mon:value(v4)
+			ws:value(v4)
+		end
 	end
 end)
 

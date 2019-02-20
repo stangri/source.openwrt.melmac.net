@@ -1,0 +1,379 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:195
+msgid ""
+"Add UDP protocol iptables rules for protocol policies with unset local "
+"addresses and either local or remote port set. By default (unless this is "
+"enabled) only TCP protocol iptables rules are added."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:180
+msgid ""
+"Add an ip rule, not an iptables entry for policies with just the local "
+"address. Use with caution to manipulte policies priorities."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:167
+msgid "Advanced Configuration"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:172
+msgid ""
+"Allows to specify the list of interface names (in lower case) to be "
+"explicitly supported by the service. Can be useful if your OpenVPN tunnels "
+"have dev option other than tun* or tap*."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:176
+msgid ""
+"Allows to specify the list of interface names (in lower case) to be ignored "
+"by the service. Can be useful if running both VPN server and VPN client on "
+"the router."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:225
+msgid "Append local IP Tables rules"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:228
+msgid "Append remote IP Tables rules"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:133
+msgid "Basic Configuration"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:288
+msgid "Chain"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:255
+msgid "Comment"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:247
+msgid ""
+"Comment, interface and at least one other field are required. Multiple local "
+"and remote addresses/devices/domains and ports can be space separated. "
+"Placeholders below represent just the format/syntax and will not be used if "
+"fields are left blank."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:137
+msgid "Condensed output"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:130
+msgid "Configuration"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:135
+msgid "Controls both system log and console output verbosity"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:200
+msgid "Create FORWARD Chain"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:205
+msgid "Create INPUT Chain"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:210
+msgid "Create OUTPUT Chain"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:200
+msgid "Create and use a FORWARD chain in the mangle table."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:205
+msgid "Create and use an INPUT chain in the mangle table."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:210
+msgid ""
+"Create and use an OUTPUT chain in the mangle table. Policies in the OUTPUT "
+"chain will affect traffic from the router itself. All policies with unset "
+"local address will be duplicated in the OUTPUT chain."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:314
+msgid "DSCP Tag"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:308
+msgid "DSCP Tagging"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:215
+msgid "Default ICMP Interface"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:152
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:160
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:164
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:181
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:186
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:191
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:196
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:201
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:206
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:211
+msgid "Disabled"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:144
+msgid "Do not enforce policies when their gateway is down"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:95
+msgid "Enable/Start"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:153
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:161
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:165
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:182
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:187
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:192
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:197
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:202
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:207
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:212
+msgid "Enabled"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:239
+msgid ""
+"FW Mask used by the service. High mask is used to avoid conflict with SQM/"
+"QoS. Change with caution together with"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:215
+msgid "Force the ICMP protocol interface."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:180
+msgid "IP Rules Support"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:163
+msgid "IPv6 Support"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:176
+msgid "Ignored Interfaces"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:297
+msgid "Interface"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:260
+msgid "Local addresses/devices"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:266
+msgid "Local ports"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:257
+msgid "Name"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:217
+msgid "No Change"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/view/vpn-policy-routing/map-vpn-policy-routing.htm:35
+msgid "One or more invalid/required values on tab"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:74
+msgid "Openconnect, OpenVPN, PPTP, Wireguard and WAN Policy-Based Routing"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:135
+msgid "Output verbosity"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:149
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:156
+msgid "Please check the"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:168
+msgid "Please make sure to check the"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:247
+msgid "Policies"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:280
+msgid "Protocol"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:143
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:158
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:169
+msgid "README"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:107
+msgid "Reload"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:271
+msgid "Remote addresses/domains"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:275
+msgid "Remote ports"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:141
+msgid "See the"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:235
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:239
+msgid "Service FW Mask"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:75
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:101
+msgid "Service Status"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:94
+msgid "Service is disabled/stopped"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:98
+msgid "Service is enabled/started"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:106
+msgid "Service started with error(s)"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:308
+msgid "Set DSCP tags (in range between 1 and 63) for specific interfaces."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:190
+msgid "Show Chain Column"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:185
+msgid "Show Protocol Column"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:190
+msgid ""
+"Shows the chain column for policies, allowing you to assign a TCP, UDP or "
+"TCP/UDP protocol to a policy."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:185
+msgid ""
+"Shows the protocol column for policies, allowing you to assign a TCP, UDP or "
+"TCP/UDP protocol to a policy."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:225
+msgid ""
+"Special instructions to append iptables rules for local IPs/netmasks/devices."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:228
+msgid "Special instructions to append iptables rules for remote IPs/netmasks."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:235
+msgid ""
+"Starting (WAN) FW Mark for marks used by the service. High starting mark is "
+"used to avoid conflict with SQM/QoS. Change with caution together with"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:231
+msgid "Starting (WAN) Table ID number for tables created by the service."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:99
+msgid "Stop/Disable"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:141
+msgid "Strict enforcement"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:145
+msgid "Strictly enforce policies when their gateway is down"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:172
+msgid "Supported Interfaces"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:136
+msgid "Suppress/No output"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:195
+msgid "UDP Protocol Support"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:148
+msgid "Use DNSMASQ for domain policies"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:155
+msgid "Use ipsets"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/controller/vpn-policy-routing.lua:4
+msgid "VPN Policy Routing"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:138
+msgid "Verbose output"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:218
+msgid "WAN"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:309
+msgid "WAN DSCP Tag"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:235
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:239
+msgid "WAN Table FW Mark"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:231
+msgid "WAN Table ID"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:168
+msgid "WARNING:"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:170
+msgid ""
+"before changing anything in this section! Change any of the settings below "
+"with extreme caution!"
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:158
+msgid "before changing this option."
+msgstr ""
+
+#: luci-app-vpn-policy-routing//luasrc/model/cbi/vpn-policy-routing.lua:143
+msgid "for details"
+msgstr ""

@@ -1,0 +1,121 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:83
+msgid "<abbr title=\"Light Emitting Diode\">LED</abbr> Configuration"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:66
+msgid "Administration"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:142
+msgid "Device is powering off..."
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:137
+msgid "Device is rebooting..."
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:92
+msgid "Device unreachable"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:409
+msgid "Erasing..."
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:86
+msgid "Flash Firmware"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:349
+msgid "Flashing..."
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:136
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:141
+msgid "Loading"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:77
+msgid "Mount Points"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:75
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:76
+msgid "Partition"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:132
+msgid "Perform power off"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:127
+msgid "Perform reboot"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:129
+msgid "Perform reboot to partition:"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:95
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:63
+msgid "Reboot"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:66
+msgid "Reboots the operating system of your device."
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:74
+msgid "Scheduled Tasks"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:69
+msgid "Software"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:73
+msgid "Startup"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:62
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:63
+msgid "System"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:410
+msgid ""
+"The system is erasing the configuration partition now and will reboot itself "
+"when finished."
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/controller/admin/system.lua:350
+msgid ""
+"The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a "
+"few minutes before you try to reconnect. It might be necessary to renew the "
+"address of your computer to reach the device again, depending on your "
+"settings."
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:74
+msgid "This device"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:102
+msgid "Waiting for device..."
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:69
+msgid "Warning: There are unsaved changes that will get lost on reboot!"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:75
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:76
+msgid "active"
+msgstr ""
+
+#: luci-mod-alt-reboot//luasrc/view/admin_system/reboot.htm:74
+msgid "has following partitions:"
+msgstr ""

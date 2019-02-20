@@ -1,2 +1,42 @@
-Set up git to auto-update pot-file:
-echo '../i18n-scan.pl luci-app-template/ > luci-app-template/po/templates/template.pot; git add .' >> ../.git/hooks/pre-commit
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+#: luci-app-https_dns_proxy//luasrc/model/cbi/https_dns_proxy.lua:41
+msgid "Group name"
+msgstr ""
+
+#: luci-app-https_dns_proxy//luasrc/controller/https_dns_proxy.lua:6
+msgid "HTTPS DNS Proxy"
+msgstr ""
+
+#: luci-app-https_dns_proxy//luasrc/model/cbi/https_dns_proxy.lua:3
+msgid "HTTPS DNS Proxy Settings"
+msgstr ""
+
+#: luci-app-https_dns_proxy//luasrc/model/cbi/https_dns_proxy.lua:6
+msgid "Instances"
+msgstr ""
+
+#: luci-app-https_dns_proxy//luasrc/model/cbi/https_dns_proxy.lua:28
+msgid "Listen address"
+msgstr ""
+
+#: luci-app-https_dns_proxy//luasrc/model/cbi/https_dns_proxy.lua:32
+msgid "Listen port"
+msgstr ""
+
+#: luci-app-https_dns_proxy//luasrc/model/cbi/https_dns_proxy.lua:12
+msgid "Provider"
+msgstr ""
+
+#: luci-app-https_dns_proxy//luasrc/model/cbi/https_dns_proxy.lua:49
+msgid "Proxy server"
+msgstr ""
+
+#: luci-app-https_dns_proxy//luasrc/model/cbi/https_dns_proxy.lua:45
+msgid "Subnet address"
+msgstr ""
+
+#: luci-app-https_dns_proxy//luasrc/model/cbi/https_dns_proxy.lua:37
+msgid "User name"
+msgstr ""

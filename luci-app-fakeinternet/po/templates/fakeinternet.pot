@@ -1,0 +1,60 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:52
+msgid "Action"
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:39
+msgid "Addresses"
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:39
+msgid "Addresses to fake."
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:42
+msgid ""
+"Advanced policies. Use # as the domain name for all domains. Put blocked "
+"domains at the top."
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:36
+msgid "Configuration"
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:48
+msgid "Domain Name"
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:15
+msgid "Enable/Start"
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/controller/fakeinternet.lua:6
+msgid "Fakeinternet"
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:6
+msgid "Fakeinternet Settings"
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:42
+msgid "Policies"
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:7
+msgid "Service Status"
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:14
+msgid "Service is disabled/stopped"
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:18
+msgid "Service is enabled/started"
+msgstr ""
+
+#: luci-app-fakeinternet//luasrc/model/cbi/fakeinternet.lua:19
+msgid "Stop/Disable"
+msgstr ""
