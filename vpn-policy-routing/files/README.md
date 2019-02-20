@@ -233,7 +233,7 @@ config policy
   option chain 'OUTPUT'
 ```
 
-The following policies route traffice from a single IP address, a range of IP addresses or a local machine (requires definition as DHCP host record in DHCP config) via WAN.
+The following policies route traffic from a single IP address, a range of IP addresses or a local machine (requires definition as DHCP host record in DHCP config) via WAN.
 
 ```text
 config policy
