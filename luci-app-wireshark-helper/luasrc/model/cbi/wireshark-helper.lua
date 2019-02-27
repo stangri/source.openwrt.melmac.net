@@ -43,7 +43,7 @@ end
 
 if monIP and wsIP then
 	if monIP ~= "" and wsIP ~= "" then
-		hintText = translate("Run a Wireshark app on the") .. " " .. wsIP .. " " .. translate("device and set Wireshark filter to") .. ": " .. "(ip.src == " .. monIP .. ") || (ip.dst == " .. monIP .. ")."
+		hintText = translate("Run a Wireshark app on the") .. " " .. wsIP .. " " .. translate("device and set Wireshark filter to") .. ": " .. "(ip.src == " .. monIP .. ") || (ip.dst == " .. monIP .. ")"
 	end
 end
 
@@ -53,11 +53,13 @@ helperText = ( hintText and hintText .. "</br>" or "" ) .. translate("See the") 
 
 s1 = m:section(NamedSection, "config", "wireshark-helper", translate("Configuration"), helperText)
 
-mon = s1:option(ListValue, "monitor_ip", translate("IP to Monitor"))
-mon.rmempty = false
-
-ws = s1:option(ListValue, "wireshark_ip", translate("Wireshark IP"))
+ws = s1:option(Value, "wireshark_ip", translate("Wireshark IP"))
+ws.datatype = "or(ip4addr,'ignore')"
 ws.rmempty = false
+
+mon = s1:option(Value, "monitor_ip", translate("IP to Monitor"))
+mon.datatype = "or(ip4addr,'ignore')"
+mon.rmempty = false
 
 -- hint = m:section(TypedSection, "_dummy", translate("Hint"), hintText)
 -- hints = hint:option(DummyValue, "_dummy", nil, hintText)
@@ -66,11 +68,11 @@ local routerip = uci:get("network", "lan", "ipaddr")
 sys.net.host_hints(function(m, v4, v6, name)
 	if v4 and v4 ~= routerip then
 		if name then
-			mon:value(v4, v4 .. " (" .. name .. ")")
 			ws:value(v4, v4 .. " (" .. name .. ")")
+			mon:value(v4, v4 .. " (" .. name .. ")")
 		else
-			mon:value(v4)
 			ws:value(v4)
+			mon:value(v4)
 		end
 	end
 end)

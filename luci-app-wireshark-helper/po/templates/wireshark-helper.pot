@@ -9,11 +9,11 @@ msgstr ""
 msgid "Enable/Start"
 msgstr ""
 
-#: luci-app-wireshark-helper//luasrc/model/cbi/wireshark-helper.lua:62
+#: luci-app-wireshark-helper//luasrc/model/cbi/wireshark-helper.lua:64
 msgid "Hint"
 msgstr ""
 
-#: luci-app-wireshark-helper//luasrc/model/cbi/wireshark-helper.lua:56
+#: luci-app-wireshark-helper//luasrc/model/cbi/wireshark-helper.lua:60
 msgid "IP to Monitor"
 msgstr ""
 
@@ -53,7 +53,7 @@ msgstr ""
 msgid "Wireshark Helper Settings"
 msgstr ""
 
-#: luci-app-wireshark-helper//luasrc/model/cbi/wireshark-helper.lua:59
+#: luci-app-wireshark-helper//luasrc/model/cbi/wireshark-helper.lua:56
 msgid "Wireshark IP"
 msgstr ""
 
