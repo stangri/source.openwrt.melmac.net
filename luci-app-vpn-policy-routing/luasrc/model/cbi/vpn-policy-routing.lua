@@ -177,6 +177,10 @@ ignored = s1:taboption("advanced", DynamicList, "ignored_interface", translate("
 ignored.optional = false
 ignored.rmempty = true
 
+timeout = s1:taboption("advanced", Value, "boot_timeout", translate("Boot Time-out"), translate("Time (in seconds) for service to wait for WAN gateway discovery on boot."))
+timeout.optional = false
+timeout.rmempty = true
+
 iprule = s1:taboption("advanced", ListValue, "iprule_enabled", translate("IP Rules Support"), translate("Add an ip rule, not an iptables entry for policies with just the local address. Use with caution to manipulte policies priorities."))
 iprule:value("", translate("Disabled"))
 iprule:value("1", translate("Enabled"))
@@ -191,26 +195,6 @@ chain_control = s1:taboption("advanced", ListValue, "chain_control", translate("
 chain_control:value("", translate("Disabled"))
 chain_control:value("1", translate("Enabled"))
 chain_control.rmempty = true
-
--- udp = s1:taboption("advanced", ListValue, "udp_proto_enabled", translate("UDP Protocol Support"), translate("Add UDP protocol iptables rules for protocol policies with unset local addresses and either local or remote port set. By default (unless this is enabled) only TCP protocol iptables rules are added."))
--- udp:value("", translate("Disabled"))
--- udp:value("1", translate("Enabled"))
--- udp.rmempty = true
--- 
--- forward = s1:taboption("advanced", ListValue, "forward_chain_enabled", translate("Create FORWARD Chain"), translate("Create and use a FORWARD chain in the mangle table."))
--- forward:value("", translate("Disabled"))
--- forward:value("1", translate("Enabled"))
--- forward.rmempty = true
--- 
--- input = s1:taboption("advanced", ListValue, "input_chain_enabled", translate("Create INPUT Chain"), translate("Create and use an INPUT chain in the mangle table."))
--- input:value("", translate("Disabled"))
--- input:value("1", translate("Enabled"))
--- input.rmempty = true
--- 
--- output = s1:taboption("advanced", ListValue, "output_chain_enabled", translate("Create OUTPUT Chain"), translate("Create and use an OUTPUT chain in the mangle table. Policies in the OUTPUT chain will affect traffic from the router itself. All policies with unset local address will be duplicated in the OUTPUT chain."))
--- output:value("", translate("Disabled"))
--- output:value("1", translate("Enabled"))
--- output.rmempty = true
 
 icmp = s1:taboption("advanced", ListValue, "icmp_interface", translate("Default ICMP Interface"), translate("Force the ICMP protocol interface."))
 icmp:depends({output_chain_enabled="1"})
