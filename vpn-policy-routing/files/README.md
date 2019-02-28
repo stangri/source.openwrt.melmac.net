@@ -149,6 +149,7 @@ The ```vpn-policy-routing``` settings are split into ```basic``` and ```advanced
 |Basic|ipv6_enabled|boolean|1|Enable/disable IPv6 support.|
 |Advanced|supported_interface|list/string||Allows to specify the space-separated list of interface names (in lower case) to be explicitly supported by the ```vpn-policy-routing``` service. Can be useful if your OpenVPN tunnels have dev option other than tun\* or tap\*.|
 |Advanced|ignored_interface|list/string||Allows to specify the space-separated list of interface names (in lower case) to be ignored by the ```vpn-policy-routing``` service. Can be useful if running both VPN server and VPN client on the router.|
+|Advanced|boot_timeout|number|30|Allows to specify the time (in seconds) for ```vpn-policy-routing``` service to wait for WAN gateway discovery on boot. Can be useful on devices with ADSL modem built in.|
 |Advanced|iprule_enabled|boolean|0|Add an ```ip rule```, not an ```iptables``` entry for policies with just the local address. Use with caution to manipulate policies priorities.|
 |Advanced|proto_control|boolean|0|Shows ```Protocol``` column for policies, allowing to specify ```TCP``` (default), ```UDP``` or ```TCP/UDP``` protocol for ```iptables``` rules for policies.|
 |Advanced|chain_control|boolean|0|Shows ```Chain``` column for policies, allowing to specify ```PREROUTING``` (default), ```FORWARD```, ```INPUT```, or ```OUTPUT``` chain for ```iptables``` rules for policies.|

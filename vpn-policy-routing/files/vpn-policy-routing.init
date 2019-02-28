@@ -55,7 +55,7 @@ export ipv6Enabled ipsetEnabled ipruleEnabled dnsmasqEnabled icmpIface
 export ignoredIfaces="" supportedIfaces=""
 export appendLocalPolicy="" appendRemotePolicy=""
 export wanIface4 wanIface6 ifaceMark ifaceTableID ifacesListAll ifacesListSupported wanGW4 wanGW6
-export ifconfigOutput ip4RouteOutput ip6RouteOutput
+export ifconfigOutput ip4RouteOutput ip6RouteOutput bootTimeout
 
 list_iface() { ifacesListAll="${ifacesListAll}${1} "; }
 list_supported_iface() { is_supported_interface "$1" && ifacesListSupported="${ifacesListSupported}${1} "; }
@@ -115,6 +115,7 @@ load_package_config() {
 	config_get icmpIface                'config' 'icmp_interface'
 	config_get ignoredIfaces            'config' 'ignored_interface'
 	config_get supportedIfaces          'config' 'supported_interface'
+	config_get bootTimeout              'config' 'boot_timeout' '30'
 
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
@@ -135,7 +136,7 @@ is_enabled() {
 			return 1
 		fi
 		if [ "$dnsmasqEnabled" -ne 0 ]; then
-			if ! dnsmasq --version | grep -q " ipset "; then
+			if ! dnsmasq --version | grep -q -w "ipset"; then
 				output "$_ERROR_: dnsmasq support is enabled in $packageName, but installed dnsmasq does not support ipsets!\\n"
 				dnsmasqEnabled=0
 			else
@@ -149,18 +150,18 @@ is_enabled() {
 			[ -n "$wanIface4" ] && network_get_gateway wanGW4 "$wanIface4"
 			[ -n "$wanIface6" ] && network_get_gateway6 wanGW6 "$wanIface6"
 			wanGW="${wanGW4:-$wanGW6}"
-			if [ $sleepCount -ge 25 ] || [ -n "$wanGW" ]; then break; fi
-			output "$serviceName waiting for wan gateway...\\n"; sleep 2; network_flush_cache; sleepCount=$((sleepCount+1));
+			if [ $((sleepCount)) -gt $((bootTimeout)) ] || [ -n "$wanGW" ]; then break; fi
+			output "$serviceName waiting for wan gateway...\\n"; sleep 1; network_flush_cache; sleepCount=$((sleepCount+1));
 		done
 
+		mkdir -p "${PID%/*}"; mkdir -p "${dnsmasqFile%/*}";
+		unset ifacesListSupported
+		config_load 'network'
+		config_foreach list_supported_iface 'interface'
 		if [ -n "$wanGW" ]; then
-			mkdir -p "${PID%/*}"; mkdir -p "${dnsmasqFile%/*}";
 			[ -z "$ip4RouteOutput" ] && ip4RouteOutput="$(ip -4 route 2>/dev/null)"
 			[ -z "$ip6RouteOutput" ] && ip6RouteOutput="$(ip -6 route 2>/dev/null)"
 			[ -z "$ifconfigOutput" ] && ifconfigOutput="$(ifconfig 2>/dev/null)"
-			unset ifacesListSupported
-			config_load 'network'
-			config_foreach list_supported_iface 'interface'
 			return 0
 		else
 			output "$_ERROR_: $serviceName failed to discover WAN gateway!\\n"
@@ -545,7 +546,9 @@ convert_config(){
 start_service() {
 	local serviceStatusSummary errorStatusSummary dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0
 	convert_config
-	is_enabled 'on_start' || return 1
+#	is_enabled 'on_start' || return 1
+# we need to successfully start when WAN connection wasn't established
+	is_enabled 'on_start' || return 0
 	if create_lock; then
 		if [ -s "$dnsmasqFile" ]; then
 			dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
