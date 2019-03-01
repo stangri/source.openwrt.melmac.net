@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "$REQUEST_URI" = "/generate_204" ]; then
+if [ "$REQUEST_URI" = "/gen_204" ] || [ "$REQUEST_URI" = "/generate_204" ]; then
   echo "Status: 204 No Content"
   echo "Content-Length: 0"
   echo "Date: $(date --rfc-2822)"
