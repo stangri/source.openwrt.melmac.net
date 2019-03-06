@@ -36,6 +36,11 @@ end
 s1 = m:section(NamedSection, "config", "fakeinternet", translate("Configuration"))
 
 -- General options
+icmp = s1:option(ListValue, "icmp_redirect", translate("ICMP Redirect"), translate("Redirect ICMP (ping) traffic to router."))
+icmp:value("0", translate("Do not redirect ICMP traffic to router"))
+icmp:value("1", translate("Redirect ICMP traffic to router"))
+icmp.default = 0
+
 dl1 = s1:option(DynamicList, "address", translate("Addresses"), translate("Addresses to fake."))
 dl1.datatype = "string"
 
