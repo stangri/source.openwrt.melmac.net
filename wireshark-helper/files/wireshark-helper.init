@@ -25,13 +25,13 @@ is_enabled() {
 
 redirect()
 {
-	local command="$1" mon_ip="$2" ws_ip="$3"
+	local command="$1"
 	iptables-save | grep -Fv -- "$packageName" | iptables-restore
 	case $command in
 		add)
-			if is_ipv4 monitorIP && is_ipv4 wiresharkIP; then
-				iptables -A POSTROUTING -t mangle -o br-lan ! -s "$mon_ip" -j TEE --gateway "$ws_ip" -m comment --comment "$packageName"
-				iptables -A PREROUTING -t mangle -i br-lan ! -d "$mon_ip" -j TEE --gateway "$ws_ip" -m comment --comment "$packageName"
+			if is_ipv4 "$monitorIP" && is_ipv4 "$wiresharkIP"; then
+				iptables -A POSTROUTING -t mangle -o br-lan ! -s "$monitorIP" -j TEE --gateway "$wiresharkIP" -m comment --comment "$packageName"
+				iptables -A PREROUTING -t mangle -i br-lan ! -d "$monitorIP" -j TEE --gateway "$wiresharkIP" -m comment --comment "$packageName"
 			else
 				return 1
 			fi
