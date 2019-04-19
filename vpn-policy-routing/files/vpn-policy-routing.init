@@ -650,10 +650,10 @@ service_triggers() {
 		procd_add_reload_trigger 'openvpn'
 		procd_add_reload_trigger 'vpn-policy-routing'
 		procd_open_trigger
-#			for n in $ifacesListSupported; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
-#			output "$serviceName monitoring interfaces: $ifacesListSupported"; output_okn;
-			for n in $ifacesListAll; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
-			output "$serviceName monitoring ALL interfaces: $ifacesListAll"; output_okn;
+			for n in $ifacesListSupported; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
+			output "$serviceName monitoring interfaces: $ifacesListSupported"; output_okn;
+#			for n in $ifacesListAll; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
+#			output "$serviceName monitoring ALL interfaces: $ifacesListAll"; output_okn;
 		procd_close_trigger
 }
 
