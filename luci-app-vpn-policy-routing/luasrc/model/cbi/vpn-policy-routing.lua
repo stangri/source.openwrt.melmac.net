@@ -5,11 +5,15 @@ local readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/vpn-p
 -- 	if obj ~= nil then if type(obj) == "table" then luci.util.dumptable(obj) else luci.util.perror(obj) end else luci.util.perror("Empty object") end
 -- end
 
+local packageName = "vpn-policy-routing"
 local uci = require "luci.model.uci".cursor()
 local sys = require "luci.sys"
 local util = require "luci.util"
 local ip = require "luci.ip"
 local fs = require "nixio.fs"
+local jsonc = require "luci.jsonc"
+local http = require "luci.http"
+local dispatcher = require "luci.dispatcher"
 
 local t = uci:get("vpn-policy-routing", "config", "supported_interface")
 if not t then
@@ -71,26 +75,31 @@ function is_supported_interface(arg)
 	end
 end
 
-c = Map("vpn-policy-routing", translate("Openconnect, OpenVPN, PPTP, Wireguard and WAN Policy-Based Routing"))
-h = c:section(NamedSection, "config", "vpn-policy-routing", translate("Service Status"))
-local packageName = "vpn-policy-routing"
-local enabledFlag = uci:get(packageName, "config", "enabled")
-local status = util.ubus('service', 'list', { name = packageName })
-if status and status[packageName] and status[packageName]['instances'] and status[packageName]['instances']['status'] and status[packageName]['instances']['status']['data'] and status[packageName]['instances']['status']['data']['status'] then
-	status = status[packageName]['instances']['status']['data']['status']
-else
-	local ipt_status = util.trim(sys.exec("iptables-save | grep -m1 'VPR_PREROUTING'"))
-	status = util.trim(sys.exec("/bin/ubus call service list \"{'name': 'vpn-policy-routing'}\" | /usr/bin/jsonfilter -l1 -e \"@['vpn-policy-routing']['instances']['status']['data']['status']\""))
-	if not status or status == "" then
-		if ipt_status and ipt_status ~= "" then
-			status = "Started without PROCD support"
-		else
-			status = "Stopped"
-		end
+local tmpfs
+if fs.access("/var/run/" .. packageName .. ".json") then
+	tmpfs = jsonc.parse(util.trim(sys.exec("cat /var/run/" .. packageName .. ".json")))
+end
+
+local tmpfsStatus, tmpfsVersion
+if tmpfs and tmpfs['data'] then
+	if tmpfs['data']['status'] then
+		tmpfsStatus = tmpfs['data']['status']
+	else
+		tmpfsStatus = 'Stopped'
+	end
+	if tmpfs['data']['version'] then
+		tmpfsVersion = tmpfs['data']['version'] ~= "" and " (" .. packageName .. " " .. tmpfs['data']['version'] .. ")"
+	else
+		tmpfsVersion = ""
 	end
 end
+
+c = Map("vpn-policy-routing", translate("Openconnect, OpenVPN, PPTP, Wireguard and WAN Policy-Based Routing"))
+h = c:section(NamedSection, "config", "vpn-policy-routing", translate("Service Status") .. tmpfsVersion)
+local packageName = "vpn-policy-routing"
+local enabledFlag = uci:get(packageName, "config", "enabled")
 en = h:option(Button, "__toggle")
-if enabledFlag ~= "1" or status:match("Stopped") then
+if enabledFlag ~= "1" or tmpfsStatus:match("Stopped") then
 	en.title      = translate("Service is disabled/stopped")
 	en.inputtitle = translate("Enable/Start")
 	en.inputstyle = "apply important"
@@ -100,15 +109,15 @@ else
 	en.inputstyle = "reset important"
 	ds = h:option(DummyValue, "_dummy", translate("Service Status"))
 	ds.template = "vpn-policy-routing/status"
-	ds.value = status
-	if not status:match("Success") and not status:match("Started without PROCD support") then
+	ds.value = tmpfsStatus
+	if not tmpfsStatus:match("Success") then
 		reload = h:option(Button, "__reload")
 		reload.title      = translate("Service started with error(s)")
 		reload.inputtitle = translate("Reload")
 		reload.inputstyle = "apply important"
 		function reload.write()
-			luci.sys.exec("/etc/init.d/vpn-policy-routing reload")
-			luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. packageName))
+			sys.exec("/etc/init.d/vpn-policy-routing reload")
+			http.redirect(dispatcher.build_url("admin/services/" .. packageName))
 		end
 	end
 end
@@ -118,12 +127,12 @@ function en.write()
 	uci:save(packageName)
 	uci:commit(packageName)
 	if enabledFlag == "0" then
-		luci.sys.init.stop(packageName)
+		sys.init.stop(packageName)
 	else
-		luci.sys.init.enable(packageName)
-		luci.sys.init.start(packageName)
+		sys.init.enable(packageName)
+		sys.init.start(packageName)
 	end
-	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. packageName))
+	http.redirect(dispatcher.build_url("admin/services/" .. packageName))
 end
 
 -- General options
@@ -267,7 +276,7 @@ proto.default = "tcp"
 proto:value("tcp","TCP")
 proto:value("udp","UDP")
 proto:value("tcp udp","TCP/UDP")
-proto:depends({proto_control="1"})
+proto:depends("proto_control", "1")
 
 chain = s3:option(ListValue, "chain", translate("Chain"))
 chain.rmempty = true
@@ -276,7 +285,7 @@ chain:value("PREROUTING")
 chain:value("FORWARD")
 chain:value("INPUT")
 chain:value("OUTPUT")
-chain:depends({chain_control="1"})
+chain:depends("chain_control", "1")
 
 gw = s3:option(ListValue, "interface", translate("Interface"))
 -- gw.datatype = "network"
