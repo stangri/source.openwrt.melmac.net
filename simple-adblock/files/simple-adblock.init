@@ -5,20 +5,20 @@ export START=94
 export USE_PROCD=1
 export LC_ALL=C
 
-readonly packageName="simple-adblock"
-readonly serviceName="$packageName $PKG_VERSION"
-readonly PID="/var/run/${packageName}.pid"
-readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
-readonly compressedCacheFile="/etc/${packageName}.gz"
 export EXTRA_COMMANDS="check dl killcache status"
 export EXTRA_HELP="	check	Checks if specified domain is found in current blacklist
 	dl      	Force-redownloads all the lists, even if the last download was successful and no config changes were made
 	status    Shows the service last-run status"
 
+readonly packageName="simple-adblock"
+readonly serviceName="$packageName $PKG_VERSION"
+readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
+readonly compressedCacheFile="/etc/${packageName}.gz"
 readonly A_TMP="/var/simple-adblock.hosts.a.tmp"
 readonly B_TMP="/var/simple-adblock.hosts.b.tmp"
-readonly cacheFile="/var/run/simple-adblock.cache"
-readonly stateFile="/var/run/simple-adblock.state"
+readonly cacheFile="/var/run/${packageName}.cache"
+readonly PIDFile="/var/run/${packageName}.pid"
+readonly JsonFile="/var/run/${packageName}.json"
 readonly h_filter='/localhost/d;/^#/d;/^[^0-9]/d;s/^0\.0\.0\.0.//;s/^127\.0\.0\.1.//;s/[[:space:]]*#.*$//;s/[[:cntrl:]]$//;s/[[:space:]]//g;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
 readonly d_filter='/^#/d;s/[[:space:]]*#.*$//;s/[[:space:]]*$//;s/[[:cntrl:]]$//;/[[:space:]]/d;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
 readonly f_filter='s|^|local=/|;s|$|/|'
@@ -39,8 +39,8 @@ readonly statusForceReloading='Force-Reloading'
 readonly statusProcessing='Processing'
 readonly statusStopped='Stopped'
 
-create_lock() { [ -e "$PID" ] && return 1; touch "$PID"; }
-remove_lock() { [ -e "$PID" ] && rm -f "$PID"; } # rm -f /var/simple-adblock_tmp_* >/dev/null 2>&1; }
+create_lock() { [ -e "$PIDFile" ] && return 1; touch "$PIDFile"; }
+remove_lock() { [ -e "$PIDFile" ] && rm -f "$PIDFile"; } # rm -f /var/simple-adblock_tmp_* >/dev/null 2>&1; }
 trap remove_lock EXIT
 output_ok() { case $verbosity in 1) output 1 "$_OK_";; 2) output 2 "$__OK__\\n";; esac; }
 output_okn() { case $verbosity in 1) output 1 "$_OK_\\n";; 2) output 2 "$__OK__\\n";; esac; }
@@ -83,6 +83,7 @@ export whitelist_domains_urls
 export blacklist_domains_urls
 export blacklist_hosts_urls
 export wan_if wan_gw wanphysdev dl_command serviceStatus dl_flag
+export dlStatus
 
 load_package_config() {
 	config_load "$packageName"
@@ -106,6 +107,7 @@ load_package_config() {
 		verbosity=1
 	fi
 	. /lib/functions/network.sh
+	. /usr/share/libubox/jshn.sh
 	# Prefer curl because it supports the file: scheme.
 	if [ -x /usr/bin/curl ] ; then
 		dl_command="curl --insecure --connect-timeout $dlTimeout --silent"
@@ -135,38 +137,10 @@ is_enabled() {
 		return 1
 	fi
 	[ ! -d ${dnsmasqFile%/*} ] && mkdir -p ${dnsmasqFile%/*}
-	[ ! -d ${stateFile%/*} ] && mkdir -p ${stateFile%/*}
 	testCompressedCache && return 0
 	network_flush_cache; network_find_wan wan_if; network_get_gateway wan_gw "$wan_if";
 	[ -n "$wan_gw" ] && return 0
 	output "$_ERROR_: $serviceName failed to discover WAN gateway.\\n"; return 1;
-}
-
-settingsState() {
-	local reloadCurrent reloadStored restartCurrent restartStored ret
-	case "$1" in
-		store)
-			[ -s "$stateFile" ] && rm "$stateFile"
-			echo "reloadStored=\"$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls\"" >> "$stateFile"
-			echo "restartStored=\"$compressedCache $forceDNS $led\"" >> "$stateFile"
-			;;
-		remove) [ -s "$stateFile" ] && rm "$stateFile";;
-		check|*)
-			if [ ! -s "$stateFile" ]; then
-				ret=""
-			else
-				. "$stateFile"
-				reloadCurrent="$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls"
-				restartCurrent="$compressedCache $forceDNS $led"
-				if [ "$reloadCurrent" != "$reloadStored" ]; then
-					ret="download"
-				elif [ "$restartCurrent" != "$restartStored" ]; then
-					ret="restart"
-				fi
-			fi
-			echo "$ret"
-			;;
-	esac
 }
 
 dnsmasq_kill() { killall -q -HUP dnsmasq; }
@@ -176,22 +150,21 @@ reload_dnsmasq() {
 		on_start)
 			if [ -s "$dnsmasqFile" ]; then
 				output 3 "Restarting DNSMASQ "
-				ubus_storage set message "restarting DNSMASQ."
+				tmpfs set message "restarting DNSMASQ"
 				if dnsmasq_restart; then
+					tmpfs set status "$statusSuccess"
 					led_on "$led"
 					output_okn
 				else 
 					output_failn
-					ubus_storage add status "$statusFail"
-					ubus_storage add message "DNSMASQ restart error"
-					ubus_storage add error "DNSMASQ restart error"
+					tmpfs set status "$statusFail"
+					tmpfs add error "DNSMASQ restart error"
 					output "$_ERROR_: $serviceName failed to restart DNSMASQ!\\n"
 					return 1
 				fi
 			else
-				ubus_storage add status "$statusFail"
-				ubus_storage add message "Failed to create $dnsmasqFile file."
-				ubus_storage add error "Failed to create $dnsmasqFile file."
+				tmpfs set status "$statusFail"
+				tmpfs add error "Failed to create $dnsmasqFile file."
 				output "$_ERROR_: $serviceName failed to create its data file!\\n"
 				return 1
 			fi
@@ -203,15 +176,14 @@ reload_dnsmasq() {
 				led_off "$led"
 				output_okn
 				output "$serviceName stopped.\\n"
-				ubus_storage set status "$statusStopped"
-				ubus_storage del message
-				ubus_storage del error
+				tmpfs set status "$statusStopped"
+				tmpfs del message
+				tmpfs del error
 				return 0
 			else
 				output_failn;
-				ubus_storage add status "$statusFail"
-				ubus_storage add message "DNSMASQ restart error on stop"
-				ubus_storage add error "DNSMASQ restart error on stop"
+				tmpfs set status "$statusFail"
+				tmpfs add error "DNSMASQ restart error on stop"
 				output "$_ERROR_: $serviceName failed to restart DNSMASQ on stop !\\n"
 				return 1
 			fi
@@ -222,45 +194,96 @@ reload_dnsmasq() {
 	esac
 }
 
-ubus_storage(){
-local action="$1" instance="$2" message="$3" curStatus curMessage curError
-	curStatus="$(ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']")"
-	curMessage="$(ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['message']")"
-	curError="$(ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['error']")"
+tmpfs(){
+	local action="$1" instance="$2" value="$3" 
+	local status message error stats 
+	local readReload readRestart curReload curRestart ret
+	if [ -s "$JsonFile" ]; then
+		status="$(jsonfilter -i $JsonFile -l1 -e "@['data']['status']")"
+		message="$(jsonfilter -i $JsonFile -l1 -e "@['data']['message']")"
+		error="$(jsonfilter -i $JsonFile -l1 -e "@['data']['error']")"
+		stats="$(jsonfilter -i $JsonFile -l1 -e "@['data']['stats']")"
+		readReload="$(jsonfilter -i $JsonFile -l1 -e "@['data']['reload']")"
+		readRestart="$(jsonfilter -i $JsonFile -l1 -e "@['data']['restart']")"
+	fi
 	case "$action" in
-		add)
-			case "$instance" in
-				status)
-					[ -n "$curStatus" ] && curStatus="$curStatus $message" || curStatus="$message";;
-				message) 
-					[ -n "$curMessage" ] && curMessage="$curMessage $message" || curMessage="$message";;
-				error) 
-					[ -n "$curError" ] && curError="$curError $message" || curError="$message";;
-			esac
-			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"/bin/true\" ], \"data\": { \"status\": \"${curStatus}\", \"message\": \"${curMessage}\", \"error\": \"${curError}\" }}}}"
-			;;
-		del | set)
-			case "$instance" in
-				status)
-					curStatus="$message";;
-				message) 
-					curMessage="$message";;
-				error) 
-					curError="$message";;
-			esac
-			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"/bin/true\" ], \"data\": { \"status\": \"${curStatus}\", \"message\": \"${curMessage}\", \"error\": \"${curError}\" }}}}"
-			;;
 		get)
 			case "$instance" in
 				status)
-					ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']";;
+					echo "$status"; return;;
 				message) 
-					ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['message']";;
+					echo "$message"; return;;
 				error) 
-					ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['error']";;
+					echo "$error"; return;;
+				stats) 
+					echo "$stats"; return;;
+				triggers)
+					curReload="$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls"
+					curRestart="$compressedCache $forceDNS $led"
+					if [ "$curReload" != "$readReload" ]; then
+						ret="download"
+					elif [ "$curRestart" != "$readRestart" ]; then
+						ret="restart"
+					fi
+					echo "$ret"
+					return;;
+			esac
+			;;
+		add)
+			case "$instance" in
+				status)
+					[ -n "$status" ] && status="$status $value" || status="$value";;
+				message) 
+					[ -n "$message" ] && message="${message} ${value}" || message="$value";;
+				error) 
+					[ -n "$error" ] && error="$error $value" || error="$value";;
+				stats) 
+					[ -n "$stats" ] && stats="$stats $value" || stats="$value";;
+			esac
+			;;
+		del)
+			case "$instance" in
+				status)
+					unset status;;
+				message) 
+					unset message;;
+				error) 
+					unset error;;
+				stats) 
+					unset stats;;
+				triggers) 
+					unset readReload; unset readRestart;;
+			esac
+			;;
+		set)
+			case "$instance" in
+				status)
+					status="$value";;
+				message) 
+					message="$value";;
+				error) 
+					error="$value";;
+				stats) 
+					stats="$value";;
+				triggers) 
+					readReload="$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls"
+					readRestart="$compressedCache $forceDNS $led"
+					;;
 			esac
 			;;
 	esac
+  json_init
+  json_add_object "data"
+  json_add_string version "$PKG_VERSION"
+  json_add_string status "$status"
+  json_add_string message "$message"
+  json_add_string error "$error"
+  json_add_string stats "$stats"
+  json_add_string reload "$readReload"
+  json_add_string restart "$readRestart"
+  json_close_object
+  json_dump > "$JsonFile"
+	sync
 }
 
 is_chaos_calmer() { ubus -S call system board | grep -q "Chaos Calmer"; }
@@ -313,8 +336,9 @@ process_url() {
 	if ! $dl_command "$1" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 2 "[DL] $type $label $__FAIL__\\n"
 		output 1 "$_FAIL_"
-		ubus_storage add message "-"
-		ubus_storage add error "Error downloading ${1}."
+#		tmpfs add message "-"
+		dlStatus="${dlStatus}-"
+		tmpfs add error "Error downloading ${1}."
 		return 0
 	fi
 	sed -i "$filter" "$R_TMP"
@@ -322,14 +346,15 @@ process_url() {
 	rm -f "${R_TMP}" >/dev/null 2>/dev/null
 	output 2 "[DL] $type $label $__OK__\\n"
 	output 1 "$_OK_"
-	ubus_storage add message "+"
+#	tmpfs add message "+"
+	dlStatus="${dlStatus}+"
 	return 0
 }
 
 download_lists() {
 	local i hf w_filter j=0 R_TMP
 
-	ubus_storage set status "$statusDownloading"
+	tmpfs set message "${statusDownloading}..."
 	for i in $A_TMP $B_TMP $cacheFile $dnsmasqFile; do [ -f $i ] && rm -f $i; done
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
 		output 3 "Low free memory, restarting dnsmasq..."
@@ -337,6 +362,7 @@ download_lists() {
 	fi
 	touch $A_TMP; touch $B_TMP;
 	output 1 "Downloading lists "
+	unset dlStatus
 	if [ -n "$blacklist_hosts_urls" ]; then
 		for hf in ${blacklist_hosts_urls}; do
 			if [ "$parallelDL" -gt 0 ]; then
@@ -365,10 +391,9 @@ download_lists() {
 		done
 	fi
 	wait
-	i="$(ubus_storage get message)"
-	i="${i//-/$xmark}"
-	i="${i//+/$checkmark}"
-	[ "$verbosity" = "1" ] && logmsg="${logmsg}${i}"
+	dlStatus="${dlStatus//-/$xmark}"
+	dlStatus="${dlStatus//+/$checkmark}"
+	[ "$verbosity" = "1" ] && logmsg="${logmsg}${dlStatus}"
 	output 1 "\\n"
 
 	[ -n "$blacklist_domains" ] && for hf in ${blacklist_domains}; do echo "$hf" | sed "$d_filter" >> $B_TMP; done
@@ -377,19 +402,18 @@ $(cat $A_TMP)"
 	[ -n "$whitelist_domains" ] && for hf in ${whitelist_domains}; do hf=$(echo "$hf" | sed 's/\./\\./g'); w_filter="$w_filter/^${hf}$/d;/\\.${hf}$/d;"; done
 	if [ -s $B_TMP ]; then
 		output 1 "Processing downloads "
-		ubus_storage set status "$statusProcessing"
 		output 2 "Sorting combined list "
-		ubus_storage set message "sorting combined list."
+		tmpfs set message "$statusProcessing: sorting combined list"
 		if sort $B_TMP | uniq > $A_TMP; then
 			output_ok
 		else
 			output_fail
-			ubus_storage add error "Sorting error."
+			tmpfs add error "Sorting error."
 		fi
 
 # TLD optimization written by Dirk Brenken (dev@brenken.org)
 		output 2 "Optimizing combined list "
-		ubus_storage set message "optimizing combined list."
+		tmpfs set message "$statusProcessing: optimizing combined list"
 		if awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$A_TMP" > "$B_TMP"; then
 			if sort "$B_TMP" > "$A_TMP"; then
 				if awk '{if(NR==1){tld=$NF};while(getline){if($NF!~tld"\\."){print tld;tld=$NF}}print tld}' "$A_TMP" > "$B_TMP"; then
@@ -398,65 +422,66 @@ $(cat $A_TMP)"
 							output_ok
 						else
 							output_fail
-							ubus_storage add error "Data file optimization error."
+							tmpfs add error "Data file optimization error."
 							mv $A_TMP $B_TMP
 						fi
 					else
 						output_fail
-						ubus_storage add error "Data file optimization error."
+						tmpfs add error "Data file optimization error."
 					fi
 				else
 					output_fail
-					ubus_storage add error "Data file optimization error."
+					tmpfs add error "Data file optimization error."
 					mv $A_TMP $B_TMP
 				fi
 			else
 				output_fail
-				ubus_storage add error "Data file optimization error."
+				tmpfs add error "Data file optimization error."
 			fi
 		else
 			output_fail
-			ubus_storage add error "Data file optimization error."
+			tmpfs add error "Data file optimization error."
 			mv $A_TMP $B_TMP
 		fi
 
 		output 2 "Whitelisting domains "
-		ubus_storage set message "whitelisting domains."
+		tmpfs set message "$statusProcessing: whitelisting domains"
 		if sed -i "$w_filter" $B_TMP; then
 			output_ok
 		else
 			output_fail
-			ubus_storage add error "Whitelist processing error."
+			tmpfs add error "Whitelist processing error."
 		fi
 		output 2 "Formatting merged file "
-		ubus_storage set message "formatting merged file."
+		tmpfs set message "$statusProcessing: formatting merged file"
 		if [ "$allowNonAscii" -gt 0 ]; then
 			if sed "$f_filter" $B_TMP > $A_TMP; then
 				output_ok
 			else
 				output_fail
-				ubus_storage add error "Data file formatting error."
+				tmpfs add error "Data file formatting error."
 			fi
 		else
 			if sed "$f_filter" $B_TMP | grep -E -v '[^a-zA-Z0-9=/.-]' > $A_TMP; then
 				output_ok
 			else
 				output_fail
-				ubus_storage add error "Data file formatting error."
+				tmpfs add error "Data file formatting error."
 			fi
 		fi
 
 		output 2 "Creating DNSMASQ config "
-		ubus_storage set message "creating DNSMASQ config."
+		tmpfs set message "$statusProcessing: creating DNSMASQ blocklist"
 		if mv $A_TMP $dnsmasqFile; then
 			output_ok
 		else
 			output_fail
-			ubus_storage add error "Error moving data file ${A_TMP} to ${dnsmasqFile}."
+			tmpfs add error "Error moving data file ${A_TMP} to ${dnsmasqFile}."
 		fi
 
 		if [ "$compressedCache" -gt 0 ]; then
 			output 2 "Creating compressed cache "
+			tmpfs set message "$statusProcessing: creating compressed cache"
 			R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
 			if gzip < "$dnsmasqFile" > "$R_TMP"; then
 				mv "$R_TMP" "$compressedCacheFile"
@@ -464,20 +489,21 @@ $(cat $A_TMP)"
 			else
 				output_fail
 				rm -f "$R_TMP"
+				tmpfs add error "Error creating compressed cache."
 			fi
 		else
 			rm -f "$compressedCacheFile" >/dev/null 2>&1
 		fi
 
 		output 2 "Removing temporary files "
-		ubus_storage set message "removing temporary files."
+		tmpfs set message "$statusProcessing: removing temporary files"
 		rm -f "/tmp/${packageName}_tmp.*" >/dev/null 2>&1
 		for i in $A_TMP $B_TMP $cacheFile; do if [ -s $i ]; then rm -f $i || j=1; fi; done
 		if [ $j -eq 0 ]; then
 			output_ok
 		else
 			output_fail
-			ubus_storage add error "Error removing temporary files."
+			tmpfs add error "Error removing temporary files."
 		fi
 		output 1 "\\n"
 	fi
@@ -485,9 +511,9 @@ $(cat $A_TMP)"
 
 start_service() {
 	is_enabled "on_start" || return 1
-	local ip status error action="$(settingsState check)"
+	local ip status error action="$(tmpfs get triggers)"
 	if create_lock; then
-		settingsState "store"
+		tmpfs set triggers
 		procd_open_instance "main"
 		procd_set_param command /bin/true
 		procd_set_param stdout 1
@@ -516,11 +542,12 @@ start_service() {
 			fi
 		fi
 		procd_close_instance
-		status="$(ubus_storage get status)"
-		error="$(ubus_storage get error)"
-		ubus_storage del status
-		ubus_storage del message
-		ubus_storage del error
+		status="$(tmpfs get status)"
+		error="$(tmpfs get error)"
+		tmpfs del status
+		tmpfs del message
+		tmpfs del error
+		tmpfs del stats
 
 		case "$1" in
 			download) action="download";;
@@ -539,10 +566,10 @@ start_service() {
 			download)
 				if [ -s "$dnsmasqFile" ] || [ -s "$cacheFile" ] || testCompressedCache; then
 					output "Force-reloading $serviceName...\\n"
-					ubus_storage set status "$statusForceReloading"
+					tmpfs set status "$statusForceReloading"
 				else
 					output "Starting $serviceName...\\n"
-					ubus_storage set status "$statusStarting"
+					tmpfs set status "$statusStarting"
 				fi
 				download_lists
 				reload_dnsmasq "on_start"
@@ -550,44 +577,47 @@ start_service() {
 			restart|*)
 				if [ "$action" == "restart" ]; then
 					output "Retarting $serviceName...\\n"
-					ubus_storage set status "$statusRestarting"
+					tmpfs set status "$statusRestarting"
 				else
 					output "Starting $serviceName...\\n"
-					ubus_storage set status "$statusStarting"
+					tmpfs set status "$statusStarting"
 				fi
 				if testCompressedCache && [ ! -s "$cacheFile" ] && [ ! -s "$dnsmasqFile" ]; then
 					output 3 "Found compressed cache file, unpacking it "
-					ubus_storage set message "found compressed cache file, unpacking it."
+					tmpfs set message "found compressed cache file, unpacking it."
 					if gzip -dc < "${compressedCacheFile}" > "$cacheFile"; then
 						output_okn
 					else
 						output_failn
 						output "$_ERROR_: $serviceName failed to unpack compressed cache!\\n"
-						ubus_storage add error "failed to unpack compressed cache!"
+						tmpfs add error "failed to unpack compressed cache!"
 						return 1
 					fi
 				fi
 				if [ -s "$cacheFile" ] &&  [ ! -s "$dnsmasqFile" ]; then
 					output 3 "Found cache file, reusing it "
-					ubus_storage set message "found cache file, reusing it."
+					tmpfs set message "found cache file, reusing it."
 					if mv "$cacheFile" "$dnsmasqFile"; then 
 						output_okn
 					else 
 						output_failn
-						ubus_storage add error "Error moving $cacheFile to $dnsmasqFile."
+						tmpfs add error "Error moving $cacheFile to $dnsmasqFile."
 					fi
 				fi
 				reload_dnsmasq "on_start"
 			;;
 		esac
 
-		if [ -s "$dnsmasqFile" ] && [ "$(ubus_storage add status)" != "$statusFail" ]; then
+		if [ -s "$dnsmasqFile" ] && [ "$(tmpfs get status)" != "$statusFail" ]; then
 			output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains "; output_okn;
-			ubus_storage set status "$statusSuccess"
-			ubus_storage set message "$(wc -l < $dnsmasqFile) domains blocked."
-			if [ -n "$(ubus_storage get error)" ]; then
-				output "Collected errors: $(ubus_storage get error)\\n"
+			tmpfs del message
+			tmpfs set status "$statusSuccess: $(wc -l < $dnsmasqFile) domains blocked."
+			if [ -n "$(tmpfs get error)" ]; then
+				output "$_ERROR_: $(tmpfs get error)\\n"
 			fi
+		else
+			tmpfs set status "$statusFail"
+			tmpfs add error "Failed to create DNSMASQ blocklist."
 		fi
 		remove_lock
 	else
@@ -603,17 +633,17 @@ reload_service() { restart_service; }
 restart() { restart_service; }
 reload() { restart_service; }
 dl() { rc_procd stop_service "restart"; rc_procd start_service "download"; }
-killcache() { [ -s $cacheFile ] && rm -f $cacheFile >/dev/null 2>/dev/null; }
+killcache() { [ -s $cacheFile ] && rm -f $cacheFile >/dev/null 2>/dev/null; [ -s $compressedCacheFile ] && rm -f $compressedCacheFile >/dev/null 2>/dev/null; }
 status() {
 	local status
-	if [ -n "$(ubus_storage get status)" ]; then 
-		status="$(ubus_storage get status)"
+	if [ -n "$(tmpfs get status)" ]; then 
+		status="$(tmpfs get status)"
 	fi
-	if [ -n "$status" ] && [ -n "$(ubus_storage get message)" ]; then 
-		status="${status}: $(ubus_storage get message)"
+	if [ -n "$status" ] && [ -n "$(tmpfs get message)" ]; then 
+		status="${status}: $(tmpfs get message)"
 	fi
 	[ -n "$status" ] && output "$serviceName $status\\n"
-	[ -n "$(ubus_storage get error)" ] && output "$_ERROR_: $(ubus_storage get error)\\n"
+	[ -n "$(tmpfs get error)" ] && output "$_ERROR_: $(tmpfs get error)\\n"
 }
 
 stop_service() {
@@ -622,15 +652,12 @@ stop_service() {
 		if [ -z "$1" ] && [ -s "$dnsmasqFile" ]; then
 			[ -s "$dnsmasqFile" ] && mv "$dnsmasqFile" "$cacheFile" >/dev/null 2>/dev/null
 			output "Stopping $serviceName...\\n"
-			settingsState "remove"
+			tmpfs del triggers
 			reload_dnsmasq "on_stop"
 		fi
 	else
 		[ -s "$dnsmasqFile" ] && mv "$dnsmasqFile" "$cacheFile" >/dev/null 2>/dev/null
 		reload_dnsmasq "quiet"
-#			ubus_storage set status "$statusStopped"
-#			ubus_storage del message
-#			ubus_storage del error
 	fi
 	if is_chaos_calmer; then
 		fw3_setup "stop"
