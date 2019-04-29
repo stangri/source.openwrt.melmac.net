@@ -10,4 +10,4 @@ In the Wireshark app, set the filter to monitored IP, for example if the IP of t
 
 ## Thanks
 
-Credit for ```iptables``` rules and instructions goes to [Ayoma Gayan Wijethunga](https://www.ayomaonline.com/security/analyzing-network-traffic-with-openwrt/)
+Credit for ```iptables``` rules and instructions goes to [Ayoma Gayan Wijethunga](https://www.ayomaonline.com/security/analyzing-network-traffic-with-openwrt/).
