@@ -25,6 +25,7 @@ export EXTRA_HELP="	support	Generates output required to troubleshoot routing is
 readonly packageName="vpn-policy-routing"
 readonly serviceName="$packageName $PKG_VERSION"
 readonly PID="/var/run/${packageName}.pid"
+readonly JsonFile="/var/run/${packageName}.json"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
 create_lock() { [ -e "$PID" ] && return 1; touch "$PID"; }
 remove_lock() { [ -e "$PID" ] && rm -f "$PID"; }
@@ -124,49 +125,49 @@ load_package_config() {
 }
 
 is_enabled() {
-		local sleepCount=1
-		load_package_config
-
-		if [ "$serviceEnabled" -eq 0 ]; then
-			if [ "$1" = "on_start" ]; then
-				output "$packageName is currently disabled.\\n"
-				output "Run the following commands before starting service again:\\n"
-				output "uci set $packageName.config.enabled='1'; uci commit;\\n"
-			fi
-			return 1
+	load_package_config
+	if [ "$serviceEnabled" -eq 0 ]; then
+		if [ "$1" = "on_start" ]; then
+			output "$packageName is currently disabled.\\n"
+			output "Run the following commands before starting service again:\\n"
+			output "uci set $packageName.config.enabled='1'; uci commit;\\n"
 		fi
-		if [ "$dnsmasqEnabled" -ne 0 ]; then
-			if ! dnsmasq --version | grep -q -w "ipset"; then
-				output "$_ERROR_: dnsmasq support is enabled in $packageName, but installed dnsmasq does not support ipsets!\\n"
-				dnsmasqEnabled=0
-			else
-				ipsetEnabled=1
-			fi
-		fi
-
-		while [ -z "$wanGW" ] ; do
-			vpr_find_iface wanIface4 'wan'
-			[ "$ipv6Enabled" -ne 0 ] && vpr_find_iface wanIface6 'wan6'
-			[ -n "$wanIface4" ] && network_get_gateway wanGW4 "$wanIface4"
-			[ -n "$wanIface6" ] && network_get_gateway6 wanGW6 "$wanIface6"
-			wanGW="${wanGW4:-$wanGW6}"
-			if [ $((sleepCount)) -gt $((bootTimeout)) ] || [ -n "$wanGW" ]; then break; fi
-			output "$serviceName waiting for wan gateway...\\n"; sleep 1; network_flush_cache; sleepCount=$((sleepCount+1));
-		done
-
-		mkdir -p "${PID%/*}"; mkdir -p "${dnsmasqFile%/*}";
-		unset ifacesListSupported
-		config_load 'network'
-		config_foreach list_supported_iface 'interface'
-		if [ -n "$wanGW" ]; then
-			[ -z "$ip4RouteOutput" ] && ip4RouteOutput="$(ip -4 route 2>/dev/null)"
-			[ -z "$ip6RouteOutput" ] && ip6RouteOutput="$(ip -6 route 2>/dev/null)"
-			[ -z "$ifconfigOutput" ] && ifconfigOutput="$(ifconfig 2>/dev/null)"
-			return 0
+		return 1
+	fi
+	if [ "$dnsmasqEnabled" -ne 0 ]; then
+		if ! dnsmasq --version | grep -q -w "ipset"; then
+			output "$_ERROR_: dnsmasq support is enabled in $packageName, but installed dnsmasq does not support ipsets!\\n"
+			dnsmasqEnabled=0
 		else
-			output "$_ERROR_: $serviceName failed to discover WAN gateway!\\n"
-			return 1
+			ipsetEnabled=1
 		fi
+	fi
+}
+
+is_wan_up() {
+	local sleepCount=1
+	while [ -z "$wanGW" ] ; do
+		vpr_find_iface wanIface4 'wan'
+		[ "$ipv6Enabled" -ne 0 ] && vpr_find_iface wanIface6 'wan6'
+		[ -n "$wanIface4" ] && network_get_gateway wanGW4 "$wanIface4"
+		[ -n "$wanIface6" ] && network_get_gateway6 wanGW6 "$wanIface6"
+		wanGW="${wanGW4:-$wanGW6}"
+		if [ $((sleepCount)) -gt $((bootTimeout)) ] || [ -n "$wanGW" ]; then break; fi
+		output "$serviceName waiting for wan gateway...\\n"; sleep 1; network_flush_cache; sleepCount=$((sleepCount+1));
+	done
+	mkdir -p "${PID%/*}"; mkdir -p "${dnsmasqFile%/*}";
+	unset ifacesListSupported
+	config_load 'network'
+	config_foreach list_supported_iface 'interface'
+	if [ -n "$wanGW" ]; then
+		[ -z "$ip4RouteOutput" ] && ip4RouteOutput="$(ip -4 route 2>/dev/null)"
+		[ -z "$ip6RouteOutput" ] && ip6RouteOutput="$(ip -6 route 2>/dev/null)"
+		[ -z "$ifconfigOutput" ] && ifconfigOutput="$(ifconfig 2>/dev/null)"
+		return 0
+	else
+		output "$_ERROR_: $serviceName failed to discover WAN gateway!\\n"
+		return 1
+	fi
 }
 
 # shellcheck disable=SC2086
@@ -515,18 +516,26 @@ process_interface(){
 	return $s
 }
 
-ubus_status(){
-	case "$1" in
-		add)
-			ubus_status set "$(ubus_status get)${2}"
-			;;
-		del | set)
-			ubus call service set "{ \"name\": \"${packageName}\", \"instances\": { \"status\": { \"command\": [ \"/bin/true\" ],  \"data\": { \"status\": \"${2}\" }}}}"
-			;;
+tmpfs(){
+	local action="$1" value="$2" status
+	if [ -s "$JsonFile" ]; then
+		status="$(jsonfilter -i $JsonFile -l1 -e "@['data']['status']")"
+	fi
+	case "$action" in
 		get)
-			ubus call service list "{\"name\": \"${packageName}\"}" | jsonfilter -l1 -e "@['${packageName}']['instances']['status']['data']['status']"
-			;;
+			echo "$status"; return;;
+		add)
+			status="${status}${value}";;
+		del | set)
+			status="${value}";;
 	esac
+  json_init
+  json_add_object "data"
+  json_add_string version "$PKG_VERSION"
+  json_add_string status "$status"
+  json_close_object
+  json_dump > "$JsonFile"
+	sync
 }
 
 convert_config(){
@@ -546,9 +555,9 @@ convert_config(){
 start_service() {
 	local serviceStatusSummary errorStatusSummary dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0
 	convert_config
-#	is_enabled 'on_start' || return 1
+	is_enabled 'on_start' || return 1
 # we need to successfully start when WAN connection wasn't established
-	is_enabled 'on_start' || return 0
+	is_wan_up || return 0
 	if create_lock; then
 		if [ -s "$dnsmasqFile" ]; then
 			dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
@@ -561,7 +570,7 @@ start_service() {
 
 		if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then 
  			output "$_ERROR_: $serviceName failed to load kernel modules!\\n"
-			ubus_status 'set' "Fail: $serviceName failed to load kernel modules!"
+			tmpfs 'set' "Fail: $serviceName failed to load kernel modules!"
 			return 1
 		fi
 
@@ -583,7 +592,7 @@ start_service() {
 
 		if [ -z "$serviceStatusSummary" ]; then
 			output "$_ERROR_: $serviceName failed to set up any interface!\\n"
-			ubus_status 'set' "Fail: $serviceName failed to set up any interface!"
+			tmpfs 'set' "Fail: $serviceName failed to set up any interface!"
 			return 1
 		else
 			if [ "$strictMode" -ne 0 ] && [ "${serviceStatusSummary//0.0.0.0}" != "${serviceStatusSummary}" ]; then
@@ -592,12 +601,12 @@ start_service() {
 			output "$serviceName started on ${serviceStatusSummary}"
 			if [ -z "$errorStatusSummary" ]; then
 				output_okn
-				ubus_status 'set' "Success: ${serviceStatusSummary}"
+				tmpfs 'set' "Success: ${serviceStatusSummary}"
 			else
 				output "with errors "
 				output_failn
 				output "${errorStatusSummary}"
-				ubus_status 'set' "Started on ${serviceStatusSummary} with error(s)"
+				tmpfs 'set' "Started on ${serviceStatusSummary} with error(s)"
 			fi
 		fi
 		remove_lock
@@ -628,7 +637,7 @@ stop_service() {
 		if [ "$serviceEnabled" -ne 0 ]; then
 			output "$serviceName stopped "; output_okn;
 		fi
-		ubus_status 'set' "Stopped"
+		tmpfs 'set' "Stopped"
 		remove_lock
 	else
 		output "$serviceName: another instance of ${packageName} is currently running "; output_failn;
