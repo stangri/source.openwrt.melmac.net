@@ -5,6 +5,10 @@ local packageName = "simple-adblock"
 local uci = require "luci.model.uci".cursor()
 local util = require "luci.util"
 local sys = require "luci.sys"
+local jsonc = require "luci.jsonc"
+local fs = require "nixio.fs"
+local http = require "luci.http"
+local dispatcher = require "luci.dispatcher"
 local enabledFlag = uci:get(packageName, "config", "enabled")
 local command
 
@@ -14,66 +18,88 @@ m.on_after_apply = function(self)
  	sys.call("/etc/init.d/simple-adblock restart")
 end
 
-h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status"))
-
-local status 
-local error
-local ubusStatus = util.ubus("service", "list", { name = packageName })
-if ubusStatus and ubusStatus[packageName] and ubusStatus[packageName]["instances"] and ubusStatus[packageName]["instances"]["status"] and ubusStatus[packageName]["instances"]["status"]["data"] then
-	if ubusStatus[packageName]["instances"]["status"]["data"]["status"] then
-		status = ubusStatus[packageName]["instances"]["status"]["data"]["status"]
-	else
-		status = "Stopped"
-	end
-	if ubusStatus[packageName]["instances"]["status"]["data"]["message"] and ubusStatus[packageName]["instances"]["status"]["data"]["message"] ~= "" then
-		status = status .. ": " .. ubusStatus[packageName]["instances"]["status"]["data"]["message"]
-	end
-	if ubusStatus[packageName]["instances"]["status"]["data"]["error"] and ubusStatus[packageName]["instances"]["status"]["data"]["error"] ~= "" then
-		error = ubusStatus[packageName]["instances"]["status"]["data"]["error"]
-	end
-else
-	status = "Stopped"
+local tmpfs
+if fs.access("/var/run/" .. packageName .. ".json") then
+	tmpfs = jsonc.parse(util.trim(sys.exec("cat /var/run/" .. packageName .. ".json")))
 end
-if status:match("ing") then
-	ds = h:option(DummyValue, "_dummy", translate("Service Status"))
-	ds.template = "simple-adblock/status"
-	ds.value = status
+
+local tmpfsStatus, tmpfsMessage, tmpfsError, tmpfsStats, tmpfsVersion
+if tmpfs and tmpfs['data'] then
+	if tmpfs['data']['status'] then
+		tmpfsStatus = tmpfs['data']['status']
+	else
+		tmpfsStatus = 'Stopped'
+	end
+	if tmpfs['data']['message'] then
+		tmpfsMessage = tmpfs['data']['message'] ~= "" and tmpfs['data']['message']
+	end
+	if tmpfs['data']['error'] then
+		tmpfsError = tmpfs['data']['error'] ~= "" and tmpfs['data']['error']
+	end
+	if tmpfs['data']['stats'] then
+		tmpfsStats = tmpfs['data']['stats'] ~= "" and tmpfs['data']['stats']
+	end
+	if tmpfs['data']['version'] then
+		tmpfsVersion = tmpfs['data']['version'] ~= "" and " (" .. packageName .. " " .. tmpfs['data']['version'] .. ")"
+	else
+		tmpfsVersion = ""
+	end
+end
+
+h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status") .. tmpfsVersion)
+
+if tmpfsStatus and tmpfsStatus:match("ing") then
+	ss = h:option(DummyValue, "_dummy", translate("Service Status"))
+	ss.template = "simple-adblock/status"
+	ss.value = tmpfsStatus .. '...'
+	if tmpfsMessage then
+		sm = h:option(DummyValue, "_dummy", translate("Task"))
+		sm.template = "simple-adblock/status"
+		sm.value = tmpfsMessage
+	end
 else
 	en = h:option(Button, "__toggle")
-	if enabledFlag ~= "1" or status:match("Stopped") then
+	if enabledFlag ~= "1" or tmpfsStatus:match("Stopped") then
 		en.title      = translate("Service is disabled/stopped")
 		en.inputtitle = translate("Enable/Start")
 		en.inputstyle = "apply important"
-		if nixio.fs.access("/var/run/simple-adblock.cache") then
-			ds = h:option(DummyValue, "_dummy", translate("Service Status"))
-			ds.template = "simple-adblock/status"
-			ds.value = "Cache file containing " .. luci.util.trim(luci.sys.exec("wc -l < /var/run/simple-adblock.cache")) .. " domains found."
+		if fs.access("/var/run/simple-adblock.cache") then
+			sm = h:option(DummyValue, "_dummy", translate("Info"))
+			sm.template = "simple-adblock/status"
+			sm.value = "Cache file containing " .. util.trim(sys.exec("wc -l < /var/run/simple-adblock.cache")) .. " domains found."
+		elseif fs.access("/etc/$simple-adblock.gz") then
+			sm = h:option(DummyValue, "_dummy", translate("Info"))
+			sm.template = "simple-adblock/status"
+			sm.value = "Compressed cache file found."
 		end
 	else
 		en.title      = translate("Service is enabled/started")
 		en.inputtitle = translate("Stop/Disable")
 		en.inputstyle = "reset important"
-		ds = h:option(DummyValue, "_dummy", translate("Service Status"))
-		ds.template = "simple-adblock/status"
-		ds.value = status
-		if status:match("Fail") or error then
-			if error then
-				es = h:option(DummyValue, "_dummy", translate("Collected Errors"))
-				es.template = "simple-adblock/status"
-				es.value = error
-			end
+		ss = h:option(DummyValue, "_dummy", translate("Service Status"))
+		ss.template = "simple-adblock/status"
+		ss.value = tmpfsStatus
+		if tmpfsMessage then
+			ms = h:option(DummyValue, "_dummy", translate("Message"))
+			ms.template = "simple-adblock/status"
+			ms.value = tmpfsMessage
+		end
+		if tmpfsError then
+			es = h:option(DummyValue, "_dummy", translate("Collected Errors"))
+			es.template = "simple-adblock/status"
+			es.value = tmpfsError
 			reload = h:option(Button, "__reload")
 			reload.title      = translate("Service started with error")
 			reload.inputtitle = translate("Reload")
 			reload.inputstyle = "apply important"
 			function reload.write()
-				luci.sys.exec("/etc/init.d/simple-adblock reload")
-				luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. packageName))
+				sys.exec("/etc/init.d/simple-adblock reload")
+				http.redirect(dispatcher.build_url("admin/services/" .. packageName))
 			end
 		end
 	end
 	function en.write()
-		if status:match("Stopped") then
+		if tmpfsStatus and tmpfsStatus:match("Stopped") then
 			enabledFlag = "1"
 		else
 			enabledFlag = enabledFlag == "1" and "0" or "1"
