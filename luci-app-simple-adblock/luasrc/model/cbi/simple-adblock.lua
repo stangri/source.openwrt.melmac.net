@@ -23,7 +23,7 @@ if fs.access("/var/run/" .. packageName .. ".json") then
 	tmpfs = jsonc.parse(util.trim(sys.exec("cat /var/run/" .. packageName .. ".json")))
 end
 
-local tmpfsMessage, tmpfsError, tmpfsStats, tmpfsVersion, tmpfsStatus = "", "Stopped"
+local tmpfsVersion, tmpfsStatus, tmpfsMessage, tmpfsError, tmpfsStats = "", "Stopped"
 if tmpfs and tmpfs['data'] then
 	if tmpfs['data']['status'] and tmpfs['data']['status'] ~= "" then
 		tmpfsStatus = tmpfs['data']['status']
