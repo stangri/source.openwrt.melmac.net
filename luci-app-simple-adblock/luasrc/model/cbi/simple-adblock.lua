@@ -28,7 +28,7 @@ if tmpfs and tmpfs['data'] then
 	if tmpfs['data']['status'] then
 		tmpfsStatus = tmpfs['data']['status']
 	else
-		tmpfsStatus = 'Stopped'
+		tmpfsStatus = "Stopped"
 	end
 	if tmpfs['data']['message'] then
 		tmpfsMessage = tmpfs['data']['message'] ~= "" and tmpfs['data']['message']
@@ -44,6 +44,9 @@ if tmpfs and tmpfs['data'] then
 	else
 		tmpfsVersion = ""
 	end
+else
+	tmpfsStatus = "Stopped"
+	tmpfsVersion = ""
 end
 
 h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status") .. tmpfsVersion)
