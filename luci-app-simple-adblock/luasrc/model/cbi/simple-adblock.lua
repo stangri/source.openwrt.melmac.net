@@ -25,22 +25,20 @@ end
 
 local tmpfsMessage, tmpfsError, tmpfsStats, tmpfsVersion, tmpfsStatus = "", "Stopped"
 if tmpfs and tmpfs['data'] then
-	if tmpfs['data']['status'] then
+	if tmpfs['data']['status'] and tmpfs['data']['status'] ~= "" then
 		tmpfsStatus = tmpfs['data']['status']
 	end
-	if tmpfs['data']['message'] then
-		tmpfsMessage = tmpfs['data']['message'] ~= "" and tmpfs['data']['message']
+	if tmpfs['data']['message'] and tmpfs['data']['message'] ~= "" then
+		tmpfsMessage = tmpfs['data']['message']
 	end
-	if tmpfs['data']['error'] then
-		tmpfsError = tmpfs['data']['error'] ~= "" and tmpfs['data']['error']
+	if tmpfs['data']['error'] and tmpfs['data']['error'] ~= "" then
+		tmpfsError = tmpfs['data']['error']
 	end
-	if tmpfs['data']['stats'] then
-		tmpfsStats = tmpfs['data']['stats'] ~= "" and tmpfs['data']['stats']
+	if tmpfs['data']['stats'] and tmpfs['data']['stats'] ~= "" then
+		tmpfsStats = tmpfs['data']['stats']
 	end
-	if tmpfs['data']['version'] then
-		tmpfsVersion = tmpfs['data']['version'] ~= "" and " (" .. packageName .. " " .. tmpfs['data']['version'] .. ")"
-	else
-		tmpfsVersion = ""
+	if tmpfs['data']['version'] and tmpfs['data']['version'] ~= "" then
+		tmpfsVersion = " (" .. packageName .. " " .. tmpfs['data']['version'] .. ")"
 	end
 end
 
