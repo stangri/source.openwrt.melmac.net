@@ -23,12 +23,10 @@ if fs.access("/var/run/" .. packageName .. ".json") then
 	tmpfs = jsonc.parse(util.trim(sys.exec("cat /var/run/" .. packageName .. ".json")))
 end
 
-local tmpfsStatus, tmpfsMessage, tmpfsError, tmpfsStats, tmpfsVersion
+local tmpfsMessage, tmpfsError, tmpfsStats, tmpfsVersion, tmpfsStatus = "", "Stopped"
 if tmpfs and tmpfs['data'] then
 	if tmpfs['data']['status'] then
 		tmpfsStatus = tmpfs['data']['status']
-	else
-		tmpfsStatus = "Stopped"
 	end
 	if tmpfs['data']['message'] then
 		tmpfsMessage = tmpfs['data']['message'] ~= "" and tmpfs['data']['message']
@@ -44,9 +42,6 @@ if tmpfs and tmpfs['data'] then
 	else
 		tmpfsVersion = ""
 	end
-else
-	tmpfsStatus = "Stopped"
-	tmpfsVersion = ""
 end
 
 h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status") .. tmpfsVersion)
