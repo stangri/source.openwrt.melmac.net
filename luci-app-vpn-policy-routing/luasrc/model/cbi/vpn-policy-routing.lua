@@ -85,13 +85,16 @@ if tmpfs and tmpfs['data'] then
 	if tmpfs['data']['status'] then
 		tmpfsStatus = tmpfs['data']['status']
 	else
-		tmpfsStatus = 'Stopped'
+		tmpfsStatus = "Stopped"
 	end
 	if tmpfs['data']['version'] then
 		tmpfsVersion = tmpfs['data']['version'] ~= "" and " (" .. packageName .. " " .. tmpfs['data']['version'] .. ")"
 	else
 		tmpfsVersion = ""
 	end
+else
+	tmpfsStatus = "Stopped"
+	tmpfsVersion = ""
 end
 
 c = Map("vpn-policy-routing", translate("Openconnect, OpenVPN, PPTP, Wireguard and WAN Policy-Based Routing"))
