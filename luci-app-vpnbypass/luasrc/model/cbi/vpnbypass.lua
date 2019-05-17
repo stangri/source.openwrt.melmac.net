@@ -3,9 +3,11 @@ local readmeURL = "https://github.com/openwrt/packages/blob/master/net/vpnbypass
 m = Map("vpnbypass", translate("VPN Bypass Settings"))
 
 h = m:section(NamedSection, "config", "vpnbypass", translate("Service Status"))
-local serviceName = "vpnbypass"
-local uci = require("luci.model.uci").cursor()
-local enabledFlag = uci:get(serviceName, "config", "enabled")
+local packageName = "vpnbypass"
+local uci = require "luci.model.uci".cursor()
+local sys = require "luci.sys"
+local http = require "luci.http"
+local dispatcher = require "luci.dispatcher"
 en = h:option(Button, "__toggle")
 if enabledFlag ~= "1" then
 	en.title      = translate("Service is disabled/stopped")
@@ -18,16 +20,16 @@ else
 end
 function en.write()
 	enabledFlag = enabledFlag == "1" and "0" or "1"
-	uci:set(serviceName, "config", "enabled", enabledFlag)
-	uci:save(serviceName)
-	uci:commit(serviceName)
+	uci:set(packageName, "config", "enabled", enabledFlag)
+	uci:save(packageName)
+	uci:commit(packageName)
 	if enabledFlag == "0" then
-		luci.sys.init.stop(serviceName)
+		sys.init.stop(packageName)
 	else
-		luci.sys.init.enable(serviceName)
-		luci.sys.init.start(serviceName)
+		sys.init.enable(packageName)
+		sys.init.start(packageName)
 	end
-	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
+	http.redirect(dispatcher.build_url("admin/services/" .. packageName))
 end
 
 s = m:section(NamedSection, "config", "vpnbypass", translate("VPN Bypass Rules"))
@@ -49,7 +51,7 @@ p2.optional = false
 -- Local Subnets
 r1 = s:option(DynamicList, "localsubnet", translate("Local IP Addresses to Bypass"), translate("Local IP addresses or subnets with direct internet access (outside of the VPN tunnel)"))
 r1.datatype    = "ip4addr"
--- r1.placeholder = luci.ip.new(m.uci:get("network", "lan", "ipaddr"), m.uci:get("network", "lan", "netmask"))
+-- r1.placeholder = ip.new(m.uci:get("network", "lan", "ipaddr"), m.uci:get("network", "lan", "netmask"))
 r1.addremove = false
 r1.optional = false
 
@@ -69,7 +71,7 @@ di = s4:option(DynamicList, "ipset", translate("Domains to Bypass"),
 		.. [[<a href="]] .. readmeURL .. [[#bypass-domains-formatsyntax" target="_blank">]]
     .. translate("README") .. [[</a> ]] .. translate("for syntax"))
 function d.on_after_commit(map)
-    luci.sys.init.restart("dnsmasq")
+    sys.init.restart("dnsmasq")
 end
 
 return m, d
