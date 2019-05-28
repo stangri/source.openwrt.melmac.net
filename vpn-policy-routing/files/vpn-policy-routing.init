@@ -27,6 +27,7 @@ readonly serviceName="$packageName $PKG_VERSION"
 readonly PID="/var/run/${packageName}.pid"
 readonly JsonFile="/var/run/${packageName}.json"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
+readonly userFile="/etc/${packageName}.user"
 create_lock() { [ -e "$PID" ] && return 1; touch "$PID"; }
 remove_lock() { [ -e "$PID" ] && rm -f "$PID"; }
 trap remove_lock EXIT
@@ -585,6 +586,11 @@ start_service() {
 		output 1 'Processing policies '
 		config_load $packageName; config_foreach process_policy 'policy';
 		output 1 '\n'
+		if [ -s "$userFile" ]; then
+			output 1 'Processing user file '
+			. "$userFile" && output_okn || output_failn
+		fi
+
 		if [ -s "$dnsmasqFile" ]; then
 			dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
 		fi

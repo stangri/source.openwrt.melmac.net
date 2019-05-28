@@ -234,6 +234,15 @@ config policy
   option chain 'OUTPUT'
 ```
 
+The following policy should route US Netflix traffic via WAN. For capturing international Netflix domain names, you can refer to [these getdomainnames.sh-specific instructions](https://github.com/Xentrk/netflix-vpn-bypass#ipset_netflix_domainssh) and don't forget to adjust them for OpenWrt.
+
+```text
+config policy
+  option name 'Netflix Domains'
+  option interface 'wan'
+  option remote_address 'amazonaws.com netflix.com nflxext.com nflximg.net nflxso.net nflxvideo.net dvd.netflix.com'
+```
+
 The following policies route traffic from a single IP address, a range of IP addresses or a local machine (requires definition as DHCP host record in DHCP config) via WAN.
 
 ```text
@@ -252,6 +261,25 @@ config policy
   option interface 'wan'
   option local_address 'dell-ubuntu'
 ```
+
+### Custom user files
+
+If the ```/etc/vpn-policy-routing.user``` file is found, the service will load and execute it after processing uci-based policies and before restarting ```dnsmasq```.
+
+Two example custom user-files are provided with the ```vpn-policy-routing``` version 0.0.6 and above: ```/etc/vpn-policy-routing.aws.user``` and ```/etc/vpn-policy-routing.netflix.user```. They are provided to pull the AWS and Netflix IP addresses into the ```wan``` ipset respectively. 
+
+To start using either one of them, run:
+
+```sh
+cp /etc/vpn-policy-routing.aws.user /etc/vpn-policy-routing.user 
+```
+
+or
+
+```sh
+cp /etc/vpn-policy-routing.netflix.user /etc/vpn-policy-routing.user 
+```
+
 
 ### Multiple OpenVPN Clients
 
