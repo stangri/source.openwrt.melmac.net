@@ -227,6 +227,7 @@ config policy
 The following policy allows you to run an OpenVPN server on router (at port 1194) if you're already running a tunnel with default routing set.
 
 ```text
+option append_local_rules '! -d 192.168.200.0/24' # from your VPN Server settings
 config policy
   option name 'OpenVPN Server'
   option interface 'wan'
