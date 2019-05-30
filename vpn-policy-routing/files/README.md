@@ -349,7 +349,7 @@ If you don't want to post the ```/etc/init.d/vpn-policy-routing status``` output
   or, for newer OpenVPN client/server combinations:
 
   ```text
-  list pull_filter='ingore "redirect-gateway"'
+  list pull_filter 'ignore "redirect-gateway"'
   ```
 
   or set the following option for your Wireguard tunnel config:
