@@ -234,7 +234,7 @@ config policy
 
 #### Local OpenVPN Server (Scenario 1)
 
-If the VPN Client on your router is used as default routing (for the whole internet), you'll need to run local OpenVPN Server with TCP protocol (at port 1194) and apply the following settings.
+If the VPN Client on your router is used as default routing (for the whole internet), you'll need to run local OpenVPN Server with TCP protocol (at port 1194) and apply the following settings:
 
 ```text
 list ignored_interface 'vpnserver'
@@ -245,46 +245,18 @@ config policy
   option chain 'OUTPUT'
 ```
 
-The sample OpenVPN config would be:
+The relevant parts of the OpenVPN Server config would be:
 
 ```text
 config openvpn 'vpnserver'
-        option enabled '1'
-        option dev_type 'tun'
-        option dev 'ovpns0'
         option port '1194'
         option proto 'tcp'
-        option keepalive '10 120'
-        option persist_key '1'
-        option persist_tun '1'
-        option ca '/etc/openvpn/ca.crt'
-        option cert '/etc/openvpn/my-server.crt'
-        option key '/etc/openvpn/my-server.key'
-        option dh '/etc/openvpn/dh2048.pem'
-        option tls_auth '/etc/openvpn/tls-auth.key'
-        option mode 'server'
-        option tls_server '1'
         option server '192.168.200.0 255.255.255.0'
-        option topology 'subnet'
-        option route_gateway 'dhcp'
-        option client_to_client '1'
-        option key_direction '0'
-        option comp_lzo 'yes'
-        option compress 'lzo'
-        list push 'compress lzo'
-        list push 'persist-key'
-        list push 'persist-tun'
-        list push 'topology subnet'
-        list push 'route-gateway dhcp'
-        list push 'redirect-gateway def1'
-        list push 'route 192.168.1.0 255.255.255.0'
-        list push 'dhcp-option DNS 192.168.1.1'
-        list push 'DOMAIN local'
 ```
 
 #### Local OpenVPN Server (Scenario 2)
 
-If the VPN Client is **not** used as default routing and you selectively pick local devices to use the VPN Client routing, you will need to apply the following settings.
+If the VPN Client is **not** used as default routing and you selectively pick local devices to use the VPN Client routing, you will need to apply the following settings:
 
 ```text
 list ignored_interface 'vpnserver'
