@@ -288,7 +288,7 @@ If the VPN Client is **not** used as default routing and you selectively pick lo
 
 ```text
 list ignored_interface 'vpnserver'
-option append_local_rules '! -d 192.168.200.0/24' # from your VPN Server settings
+option append_local_rules '! -d 192.168.200.0/24'
 ```
 
 Refer to the OpenVPN Server config in the example above.
