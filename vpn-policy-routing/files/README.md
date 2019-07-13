@@ -256,7 +256,7 @@ config openvpn 'vpnserver'
 
 #### Local OpenVPN Server (Scenario 2)
 
-If the VPN Client is **not** used as default routing and you selectively pick local devices to use the VPN Client routing, you will need to apply the following settings:
+If the VPN Client is **not** used as default routing and you selectively pick local devices to use the VPN tunnel, you will need to apply the following settings:
 
 ```text
 list ignored_interface 'vpnserver'
