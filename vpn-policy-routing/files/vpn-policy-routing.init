@@ -13,7 +13,7 @@ readonly __PASS__='\033[0;33m[-]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
 # readonly readmeURL="https://github.com/openwrt/packages/tree/master/net/vpn-policy-routing/files/README.md"
-readonly readmeURL="https://github.com/stangri/openwrt-packages/blob/vpn-policy-routing/net/vpn-policy-routing/files/README.md"
+readonly readmeURL="https://github.com/stangri/openwrt_packages/blob/master/vpn-policy-routing/files/README.md"
 
 export EXTRA_COMMANDS="status support"
 export EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
@@ -173,9 +173,9 @@ is_wan_up() {
 
 # shellcheck disable=SC2086
 ipt() {
-  local d failFlagIpv4=1 failFlagIpv6=1
-	for d in "${*//-A/-D}" "${*//-I/-D}" "${*//-N/-F}" "${*//-N/-X}"; do 
-		[ "$d" != "$*" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
+  local d failFlagIpv4=1 failFlagIpv6=1 c="${*// 1/}"
+	for d in "${c//-A/-D}" "${c//-I/-D}" "${c//-N/-F}" "${c//-N/-X}"; do 
+		[ "$d" != "$c" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
 	done
 
 	d="$*"; iptables $d >/dev/null 2>&1 && failFlagIpv4=0;

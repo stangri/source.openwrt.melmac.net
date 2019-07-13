@@ -177,6 +177,8 @@ Each policy may have a combination of the options below, please note that the ``
 
 ### Example Policies
 
+#### Plex Media Server
+
 The following policies route Plex Media Server traffic via WAN. Please note, you'd still need to open the port in the firewall either manually or with the UPnP.
 
 ```text
@@ -190,6 +192,8 @@ config policy
   option interface 'wan'
   option remote_address 'plex.tv my.plexapp.com'
 ```
+
+#### Emby Media Server
 
 The following policy route Emby traffic via WAN. Please note, you'd still need to open the port in the firewall either manually or with the UPnP.
 
@@ -205,6 +209,8 @@ config policy
   option remote_address 'emby.media app.emby.media tv.emby.media'
 ```
 
+#### Logmein Hamachi
+
 The following policy routes LogMeIn Hamachi zero-setup VPN traffic via WAN.
 
 ```text
@@ -213,6 +219,8 @@ config policy
   option interface 'wan'
   option remote_address '25.0.0.0/8 hamachi.cc hamachi.com logmein.com'
 ```
+
+#### SIP Port
 
 The following policy routes standard SIP port traffic via WAN for both TCP and UDP protocols.
 
@@ -224,10 +232,12 @@ config policy
   option proto 'tcp udp'
 ```
 
-The following policy allows you to run an OpenVPN server on router (at port 1194) if you're already running a tunnel with default routing set.
+#### Local OpenVPN Server (Scenario 1)
+
+If the VPN Client on your router is used as default routing (for the whole internet), you'll need to run local OpenVPN Server with TCP protocol (at port 1194) and apply the following settings.
 
 ```text
-option append_local_rules '! -d 192.168.200.0/24' # from your VPN Server settings
+list ignored_interface 'vpnserver'
 config policy
   option name 'OpenVPN Server'
   option interface 'wan'
@@ -235,7 +245,57 @@ config policy
   option chain 'OUTPUT'
 ```
 
-The following policy should route US Netflix traffic via WAN. For capturing international Netflix domain names, you can refer to [these getdomainnames.sh-specific instructions](https://github.com/Xentrk/netflix-vpn-bypass#ipset_netflix_domainssh) and don't forget to adjust them for OpenWrt.
+The sample OpenVPN config would be:
+
+```text
+config openvpn 'vpnserver'
+        option enabled '1'
+        option dev_type 'tun'
+        option dev 'ovpns0'
+        option port '1194'
+        option proto 'tcp'
+        option keepalive '10 120'
+        option persist_key '1'
+        option persist_tun '1'
+        option ca '/etc/openvpn/ca.crt'
+        option cert '/etc/openvpn/my-server.crt'
+        option key '/etc/openvpn/my-server.key'
+        option dh '/etc/openvpn/dh2048.pem'
+        option tls_auth '/etc/openvpn/tls-auth.key'
+        option mode 'server'
+        option tls_server '1'
+        option server '192.168.200.0 255.255.255.0'
+        option topology 'subnet'
+        option route_gateway 'dhcp'
+        option client_to_client '1'
+        option key_direction '0'
+        option comp_lzo 'yes'
+        option compress 'lzo'
+        list push 'compress lzo'
+        list push 'persist-key'
+        list push 'persist-tun'
+        list push 'topology subnet'
+        list push 'route-gateway dhcp'
+        list push 'redirect-gateway def1'
+        list push 'route 192.168.1.0 255.255.255.0'
+        list push 'dhcp-option DNS 192.168.1.1'
+        list push 'DOMAIN local'
+```
+
+#### Local OpenVPN Server (Scenario 2)
+
+If the VPN Client is **not** used as default routing and you selectively pick local devices to use the VPN Client routing, you will need to apply the following settings.
+
+```text
+list ignored_interface 'vpnserver'
+option append_local_rules '! -d 192.168.200.0/24' # from your VPN Server settings
+```
+
+Refer to the OpenVPN Server config in the example above.
+
+#### Netflix Domains
+
+The following policy should route US Netflix traffic via WAN. For capturing international Netflix domain names, you can refer to [these getdomainnames.sh-specific instructions](https://github.com/Xentrk/netflix-vpn-bypass#ipset_netflix_domainssh) and don't forget to adjust them for OpenWrt. This may not work if Netflix changes things. For more reliable US Netflix routing you may want to consider using [custom user files](#custom-user-files).
 
 ```text
 config policy
@@ -243,6 +303,8 @@ config policy
   option interface 'wan'
   option remote_address 'amazonaws.com netflix.com nflxext.com nflximg.net nflxso.net nflxvideo.net dvd.netflix.com'
 ```
+
+#### Single IP, IP Range, Local Machine
 
 The following policies route traffic from a single IP address, a range of IP addresses or a local machine (requires definition as DHCP host record in DHCP config) via WAN.
 
@@ -267,20 +329,19 @@ config policy
 
 If the ```/etc/vpn-policy-routing.user``` file is found, the service will load and execute it after processing uci-based policies and before restarting ```dnsmasq```.
 
-Two example custom user-files are provided with the ```vpn-policy-routing``` version 0.0.6 and above: ```/etc/vpn-policy-routing.aws.user``` and ```/etc/vpn-policy-routing.netflix.user```. They are provided to pull the AWS and Netflix IP addresses into the ```wan``` ipset respectively. 
+Two example custom user-files are provided with the ```vpn-policy-routing``` version 0.0.6 and above: ```/etc/vpn-policy-routing.aws.user``` and ```/etc/vpn-policy-routing.netflix.user```. They are provided to pull the AWS and Netflix IP addresses into the ```wan``` ipset respectively.
 
 To start using either one of them, run:
 
 ```sh
-cp /etc/vpn-policy-routing.aws.user /etc/vpn-policy-routing.user 
+cp /etc/vpn-policy-routing.aws.user /etc/vpn-policy-routing.user
 ```
 
 or
 
 ```sh
-cp /etc/vpn-policy-routing.netflix.user /etc/vpn-policy-routing.user 
+cp /etc/vpn-policy-routing.netflix.user /etc/vpn-policy-routing.user
 ```
-
 
 ### Multiple OpenVPN Clients
 
