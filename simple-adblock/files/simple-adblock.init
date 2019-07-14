@@ -7,8 +7,8 @@ export LC_ALL=C
 
 export EXTRA_COMMANDS="check dl killcache status"
 export EXTRA_HELP="	check	Checks if specified domain is found in current blacklist
-	dl      	Force-redownloads all the lists, even if the last download was successful and no config changes were made
-	status    Shows the service last-run status"
+	dl	Force-redownloads all the list
+	status	Shows the service last-run status"
 
 readonly packageName="simple-adblock"
 readonly serviceName="$packageName $PKG_VERSION"
