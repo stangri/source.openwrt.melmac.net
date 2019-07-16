@@ -554,6 +554,8 @@ start_service() {
 			restart|*)
 				if [ ! -s "$dnsmasqFile" ] && [ ! -s "$cacheFile" ] && ! testCompressedCache; then
 					action="download"
+				elif [ -s "$cacheFile" ] || testCompressedCache; then
+					action="start"
 				fi
 				if [ -n "$error" ]; then 
 					action="download"
@@ -574,7 +576,7 @@ start_service() {
 				download_lists
 				reload_dnsmasq "on_start"
 			;;
-			restart|*)
+			restart|start)
 				if [ "$action" == "restart" ]; then
 					output "Retarting $serviceName...\\n"
 					tmpfs set status "$statusRestarting"
