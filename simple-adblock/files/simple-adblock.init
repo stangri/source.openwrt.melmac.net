@@ -178,7 +178,7 @@ reload_dnsmasq() {
 				output "$serviceName stopped.\\n"
 				tmpfs set status "$statusStopped"
 				tmpfs del message
-				tmpfs del error
+#				tmpfs del error
 				return 0
 			else
 				output_failn;
@@ -511,9 +511,8 @@ $(cat $A_TMP)"
 
 start_service() {
 	is_enabled "on_start" || return 1
-	local ip status error action="$(tmpfs get triggers)"
+	local ip status error action
 	if create_lock; then
-		tmpfs set triggers
 		procd_open_instance "main"
 		procd_set_param command /bin/true
 		procd_set_param stdout 1
@@ -544,6 +543,8 @@ start_service() {
 		procd_close_instance
 		status="$(tmpfs get status)"
 		error="$(tmpfs get error)"
+		action="$(tmpfs get triggers)"
+		tmpfs set triggers
 		tmpfs del status
 		tmpfs del message
 		tmpfs del error
@@ -637,15 +638,12 @@ reload() { restart_service; }
 dl() { rc_procd stop_service "restart"; rc_procd start_service "download"; }
 killcache() { [ -s $cacheFile ] && rm -f $cacheFile >/dev/null 2>/dev/null; [ -s $compressedCacheFile ] && rm -f $compressedCacheFile >/dev/null 2>/dev/null; }
 status() {
-	local status
-	if [ -n "$(tmpfs get status)" ]; then 
-		status="$(tmpfs get status)"
-	fi
-	if [ -n "$status" ] && [ -n "$(tmpfs get message)" ]; then 
-		status="${status}: $(tmpfs get message)"
+	local status="$(tmpfs get status)" error="$(tmpfs get error)" message="$(tmpfs get message)"
+	if [ -n "$status" ] && [ -n "$message" ]; then 
+		status="${status}: $message"
 	fi
 	[ -n "$status" ] && output "$serviceName $status\\n"
-	[ -n "$(tmpfs get error)" ] && output "$_ERROR_: $(tmpfs get error)\\n"
+	[ -n "$error" ] && output "$_ERROR_: $error\\n"
 }
 
 stop_service() {
