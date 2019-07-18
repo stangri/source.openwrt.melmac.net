@@ -84,7 +84,7 @@ export whitelist_domains_urls
 export blacklist_domains_urls
 export blacklist_hosts_urls
 export wan_if wan_gw wanphysdev dl_command serviceStatus dl_flag
-export dlStatus
+export dlStatus dlError
 
 load_package_config() {
 	config_load "$packageName"
@@ -340,7 +340,8 @@ process_url() {
 		output 1 "$_FAIL_"
 #		tmpfs add message "-"
 		dlStatus="${dlStatus}-"
-		tmpfs add error "Error downloading ${1}."
+#		tmpfs add error "Error downloading ${1}."
+		dlError="${dlError}Error downloading ${1}.\\n"
 		return 0
 	fi
 	sed -i "$filter" "$R_TMP"
@@ -365,6 +366,7 @@ download_lists() {
 	touch $A_TMP; touch $B_TMP;
 	output 1 "Downloading lists "
 	unset dlStatus
+	unset dlError
 	if [ -n "$blacklist_hosts_urls" ]; then
 		for hf in ${blacklist_hosts_urls}; do
 			if [ "$parallelDL" -gt 0 ]; then
@@ -393,6 +395,7 @@ download_lists() {
 		done
 	fi
 	wait
+	[ -n "$dlError" ] && tmpfs add error "$dlError"
 	dlStatus="${dlStatus//-/$xmark}"
 	dlStatus="${dlStatus//+/$checkmark}"
 	[ "$verbosity" = "1" ] && logmsg="${logmsg}${dlStatus}"
