@@ -148,19 +148,23 @@ end
 
 s:tab("advanced", translate("Advanced Configuration"))
 
-o6 = s:taboption("advanced", Value, "boot_delay", translate("Delay (in seconds) for on-boot start"), translate("Run service after set delay on boot"))
-o6.default = 120
-o6.datatype = "range(1,600)"
+o5 = s:taboption("advanced", Value, "boot_delay", translate("Delay (in seconds) for on-boot start"), translate("Run service after set delay on boot"))
+o5.default = 120
+o5.datatype = "range(1,600)"
 
-o7 = s:taboption("advanced", Value, "download_timeout", translate("Download time-out (in seconds)"), translate("Stop the download if it is stalled for set number of seconds"))
-o7.default = 10
-o7.datatype = "range(1,60)"
+o6 = s:taboption("advanced", Value, "download_timeout", translate("Download time-out (in seconds)"), translate("Stop the download if it is stalled for set number of seconds"))
+o6.default = 10
+o6.datatype = "range(1,60)"
 
-o5 = s:taboption("advanced", ListValue, "parallel_downloads", translate("Simultaneous processing"), translate("Launch all lists downloads and processing simultaneously, reducing service start time"))
-o5:value("0", translate("Do not use simultaneous processing"))
-o5:value("1", translate("Use simultaneous processing"))
-o5.rmempty = false
-o5.default = 1
+o7 = s:taboption("advanced", Value, "curl_retry", translate("Curl download retry"), translate("If curl is installed and detected, it would retry download this many times on timeout/fail"))
+o7.default = 3
+o7.datatype = "range(0,30)"
+
+o8 = s:taboption("advanced", ListValue, "parallel_downloads", translate("Simultaneous processing"), translate("Launch all lists downloads and processing simultaneously, reducing service start time"))
+o8:value("0", translate("Do not use simultaneous processing"))
+o8:value("1", translate("Use simultaneous processing"))
+o8.rmempty = false
+o8.default = 1
 
 o9 = s:taboption("advanced", ListValue, "allow_non_ascii", translate("Allow Non-ASCII characters in DNSMASQ file"), translate("Only enable if your version of DNSMASQ supports the use of Non-ASCII characters, otherwise DNSMASQ will fail to start."))
 o9:value("0", translate("Do not allow Non-ASCII"))
@@ -174,11 +178,11 @@ o10:value("1", translate("Store compressed cache"))
 o10.rmempty = false
 o10.default = "0"
 
-o8 = s:taboption("advanced", ListValue, "debug", translate("Enable Debugging"), translate("Enables debug output to /tmp/simple-adblock.log"))
-o8:value("0", translate("Disable Debugging"))
-o8:value("1", translate("Enable Debugging"))
-o8.rmempty = false
-o8.default = "0"
+o11 = s:taboption("advanced", ListValue, "debug", translate("Enable Debugging"), translate("Enables debug output to /tmp/simple-adblock.log"))
+o11:value("0", translate("Disable Debugging"))
+o11:value("1", translate("Enable Debugging"))
+o11.rmempty = false
+o11.default = "0"
 
 
 s2 = m:section(NamedSection, "config", "simple-adblock", translate("Whitelist and Blocklist Management"))
