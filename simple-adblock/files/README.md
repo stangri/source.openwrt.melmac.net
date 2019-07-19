@@ -136,4 +136,4 @@ Please head [LEDE Project Forum](https://forum.lede-project.org/t/simple-adblock
 
 ## Thanks
 
-I'd like to thank everyone who helped create, test and troubleshoot this service. Special thanks to [@hnyman](https://github.com/hnyman) for general package/luci guidance, [@dibdot](https://github.com/dibdot) for general guidance and block-list optimization code and [@ckuethe](https://github.com/ckuethe) for the curl support, non-ASCII filtering and compressed cache code.
+I'd like to thank everyone who helped create, test and troubleshoot this service. Special thanks to [@hnyman](https://github.com/hnyman) for general package/luci guidance, [@dibdot](https://github.com/dibdot) for general guidance and block-list optimization code, [@ckuethe](https://github.com/ckuethe) for the curl support, non-ASCII filtering and compressed cache code and [@phasecat](https://forum.openwrt.org/u/phasecat/summary) for submitting bugs and testing.
