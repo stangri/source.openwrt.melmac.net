@@ -84,7 +84,6 @@ export whitelist_domains_urls
 export blacklist_domains_urls
 export blacklist_hosts_urls
 export wan_if wan_gw wanphysdev dl_command serviceStatus dl_flag
-export dlStatus dlError
 
 load_package_config() {
 	config_load "$packageName"
@@ -160,13 +159,13 @@ reload_dnsmasq() {
 				else 
 					output_failn
 					tmpfs set status "$statusFail"
-					tmpfs add error "DNSMASQ restart error"
+					tmpfs add error "Error: DNSMASQ restart error."
 					output "$_ERROR_: $serviceName failed to restart DNSMASQ!\\n"
 					return 1
 				fi
 			else
 				tmpfs set status "$statusFail"
-				tmpfs add error "Failed to create $dnsmasqFile file."
+				tmpfs add error "Error: Failed to create $dnsmasqFile file."
 				output "$_ERROR_: $serviceName failed to create its data file!\\n"
 				return 1
 			fi
@@ -185,7 +184,7 @@ reload_dnsmasq() {
 			else
 				output_failn;
 				tmpfs set status "$statusFail"
-				tmpfs add error "DNSMASQ restart error on stop"
+				tmpfs add error "Error: DNSMASQ restart error on stop."
 				output "$_ERROR_: $serviceName failed to restart DNSMASQ on stop !\\n"
 				return 1
 			fi
@@ -338,19 +337,20 @@ process_url() {
 	if ! $dl_command "$1" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 2 "[DL] $type $label $__FAIL__\\n"
 		output 1 "$_FAIL_"
-#		tmpfs add message "-"
-		dlStatus="${dlStatus}-"
-#		tmpfs add error "Error downloading ${1}."
-		dlError="${dlError}Error downloading ${1}.\\n"
-		return 0
+		echo -e -n "Error: downloading '${1}'\\n" >> "${JsonFile}.error"
+	else
+		sed -i "$filter" "$R_TMP"
+		if [ ! -s "$R_TMP" ]; then
+			output 2 "[DL] $type $label $__FAIL__\\n"
+			output 1 "$_FAIL_"
+			echo -e -n "Error: parsing '${1}'\\n" >> "${JsonFile}.error"
+		else
+			cat "${R_TMP}" >> "$D_TMP"
+			output 2 "[DL] $type $label $__OK__\\n"
+			output 1 "$_OK_"
+		fi
 	fi
-	sed -i "$filter" "$R_TMP"
-	cat "${R_TMP}" >> "$D_TMP"
 	rm -f "${R_TMP}" >/dev/null 2>/dev/null
-	output 2 "[DL] $type $label $__OK__\\n"
-	output 1 "$_OK_"
-#	tmpfs add message "+"
-	dlStatus="${dlStatus}+"
 	return 0
 }
 
@@ -365,8 +365,7 @@ download_lists() {
 	fi
 	touch $A_TMP; touch $B_TMP;
 	output 1 "Downloading lists "
-	unset dlStatus
-	unset dlError
+	rm -f "${JsonFile}.error" >/dev/null 2>&1
 	if [ -n "$blacklist_hosts_urls" ]; then
 		for hf in ${blacklist_hosts_urls}; do
 			if [ "$parallelDL" -gt 0 ]; then
@@ -395,10 +394,8 @@ download_lists() {
 		done
 	fi
 	wait
-	[ -n "$dlError" ] && tmpfs add error "$dlError"
-	dlStatus="${dlStatus//-/$xmark}"
-	dlStatus="${dlStatus//+/$checkmark}"
-	[ "$verbosity" = "1" ] && logmsg="${logmsg}${dlStatus}"
+	[ -s "${JsonFile}.error" ] && tmpfs add error "$(cat "${JsonFile}.error")"
+	rm -f "${JsonFile}.error" >/dev/null 2>&1
 	output 1 "\\n"
 
 	[ -n "$blacklist_domains" ] && for hf in ${blacklist_domains}; do echo "$hf" | sed "$d_filter" >> $B_TMP; done
@@ -413,7 +410,7 @@ $(cat $A_TMP)"
 			output_ok
 		else
 			output_fail
-			tmpfs add error "Sorting error."
+			tmpfs add error "Error: Sorting error."
 		fi
 
 # TLD optimization written by Dirk Brenken (dev@brenken.org)
@@ -427,25 +424,25 @@ $(cat $A_TMP)"
 							output_ok
 						else
 							output_fail
-							tmpfs add error "Data file optimization error."
+							tmpfs add error "Error: Data file optimization."
 							mv $A_TMP $B_TMP
 						fi
 					else
 						output_fail
-						tmpfs add error "Data file optimization error."
+						tmpfs add error "Error: Data file optimization."
 					fi
 				else
 					output_fail
-					tmpfs add error "Data file optimization error."
+					tmpfs add error "Error: Data file optimization."
 					mv $A_TMP $B_TMP
 				fi
 			else
 				output_fail
-				tmpfs add error "Data file optimization error."
+				tmpfs add error "Error: Data file optimization."
 			fi
 		else
 			output_fail
-			tmpfs add error "Data file optimization error."
+			tmpfs add error "Error: Data file optimization."
 			mv $A_TMP $B_TMP
 		fi
 
@@ -455,7 +452,7 @@ $(cat $A_TMP)"
 			output_ok
 		else
 			output_fail
-			tmpfs add error "Whitelist processing error."
+			tmpfs add error "Error: Whitelist processing."
 		fi
 		output 2 "Formatting merged file "
 		tmpfs set message "$statusProcessing: formatting merged file"
@@ -464,14 +461,14 @@ $(cat $A_TMP)"
 				output_ok
 			else
 				output_fail
-				tmpfs add error "Data file formatting error."
+				tmpfs add error "Error: Data file formatting."
 			fi
 		else
 			if sed "$f_filter" $B_TMP | grep -E -v '[^a-zA-Z0-9=/.-]' > $A_TMP; then
 				output_ok
 			else
 				output_fail
-				tmpfs add error "Data file formatting error."
+				tmpfs add error "Error: Data file formatting."
 			fi
 		fi
 
@@ -481,7 +478,7 @@ $(cat $A_TMP)"
 			output_ok
 		else
 			output_fail
-			tmpfs add error "Error moving data file ${A_TMP} to ${dnsmasqFile}."
+			tmpfs add error "Error: moving data file ${A_TMP} to ${dnsmasqFile}."
 		fi
 
 		if [ "$compressedCache" -gt 0 ]; then
@@ -494,7 +491,7 @@ $(cat $A_TMP)"
 			else
 				output_fail
 				rm -f "$R_TMP"
-				tmpfs add error "Error creating compressed cache."
+				tmpfs add error "Error: creating compressed cache."
 			fi
 		else
 			rm -f "$compressedCacheFile" >/dev/null 2>&1
@@ -508,7 +505,7 @@ $(cat $A_TMP)"
 			output_ok
 		else
 			output_fail
-			tmpfs add error "Error removing temporary files."
+			tmpfs add error "Error: removing temporary files."
 		fi
 		output 1 "\\n"
 	fi
@@ -598,7 +595,7 @@ start_service() {
 					else
 						output_failn
 						output "$_ERROR_: $serviceName failed to unpack compressed cache!\\n"
-						tmpfs add error "failed to unpack compressed cache!"
+						tmpfs add error "Error: Failed to unpack compressed cache."
 						return 1
 					fi
 				fi
@@ -609,7 +606,7 @@ start_service() {
 						output_okn
 					else 
 						output_failn
-						tmpfs add error "Error moving $cacheFile to $dnsmasqFile."
+						tmpfs add error "Error: moving $cacheFile to $dnsmasqFile."
 					fi
 				fi
 				reload_dnsmasq "on_start"
@@ -620,12 +617,13 @@ start_service() {
 			output "$serviceName is blocking $(wc -l < $dnsmasqFile) domains "; output_okn;
 			tmpfs del message
 			tmpfs set status "$statusSuccess: $(wc -l < $dnsmasqFile) domains blocked."
-			if [ -n "$(tmpfs get error)" ]; then
-				output "$_ERROR_: $(tmpfs get error)\\n"
+			error="$(tmpfs get error)"
+			if [ -n "$error" ]; then
+				output "${error/Error:/$_ERROR_:}\\n"
 			fi
 		else
 			tmpfs set status "$statusFail"
-			tmpfs add error "Failed to create DNSMASQ blocklist."
+			tmpfs add error "Error: Failed to create DNSMASQ blocklist."
 		fi
 		remove_lock
 	else
@@ -648,7 +646,7 @@ status() {
 		status="${status}: $message"
 	fi
 	[ -n "$status" ] && output "$serviceName $status\\n"
-	[ -n "$error" ] && output "$_ERROR_: $error\\n"
+	[ -n "$error" ] && output "$error\\n"
 }
 
 stop_service() {
