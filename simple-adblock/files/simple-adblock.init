@@ -337,13 +337,13 @@ process_url() {
 	if ! $dl_command "$1" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 2 "[DL] $type $label $__FAIL__\\n"
 		output 1 "$_FAIL_"
-		echo -e -n "Error: downloading '${1}'\\n" >> "${JsonFile}.error"
+		echo -e -n "Error: downloading '${1}'.\\n" >> "${JsonFile}.error"
 	else
 		sed -i "$filter" "$R_TMP"
 		if [ ! -s "$R_TMP" ]; then
 			output 2 "[DL] $type $label $__FAIL__\\n"
 			output 1 "$_FAIL_"
-			echo -e -n "Error: parsing '${1}'\\n" >> "${JsonFile}.error"
+			echo -e -n "Error: parsing '${1}'.\\n" >> "${JsonFile}.error"
 		else
 			cat "${R_TMP}" >> "$D_TMP"
 			output 2 "[DL] $type $label $__OK__\\n"
