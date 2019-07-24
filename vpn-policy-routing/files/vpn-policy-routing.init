@@ -248,80 +248,43 @@ insert_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
 	local mark=$(eval echo "\$mark_$iface") param
 	if [ "$ipv6Enabled" -eq 0 ]; then
-		is_ipv6 "$laddr" && return 0
-		is_ipv6 "$raddr" && return 0
+		! is_mac_address "$laddr" && is_ipv6 "$laddr" && return 0
+		! is_mac_address "$laddr" && is_ipv6 "$raddr" && return 0
 	fi
 
 	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
 #	param="-t mangle -A VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask}"
 	if [ "${proto//tcp}" != "$proto" ]; then
-		param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
-		[ -n "$laddr" ] && param="$param -s $laddr $appendLocalPolicy"
-		[ -n "$lport" ] && param="$param -p tcp -m multiport --sport ${lport//-/:}"
+		param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask} -p tcp"
+		if [ -n "$laddr" ]; then
+			if is_phys_dev "$laddr"; then
+				param="$param -i ${laddr:1} $appendLocalPolicy"
+			elif is_mac_address "$laddr"; then
+				param="$param -m mac --mac-source $laddr $appendLocalPolicy"
+			else
+				param="$param -s $laddr $appendLocalPolicy"
+			fi
+		fi
+		[ -n "$lport" ] && param="$param -m multiport --sport ${lport//-/:}"
 		[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
-		[ -n "$rport" ] && param="$param -p tcp -m multiport --dport ${rport//-/:}"
+		[ -n "$rport" ] && param="$param -m multiport --dport ${rport//-/:}"
 		[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
 		ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
 	fi
 	if [ "${proto//udp}" != "$proto" ]; then
-		param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
-		[ -n "$laddr" ] && param="$param -s $laddr $appendLocalPolicy"
-		[ -n "$lport" ] && param="$param -p udp -m multiport --sport ${lport//-/:}"
+		param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask} -p udp"
+		if [ -n "$laddr" ]; then
+			if is_phys_dev "$laddr"; then
+				param="$param -i ${laddr:1} $appendLocalPolicy"
+			elif is_mac_address "$laddr"; then
+				param="$param -m mac --mac-source $laddr $appendLocalPolicy"
+			else
+				param="$param -s $laddr $appendLocalPolicy"
+			fi
+		fi
+		[ -n "$lport" ] && param="$param -m multiport --sport ${lport//-/:}"
 		[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
-		[ -n "$rport" ] && param="$param -p udp -m multiport --dport ${rport//-/:}"
-		[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
-		ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
-	fi
-	return 0
-}
-
-insert_phys_dev_policy() {
-	local comment="$1" iface="$2" phys_dev="${3:1}" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
-	local mark=$(eval echo "\$mark_$iface") param
-	# add code to handle wrong chain for physical device
-	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
-	if [ "${proto//tcp}" != "$proto" ]; then
-		param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
-		[ -n "$phys_dev" ] && param="$param -i $phys_dev $appendLocalPolicy"
-		[ -n "$lport" ] && param="$param -p tcp -m multiport --sport ${lport//-/:}"
-		[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
-		[ -n "$rport" ] && param="$param -p tcp -m multiport --dport ${rport//-/:}"
-		[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
-		ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
-	fi
-	if [ "${proto//udp}" != "$proto" ]; then
-		param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
-		[ -n "$phys_dev" ] && param="$param -i $phys_dev $appendLocalPolicy"
-		[ -n "$lport" ] && param="$param -p udp -m multiport --sport ${lport//-/:}"
-		[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
-		[ -n "$rport" ] && param="$param -p udp -m multiport --dport ${rport//-/:}"
-		[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
-		ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
-	fi
-	return 0
-}
-
-insert_mac_addr_policy() {
-	local comment="$1" iface="$2" mac="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
-	local mark=$(eval echo "\$mark_$iface") param
-
-	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
-#	param="-t mangle -A VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask}"
-	if [ "${proto//tcp}" != "$proto" ]; then
-		param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
-		[ -n "$mac" ] && param="$param -m mac --mac-source $mac"
-		[ -n "$lport" ] && param="$param -p tcp -m multiport --sport ${lport//-/:}"
-		[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
-		[ -n "$rport" ] && param="$param -p tcp -m multiport --dport ${rport//-/:}"
-		[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
-		ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
-	fi
-	if [ "${proto//udp}" != "$proto" ]; then
-		param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
-		[ -n "$mac" ] && param="$param -m mac --mac-source $mac"
-		[ -n "$lport" ] && param="$param -p udp -m multiport --sport ${lport//-/:}"
-		[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
-		[ -n "$rport" ] && param="$param -p udp -m multiport --dport ${rport//-/:}"
+		[ -n "$rport" ] && param="$param -m multiport --dport ${rport//-/:}"
 		[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
 		ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
 	fi
@@ -332,56 +295,54 @@ r_process_policy(){
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$7" chain="$8" resolved_laddr resolved_raddr i ipsFailFlag
 	if [ "${laddr//[ ;\{\}]}" != "$laddr" ]; then
 		for i in $(echo "$laddr" | tr " ;{}" "\\n"); do [ -n "$i" ] && r_process_policy "$comment" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"; done
+		return 0
 	elif [ "${lport//[ ;\{\}]}" != "$lport" ]; then
 		for i in $(echo "$lport" | tr " ;{}" "\\n"); do [ -n "$i" ] && r_process_policy "$comment" "$iface" "$laddr" "$i" "$raddr" "$rport" "$proto" "$chain"; done
+		return 0
 	elif [ "${raddr//[ ;\{\}]}" != "$raddr" ]; then
 		for i in $(echo "$raddr" | tr " ;{}" "\\n"); do [ -n "$i" ] && r_process_policy "$comment" "$iface" "$laddr" "$lport" "$i" "$rport" "$proto" "$chain"; done
+		return 0
 	elif [ "${rport//[ ;\{\}]}" != "$rport" ]; then
 		for i in $(echo "$rport" | tr " ;{}" "\\n"); do [ -n "$i" ] && r_process_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$i" "$proto" "$chain"; done
-	else
-		if is_tor "$iface"; then
-			insert_tor_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
-		elif is_netmask "$laddr" || is_netmask "$raddr"; then
-			insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
-		elif [ -n "$laddr" ] && [ -z "$lport" ] && [ -z "$raddr" ] && [ -z "$rport" ] && [ "$proto" == "tcp" ] && [ "$chain" == "PREROUTING" ]; then
-			if is_phys_dev "$laddr"; then
-				insert_phys_dev_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
-			elif is_mac_address "$laddr"; then
-				insert_mac_addr_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
-			else
-				for i in $(resolveip "$laddr"); do
-					ipr "$comment" "$iface" "$i" || insert_policy "$comment" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"
-				done
-			fi
-		elif [ -z "$laddr" ] && [ -z "$lport" ] && [ -n "$raddr" ] && [ -z "$rport" ] && [ "$proto" == "tcp" ] && [ "$chain" == "PREROUTING" ]; then
-			if is_ipv6 "$raddr"; then
-				ips "add" "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1;
-			elif is_domain "$raddr"; then
-				if ! ips "add_dnsmasq" "${iface}" "$raddr" "${comment}"; then
-					for i in $(resolveip "$raddr"); do ips "add" "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1; done
-				fi
-			elif is_ipv4 "$raddr"; then
-				ips "add" "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1
-			else
-				ipsFailFlag=1
+		return 0
+	fi
+
+	# start non-recursive processing 
+	# process TOR, netmask, physical device and mac-address separately, so we don't send them to resolveip
+	if is_tor "$iface"; then
+		insert_tor_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
+	elif is_netmask "$laddr" || is_netmask "$raddr"; then
+		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
+	elif is_phys_dev "$laddr"; then
+		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
+	elif is_mac_address "$laddr"; then
+		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
+	elif [ -n "$laddr" ] && [ -z "$lport" ] && [ -z "$raddr" ] && [ -z "$rport" ] && [ "$proto" == "tcp" ] && [ "$chain" == "PREROUTING" ]; then
+		# see if we can add iprule instead of the iptable entry
+		for i in $(resolveip "$laddr"); do
+			ipr "$comment" "$iface" "$i" || insert_policy "$comment" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"
+		done
+	elif [ -z "$laddr" ] && [ -z "$lport" ] && [ -n "$raddr" ] && [ -z "$rport" ] && [ "$proto" == "tcp" ] && [ "$chain" == "PREROUTING" ]; then
+		# see if we can add ipset or dnsmasq ipset instead of the iptable entry
+		if is_domain "$raddr"; then
+			if ! ips "add_dnsmasq" "${iface}" "$raddr" "${comment}"; then
+				for i in $(resolveip "$raddr"); do ips "add" "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1; done
 			fi
 		else
-			ipsFailFlag=1
+			ips "add" "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1
 		fi
-		if [ -n "$ipsFailFlag" ]; then # either ipset above has failed or it's a non-ispet compatible policy
-			if is_netmask "$laddr" || is_netmask "$raddr"; then
-				insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
-			else
-				[ -n "$laddr" ] && resolved_laddr="$(resolveip "$laddr")"
-				[ -n "$raddr" ] && resolved_raddr="$(resolveip "$raddr")"
-				if [ "$resolved_laddr" != "$laddr" ]; then
-					for i in $resolved_laddr; do [ -n "$i" ] && r_process_policy "$comment $laddr" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"; done
-				elif [ "$resolved_raddr" != "$raddr" ]; then
-						for i in $resolved_raddr; do [ -n "$i" ] && r_process_policy "$comment $raddr" "$iface" "$laddr" "$lport" "$i" "$rport" "$proto" "$chain"; done
-				else
-					insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
-				fi
-			fi
+	else
+		ipsFailFlag=1
+	fi
+	if [ -n "$ipsFailFlag" ]; then
+		[ -n "$laddr" ] && resolved_laddr="$(resolveip "$laddr")"
+		[ -n "$raddr" ] && resolved_raddr="$(resolveip "$raddr")"
+		if [ -n "$resolved_laddr" ] && [ "$resolved_laddr" != "$laddr" ]; then
+			for i in $resolved_laddr; do [ -n "$i" ] && r_process_policy "$comment $laddr" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"; done
+		elif [ -n "$resolved_raddr" ] && [ "$resolved_raddr" != "$raddr" ]; then
+				for i in $resolved_raddr; do [ -n "$i" ] && r_process_policy "$comment $raddr" "$iface" "$laddr" "$lport" "$i" "$rport" "$proto" "$chain"; done
+		else
+			insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 		fi
 	fi
 }

@@ -170,7 +170,7 @@ Each policy may have a combination of the options below, please note that the ``
 |name||Policy name, it **must** be set.|
 |enabled|1|Enable/disable policy. To display the ```Enable``` checkbox column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Enable Column``` in the ```Advanced``` tab.|
 |interface||Policy interface, it **must** be set.|
-|local_address||List of space-separated local/source IP addresses, CIDRs or hostnames. You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
+|local_address||List of space-separated local/source IP addresses, CIDRs, hostnames or mac addresses (colon-separated). You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
 |local_port||List of space-separated local/source ports or port-ranges.|
 |remote_address||List of space-separated remote/target IP addresses, CIDRs or hostnames/domain names.|
 |remote_port||List of space-separated remote/target ports or port-ranges.|
@@ -278,7 +278,7 @@ config policy
   option remote_address 'amazonaws.com netflix.com nflxext.com nflximg.net nflxso.net nflxvideo.net dvd.netflix.com'
 ```
 
-#### Single IP, IP Range, Local Machine
+#### Single IP, IP Range, Local Machine, Local MAC Address
 
 The following policies route traffic from a single IP address, a range of IP addresses or a local machine (requires definition as DHCP host record in DHCP config) via WAN.
 
@@ -297,6 +297,11 @@ config policy
   option name 'Local Machine'
   option interface 'wan'
   option local_address 'dell-ubuntu'
+
+config policy
+  option name 'Local MAC Address'
+  option interface 'wan'
+  option local_address '00:0F:EA:91:04:08'
 ```
 
 ### Custom User Files
