@@ -168,7 +168,7 @@ Each policy may have a combination of the options below, please note that the ``
 |Option|Default|Description|
 | --- | --- | --- |
 |name||Policy name, it **must** be set.|
-|enabled|1|Enable/disable setting. This setting needs to be set manually in the config file or via ```uci``` command as it is not exposed in the WebUI.|
+|enabled|1|Enable/disable policy. To display the ```Enable``` checkbox column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Enable Column``` in the ```Advanced``` tab.|
 |interface||Policy interface, it **must** be set.|
 |local_address||List of space-separated local/source IP addresses, CIDRs or hostnames. You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
 |local_port||List of space-separated local/source ports or port-ranges.|
