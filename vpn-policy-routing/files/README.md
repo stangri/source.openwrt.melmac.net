@@ -151,6 +151,7 @@ The ```vpn-policy-routing``` settings are split into ```basic``` and ```advanced
 |Advanced|ignored_interface|list/string||Allows to specify the space-separated list of interface names (in lower case) to be ignored by the ```vpn-policy-routing``` service. Can be useful if running both VPN server and VPN client on the router.|
 |Advanced|boot_timeout|number|30|Allows to specify the time (in seconds) for ```vpn-policy-routing``` service to wait for WAN gateway discovery on boot. Can be useful on devices with ADSL modem built in.|
 |Advanced|iprule_enabled|boolean|0|Add an ```ip rule```, not an ```iptables``` entry for policies with just the local address. Use with caution to manipulate policies priorities.|
+|Advanced|enable_control|boolean|0|Shows ```Enable``` checkbox column for policies, allowing to quickly enable/disable specific policy without deleting it.|
 |Advanced|proto_control|boolean|0|Shows ```Protocol``` column for policies, allowing to specify ```TCP``` (default), ```UDP``` or ```TCP/UDP``` protocol for ```iptables``` rules for policies.|
 |Advanced|chain_control|boolean|0|Shows ```Chain``` column for policies, allowing to specify ```PREROUTING``` (default), ```FORWARD```, ```INPUT```, or ```OUTPUT``` chain for ```iptables``` rules for policies.|
 |Advanced|icmp_interface|string||Set the default ICMP protocol interface (interface name in lower case). Use with caution.|
@@ -167,6 +168,7 @@ Each policy may have a combination of the options below, please note that the ``
 |Option|Default|Description|
 | --- | --- | --- |
 |name||Policy name, it **must** be set.|
+|enabled|1|Enable/disable setting. This setting needs to be set manually in the config file or via ```uci``` command as it is not exposed in the WebUI.|
 |interface||Policy interface, it **must** be set.|
 |local_address||List of space-separated local/source IP addresses, CIDRs or hostnames. You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
 |local_port||List of space-separated local/source ports or port-ranges.|
@@ -297,22 +299,27 @@ config policy
   option local_address 'dell-ubuntu'
 ```
 
-### Custom user files
+### Custom User Files
 
-If the ```/etc/vpn-policy-routing.user``` file is found, the service will load and execute it after processing uci-based policies and before restarting ```dnsmasq```.
+If the custom user file includes are set, the service will load and execute them after setting up ip tables and ipsets, processing policies and before restarting ```dnsmasq```. This allows, for example, to add large numbers of domains/IP addresses to ipsets without manually adding all of them to the config file.
 
 Two example custom user-files are provided with the ```vpn-policy-routing``` version 0.0.6 and above: ```/etc/vpn-policy-routing.aws.user``` and ```/etc/vpn-policy-routing.netflix.user```. They are provided to pull the AWS and Netflix IP addresses into the ```wan``` ipset respectively.
 
-To start using either one of them, run:
+#### Custom User Files Include Options
 
-```sh
-cp /etc/vpn-policy-routing.aws.user /etc/vpn-policy-routing.user
-```
+|Option|Default|Description|
+| --- | --- | --- |
+|path||Path to a custom user file (in a form of shell script), it **must** be set.|
+|enabled|1|Enable/disable setting.|
 
-or
+#### Example Includes
 
-```sh
-cp /etc/vpn-policy-routing.netflix.user /etc/vpn-policy-routing.user
+```text
+config include
+  option path '/etc/vpn-policy-routing.netflix.user'
+
+config include
+  option path '/etc/vpn-policy-routing.aws.user'
 ```
 
 ### Multiple OpenVPN Clients

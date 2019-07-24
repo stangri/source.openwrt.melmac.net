@@ -118,6 +118,7 @@ load_package_config() {
 	config_get ignoredIfaces            'config' 'ignored_interface'
 	config_get supportedIfaces          'config' 'supported_interface'
 	config_get bootTimeout              'config' 'boot_timeout' '30'
+	config_get customUserFile           'config' 'custom_user_file' '30'
 
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
@@ -356,7 +357,7 @@ r_process_policy(){
 }
 
 process_policy(){
-	local name comment iface laddr lport raddr rport param mark processPolicyStatus proto chain
+	local name comment iface laddr lport raddr rport param mark processPolicyStatus proto chain enabled
 	config_get comment "$1" 'comment'
 	config_get name    "$1" 'name' 'blank'
 	config_get iface   "$1" 'interface'
@@ -366,6 +367,9 @@ process_policy(){
 	config_get rport   "$1" 'remote_port'
 	config_get proto   "$1" 'proto' 'tcp'
 	config_get chain   "$1" 'chain' 'PREROUTING'
+	config_get_bool enabled "$1" 'enabled' 1
+
+	[ "$enabled" -gt 0 ] || return 0
 
 	comment="${comment:-$name}"
 	output 2 "Routing '$comment' via $iface "
@@ -553,6 +557,40 @@ convert_config(){
 	done
 }
 
+check_config(){ local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
+is_config_enabled(){
+	local cfg="$1" _cfg_enabled=1
+	[ -n "$1" ] || return 1
+	config_load "$packageName"
+	config_foreach check_config "$cfg"
+	return "$_cfg_enabled"
+}
+
+process_user_file(){
+	local path enabled shellBin="${SHELL:-/bin/ash}"
+	config_get_bool enabled "$1" 'enabled' 1
+	config_get      path    "$1" 'path'
+	[ "$enabled" -gt 0 ] || return 0
+	if [ ! -s "$path" ]; then
+		errorStatusSummary="${errorStatusSummary}${_ERROR_}: Custom user file '$path' not found or empty\\n"
+		output_fail
+		return 1
+	fi
+	if ! $shellBin -n "$path"; then
+		errorStatusSummary="${errorStatusSummary}${_ERROR_}: Syntax error in custom user file '$path'\\n"
+		output_fail
+		return 1
+	fi
+	if ! . "$path"; then
+		errorStatusSummary="${errorStatusSummary}${_ERROR_}: Error running custom user file '$path'\\n"
+		output_fail
+		return 1
+	else
+		output_ok
+		return 0
+	fi
+}
+
 start_service() {
 	local serviceStatusSummary errorStatusSummary dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0
 	convert_config
@@ -583,12 +621,15 @@ start_service() {
 		output 1 'Processing interfaces '
 		config_load 'network'; config_foreach process_interface 'interface' 'create';
 		output 1 '\n'
-		output 1 'Processing policies '
-		config_load $packageName; config_foreach process_policy 'policy';
-		output 1 '\n'
-		if [ -s "$userFile" ]; then
-			output 1 'Processing user file '
-			. "$userFile" && output_okn || output_failn
+		if is_config_enabled 'policy'; then
+			output 1 'Processing policies '
+			config_load $packageName; config_foreach process_policy 'policy';
+			output 1 '\n'
+		fi
+		if is_config_enabled 'include'; then
+			output 1 'Processing user file(s) '
+			config_load $packageName; config_foreach process_user_file 'include';
+			output 1 '\n'
 		fi
 
 		if [ -s "$dnsmasqFile" ]; then
