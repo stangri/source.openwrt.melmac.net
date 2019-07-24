@@ -84,7 +84,7 @@ is_ignored_interface() { string_match_word "$ignoredIfaces" "$1"; }
 is_supported_interface() { string_match_word "$supportedIfaces" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; }; }
 is_mac_address() { expr "$1" : '[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]$' >/dev/null; }
 is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; }
-is_ipv6() { [ "${1//:}" != "$1" ]; }
+is_ipv6() { ! is_mac_address "$1" && [ "${1//:}" != "$1" ]; }
 is_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
 is_domain() { [ "${1//[a-zA-Z-]}" != "$1" ]; }
 is_phys_dev() { [ "${1:0:1}" == "@" ] && echo "$ifconfigOutput" | grep -q "^${1:1}"; }
@@ -248,8 +248,8 @@ insert_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
 	local mark=$(eval echo "\$mark_$iface") param
 	if [ "$ipv6Enabled" -eq 0 ]; then
-		! is_mac_address "$laddr" && is_ipv6 "$laddr" && return 0
-		! is_mac_address "$laddr" && is_ipv6 "$raddr" && return 0
+		is_ipv6 "$laddr" && return 0
+		is_ipv6 "$raddr" && return 0
 	fi
 
 	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
