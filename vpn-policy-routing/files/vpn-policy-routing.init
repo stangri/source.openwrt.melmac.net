@@ -246,48 +246,38 @@ insert_tor_policy() {
 
 insert_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
-	local mark=$(eval echo "\$mark_$iface") param
+	local mark=$(eval echo "\$mark_$iface") param i
 	if [ "$ipv6Enabled" -eq 0 ]; then
 		is_ipv6 "$laddr" && return 0
 		is_ipv6 "$raddr" && return 0
 	fi
 
-	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
-#	param="-t mangle -A VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask}"
-	if [ "${proto//tcp}" != "$proto" ]; then
-		param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask} -p tcp"
-		if [ -n "$laddr" ]; then
-			if is_phys_dev "$laddr"; then
-				param="$param -i ${laddr:1} $appendLocalPolicy"
-			elif is_mac_address "$laddr"; then
-				param="$param -m mac --mac-source $laddr $appendLocalPolicy"
-			else
-				param="$param -s $laddr $appendLocalPolicy"
-			fi
-		fi
-		[ -n "$lport" ] && param="$param -m multiport --sport ${lport//-/:}"
-		[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
-		[ -n "$rport" ] && param="$param -m multiport --dport ${rport//-/:}"
-		[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
-		ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
+	if [ -z "$mark" ]; then
+		processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
+		return 0
 	fi
-	if [ "${proto//udp}" != "$proto" ]; then
-		param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask} -p udp"
-		if [ -n "$laddr" ]; then
-			if is_phys_dev "$laddr"; then
-				param="$param -i ${laddr:1} $appendLocalPolicy"
-			elif is_mac_address "$laddr"; then
-				param="$param -m mac --mac-source $laddr $appendLocalPolicy"
-			else
-				param="$param -s $laddr $appendLocalPolicy"
+
+	for i in tcp udp; do
+		if [ "${proto//$i}" != "$proto" ]; then
+			#	param="-t mangle -A VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask} -p $i"
+			param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask} -p $i"
+			if [ -n "$laddr" ]; then
+				if is_phys_dev "$laddr"; then
+					param="$param -i ${laddr:1}"
+				elif is_mac_address "$laddr"; then
+					param="$param -m mac --mac-source $laddr"
+				else
+					param="$param -s $laddr"
+				fi
+				param="$param $appendLocalPolicy"
 			fi
+			[ -n "$lport" ] && param="$param -m multiport --sport ${lport//-/:}"
+			[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
+			[ -n "$rport" ] && param="$param -m multiport --dport ${rport//-/:}"
+			[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
+			ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
 		fi
-		[ -n "$lport" ] && param="$param -m multiport --sport ${lport//-/:}"
-		[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
-		[ -n "$rport" ] && param="$param -m multiport --dport ${rport//-/:}"
-		[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
-		ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
-	fi
+	done
 	return 0
 }
 
