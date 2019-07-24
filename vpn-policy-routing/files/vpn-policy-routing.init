@@ -82,6 +82,7 @@ is_wan() { [ -n "$wanIface4" ] && [ "$1" = "$wanIface4" ]; }
 is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ]; }
 is_ignored_interface() { string_match_word "$ignoredIfaces" "$1"; }
 is_supported_interface() { string_match_word "$supportedIfaces" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; }; }
+is_mac_address() { expr "$1" : '[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]$' >/dev/null; }
 is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; }
 is_ipv6() { [ "${1//:}" != "$1" ]; }
 is_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
@@ -300,6 +301,33 @@ insert_phys_dev_policy() {
 	return 0
 }
 
+insert_mac_addr_policy() {
+	local comment="$1" iface="$2" mac="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
+	local mark=$(eval echo "\$mark_$iface") param
+
+	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
+#	param="-t mangle -A VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask}"
+	if [ "${proto//tcp}" != "$proto" ]; then
+		param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
+		[ -n "$mac" ] && param="$param -m mac --mac-source $mac"
+		[ -n "$lport" ] && param="$param -p tcp -m multiport --sport ${lport//-/:}"
+		[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
+		[ -n "$rport" ] && param="$param -p tcp -m multiport --dport ${rport//-/:}"
+		[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
+		ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
+	fi
+	if [ "${proto//udp}" != "$proto" ]; then
+		param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
+		[ -n "$mac" ] && param="$param -m mac --mac-source $mac"
+		[ -n "$lport" ] && param="$param -p udp -m multiport --sport ${lport//-/:}"
+		[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
+		[ -n "$rport" ] && param="$param -p udp -m multiport --dport ${rport//-/:}"
+		[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
+		ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
+	fi
+	return 0
+}
+
 r_process_policy(){
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$7" chain="$8" resolved_laddr resolved_raddr i ipsFailFlag
 	if [ "${laddr//[ ;\{\}]}" != "$laddr" ]; then
@@ -318,6 +346,8 @@ r_process_policy(){
 		elif [ -n "$laddr" ] && [ -z "$lport" ] && [ -z "$raddr" ] && [ -z "$rport" ] && [ "$proto" == "tcp" ] && [ "$chain" == "PREROUTING" ]; then
 			if is_phys_dev "$laddr"; then
 				insert_phys_dev_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
+			elif is_mac_address "$laddr"; then
+				insert_mac_addr_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 			else
 				for i in $(resolveip "$laddr"); do
 					ipr "$comment" "$iface" "$i" || insert_policy "$comment" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"
