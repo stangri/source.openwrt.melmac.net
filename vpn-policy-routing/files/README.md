@@ -303,7 +303,7 @@ config policy
 
 If the custom user file includes are set, the service will load and execute them after setting up ip tables and ipsets, processing policies and before restarting ```dnsmasq```. This allows, for example, to add large numbers of domains/IP addresses to ipsets without manually adding all of them to the config file.
 
-Two example custom user-files are provided with the ```vpn-policy-routing``` version 0.0.6 and above: ```/etc/vpn-policy-routing.aws.user``` and ```/etc/vpn-policy-routing.netflix.user```. They are provided to pull the AWS and Netflix IP addresses into the ```wan``` ipset respectively.
+Two example custom user-files are provided: ```/etc/vpn-policy-routing.aws.user``` and ```/etc/vpn-policy-routing.netflix.user```. They are provided to pull the AWS and Netflix IP addresses into the ```wan``` ipset respectively.
 
 #### Custom User Files Include Options
 
