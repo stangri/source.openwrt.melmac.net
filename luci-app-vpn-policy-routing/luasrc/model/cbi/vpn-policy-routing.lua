@@ -202,7 +202,6 @@ chain_control:value("1", translate("Enabled"))
 chain_control.rmempty = true
 
 icmp = s1:taboption("advanced", ListValue, "icmp_interface", translate("Default ICMP Interface"), translate("Force the ICMP protocol interface."))
-icmp:depends({output_chain_enabled="1"})
 icmp:value("", translate("No Change"))
 icmp:value("wan", translate("WAN"))
 uci:foreach("network", "interface", function(s)
