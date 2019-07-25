@@ -132,7 +132,7 @@ In general, whatever domain is specified to be whitelisted; it, along with with 
 
 ## Documentation / Discussion
 
-Please head [LEDE Project Forum](https://forum.lede-project.org/t/simple-adblock-fast-lean-and-fully-uci-luci-configurable-adblocking/1327/) for discussion of this package.
+Please head to [OpenWrt Forum](https://forum.openwrt.org/t/simple-adblock-fast-lean-and-fully-uci-luci-configurable-adblocking/1327/) for discussion of this package.
 
 ## Thanks
 
