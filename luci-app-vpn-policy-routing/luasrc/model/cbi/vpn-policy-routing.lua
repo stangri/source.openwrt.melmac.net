@@ -187,6 +187,12 @@ timeout = config:taboption("advanced", Value, "boot_timeout", translate("Boot Ti
 timeout.optional = false
 timeout.rmempty = true
 
+insert = config:taboption("advanced", ListValue, "iptables_rule_option", translate("IPTables rule option"), translate("Select Append for -A and Insert for -I."))
+insert:value("", translate("Append"))
+insert:value("insert", translate("Insert"))
+insert.default = ""
+insert.rmempty = true
+
 iprule = config:taboption("advanced", ListValue, "iprule_enabled", translate("IP Rules Support"), translate("Add an ip rule, not an iptables entry for policies with just the local address. Use with caution to manipulte policies priorities."))
 iprule:value("", translate("Disabled"))
 iprule:value("1", translate("Enabled"))

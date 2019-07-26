@@ -57,7 +57,7 @@ export ipv6Enabled ipsetEnabled ipruleEnabled dnsmasqEnabled icmpIface
 export ignoredIfaces="" supportedIfaces=""
 export appendLocalPolicy="" appendRemotePolicy=""
 export wanIface4 wanIface6 ifaceMark ifaceTableID ifacesListAll ifacesListSupported wanGW4 wanGW6
-export ifconfigOutput ip4RouteOutput ip6RouteOutput bootTimeout
+export ifconfigOutput ip4RouteOutput ip6RouteOutput bootTimeout insertOption
 
 list_iface() { ifacesListAll="${ifacesListAll}${1} "; }
 list_supported_iface() { is_supported_interface "$1" && ifacesListSupported="${ifacesListSupported}${1} "; }
@@ -119,11 +119,18 @@ load_package_config() {
 	config_get ignoredIfaces            'config' 'ignored_interface'
 	config_get supportedIfaces          'config' 'supported_interface'
 	config_get bootTimeout              'config' 'boot_timeout' '30'
-	config_get customUserFile           'config' 'custom_user_file' '30'
+	config_get insertOption             'config' 'iptables_rule_option' 'append'
 
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
 	fi
+
+	if [ "$insertOption" == "insert" ]; then
+		insertOption="-I"
+	else
+		insertOption="-A"
+	fi 
+
 	. /lib/functions/network.sh
 }
 
@@ -175,7 +182,7 @@ is_wan_up() {
 
 # shellcheck disable=SC2086
 ipt() {
-  local d failFlagIpv4=1 failFlagIpv6=1 c="${*// 1/}"
+  local d failFlagIpv4=1 failFlagIpv6=1 # c="${*// 1/}"
 	for d in "${c//-A/-D}" "${c//-I/-D}" "${c//-N/-F}" "${c//-N/-X}"; do 
 		[ "$d" != "$c" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
 	done
@@ -234,7 +241,7 @@ insert_tor_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
 	local mark=$(eval echo "\$mark_$iface")
 	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
-	param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
+	param="-t mangle $insertOption VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
 	[ -n "$laddr" ] && param="$param -s $laddr"
 	[ -n "$lport" ] && param="$param -p tcp -m multiport --sport ${lport//-/:}"
 	[ -n "$raddr" ] && param="$param -d $raddr"
@@ -259,8 +266,7 @@ insert_policy() {
 
 	for i in tcp udp; do
 		if [ "${proto//$i}" != "$proto" ]; then
-			#	param="-t mangle -A VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask} -p $i"
-			param="-t mangle -I VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask} -p $i"
+			param="-t mangle $insertOption VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask} -p $i"
 			if [ -n "$laddr" ]; then
 				if is_phys_dev "$laddr"; then
 					param="$param -i ${laddr:1}"
@@ -436,15 +442,15 @@ table_create(){
 		if [ $ipv4_set -ne 0 ] || [ $ipv6_set -ne 0 ]; then
 			dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
 			if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
-				ipt -t mangle -I VPR_PREROUTING 1 -m dscp --dscp "${dscp}" -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+				ipt -t mangle "$insertOption" VPR_PREROUTING -m dscp --dscp "${dscp}" -j MARK --set-xmark "${mark}/${fwMask}" || s=1
 			fi
 			if [ $ipsetEnabled -ne 0 ]; then
 				ips 'create' "${iface}" 'hash:net family inet comment' && ips 'flush' "${iface}" || s=1
-				[ $ipv4_set -ne 0 ] && { ipt -t mangle -I VPR_PREROUTING 1 -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
-				[ $ipv6_set -ne 0 ] && { ipt -t mangle -I VPR_PREROUTING 1 -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
+				[ $ipv4_set -ne 0 ] && { ipt -t mangle "$insertOption" VPR_PREROUTING -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
+				[ $ipv6_set -ne 0 ] && { ipt -t mangle "$insertOption" VPR_PREROUTING -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
 			fi
 			if [ "$iface" = "$icmpIface" ]; then
-				ipt -t mangle -I VPR_OUTPUT 1 -p icmp -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+				ipt -t mangle "$insertOption" VPR_OUTPUT -p icmp -j MARK --set-xmark "${mark}/${fwMask}" || s=1
 			fi
 		fi
 	fi
