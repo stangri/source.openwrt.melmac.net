@@ -180,11 +180,18 @@ is_wan_up() {
 	fi
 }
 
+ipt_cleanup() {
+	local i
+	for i in PREROUTING FORWARD INPUT OUTPUT; do
+		while iptables -t mangle -D $i -m mark --mark 0x0/0xff0000 -j VPR_${i} >/dev/null 2>&1; do : ; done
+	done
+}
+
 # shellcheck disable=SC2086
 ipt() {
-  local d failFlagIpv4=1 failFlagIpv6=1 # c="${*// 1/}"
-	for d in "${c//-A/-D}" "${c//-I/-D}" "${c//-N/-F}" "${c//-N/-X}"; do 
-		[ "$d" != "$c" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
+  local d failFlagIpv4=1 failFlagIpv6=1
+	for d in "${*//-A/-D}" "${*//-I/-D}" "${*//-N/-F}" "${*//-N/-X}"; do 
+		[ "$d" != "$*" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
 	done
 
 	d="$*"; iptables $d >/dev/null 2>&1 && failFlagIpv4=0;
@@ -443,15 +450,15 @@ table_create(){
 		if [ $ipv4_set -ne 0 ] || [ $ipv6_set -ne 0 ]; then
 			dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
 			if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
-				ipt -t mangle "$insertOption" VPR_PREROUTING -m dscp --dscp "${dscp}" -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+				ipt -t mangle -I VPR_PREROUTING -m dscp --dscp "${dscp}" -j MARK --set-xmark "${mark}/${fwMask}" || s=1
 			fi
 			if [ $ipsetEnabled -ne 0 ]; then
 				ips 'create' "${iface}" 'hash:net family inet comment' && ips 'flush' "${iface}" || s=1
-				[ $ipv4_set -ne 0 ] && { ipt -t mangle "$insertOption" VPR_PREROUTING -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
-				[ $ipv6_set -ne 0 ] && { ipt -t mangle "$insertOption" VPR_PREROUTING -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
+				[ $ipv4_set -ne 0 ] && { ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
+				[ $ipv6_set -ne 0 ] && { ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
 			fi
 			if [ "$iface" = "$icmpIface" ]; then
-				ipt -t mangle "$insertOption" VPR_OUTPUT -p icmp -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+				ipt -t mangle -I VPR_OUTPUT -p icmp -j MARK --set-xmark "${mark}/${fwMask}" || s=1
 			fi
 		fi
 	fi
@@ -601,10 +608,10 @@ start_service() {
 			return 1
 		fi
 
-		ipt -t mangle -N VPR_PREROUTING; ipt -t mangle -I PREROUTING 1 -m mark --mark "0x00/${fwMask}" -j VPR_PREROUTING;
-		ipt -t mangle -N VPR_FORWARD; ipt -t mangle -I FORWARD 1 -m mark --mark "0x00/${fwMask}" -j VPR_FORWARD;
-		ipt -t mangle -N VPR_INPUT; ipt -t mangle -I INPUT 1 -m mark --mark "0x00/${fwMask}" -j VPR_INPUT;
-		ipt -t mangle -N VPR_OUTPUT; ipt -t mangle -I OUTPUT 1 -m mark --mark "0x00/${fwMask}" -j VPR_OUTPUT;
+		ipt -t mangle -N VPR_PREROUTING; ipt -t mangle "$insertOption" PREROUTING -m mark --mark "0x00/${fwMask}" -j VPR_PREROUTING;
+		ipt -t mangle -N VPR_FORWARD; ipt -t mangle "$insertOption" FORWARD -m mark --mark "0x00/${fwMask}" -j VPR_FORWARD;
+		ipt -t mangle -N VPR_INPUT; ipt -t mangle "$insertOption" INPUT -m mark --mark "0x00/${fwMask}" -j VPR_INPUT;
+		ipt -t mangle -N VPR_OUTPUT; ipt -t mangle "$insertOption" OUTPUT -m mark --mark "0x00/${fwMask}" -j VPR_OUTPUT;
 
 		output 1 'Processing interfaces '
 		config_load 'network'; config_foreach process_interface 'interface' 'create';
