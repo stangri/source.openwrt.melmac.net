@@ -266,7 +266,8 @@ insert_policy() {
 
 	for i in tcp udp; do
 		if [ "${proto//$i}" != "$proto" ]; then
-			param="-t mangle $insertOption VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask} -p $i"
+#			param="-t mangle $insertOption VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask} -p $i"
+			param="-t mangle -I VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask} -p $i"
 			if [ -n "$laddr" ]; then
 				if is_phys_dev "$laddr"; then
 					param="$param -i ${laddr:1}"
