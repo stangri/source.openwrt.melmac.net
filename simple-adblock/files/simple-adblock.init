@@ -358,14 +358,14 @@ download_lists() {
 	local i hf w_filter j=0 R_TMP
 
 	tmpfs set message "${statusDownloading}..."
-	for i in $A_TMP $B_TMP $cacheFile $dnsmasqFile; do [ -f $i ] && rm -f $i; done
+	rm -f $A_TMP $B_TMP $cacheFile $dnsmasqFile
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
 		output 3 "Low free memory, restarting dnsmasq..."
 		if reload_dnsmasq "quiet"; then output_okn; else output_failn; fi
 	fi
 	touch $A_TMP; touch $B_TMP;
 	output 1 "Downloading lists "
-	rm -f "${JsonFile}.error" >/dev/null 2>&1
+	rm -f "${JsonFile}.error"
 	if [ -n "$blacklist_hosts_urls" ]; then
 		for hf in ${blacklist_hosts_urls}; do
 			if [ "$parallelDL" -gt 0 ]; then
@@ -395,7 +395,7 @@ download_lists() {
 	fi
 	wait
 	[ -s "${JsonFile}.error" ] && tmpfs add error "$(cat "${JsonFile}.error")"
-	rm -f "${JsonFile}.error" >/dev/null 2>&1
+	rm -f "${JsonFile}.error"
 	output 1 "\\n"
 
 	[ -n "$blacklist_domains" ] && for hf in ${blacklist_domains}; do echo "$hf" | sed "$d_filter" >> $B_TMP; done
