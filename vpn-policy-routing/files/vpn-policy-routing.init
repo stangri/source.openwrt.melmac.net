@@ -87,7 +87,7 @@ is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/
 is_ipv6() { ! is_mac_address "$1" && [ "${1//:}" != "$1" ]; }
 is_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
 is_domain() { [ "${1//[a-zA-Z-]}" != "$1" ]; }
-is_phys_dev() { [ "${1:0:1}" == "@" ] && echo "$ifconfigOutput" | grep -q "^${1:1}"; }
+is_phys_dev() { [ "${1:0:1}" == "@" ] && echo "$ip4RouteOutput" | grep -q "^${1:1}"; }
 is_turris() { /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05'; }
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
 string_match_word() { echo "$1" | grep -q -w "$2"; }
