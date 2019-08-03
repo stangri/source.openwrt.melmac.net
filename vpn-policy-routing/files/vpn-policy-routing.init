@@ -57,7 +57,7 @@ export ipv6Enabled ipsetEnabled ipruleEnabled dnsmasqEnabled icmpIface
 export ignoredIfaces="" supportedIfaces=""
 export appendLocalPolicy="" appendRemotePolicy=""
 export wanIface4 wanIface6 ifaceMark ifaceTableID ifacesListAll ifacesListSupported wanGW4 wanGW6
-export ifconfigOutput ipAddrOutput ip4RouteOutput ip6RouteOutput bootTimeout insertOption
+export bootTimeout insertOption
 
 list_iface() { ifacesListAll="${ifacesListAll}${1} "; }
 list_supported_iface() { is_supported_interface "$1" && ifacesListSupported="${ifacesListSupported}${1} "; }
@@ -87,25 +87,17 @@ is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/
 is_ipv6() { ! is_mac_address "$1" && [ "${1//:}" != "$1" ]; }
 is_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
 is_domain() { [ "${1//[a-zA-Z-]}" != "$1" ]; }
-is_phys_dev() { [ "${1:0:1}" == "@" ] && echo "$ip4RouteOutput" | grep -q "^${1:1}"; }
+is_phys_dev() { [ "${1:0:1}" == "@" ] && ip route | grep -q "dev ^${1:1}"; }
 is_turris() { /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05'; }
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
 string_match_word() { echo "$1" | grep -q -w "$2"; }
-get_device_default_gw() { echo "$ip4RouteOutput" | grep -Eso -m1 "via ([0-9]{1,3}\\.){3}[0-9]{1,3} dev $1" | awk '{print $2}'; }
-get_device_default_gw6() { echo "$ip6RouteOutput" | grep -Eso -m1 "via ([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}(/([0-9]){0,2}){0,2} dev $1" | awk '{print $2}' | awk -F "/" '{print $1}'; }
-get_device_gw() { echo "$ip4RouteOutput" | grep -Eso -m1 "^([0-9]{1,3}\\.){3}[0-9]{1,3} dev $1" | awk '{print $1}'; }
-get_device_gw6() { echo "$ip6RouteOutput" | grep -Eso -m1 "^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}(/([0-9]){0,2}){0,2} dev $1" | awk -F "/" '{print $1}'; }
-get_tunnel_gw() { echo "$ifconfigOutput" | grep "^${1}" -A 3 | grep 'P-t-P' | awk '{print $3}' | awk -F ":" '{print $2}'; }
-get_tunnel_gw6() { local gw6=$(echo "$ifconfigOutput" | grep "^${1}" -A 3 | grep 'inet6 addr:' | awk '{print $3}'); echo ${gw6:+"${gw6%:*}:1"}; }
-get_device_bridge_gw() { echo "$ip4RouteOutput" | grep -m1 "dev $1" | grep -Eso "src ([0-9]{1,3}\\.){3}[0-9]{1,3}" | awk '{print $2}'; }
 dnsmasq_kill() { killall -q -HUP dnsmasq; }
-dnsmasq_restart() { output 1 'Restarting DNSMASQ '; /etc/init.d/dnsmasq restart >/dev/null 2>&1 && output_okn || output_failn; }
-get_iface_addr() { local NET_ADDR="$(ip $1 addr show dev $2 | sed -n -e "/\sinet6*\s/{s/^\s*\w*\s//;s/\/.*$//p}" | sed -n -e "1p")"; echo "${NET_ADDR}"; }
+dnsmasq_restart() { output 1 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
 get_iface_gw() {
 	local PROTO="${1}" NET_IF="${2}" NET_GLOBAL="1" NET_ADDR NET_GW
 	[ "$PROTO" == "-6" ] && NET_GLOBAL="1::"
-	NET_ADDR="$(get_iface_addr ${PROTO} ${NET_IF})"
-	[ -n "$NET_ADDR" ] && NET_GW="$(ip ${PROTO} route get ${NET_GLOBAL} from ${NET_ADDR} dev ${NET_IF} 2>/dev/null | sed -n -e "/\svia\s/{s/^.*\svia\s//;s/\s.*$//p}")"
+	NET_ADDR="$(ip "$PROTO" addr show dev "$NET_IF" 2>/dev/null | sed -n -e "/\sinet6*\s/{s/^\s*\w*\s//;s/\/.*$//p}" | sed -n -e "1p")"
+	[ -n "$NET_ADDR" ] && NET_GW="$(ip "${PROTO}" route get "${NET_GLOBAL}" from "${NET_ADDR}" dev "${NET_IF}" 2>/dev/null | sed -n -e "/\svia\s/{s/^.*\svia\s//;s/\s.*$//p}")"
 	echo "${NET_GW:-$NET_ADDR}"
 }
 
@@ -177,16 +169,11 @@ is_wan_up() {
 	unset ifacesListSupported
 	config_load 'network'
 	config_foreach list_supported_iface 'interface'
-	if [ -n "$wanGW" ]; then
-		[ -z "$ipAddrOutput" ] && ip4AddrOutput="$(ip addr show 2>/dev/null)"
-		[ -z "$ip4RouteOutput" ] && ip4RouteOutput="$(ip -4 route 2>/dev/null)"
-		[ -z "$ip6RouteOutput" ] && ip6RouteOutput="$(ip -6 route 2>/dev/null)"
-		[ -z "$ifconfigOutput" ] && ifconfigOutput="$(ifconfig 2>/dev/null)"
-		return 0
-	else
+	if [ -z "$wanGW" ]; then
 		output "$_ERROR_: $serviceName failed to discover WAN gateway!\\n"
 		return 1
 	fi
+	return 0
 }
 
 ipt_cleanup() {
