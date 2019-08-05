@@ -198,7 +198,8 @@ ipt() {
 
 # shellcheck disable=SC2086
 ips() {
-	local command="$1" ipset="${2//-/_}" param="$3" comment="$4" failFlagIpv4=0 failFlagIpv6=0
+	local command="$1" ipset="${2//-/_}" param="$3" comment="$4" appendix="$5" failFlagIpv4=0 failFlagIpv6=0
+	[ -n "$appendix" ] && appendix="_${appendix}"
 	case "$command" in
 		add_dnsmasq)
 			[ "$dnsmasqEnabled" -eq 0 ] && return 1
@@ -208,20 +209,20 @@ ips() {
 			;;
 		add)
 			[ "$ipsetEnabled" -eq 0 ] && return 1
-			ipset -q -! $command "$ipset" $param comment "$comment" || failFlagIpv4=1
-			[ "$ipv6Enabled" -ne 0 ] && ipset -q -! "$command" "${ipset}6" ${param/"family inet"/"family inet6"} comment "$comment" || failFlagIpv6=1
+			ipset -q -! $command "${ipset}${appendix}" $param comment "$comment" || failFlagIpv4=1
+			[ "$ipv6Enabled" -ne 0 ] && ipset -q -! "$command" "${ipset}6${appendix}" ${param/"family inet"/"family inet6"} comment "$comment" || failFlagIpv6=1
 			if [ "$failFlagIpv4" -eq 0 ] || [ "$failFlagIpv6" -eq 0 ]; then return 0; else return 1; fi
 			;;
 		create)
 			[ "$ipsetEnabled" -eq 0 ] && return 0
-			ipset -q -! "$command" "$ipset" $param || failFlagIpv4=1
-			if [ "$ipv6Enabled" -ne 0 ]; then ipset -q -! "$command" "${ipset}6" ${param/"family inet"/"family inet6"} || failFlagIpv6=1; fi
+			ipset -q -! "$command" "${ipset}${appendix}" $param || failFlagIpv4=1
+			if [ "$ipv6Enabled" -ne 0 ]; then ipset -q -! "$command" "${ipset}6${appendix}" ${param/"family inet"/"family inet6"} || failFlagIpv6=1; fi
 			if [ "$failFlagIpv4" -eq 0 ] && [ "$failFlagIpv6" -eq 0 ]; then return 0; else return 1; fi
 			;;
 		destroy|flush)
 			[ "$ipsetEnabled" -eq 0 ] && return 0
-			ipset -q -! "$command" "$ipset" || failFlagIpv4=1
-			if [ "$ipv6Enabled" -ne 0 ]; then ipset -q -! "$command" "${ipset}6" || failFlagIpv6=1; fi
+			ipset -q -! "$command" "${ipset}${appendix}" || failFlagIpv4=1
+			if [ "$ipv6Enabled" -ne 0 ]; then ipset -q -! "$command" "${ipset}6${appendix}" || failFlagIpv6=1; fi
 			if [ "$failFlagIpv4" -eq 0 ] && [ "$failFlagIpv6" -eq 0 ]; then return 0; else return 1; fi
 			;;
 	esac
@@ -315,13 +316,17 @@ r_process_policy(){
 		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 	elif is_phys_dev "$laddr"; then
 		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
-	elif is_mac_address "$laddr"; then
-		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 	elif [ -n "$laddr" ] && [ -z "$lport" ] && [ -z "$raddr" ] && [ -z "$rport" ] && [ "$proto" == "tcp" ] && [ "$chain" == "PREROUTING" ]; then
-		# see if we can add iprule instead of the iptable entry
-		for i in $(resolveip "$laddr"); do
-			ipr "$comment" "$iface" "$i" || insert_policy "$comment" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"
-		done
+		if is_mac_address "$laddr"; then
+			ips add "${iface}" "$laddr" "${comment}: $laddr" "local_mac" || ipsFailFlag=1
+		else
+			# see if we can add ipset or iprule instead of the iptable entry
+			for i in $(resolveip "$laddr"); do
+				ips add "${iface}" "$i" "${comment}: $laddr $i" "local_ip" || \
+				ipr "$comment" "$iface" "$i" || \
+				insert_policy "$comment" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"
+			done
+		fi
 	elif [ -z "$laddr" ] && [ -z "$lport" ] && [ -n "$raddr" ] && [ -z "$rport" ] && [ "$proto" == "tcp" ] && [ "$chain" == "PREROUTING" ]; then
 		# see if we can add ipset or dnsmasq ipset instead of the iptable entry
 		if is_domain "$raddr"; then
@@ -331,6 +336,8 @@ r_process_policy(){
 		else
 			ips "add" "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1
 		fi
+	elif is_mac_address "$laddr"; then
+		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 	else
 		ipsFailFlag=1
 	fi
@@ -400,6 +407,8 @@ table_destroy(){
 		ip -4 route flush table "$tid";
 		ip -6 route flush table "$tid";
 		ips 'flush' "${iface}"; ips 'destroy' "${iface}";
+		ips 'flush' "${iface}" '' '' 'local_ip'; ips 'destroy' "${iface}" '' '' 'local_ip';
+		ips 'flush' "${iface}" '' '' 'local_mac'; ips 'destroy' "${iface}" '' '' 'local_mac';
 		ip -4 route flush cache
 		ip -6 route flush cache
 		return 0
@@ -450,8 +459,18 @@ table_create(){
 			fi
 			if [ $ipsetEnabled -ne 0 ]; then
 				ips 'create' "${iface}" 'hash:net family inet comment' && ips 'flush' "${iface}" || s=1
-				[ $ipv4_set -ne 0 ] && { ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
-				[ $ipv6_set -ne 0 ] && { ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; }
+				ips 'create' "${iface}" 'hash:net family inet comment' '' 'local_ip' && ips 'flush' "${iface}" '' '' 'local_ip' || s=1
+				ips 'create' "${iface}" 'hash:mac comment' '' 'local_mac' && ips 'flush' "${iface}" '' '' 'local_mac' || s=1
+				if [ $ipv4_set -ne 0 ]; then
+					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+					ipt -t mangle -A VPR_PREROUTING -m set --match-set "${iface}_local_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
+					ipt -t mangle -A VPR_PREROUTING -m set --match-set "${iface}_local_mac" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
+				fi
+				if [ $ipv6_set -ne 0 ]; then
+					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_local_ip" src -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_local_mac" src -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+				fi
 			fi
 			if [ "$iface" = "$icmpIface" ]; then
 				ipt -t mangle -I VPR_OUTPUT -p icmp -j MARK --set-xmark "${mark}/${fwMask}" || s=1
