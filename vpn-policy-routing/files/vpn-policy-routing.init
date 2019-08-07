@@ -463,8 +463,8 @@ table_create(){
 				ips 'create' "${iface}" 'hash:mac comment' '' 'local_mac' && ips 'flush' "${iface}" '' '' 'local_mac' || s=1
 				if [ $ipv4_set -ne 0 ]; then
 					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
-					ipt -t mangle -A VPR_PREROUTING -m set --match-set "${iface}_local_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
-					ipt -t mangle -A VPR_PREROUTING -m set --match-set "${iface}_local_mac" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
+					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_local_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
+					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_local_mac" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
 				fi
 				if [ $ipv6_set -ne 0 ]; then
 					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
