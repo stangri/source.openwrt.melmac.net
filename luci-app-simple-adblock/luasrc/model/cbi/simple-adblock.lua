@@ -149,10 +149,11 @@ end
 s:tab("advanced", translate("Advanced Configuration"))
 
 target = s:taboption("advanced", ListValue, "target", translate("Target service"), translate("Pick the service to create the adblock list for, see the") .. " "
-  .. [[<a href="]] .. readmeURL .. [[#target-setting" target="_blank">]]
+  .. [[<a href="]] .. readmeURL .. [[#configuration-settings" target="_blank">]]
   .. translate("README") .. [[</a>]] .. " " .. translate("for details"))
 target:value("dnsmasq.config", translate("DNSMASQ Config"))
 target:value("dnsmasq.addnhosts", translate("DNSMASQ Additional Hosts"))
+target:value("unbound.config", translate("Unbound Config"))
 target.default = "dnsmasq.config"
 
 o5 = s:taboption("advanced", Value, "boot_delay", translate("Delay (in seconds) for on-boot start"), translate("Run service after set delay on boot"))

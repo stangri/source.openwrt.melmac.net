@@ -137,7 +137,7 @@ Default configuration has service disabled (use Web UI to enable/start service o
 
 ## Additional settings
 
-The ```vpn-policy-routing``` settings are split into ```basic``` and ```advanced``` settings. The full list of configuration parameters of ```vpn-policy-routing.config``` section is:
+In the Web UI the ```vpn-policy-routing``` settings are split into ```basic``` and ```advanced``` settings. The full list of configuration parameters of ```vpn-policy-routing.config``` section is:
 
 |Web UI Section|Parameter|Type|Default|Description|
 | --- | --- | --- | --- | --- |

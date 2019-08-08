@@ -12,11 +12,11 @@ A simple DNSMASQ-based AdBlocking service for OpenWrt/LEDE Project. Loosely base
 - Allows you to easily add URLs to your own blocked hosts or domains lists to block/whitelist (just put whitelisted domains one per line).
 - Requires no configuration for the download utility wherever you want to use wget/libopenssl or uclient-fetch/libustream-mbedtls.
 - Installs dependencies automatically (DD/LEDE-default uclient-fetch libustream-mbedtls).
-- Doesn't stay in memory -- creates the list of blocked domains and then uses DNSMASQ and firewall rules to serve "domain not found reply".
+- Doesn't stay in memory -- creates the list of blocked domains and then uses DNSMASQ and firewall rules to serve NXDOMAIN or 127.0.0.1 (depending on settings) reply for blocked domains.
 - As some of the default lists are using https, reliably works with either wget/libopenssl or uclient-fetch/libustream-mbedtls.
 - Very lightweight and easily hackable, the whole script is just one /etc/init.d/simple-adblock file.
 - Logs single entry in the system log with the number of blocked domains if verbosity is set to 0.
-- Retains the downloaded/sorted adblocking list on service stop and reuses it on service start (use reload if you want to force re-download of the list).
+- Retains the downloaded/sorted AdBlocking list on service stop and reuses it on service start (use reload if you want to force re-download of the list).
 - Blocks ads served over https.
 - Proudly made in Canada, using locally-sourced electrons.
 
@@ -104,11 +104,11 @@ Default configuration has service disabled (use Web UI to enable/start service o
 
 You can use Web UI (found in Services/Simple AdBlock) to add/remove/edit links to:
 
-- hosts files (127.0.0.1 or 0.0.0.0 followed by space and domain name per line) to be blocked.
+- [hosts files](https://en.wikipedia.org/wiki/Hosts_(file)) (127.0.0.1 or 0.0.0.0 followed by space and domain name per line) to be blocked.
 - domains lists (one domain name per line) to be blocked.
 - domains lists (one domain name per line) to be whitelisted. It is useful if you want to run simple-adblock on multiple routers and maintain one centralized whitelist which you can publish on a web-server.
 
-Please note that these lists **have** to include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix. Some of the top block lists (both hosts files and domains lists) suitable for routers with at least 8MB RAM are used in the default simple-adblock installation.
+Please note that these lists **must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix. Some of the top block lists (both hosts files and domains lists) suitable for routers with at least 8MB RAM are used in the default simple-adblock installation.
 
 You can also use Web UI to add individual domains to be blocked or whitelisted.
 
@@ -122,9 +122,32 @@ If you want to force simple-adblock to re-download the lists, run ```/etc/init.d
 
 If you want to check if the specific domain (or part of the domain name) is being blocked, run ```/etc/init.d/simple-adblock check test-domain.com```.
 
+## Configuration settings
+
+In the Web UI the ```simple-adblock``` settings are split into ```basic``` and ```advanced``` settings. The full list of configuration parameters of ```simple-adblock.config``` section is:
+
+|Web UI Section|Parameter|Type|Default|Description|
+| --- | --- | --- | --- | --- |
+|Basic|enabled|boolean|0|Enable/disable the ```simple-adblock``` service.|
+|Basic|verbosity|integer|2|Can be set to 0, 1 or 2 to control the console and system log output verbosity of the ```simple-adblock``` service.|
+|Basic|force_dns|boolean|0|.|
+|Basic|led|string|none|Use one of the router LEDs to indicate the AdBlocking status.|
+|Advanced|target|string|dnsmasq.conf|Target AdBlocking file. Currently supported options are ```dnsmasq.conf``` (creates the DNSMASQ config file so that DNSMASQ replies with NXDOMAIN - "domain not found"), ```dnsmasq.addnhosts``` (creates the DNSMASQ additional hosts file, so that DNSMASQ resolves all blocked domains to "local machine" -- 127.0.0.1) and ```unbound.conf``` (creates the Unbound config file so that Unbound replies with NXDOMAIN - "domain not found").|
+|Advanced|boot_delay|integer|120|Delay service activation for that many seconds on boot up. You can shorten it to 10-30 seconds on modern fast routers. Routers with built-in modems may require longer boot delay.|
+|Advanced|download_timeout|integer|10|Time-out downloads if no reply received within that many last seconds.|
+|Advanced|curl_retry|integer|3|If ```curl``` is installed and detected, attempt that many retries for failed downloads.|
+|Advanced|parallel_downloads|boolean|1|If enabled, all downloads are completed concurrently, if disabled -- sequentioally. Concurrent downloads dramatically speed up service loading.|
+|Advanced|debug|boolean|0|If enabled, output service full debug to ```/tmp/simple-adblock.log```. Please note that the debug file may clog up the router's RAM on some devices. Use with caution.|
+|Advanced|allow_non_ascii|boolean|0|Enable support for non-ASCII characters in the final AdBlocking file. Only enable if your target service supports non-ASCII characters. If you're using DNSMASQ-based AdBlocking and enable this on the system with the DNSMASQ which doesn't support non-ASCII characters, it will crash. Use with caution.|
+|Advanced|compressed_cache|boolean|0|Create compressed cache of the AdBlocking file in router's persistent memory. Only recommended to be used on routers with large ROM and/or routers with metered/flaky internet connection.|
+||whitelist_domain|list/string||List of white-listed domains.|
+||whitelist_domains_url|list/string||List of URL(s) to text files containing white-listed domains. **Must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix. Useful if you want to keep/publish a single white-list for multiple routers.|
+||blacklist_domains_url|list/string||List of URL(s) to text files containing black-listed domains. **Must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix.|
+||blacklist_hosts_url|list/string||List of URL(s) to [hosts files](https://en.wikipedia.org/wiki/Hosts_(file)) containing black-listed domains. **Must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix.|
+
 ## How does it work
 
-This service downloads (and processes in the background, removing comments and other useless data) lists of hosts and domains to be blocked, combines those lists into one big block list, removes duplicates and sorts it and then removes your whitelisted domains from the block list before converting to to dnsmasq-compatible file and restarting dnsmasq. The result of the process is that dnsmasq returns "domain not found" for the blocked domains.
+This service downloads (and processes in the background, removing comments and other useless data) lists of hosts and domains to be blocked, combines those lists into one big block list, removes duplicates and sorts it and then removes your whitelisted domains from the block list before converting to to DNSMASQ-compatible file and restarting DNSMASQ. The result of the process is that DNSMASQ returns NXDOMAIN or 127.0.0.1 (depending on settings) for the blocked domains.
 
 If you specify ```google.com``` as a domain to be whitelisted, you will have access to ```google.com```, ```www.google.com```, ```analytics.google.com```, but not fake domains like ```email-google.com``` or ```drive.google.com.verify.signin.normandeassociation.com``` for example. If you only want to allow ```www.google.com``` while blocking all other ```google.com``` subdomains, just specify ```www.google.com``` as domain to be whitelisted.
 
