@@ -13,7 +13,35 @@ local fs = require "nixio.fs"
 local http = require "luci.http"
 local dispatcher = require "luci.dispatcher"
 local enabledFlag = uci:get(packageName, "config", "enabled")
-local command
+local command, outputFile, outputCache, outputGzip
+local targetDNS = uci:get(packageName, "config", "dns")
+
+if not targetDNS or targetDNS == "" then
+	targetDNS = "dnsmasq.servers"
+end
+
+if targetDNS ~= "dnsmasq.addnhosts" and targetDNS ~= "dnsmasq.conf" and 
+	 targetDNS ~= "dnsmasq.servers" and targetDNS ~= "unbound.conf" then
+	targetDNS = "dnsmasq.servers"
+end
+
+if targetDNS == "dnsmasq.addnhosts" then
+	outputFile="/var/run/" .. packageName .. ".addnhosts"
+	outputCache="/var/run/" .. packageName .. ".addnhosts.cache"
+	outputGzip="/etc/" .. packageName .. ".addnhosts.gz"
+elseif targetDNS == "dnsmasq.conf" then
+	outputFile="/var/dnsmasq.d/" .. packageName .. ""
+	outputCache="/var/run/" .. packageName .. ".dnsmasq.cache"
+	outputGzip="/etc/" .. packageName .. ".dnsmasq.gz"
+elseif targetDNS == "dnsmasq.servers" then
+	outputFile="/var/run/" .. packageName .. ".servers"
+	outputCache="/var/run/" .. packageName .. ".servers.cache"
+	outputGzip="/etc/" .. packageName .. ".servers.gz"
+elseif targetDNS == "unbound.conf" then
+	outputFile="/var/lib/unbound/" .. packageName .. ""
+	outputCache="/var/run/" .. packageName .. ".unbound.cache"
+	outputGzip="/etc/" .. packageName .. ".unbound.gz"
+end
 
 m = Map("simple-adblock", translate("Simple AdBlock Settings"))
 m.apply_on_parse = true
@@ -62,11 +90,11 @@ else
 		en.title      = translate("Service is disabled/stopped")
 		en.inputtitle = translate("Enable/Start")
 		en.inputstyle = "apply important"
-		if fs.access("/var/run/simple-adblock.cache") then
+		if fs.access(outputCache) then
 			sm = h:option(DummyValue, "_dummy", translate("Info"))
 			sm.template = "simple-adblock/status"
-			sm.value = "Cache file containing " .. util.trim(sys.exec("wc -l < /var/run/simple-adblock.cache")) .. " domains found."
-		elseif fs.access("/etc/$simple-adblock.gz") then
+			sm.value = "Cache file containing " .. util.trim(sys.exec("wc -l < " .. outputCache)) .. " domains found."
+		elseif fs.access(outputGzip) then
 			sm = h:option(DummyValue, "_dummy", translate("Info"))
 			sm.template = "simple-adblock/status"
 			sm.value = "Compressed cache file found."
