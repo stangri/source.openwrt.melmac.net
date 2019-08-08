@@ -14,7 +14,7 @@ A simple DNSMASQ-based AdBlocking service for OpenWrt/LEDE Project. Loosely base
 - Installs dependencies automatically (DD/LEDE-default uclient-fetch libustream-mbedtls).
 - Doesn't stay in memory -- creates the list of blocked domains and then uses DNSMASQ and firewall rules to serve NXDOMAIN or 127.0.0.1 (depending on settings) reply for blocked domains.
 - As some of the default lists are using https, reliably works with either wget/libopenssl or uclient-fetch/libustream-mbedtls.
-- Very lightweight and easily hackable, the whole script is just one /etc/init.d/simple-adblock file.
+- Very lightweight and easily hackable, the whole script is just one ```/etc/init.d/simple-adblock``` file.
 - Logs single entry in the system log with the number of blocked domains if verbosity is set to 0.
 - Retains the downloaded/sorted AdBlocking list on service stop and reuses it on service start (use reload if you want to force re-download of the list).
 - Blocks ads served over https.
@@ -68,33 +68,7 @@ Install ```simple-adblock``` and ```luci-app-simple-adblock``` packages from Web
 opkg update; opkg install simple-adblock luci-app-simple-adblock
 ```
 
-If ```simple-adblock``` and ```luci-app-simple-adblock``` packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](#add-custom-repo-to-your-router) first.
-
-### Add custom repo to your router
-
-If your router is not set up with the access to repository containing these packages you will need to add custom repository to your router by connecting to your router via ssh and running the following commands:
-
-#### OpenWrt 15.05.1 Instructions
-
-```sh
-opkg update; opkg install ca-certificates wget libopenssl
-echo -e -n 'untrusted comment: LEDE usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /tmp/stangri-repo.pub && opkg-key add /tmp/stangri-repo.pub
-! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://raw.githubusercontent.com/stangri/openwrt-repo/master' >> /etc/opkg/customfeeds.conf
-opkg update
-opkg install simple-adblock luci-app-simple-adblock
-```
-
-#### LEDE Project 17.01.x and OpenWrt 18.06.x Instructions
-
-```sh
-opkg update
-opkg list-installed | grep -q uclient-fetch || opkg install uclient-fetch
-opkg list-installed | grep -q libustream || opkg install libustream-mbedtls
-echo -e -n 'untrusted comment: LEDE usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /tmp/stangri-repo.pub && opkg-key add /tmp/stangri-repo.pub
-! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://raw.githubusercontent.com/stangri/openwrt-repo/master' >> /etc/opkg/customfeeds.conf
-opkg update
-opkg install simple-adblock luci-app-simple-adblock
-```
+If ```simple-adblock``` and ```luci-app-simple-adblock``` packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router) first.
 
 ## Default Settings
 
@@ -106,13 +80,13 @@ You can use Web UI (found in Services/Simple AdBlock) to add/remove/edit links t
 
 - [hosts files](https://en.wikipedia.org/wiki/Hosts_(file)) (127.0.0.1 or 0.0.0.0 followed by space and domain name per line) to be blocked.
 - domains lists (one domain name per line) to be blocked.
-- domains lists (one domain name per line) to be whitelisted. It is useful if you want to run simple-adblock on multiple routers and maintain one centralized whitelist which you can publish on a web-server.
+- domains lists (one domain name per line) to be whitelisted. It is useful if you want to run ```simple-adblock``` on multiple routers and maintain one centralized whitelist which you can publish on a web-server.
 
-Please note that these lists **must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix. Some of the top block lists (both hosts files and domains lists) suitable for routers with at least 8MB RAM are used in the default simple-adblock installation.
+Please note that these lists **must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix. Some of the top block lists (both hosts files and domains lists) suitable for routers with at least 8MB RAM are used in the default ```simple-adblock``` installation.
 
 You can also use Web UI to add individual domains to be blocked or whitelisted.
 
-If you want to use CLI to customize simple-adblock config, you can probably figure out how to do it by looking at the contents of ```/etc/config/simple-adblock``` or output of the ```uci show simple-adblock``` command.
+If you want to use CLI to customize ```simple-adblock``` config, you can probably figure out how to do it by looking at the contents of ```/etc/config/simple-adblock``` or output of the ```uci show simple-adblock``` command.
 
 ## How to use
 
@@ -132,7 +106,7 @@ In the Web UI the ```simple-adblock``` settings are split into ```basic``` and `
 |Basic|verbosity|integer|2|Can be set to 0, 1 or 2 to control the console and system log output verbosity of the ```simple-adblock``` service.|
 |Basic|force_dns|boolean|0|.|
 |Basic|led|string|none|Use one of the router LEDs to indicate the AdBlocking status.|
-|Advanced|target|string|dnsmasq.conf|Target AdBlocking file. Currently supported options are ```dnsmasq.conf``` (creates the DNSMASQ config file so that DNSMASQ replies with NXDOMAIN - "domain not found"), ```dnsmasq.addnhosts``` (creates the DNSMASQ additional hosts file, so that DNSMASQ resolves all blocked domains to "local machine" -- 127.0.0.1) and ```unbound.conf``` (creates the Unbound config file so that Unbound replies with NXDOMAIN - "domain not found").|
+|Advanced|dns|string|dnsmasq.servers|DNS resolution option. See table below for addtional information.|
 |Advanced|boot_delay|integer|120|Delay service activation for that many seconds on boot up. You can shorten it to 10-30 seconds on modern fast routers. Routers with built-in modems may require longer boot delay.|
 |Advanced|download_timeout|integer|10|Time-out downloads if no reply received within that many last seconds.|
 |Advanced|curl_retry|integer|3|If ```curl``` is installed and detected, attempt that many retries for failed downloads.|
@@ -144,6 +118,16 @@ In the Web UI the ```simple-adblock``` settings are split into ```basic``` and `
 ||whitelist_domains_url|list/string||List of URL(s) to text files containing white-listed domains. **Must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix. Useful if you want to keep/publish a single white-list for multiple routers.|
 ||blacklist_domains_url|list/string||List of URL(s) to text files containing black-listed domains. **Must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix.|
 ||blacklist_hosts_url|list/string||List of URL(s) to [hosts files](https://en.wikipedia.org/wiki/Hosts_(file)) containing black-listed domains. **Must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix.|
+
+### Target AdBlocking file
+
+Currently supported options are:
+
+|Option|Explanation|
+|```dnsmasq.addnhosts```|Creates the DNSMASQ additional hosts file ```/var/run/simple-adblock.addnhosts``` and modifies DNSMASQ settings, so that DNSMASQ resolves all blocked domains to "local machine" -- 127.0.0.1.|
+|```dnsmasq.conf```|Creates the DNSMASQ config file ```/var/dnsmasq.d/simple-adblock``` so that DNSMASQ replies with NXDOMAIN - "domain not found". This is the setting for classic ```simple-adblock``` behavior.|
+|```dnsmasq.servers```|Creates the DNSMASQ servers file ```/var/run/simple-adblock.servers``` and modifies DNSMASQ settings so that DNSMASQ replies with NXDOMAIN - "domain not found". This is a default setting as it allows quick reloads of DNSMASQ.|
+|```unbound.conf```|Creates the Unbound config file ```/var/lib/unbound/simple-adblock``` so that Unbound replies with NXDOMAIN - "domain not found".|
 
 ## How does it work
 

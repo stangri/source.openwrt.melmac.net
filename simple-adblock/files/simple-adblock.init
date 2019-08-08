@@ -16,21 +16,18 @@ readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
 readonly dnsmasqCache="/var/run/${packageName}.dnsmasq.cache"
 readonly dnsmasqGzip="/etc/${packageName}.dnsmasq.gz"
 readonly dnsmasqOutputFilter='s|^|local=/|;s|$|/|'
-readonly serversFile="/var/run/${packageName}.servers"
-readonly serversCache="/var/run/${packageName}.servers.cache"
-readonly serversGzip="/etc/${packageName}.servers.gz"
-readonly serversOutputFilter='s|^|server=/|;s|$|/|'
-readonly dnsmasqOutputAWK="awk '{print \"local=/\"\$0\"/\"}'"
 readonly addnhostsFile="/var/run/${packageName}.addnhosts"
 readonly addnhostsCache="/var/run/${packageName}.addnhosts.cache"
 readonly addnhostsGzip="/etc/${packageName}.addnhosts.gz"
 readonly addnhostsOutputFilter='s|^|127.0.0.1 |;s|$||'
-readonly addnhostsOutputAWK="awk '{print \"127.0.0.1 \"\$0\"\"}'"
-readonly unboundFile="/var/run/${packageName}.unbound"
+readonly serversFile="/var/run/${packageName}.servers"
+readonly serversCache="/var/run/${packageName}.servers.cache"
+readonly serversGzip="/etc/${packageName}.servers.gz"
+readonly serversOutputFilter='s|^|server=/|;s|$|/|'
+readonly unboundFile="/var/lib/unbound/${packageName}"
 readonly unboundCache="/var/run/${packageName}.unbound.cache"
 readonly unboundGzip="/etc/${packageName}.unbound.gz"
 readonly unboundOutputFilter='s|^|local-zone: "|;s|$|" refuse|'
-readonly unboundOutputAWK="awk '{print \"local-zone: \042\"\$0\"\042 refuse\"}'"
 readonly A_TMP="/var/simple-adblock.hosts.a.tmp"
 readonly B_TMP="/var/simple-adblock.hosts.b.tmp"
 readonly PIDFile="/var/run/${packageName}.pid"
@@ -87,7 +84,7 @@ export parallelDL
 export debug
 export allowNonAscii
 export compressedCache     
-export targetFile
+export targetDNS
 export bootDelay
 export dlTimeout
 export curlRetry
@@ -114,37 +111,52 @@ load_package_config() {
 	config_get curlRetry                  "config" "curl_retry" "3"
 	config_get verbosity                  "config" "verbosity" "2"
 	config_get led        	              "config" "led"
-	config_get targetFile                 "config" "target" "dnsmasq.conf"
+	config_get targetDNS                 "config" "dns" "dnsmasq.servers"
 	config_get whitelist_domains          "config" "whitelist_domain"
 	config_get blacklist_domains          "config" "blacklist_domain"
 	config_get whitelist_domains_urls     "config" "whitelist_domains_url"
 	config_get blacklist_domains_urls     "config" "blacklist_domains_url"
 	config_get blacklist_hosts_urls       "config" "blacklist_hosts_url"
 
-	case "$targetFile" in
+	case "$targetDNS" in
 		dnsmasq.addnhosts)
+			;;
+		dnsmasq.conf)
+			;;
+		dnsmasq.servers)
 			;;
 		unbound.config)
 			;;
 		*)
-			targetFile="dnsmasq.conf";;
+			targetDNS="dnsmasq.servers";;
 	esac
 
-	case "$targetFile" in
-		dnsmasq.conf)
-			outputFilter="$dnsmasqOutputFilter"
-			outputFile="$dnsmasqFile"
-			outputCache="$dnsmasqCache"
-			outputGzip="$dnsmasqGzip"
-			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
-			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
-			;;
+	case "$targetDNS" in
 		dnsmasq.addnhosts)
 			outputFilter="$addnhostsOutputFilter"
 			outputFile="$addnhostsFile"
 			outputCache="$addnhostsCache"
 			outputGzip="$addnhostsGzip"
 			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
+			rm -f "$serversFile" "$serversCache" "$serversGzip"
+			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
+			;;
+		dnsmasq.conf)
+			outputFilter="$dnsmasqOutputFilter"
+			outputFile="$dnsmasqFile"
+			outputCache="$dnsmasqCache"
+			outputGzip="$dnsmasqGzip"
+			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
+			rm -f "$serversFile" "$serversCache" "$serversGzip"
+			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
+			;;
+		dnsmasq.servers)
+			outputFilter="$serversOutputFilter"
+			outputFile="$serversFile"
+			outputCache="$serversCache"
+			outputGzip="$serversGzip"
+			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
+			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			;;
 		unbound.config)
@@ -154,6 +166,7 @@ load_package_config() {
 			outputGzip="$unboundGzip"
 			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
 			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
+			rm -f "$serversFile" "$serversCache" "$serversGzip"
 			;;
 	esac
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
@@ -202,6 +215,7 @@ is_enabled() {
 dnsmasq_kill() { killall -q -HUP dnsmasq; }
 dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
 reload_dnsmasq() {
+	local param
 	case $1 in
 		on_start)
 			if [ ! -s "$outputFile" ]; then
@@ -211,52 +225,47 @@ reload_dnsmasq() {
 				return 1
 			fi
 
-			case "$targetFile" in
-				dnsmasq.conf)
-					uci -q del dhcp.@dnsmasq[0].serversfile="$dnsmasqFile"
-					uci set dhcp.@dnsmasq[0].serversfile="$dnsmasqFile"
-					;;
+			case "$targetDNS" in
 				dnsmasq.addnhosts)
 					uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
 					uci add_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
 					;;
+				dnsmasq.servers)
+					uci -q del dhcp.@dnsmasq[0].serversfile="$serversFile"
+					uci set dhcp.@dnsmasq[0].serversfile="$serversFile"
+					;;
 			esac
 
-			if [ -n "$(uci changes dhcp)" ]; then
-				output 3 "Restarting DNSMASQ "
-				tmpfs set message "restarting DNSMASQ"
-				uci commit dhcp
-				if dnsmasq_restart; then
-					tmpfs set status "$statusSuccess"
-					led_on "$led"
-					output_okn
-				else 
-					output_failn
-					tmpfs set status "$statusFail"
-					tmpfs add error "Error: DNSMASQ restart error."
-					output "$_ERROR_: $serviceName failed to restart DNSMASQ!\\n"
-					return 1
-				fi
+			if [ -n "$(uci changes dhcp)" ] || [ "$targetDNS" == "dnsmasq.conf" ]; then
+				param=dnsmasq_restart
 			else
-				output 3 "Reloading DNSMASQ "
-				tmpfs set message "reloading DNSMASQ"
-				if dnsmasq_kill; then
-					tmpfs set status "$statusSuccess"
-					led_on "$led"
-					output_okn
-				else 
-					output_failn
-					tmpfs set status "$statusFail"
-					tmpfs add error "Error: DNSMASQ reload error."
-					output "$_ERROR_: $serviceName failed to restart DNSMASQ!\\n"
-					return 1
-				fi
+				param=dnsmasq_kill
+			fi
+
+			output 3 "Restarting DNSMASQ "
+			tmpfs set message "restarting DNSMASQ"
+			[ -n "$(uci changes dhcp)" ] && uci commit dhcp
+			if eval "$param"; then
+				tmpfs set status "$statusSuccess"
+				led_on "$led"
+				output_okn
+			else 
+				output_failn
+				tmpfs set status "$statusFail"
+				tmpfs add error "Error: DNSMASQ restart error."
+				output "$_ERROR_: $serviceName failed to restart DNSMASQ!\\n"
+				return 1
 			fi
 			;;
 		on_stop)
 			cacheOps 'create'
+			if [ "$targetDNS" == "dnsmasq.conf" ]; then
+				param="dnsmasq_restart"
+			else
+				param="dnsmasq_kill"
+			fi
 			output 3 "Reloading dnsmasq "
-			if dnsmasq_kill; then
+			if eval "$param"; then
 				led_off "$led"
 				output_okn
 				output "$serviceName stopped.\\n"
@@ -268,19 +277,20 @@ reload_dnsmasq() {
 				output_failn;
 				tmpfs set status "$statusFail"
 				tmpfs add error "Error: DNSMASQ restart error on stop."
-				output "$_ERROR_: $serviceName failed to restart DNSMASQ on stop !\\n"
+				output "$_ERROR_: $serviceName failed to restart DNSMASQ on stop!\\n"
 				return 1
 			fi
 			;;
 		quiet | *)
-			uci -q del dhcp.@dnsmasq[0].serversfile="$dnsmasqFile"
+			uci -q del dhcp.@dnsmasq[0].serversfile="$serversFile"
 			uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
-			if [ -n "$(uci changes dhcp)" ]; then 
-				uci commit dhcp
-				dnsmasq_restart && return 0 || return 1
+			if [ -n "$(uci changes dhcp)" ] || [ "$targetDNS" == "dnsmasq.conf" ]; then
+				param=dnsmasq_restart
 			else
-				dnsmasq_kill && return 0 || return 1
+				param=dnsmasq_kill
 			fi
+			[ -n "$(uci changes dhcp)" ] && uci commit dhcp
+			eval "$param" && return 0 || return 1
 			;;
 	esac
 }
@@ -309,7 +319,7 @@ tmpfs(){
 				stats) 
 					echo "$stats"; return;;
 				triggers)
-					curReload="$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetFile"
+					curReload="$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetDNS"
 					curRestart="$compressedCache $forceDNS $led"
 					if [ "$curReload" != "$readReload" ]; then
 						ret="download"
@@ -357,7 +367,7 @@ tmpfs(){
 				stats) 
 					stats="$value";;
 				triggers) 
-					readReload="$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetFile"
+					readReload="$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetDNS"
 					readRestart="$compressedCache $forceDNS $led"
 					;;
 			esac
@@ -552,7 +562,9 @@ $(cat $A_TMP)"
 		fi
 	fi
 
-	if [ "$targetFile" == "dnsmasq.conf" ] || [ "$targetFile" == "unbound.conf" ]; then
+	if [ "$targetDNS" == "dnsmasq.conf" ] || \
+	   [ "$targetDNS" == "dnsmasq.servers" ] || \
+		 [ "$targetDNS" == "unbound.conf" ]; then
 		# TLD optimization written by Dirk Brenken (dev@brenken.org)
 		output 2 "Optimizing combined list "
 		tmpfs set message "$statusProcessing: optimizing combined list"
@@ -607,14 +619,18 @@ $(cat $A_TMP)"
 		tmpfs add error "Error: Data file formatting."
 	fi
 
-	case "$targetFile" in
+	case "$targetDNS" in
+		dnsmasq.addnhosts)
+			output 2 "Creating DNSMASQ addnhosts file "
+			tmpfs set message "$statusProcessing: creating DNSMASQ addnhosts file"
+			;;
 		dnsmasq.conf)
 			output 2 "Creating DNSMASQ config file "
 			tmpfs set message "$statusProcessing: creating DNSMASQ config file"
 			;;
-		dnsmasq.addnhosts)
-			output 2 "Creating DNSMASQ addnhosts file "
-			tmpfs set message "$statusProcessing: creating DNSMASQ addnhosts file"
+		dnsmasq.servers)
+			output 2 "Creating DNSMASQ servers file "
+			tmpfs set message "$statusProcessing: creating DNSMASQ servers file"
 			;;
 		unbound.conf)
 			output 2 "Creating Unbound config file "
@@ -779,17 +795,22 @@ reload_service() { restart_service; }
 restart() { restart_service; }
 reload() { restart_service; }
 dl() { rc_procd stop_service "restart"; rc_procd start_service "download"; }
-killcache() { 
-	rm -f "$dnsmasqCache" "$dnsmasqGzip" "$addnhostsCache" "$addnhostsGzip" "$unboundCache" "$unboundGzip"
-	uci -q del dhcp.@dnsmasq[0].serversfile="$dnsmasqFile"
+
+killcache() {
+	rm -f "$addnhostsCache" "$addnhostsGzip"
+	rm -f "$dnsmasqCache" "$dnsmasqGzip"
+	rm -f "$serversCache" "$serversGzip"
+	rm -f "$unboundCache" "$unboundGzip"
+	uci -q del dhcp.@dnsmasq[0].serversfile="$serversFile"
 	uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
 	if [ -n "$(uci changes dhcp)" ]; then 
-		uci commit dhcp
-		dnsmasq_restart
+		uci -q commit dhcp
+		dnsmasq_restart || return 0
 	else
-		dnsmasq_kill
+		dnsmasq_kill || return 0
 	fi
 }
+
 status() {
 	local status="$(tmpfs get status)" error="$(tmpfs get error)" message="$(tmpfs get message)"
 	if [ -n "$status" ] && [ -n "$message" ]; then 

@@ -1,7 +1,8 @@
 -- Copyright 2016-2018 Stan Grishin <stangri@melmac.net>
 -- Licensed to the public under the Apache License 2.0.
 
-local readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/simple-adblock/files/README.md"
+local readmeURL = "https://github.com/openwrt/packages/tree/master/net/simple-adblock/files/README.md"
+-- local readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/simple-adblock/files/README.md"
 
 local packageName = "simple-adblock"
 local uci = require "luci.model.uci".cursor()
@@ -148,13 +149,14 @@ end
 
 s:tab("advanced", translate("Advanced Configuration"))
 
-target = s:taboption("advanced", ListValue, "target", translate("Target service"), translate("Pick the service to create the adblock list for, see the") .. " "
-  .. [[<a href="]] .. readmeURL .. [[#configuration-settings" target="_blank">]]
+dns = s:taboption("advanced", ListValue, "dns", translate("DNS Service"), translate("Pick the DNS resolution option to create the adblock list for, see the") .. " "
+  .. [[<a href="]] .. readmeURL .. [[#dns-option" target="_blank">]]
   .. translate("README") .. [[</a>]] .. " " .. translate("for details"))
-target:value("dnsmasq.config", translate("DNSMASQ Config"))
-target:value("dnsmasq.addnhosts", translate("DNSMASQ Additional Hosts"))
-target:value("unbound.config", translate("Unbound Config"))
-target.default = "dnsmasq.config"
+dns:value("dnsmasq.addnhosts", translate("DNSMASQ Additional Hosts"))
+dns:value("dnsmasq.config", translate("DNSMASQ Config"))
+dns:value("dnsmasq.servers", translate("DNSMASQ Servers File"))
+dns:value("unbound.config", translate("Unbound Config"))
+dns.default = "dnsmasq.servers"
 
 o5 = s:taboption("advanced", Value, "boot_delay", translate("Delay (in seconds) for on-boot start"), translate("Run service after set delay on boot"))
 o5.default = 120
