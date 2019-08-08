@@ -223,7 +223,7 @@ reload_dnsmasq() {
 					uci add_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
 					;;
 				dnsmasq.servers)
-					uci -q del dhcp.@dnsmasq[0].serversfile="$serversFile"
+					grep -q "$serversFile" /etc/config/dhcp && uci -q del dhcp.@dnsmasq[0].serversfile
 					uci set dhcp.@dnsmasq[0].serversfile="$serversFile"
 					;;
 			esac
@@ -274,7 +274,7 @@ reload_dnsmasq() {
 			fi
 			;;
 		quiet | *)
-			uci -q del dhcp.@dnsmasq[0].serversfile="$serversFile"
+			grep -q "$serversFile" /etc/config/dhcp && uci -q del dhcp.@dnsmasq[0].serversfile
 			uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
 			if [ -n "$(uci changes dhcp)" ] || [ "$targetDNS" == "dnsmasq.conf" ]; then
 				param=dnsmasq_restart
@@ -793,7 +793,7 @@ killcache() {
 	rm -f "$dnsmasqCache" "$dnsmasqGzip"
 	rm -f "$serversCache" "$serversGzip"
 	rm -f "$unboundCache" "$unboundGzip"
-	uci -q del dhcp.@dnsmasq[0].serversfile="$serversFile"
+	grep -q "$serversFile" /etc/config/dhcp && uci -q del dhcp.@dnsmasq[0].serversfile
 	uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
 	if [ -n "$(uci changes dhcp)" ]; then 
 		uci -q commit dhcp
