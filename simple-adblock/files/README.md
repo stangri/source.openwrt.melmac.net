@@ -105,7 +105,7 @@ In the Web UI the ```simple-adblock``` settings are split into ```basic``` and `
 |Basic|verbosity|integer|2|Can be set to 0, 1 or 2 to control the console and system log output verbosity of the ```simple-adblock``` service.|
 |Basic|force_dns|boolean|1|Force router's DNS to local devices which may have different/hardcoded DNS server settings. If enabled, creates a firewall rule to intercept DNS requests from local devices to external DNS servers and redirect them to router.|
 |Basic|led|string|none|Use one of the router LEDs to indicate the AdBlocking status.|
-|Advanced|dns|string|dnsmasq.servers|DNS resolution option. See table below for addtional information.|
+|Advanced|dns|string|dnsmasq.servers|DNS resolution option. See [table below](#dns-resolution-options) for addtional information.|
 |Advanced|boot_delay|integer|120|Delay service activation for that many seconds on boot up. You can shorten it to 10-30 seconds on modern fast routers. Routers with built-in modems may require longer boot delay.|
 |Advanced|download_timeout|integer|10|Time-out downloads if no reply received within that many last seconds.|
 |Advanced|curl_retry|integer|3|If ```curl``` is installed and detected, attempt that many retries for failed downloads.|
