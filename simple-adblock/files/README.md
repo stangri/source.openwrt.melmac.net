@@ -1,10 +1,10 @@
 # Simple AdBlock
 
-A simple DNSMASQ-based AdBlocking service for OpenWrt/LEDE Project. Loosely based on [bole5's](https://forum.openwrt.org/profile.php?id=45571) idea with major performance improvements, added features and Web UI (as a separate package); inspired by @dibdot's innovation.
+A simple DNSMASQ/Unbound-based AdBlocking service for OpenWrt/LEDE Project.
 
 ## Features
 
-- Supports OpenWrt Designated Driver and LEDE Project.
+- Supports OpenWrt and LEDE Project.
 - Super-fast due to the nature of supported block lists and backgrounding of already downloaded data while next list is downloading.
 - Supports both hosts files and domains lists for blocking (to keep it lean and fast).
 - Everything is configurable from Web UI.
@@ -12,7 +12,7 @@ A simple DNSMASQ-based AdBlocking service for OpenWrt/LEDE Project. Loosely base
 - Allows you to easily add URLs to your own blocked hosts or domains lists to block/whitelist (just put whitelisted domains one per line).
 - Requires no configuration for the download utility wherever you want to use wget/libopenssl or uclient-fetch/libustream-mbedtls.
 - Installs dependencies automatically (DD/LEDE-default uclient-fetch libustream-mbedtls).
-- Doesn't stay in memory -- creates the list of blocked domains and then uses DNSMASQ and firewall rules to serve NXDOMAIN or 127.0.0.1 (depending on settings) reply for blocked domains.
+- Doesn't stay in memory -- creates the list of blocked domains and then uses DNSMASQ/Unbound and firewall rules to serve NXDOMAIN or 127.0.0.1 (depending on settings) reply for blocked domains.
 - As some of the default lists are using https, reliably works with either wget/libopenssl or uclient-fetch/libustream-mbedtls.
 - Very lightweight and easily hackable, the whole script is just one ```/etc/init.d/simple-adblock``` file.
 - Retains the downloaded/sorted AdBlocking list on service stop and reuses it on service start (use ```dl``` command if you want to force re-download of the list).
@@ -27,7 +27,7 @@ If you want a more robust AdBlocking, supporting free memory detection and compl
 
 ## Requirements
 
-This service requires the following packages to be installed on your router: ```dnsmasq``` or ```dnsmasq-full``` and either ```ca-certificates```, ```wget``` and ```libopenssl``` (for OpenWrt 15.05.1) or ```uclient-fetch``` and ```libustream-mbedtls``` (for OpenWrt DD trunk and all LEDE Project builds). Additionally installation of ```coreutils-sort``` is highly recommended as it speeds up blocklist processing.
+This service requires the following packages to be installed on your router: ```dnsmasq``` or ```dnsmasq-full``` or ```unbound``` and either ```ca-certificates```, ```wget``` and ```libopenssl``` (for OpenWrt 15.05.1) or ```uclient-fetch``` and ```libustream-mbedtls``` (for LEDE Project and OpenWrt 18.06.xx or newer). Additionally installation of ```coreutils-sort``` is highly recommended as it speeds up blocklist processing.
 
 To satisfy the requirements for connect to your router via ssh and run the following commands:
 
@@ -111,7 +111,7 @@ In the Web UI the ```simple-adblock``` settings are split into ```basic``` and `
 |Advanced|curl_retry|integer|3|If ```curl``` is installed and detected, attempt that many retries for failed downloads.|
 |Advanced|parallel_downloads|boolean|1|If enabled, all downloads are completed concurrently, if disabled -- sequentioally. Concurrent downloads dramatically speed up service loading.|
 |Advanced|debug|boolean|0|If enabled, output service full debug to ```/tmp/simple-adblock.log```. Please note that the debug file may clog up the router's RAM on some devices. Use with caution.|
-|Advanced|allow_non_ascii|boolean|0|Enable support for non-ASCII characters in the final AdBlocking file. Only enable if your target service supports non-ASCII characters. If you're using DNSMASQ-based AdBlocking and enable this on the system with the DNSMASQ which doesn't support non-ASCII characters, it will crash. Use with caution.|
+|Advanced|allow_non_ascii|boolean|0|Enable support for non-ASCII characters in the final AdBlocking file. Only enable if your target service supports non-ASCII characters. If you enable this on the system where DNS resolver doesn't support non-ASCII characters, it will crash. Use with caution.|
 |Advanced|compressed_cache|boolean|0|Create compressed cache of the AdBlocking file in router's persistent memory. Only recommended to be used on routers with large ROM and/or routers with metered/flaky internet connection.|
 ||whitelist_domain|list/string||List of white-listed domains.|
 ||whitelist_domains_url|list/string||List of URL(s) to text files containing white-listed domains. **Must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix. Useful if you want to keep/publish a single white-list for multiple routers.|
@@ -131,7 +131,7 @@ Currently supported options are:
 
 ## How does it work
 
-This service downloads (and processes in the background, removing comments and other useless data) lists of hosts and domains to be blocked, combines those lists into one big block list, removes duplicates and sorts it and then removes your whitelisted domains from the block list before converting to to DNSMASQ-compatible file and restarting DNSMASQ. The result of the process is that DNSMASQ returns NXDOMAIN or 127.0.0.1 (depending on settings) for the blocked domains.
+This service downloads (and processes in the background, removing comments and other useless data) lists of hosts and domains to be blocked, combines those lists into one big block list, removes duplicates and sorts it and then removes your whitelisted domains from the block list before converting to to DNSMASQ/Unbound-compatible file and restarting DNSMASQ/Unbound if needed. The result of the process is that DNSMASQ/Unbound return NXDOMAIN or 127.0.0.1 (depending on settings) for the blocked domains.
 
 If you specify ```google.com``` as a domain to be whitelisted, you will have access to ```google.com```, ```www.google.com```, ```analytics.google.com```, but not fake domains like ```email-google.com``` or ```drive.google.com.verify.signin.normandeassociation.com``` for example. If you only want to allow ```www.google.com``` while blocking all other ```google.com``` subdomains, just specify ```www.google.com``` as domain to be whitelisted.
 
