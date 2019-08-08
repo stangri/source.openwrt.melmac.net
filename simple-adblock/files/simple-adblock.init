@@ -118,18 +118,10 @@ load_package_config() {
 	config_get blacklist_domains_urls     "config" "blacklist_domains_url"
 	config_get blacklist_hosts_urls       "config" "blacklist_hosts_url"
 
-	case "$targetDNS" in
-		dnsmasq.addnhosts)
-			;;
-		dnsmasq.conf)
-			;;
-		dnsmasq.servers)
-			;;
-		unbound.config)
-			;;
-		*)
-			targetDNS="dnsmasq.servers";;
-	esac
+	if [ "$targetDNS" != "dnsmasq.addnhosts" ] && [ "$targetDNS" != "dnsmasq.conf" ] && \
+		 [ "$targetDNS" != "dnsmasq.servers" ] && [ "$targetDNS" != "unbound.conf" ]; then
+		targetDNS="dnsmasq.servers"
+	fi
 
 	case "$targetDNS" in
 		dnsmasq.addnhosts)
