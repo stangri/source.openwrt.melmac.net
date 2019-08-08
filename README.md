@@ -17,7 +17,7 @@ echo -e -n 'untrusted comment: LEDE usign key of Stan Grishin\nRWR//HUXxMwMVnx7f
 opkg update
 ```
 
-#### LEDE Project 17.01.x and OpenWrt 18.06.x Instructions
+#### LEDE Project 17.01.x and OpenWrt 18.06.x (or Newer) Instructions
 
 ```sh
 opkg update
@@ -28,9 +28,7 @@ echo -e -n 'untrusted comment: LEDE usign key of Stan Grishin\nRWR//HUXxMwMVnx7f
 opkg update
 ```
 
-#### In your Image Builder/SDK
-
-#### Image Builder
+### Image Builder
 
 Add the following line
 
@@ -44,7 +42,7 @@ to the ```repositories.conf``` file inside your Image Builder directory. You can
 ! grep -q 'stangri_repo' repositories.conf && sed -i '2 i\src/gz stangri_repo https://raw.githubusercontent.com/stangri/openwrt-repo/master' repositories.conf
 ```
 
-#### SDK
+### SDK
 
 The packages source code is available in [my  packages source](https://github.com/stangri/openwrt_packages). Check out the code for the individual packages you want into your SDK's ```package``` folder or for luci apps into the ```package/luci/applications``` folder.
 
