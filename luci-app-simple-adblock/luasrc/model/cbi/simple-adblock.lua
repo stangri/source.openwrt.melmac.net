@@ -1,6 +1,8 @@
 -- Copyright 2016-2018 Stan Grishin <stangri@melmac.net>
 -- Licensed to the public under the Apache License 2.0.
 
+local readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/simple-adblock/files/README.md"
+
 local packageName = "simple-adblock"
 local uci = require "luci.model.uci".cursor()
 local util = require "luci.util"
@@ -121,13 +123,11 @@ o2 = s:taboption("basic", ListValue, "verbosity", translate("Output Verbosity Se
 o2:value("0", translate("Suppress output"))
 o2:value("1", translate("Some output"))
 o2:value("2", translate("Verbose output"))
-o2.rmempty = false
 o2.default = 2
 
 o3 = s:taboption("basic", ListValue, "force_dns", translate("Force Router DNS"), translate("Forces Router DNS use on local devices, also known as DNS Hijacking"))
 o3:value("0", translate("Let local devices use their own DNS servers if set"))
 o3:value("1", translate("Force Router DNS server to all local devices"))
-o3.rmempty = false
 o3.default = 1
 
 local sysfs_path = "/sys/class/leds/"
@@ -148,6 +148,13 @@ end
 
 s:tab("advanced", translate("Advanced Configuration"))
 
+target = s:taboption("advanced", ListValue, "target", translate("Target service"), translate("Pick the service to create the adblock list for, see the") .. " "
+  .. [[<a href="]] .. readmeURL .. [[#target-setting" target="_blank">]]
+  .. translate("README") .. [[</a>]] .. " " .. translate("for details"))
+target:value("dnsmasq.config", translate("DNSMASQ Config"))
+target:value("dnsmasq.addnhosts", translate("DNSMASQ Additional Hosts"))
+target.default = "dnsmasq.config"
+
 o5 = s:taboption("advanced", Value, "boot_delay", translate("Delay (in seconds) for on-boot start"), translate("Run service after set delay on boot"))
 o5.default = 120
 o5.datatype = "range(1,600)"
@@ -163,25 +170,21 @@ o7.datatype = "range(0,30)"
 o8 = s:taboption("advanced", ListValue, "parallel_downloads", translate("Simultaneous processing"), translate("Launch all lists downloads and processing simultaneously, reducing service start time"))
 o8:value("0", translate("Do not use simultaneous processing"))
 o8:value("1", translate("Use simultaneous processing"))
-o8.rmempty = false
 o8.default = 1
 
-o9 = s:taboption("advanced", ListValue, "allow_non_ascii", translate("Allow Non-ASCII characters in DNSMASQ file"), translate("Only enable if your version of DNSMASQ supports the use of Non-ASCII characters, otherwise DNSMASQ will fail to start."))
+o9 = s:taboption("advanced", ListValue, "allow_non_ascii", translate("Allow Non-ASCII characters in DNSMASQ file"), translate("Only enable if your version of DNSMASQ supports the use of Non-ASCII characters, otherwise DNSMASQ will fail to start"))
 o9:value("0", translate("Do not allow Non-ASCII"))
 o9:value("1", translate("Allow Non-ASCII"))
-o9.rmempty = false
 o9.default = "0"
 
-o10 = s:taboption("advanced", ListValue, "compressed_cache", translate("Store compressed cache file on router"), translate("Attempt to create a compressed cache of final block-list on the router."))
+o10 = s:taboption("advanced", ListValue, "compressed_cache", translate("Store compressed cache file on router"), translate("Attempt to create a compressed cache of block-list in the persistent memory"))
 o10:value("0", translate("Do not store compressed cache"))
 o10:value("1", translate("Store compressed cache"))
-o10.rmempty = false
 o10.default = "0"
 
 o11 = s:taboption("advanced", ListValue, "debug", translate("Enable Debugging"), translate("Enables debug output to /tmp/simple-adblock.log"))
 o11:value("0", translate("Disable Debugging"))
 o11:value("1", translate("Enable Debugging"))
-o11.rmempty = false
 o11.default = "0"
 
 

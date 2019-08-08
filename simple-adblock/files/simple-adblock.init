@@ -44,7 +44,7 @@ readonly statusProcessing='Processing'
 readonly statusStopped='Stopped'
 
 create_lock() { [ -e "$PIDFile" ] && return 1; touch "$PIDFile"; }
-remove_lock() { [ -e "$PIDFile" ] && rm -f "$PIDFile"; } # rm -f /var/simple-adblock_tmp_* >/dev/null 2>&1; }
+remove_lock() { [ -e "$PIDFile" ] && rm -f "$PIDFile"; } # rm -f "/var/simple-adblock_tmp_*"; }
 trap remove_lock EXIT
 output_ok() { case $verbosity in 1) output 1 "$_OK_";; 2) output 2 "$__OK__\\n";; esac; }
 output_okn() { case $verbosity in 1) output 1 "$_OK_\\n";; 2) output 2 "$__OK__\\n";; esac; }
@@ -76,7 +76,7 @@ export parallelDL
 export debug
 export allowNonAscii
 export compressedCache     
-export useAddnhosts
+export targetFile
 export bootDelay
 export dlTimeout
 export curlRetry
@@ -98,31 +98,34 @@ load_package_config() {
 	config_get_bool debug                 "config" "debug" 0
 	config_get_bool allowNonAscii         "config" "allow_non_ascii" 0
 	config_get_bool compressedCache       "config" "compressed_cache" 0
-	config_get_bool useAddnhosts          "config" "use_addnhosts" 0
 	config_get bootDelay                  "config" "boot_delay" "120"
 	config_get dlTimeout                  "config" "download_timeout" "20"
 	config_get curlRetry                  "config" "curl_retry" "3"
 	config_get verbosity                  "config" "verbosity" "2"
 	config_get led        	              "config" "led"
+	config_get targetFile                 "config" "target" "dnsmasq.conf"
 	config_get whitelist_domains          "config" "whitelist_domain"
 	config_get blacklist_domains          "config" "blacklist_domain"
 	config_get whitelist_domains_urls     "config" "whitelist_domains_url"
 	config_get blacklist_domains_urls     "config" "blacklist_domains_url"
 	config_get blacklist_hosts_urls       "config" "blacklist_hosts_url"
 
-	if [ "$useAddnhosts" -gt 0 ]; then
-		outputFilter="$addnhostsOutputFilter"
-		outputFile="$addnhostsFile"
-		outputCache="$addnhostsCache"
-		outputGzip="$addnhostsGzip"
-		rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip" >/dev/null 2>/dev/null;
-	else
-		outputFilter="$dnsmasqOutputFilter"
-		outputFile="$dnsmasqFile"
-		outputCache="$dnsmasqCache"
-		outputGzip="$dnsmasqGzip"
-		rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip" >/dev/null 2>/dev/null;
-	fi
+	case "$targetFile" in
+		dnsmasq.conf)
+			outputFilter="$dnsmasqOutputFilter"
+			outputFile="$dnsmasqFile"
+			outputCache="$dnsmasqCache"
+			outputGzip="$dnsmasqGzip"
+			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
+			;;
+		dnsmasq.addnhosts)
+			outputFilter="$addnhostsOutputFilter"
+			outputFile="$addnhostsFile"
+			outputCache="$addnhostsCache"
+			outputGzip="$addnhostsGzip"
+			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
+			;;
+	esac
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
 	fi
@@ -160,7 +163,7 @@ is_enabled() {
 	[ ! -d "${outputFile%/*}" ] && mkdir -p "${outputFile%/*}"
 	[ ! -d "${outputCache%/*}" ] && mkdir -p "${outputFile%/*}"
 	[ ! -d "${outputGzip%/*}" ] && mkdir -p "${outputFile%/*}"
-	cacheGzip 'test' && return 0
+	cacheOps 'testGzip' && return 0
 	network_flush_cache; network_find_wan wan_if; network_get_gateway wan_gw "$wan_if";
 	[ -n "$wan_gw" ] && return 0
 	output "$_ERROR_: $serviceName failed to discover WAN gateway.\\n"; return 1;
@@ -174,7 +177,7 @@ reload_dnsmasq() {
 			if [ -s "$outputFile" ]; then
 				output 3 "Restarting DNSMASQ "
 				tmpfs set message "restarting DNSMASQ"
-				if [ "$useAddnhosts" -gt 0 ]; then
+				if [ "$targetFile" == "dnsmasq.addnhosts" ]; then
 					uci del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
 					uci add_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
 					[ -n "$(uci changes dhcp)" ] && uci commit dhcp
@@ -198,7 +201,7 @@ reload_dnsmasq() {
 			fi
 			;;
 		on_stop)
-			[ -f "$outputFile" ] && mv "$outputFile" "$outputCache"
+			cacheOps 'create'
 			output 3 "Restarting dnsmasq "
 			uci del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
 			[ -n "$(uci changes dhcp)" ] && uci commit dhcp
@@ -250,7 +253,7 @@ tmpfs(){
 				stats) 
 					echo "$stats"; return;;
 				triggers)
-					curReload="$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $useAddnhosts"
+					curReload="$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetFile"
 					curRestart="$compressedCache $forceDNS $led"
 					if [ "$curReload" != "$readReload" ]; then
 						ret="download"
@@ -298,7 +301,7 @@ tmpfs(){
 				stats) 
 					stats="$value";;
 				triggers) 
-					readReload="$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $useAddnhosts"
+					readReload="$allowNonAscii $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetFile"
 					readRestart="$compressedCache $forceDNS $led"
 					;;
 			esac
@@ -318,14 +321,24 @@ tmpfs(){
 	sync
 }
 
-cacheGzip(){
+cacheOps(){
 	local R_TMP
 	case "$1" in
+		create|backup)
+			[ -f "$outputFile" ] && mv "$outputFile" "$outputCache" >/dev/null 2>/dev/null
+			return $?
+			;;
+		restore|use)
+			[ -f "$outputCache" ] && mv "$outputCache" "$outputFile" >/dev/null 2>/dev/null
+			return $?
+			;;
 		test)
+			[ -s "$outputCache" ] && return 0 || return 1;;
+		testGzip)
 			[ -s "$outputGzip" ] && gzip -t -c "$outputGzip"
 			return $?
 			;;
-		create)
+		createGzip)
 			R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
 			if gzip < "$outputFile" > "$R_TMP"; then
 				if mv "$R_TMP" "$outputGzip"; then
@@ -339,7 +352,7 @@ cacheGzip(){
 				return 1
 			fi
 			;;
-		expand|unpack)
+		expand|unpack|expandGzip|unpackGzip)
 			[ -s "$outputGzip" ] && gzip -dc < "$outputGzip" > "$outputCache"
 			return $?
 			;;
@@ -409,7 +422,7 @@ process_url() {
 			output 1 "$_OK_"
 		fi
 	fi
-	rm -f "${R_TMP}" >/dev/null 2>/dev/null
+	rm -f "$R_TMP"
 	return 0
 }
 
@@ -417,14 +430,14 @@ download_lists() {
 	local i hf w_filter j=0 R_TMP
 
 	tmpfs set message "${statusDownloading}..."
-	for i in $A_TMP $B_TMP $outputFile $outputCache $outputGzip; do [ -f $i ] && rm -f $i; done
+	rm -f "$A_TMP" "$B_TMP" "$outputFile" "$outputCache" "$outputGzip"
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
 		output 3 "Low free memory, restarting dnsmasq..."
 		if reload_dnsmasq "quiet"; then output_okn; else output_failn; fi
 	fi
 	touch $A_TMP; touch $B_TMP;
 	output 1 "Downloading lists "
-	rm -f "${jsonFile}.error" >/dev/null 2>&1
+	rm -f "${jsonFile}.error"
 	if [ -n "$blacklist_hosts_urls" ]; then
 		for hf in ${blacklist_hosts_urls}; do
 			if [ "$parallelDL" -gt 0 ]; then
@@ -454,7 +467,7 @@ download_lists() {
 	fi
 	wait
 	[ -s "${jsonFile}.error" ] && tmpfs add error "$(cat "${jsonFile}.error")"
-	rm -f "${jsonFile}.error" >/dev/null 2>&1
+	rm -f "${jsonFile}.error"
 	output 1 "\\n"
 
 	[ -n "$blacklist_domains" ] && for hf in ${blacklist_domains}; do echo "$hf" | sed "$domainsFilter" >> $B_TMP; done
@@ -483,7 +496,7 @@ $(cat $A_TMP)"
 		fi
 	fi
 
-	if [ "$useAddnhosts" == "0" ]; then
+	if [ "$targetFile" == "dnsmasq.conf" ]; then
 		# TLD optimization written by Dirk Brenken (dev@brenken.org)
 		output 2 "Optimizing combined list "
 		tmpfs set message "$statusProcessing: optimizing combined list"
@@ -538,13 +551,16 @@ $(cat $A_TMP)"
 		tmpfs add error "Error: Data file formatting."
 	fi
 
-	if [ "$useAddnhosts" -gt 0 ]; then
-		output 2 "Creating DNSMASQ addnhosts file "
-		tmpfs set message "$statusProcessing: creating DNSMASQ addnhosts file"
-	else
-		output 2 "Creating DNSMASQ config file "
-		tmpfs set message "$statusProcessing: creating DNSMASQ config file"
-	fi
+	case "$targetFile" in
+		dnsmasq.conf)
+			output 2 "Creating DNSMASQ config file "
+			tmpfs set message "$statusProcessing: creating DNSMASQ config file"
+			;;
+		dnsmasq.addnhosts)
+			output 2 "Creating DNSMASQ addnhosts file "
+			tmpfs set message "$statusProcessing: creating DNSMASQ addnhosts file"
+			;;
+	esac
 	if mv $A_TMP $outputFile; then
 		output_ok
 	else
@@ -554,19 +570,18 @@ $(cat $A_TMP)"
 	if [ "$compressedCache" -gt 0 ]; then
 		output 2 "Creating compressed cache "
 		tmpfs set message "$statusProcessing: creating compressed cache"
-		if cacheGzip 'create'; then
+		if cacheOps 'createGzip'; then
 			output_ok
 		else
 			output_fail
 			tmpfs add error "Error: creating compressed cache."
 		fi
 	else
-		rm -f "$outputGzip" >/dev/null 2>&1
+		rm -f "$outputGzip"
 	fi
 	output 2 "Removing temporary files "
 	tmpfs set message "$statusProcessing: removing temporary files"
-	rm -f "/tmp/${packageName}_tmp.*" >/dev/null 2>&1
-	for i in $A_TMP $B_TMP $outputCache; do if [ -s $i ]; then rm -f $i || j=1; fi; done
+	rm -f "/tmp/${packageName}_tmp.*" "$A_TMP" "$B_TMP" "$outputCache" || j=1
 	if [ $j -eq 0 ]; then
 		output_ok
 	else
@@ -620,9 +635,9 @@ start_service() {
 		case "$1" in
 			download) action="download";;
 			restart|*)
-				if [ ! -s "$outputFile" ] && [ ! -s "$outputCache" ] && ! cacheGzip 'test'; then
+				if [ ! -s "$outputFile" ] && ! cacheOps 'test' && ! cacheOps 'testGzip'; then
 					action="download"
-				elif [ -s "$outputCache" ] || cacheGzip 'test'; then
+				elif cacheOps 'test' || cacheOps 'testGzip'; then
 					action="start"
 				fi
 				if [ -n "$error" ]; then 
@@ -634,7 +649,7 @@ start_service() {
 
 		case $action in
 			download)
-				if [ -s "$outputFile" ] || [ -s "$outputCache" ] || cacheGzip 'test'; then
+				if [ -s "$outputFile" ] || cacheOps 'test' || cacheOps 'testGzip'; then
 					output "Force-reloading $serviceName...\\n"
 					tmpfs set status "$statusForceReloading"
 				else
@@ -652,10 +667,10 @@ start_service() {
 					output "Starting $serviceName...\\n"
 					tmpfs set status "$statusStarting"
 				fi
-				if cacheGzip 'test' && [ ! -s "$outputCache" ] && [ ! -s "$outputFile" ]; then
+				if cacheOps 'testGzip' && ! cacheOps 'test' && [ ! -s "$outputFile" ]; then
 					output 3 "Found compressed cache file, unpacking it "
 					tmpfs set message "found compressed cache file, unpacking it."
-					if cacheGzip 'unpack'; then
+					if cacheOps 'unpackGzip'; then
 						output_okn
 					else
 						output_failn
@@ -664,10 +679,10 @@ start_service() {
 						return 1
 					fi
 				fi
-				if [ -s "$outputCache" ] && [ ! -s "$outputFile" ]; then
+				if cacheOps 'test' && [ ! -s "$outputFile" ]; then
 					output 3 "Found cache file, reusing it "
 					tmpfs set message "found cache file, reusing it."
-					if mv "$outputCache" "$outputFile"; then 
+					if cacheOps 'restore'; then 
 						output_okn
 					else 
 						output_failn
@@ -704,7 +719,7 @@ reload_service() { restart_service; }
 restart() { restart_service; }
 reload() { restart_service; }
 dl() { rc_procd stop_service "restart"; rc_procd start_service "download"; }
-killcache() { rm -f "$dnsmasqCache" "$dnsmasqGzip" "$addnhostsCache" "$addnhostsGzip" >/dev/null 2>/dev/null; }
+killcache() { rm -f "$dnsmasqCache" "$dnsmasqGzip" "$addnhostsCache" "$addnhostsGzip"; }
 status() {
 	local status="$(tmpfs get status)" error="$(tmpfs get error)" message="$(tmpfs get message)"
 	if [ -n "$status" ] && [ -n "$message" ]; then 
@@ -718,13 +733,13 @@ stop_service() {
 	load_package_config
 	if [ "$serviceEnabled" -gt 0 ]; then
 		if [ -z "$1" ] && [ -s "$outputFile" ]; then
-			[ -s "$outputFile" ] && mv "$outputFile" "$outputCache" >/dev/null 2>/dev/null
+			cacheOps 'backup'
 			output "Stopping $serviceName...\\n"
 			tmpfs del triggers
 			reload_dnsmasq "on_stop"
 		fi
 	else
-		[ -s "$outputFile" ] && mv "$outputFile" "$outputCache" >/dev/null 2>/dev/null
+		cacheOps 'backup'
 		reload_dnsmasq "quiet"
 	fi
 	if is_chaos_calmer; then
