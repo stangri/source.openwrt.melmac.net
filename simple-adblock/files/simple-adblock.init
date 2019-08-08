@@ -805,10 +805,11 @@ killcache() {
 	uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
 	if [ -n "$(uci changes dhcp)" ]; then 
 		uci -q commit dhcp
-		dnsmasq_restart || return 0
+		dnsmasq_restart
 	else
-		dnsmasq_kill || return 0
+		dnsmasq_kill
 	fi
+	return 0
 }
 
 status() {
