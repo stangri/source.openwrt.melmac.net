@@ -360,6 +360,7 @@ If you don't want to post the ```/etc/init.d/vpn-policy-routing status``` output
 
 - While you can select some down/inactive VPN tunnel in Web UI, the appropriate tunnel must be up/active for the policies to properly work without errors on service start.
 - If your ```OpenVPN``` interface has the device name different from tun\* or tap\*, please make sure that the tunnel is up before trying to assign it policies in Web UI.
+- When configuring an ```OpenVPN``` tunnel on your router, you **must** setup the firewall zone for the OpenVPN tunnel and firewall forwarding from ```lan``` (and ```guest``` if you have it) to the OpenVPN tunnel interface defined in ```/etc/config/network```.
 - Service does not alter the default routing. Depending on your VPN tunnel settings (and settings of the VPN server you are connecting to), the default routing might be set to go via WAN or via VPN tunnel. This service affects only routing of the traffic matching the policies. If you want to override default routing, consider adding the following to your OpenVPN tunnel config:
 
   ```text
