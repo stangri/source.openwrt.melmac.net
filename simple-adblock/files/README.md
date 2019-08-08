@@ -15,9 +15,8 @@ A simple DNSMASQ-based AdBlocking service for OpenWrt/LEDE Project. Loosely base
 - Doesn't stay in memory -- creates the list of blocked domains and then uses DNSMASQ and firewall rules to serve NXDOMAIN or 127.0.0.1 (depending on settings) reply for blocked domains.
 - As some of the default lists are using https, reliably works with either wget/libopenssl or uclient-fetch/libustream-mbedtls.
 - Very lightweight and easily hackable, the whole script is just one ```/etc/init.d/simple-adblock``` file.
-- Logs single entry in the system log with the number of blocked domains if verbosity is set to 0.
-- Retains the downloaded/sorted AdBlocking list on service stop and reuses it on service start (use reload if you want to force re-download of the list).
-- Blocks ads served over https.
+- Retains the downloaded/sorted AdBlocking list on service stop and reuses it on service start (use ```dl``` command if you want to force re-download of the list).
+- Blocks ads served over https (unlike PixelServ-derived solutions).
 - Proudly made in Canada, using locally-sourced electrons.
 
 If you want a more robust AdBlocking, supporting free memory detection and complex block lists, supporting IDN, check out [@dibdot's adblock](https://github.com/openwrt/packages/tree/master/net/adblock/files).
@@ -38,7 +37,7 @@ To satisfy the requirements for connect to your router via ssh and run the follo
 opkg update; opkg install ca-certificates wget libopenssl coreutils-sort dnsmasq
 ```
 
-### LEDE Project 17.01.x and OpenWrt 18.xx or later Requirements
+### LEDE Project 17.01.x and OpenWrt 18.xx (or newer) Requirements
 
 ```sh
 opkg update; opkg install uclient-fetch libustream-mbedtls coreutils-sort dnsmasq
@@ -104,7 +103,7 @@ In the Web UI the ```simple-adblock``` settings are split into ```basic``` and `
 | --- | --- | --- | --- | --- |
 |Basic|enabled|boolean|0|Enable/disable the ```simple-adblock``` service.|
 |Basic|verbosity|integer|2|Can be set to 0, 1 or 2 to control the console and system log output verbosity of the ```simple-adblock``` service.|
-|Basic|force_dns|boolean|0|.|
+|Basic|force_dns|boolean|1|Force router's DNS to local devices which may have different/hardcoded DNS server settings. If enabled, creates a firewall rule to intercept DNS requests from local devices to external DNS servers and redirect them to router.|
 |Basic|led|string|none|Use one of the router LEDs to indicate the AdBlocking status.|
 |Advanced|dns|string|dnsmasq.servers|DNS resolution option. See table below for addtional information.|
 |Advanced|boot_delay|integer|120|Delay service activation for that many seconds on boot up. You can shorten it to 10-30 seconds on modern fast routers. Routers with built-in modems may require longer boot delay.|
@@ -119,11 +118,12 @@ In the Web UI the ```simple-adblock``` settings are split into ```basic``` and `
 ||blacklist_domains_url|list/string||List of URL(s) to text files containing black-listed domains. **Must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix.|
 ||blacklist_hosts_url|list/string||List of URL(s) to [hosts files](https://en.wikipedia.org/wiki/Hosts_(file)) containing black-listed domains. **Must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix.|
 
-### Target AdBlocking file
+### DNS Resolution Option
 
 Currently supported options are:
 
 |Option|Explanation|
+| --- | --- |
 |```dnsmasq.addnhosts```|Creates the DNSMASQ additional hosts file ```/var/run/simple-adblock.addnhosts``` and modifies DNSMASQ settings, so that DNSMASQ resolves all blocked domains to "local machine" -- 127.0.0.1.|
 |```dnsmasq.conf```|Creates the DNSMASQ config file ```/var/dnsmasq.d/simple-adblock``` so that DNSMASQ replies with NXDOMAIN - "domain not found". This is the setting for classic ```simple-adblock``` behavior.|
 |```dnsmasq.servers```|Creates the DNSMASQ servers file ```/var/run/simple-adblock.servers``` and modifies DNSMASQ settings so that DNSMASQ replies with NXDOMAIN - "domain not found". This is a default setting as it allows quick reloads of DNSMASQ.|

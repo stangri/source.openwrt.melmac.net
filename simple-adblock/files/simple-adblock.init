@@ -111,7 +111,7 @@ load_package_config() {
 	config_get curlRetry                  "config" "curl_retry" "3"
 	config_get verbosity                  "config" "verbosity" "2"
 	config_get led        	              "config" "led"
-	config_get targetDNS                 "config" "dns" "dnsmasq.servers"
+	config_get targetDNS                  "config" "dns" "dnsmasq.servers"
 	config_get whitelist_domains          "config" "whitelist_domain"
 	config_get blacklist_domains          "config" "blacklist_domain"
 	config_get whitelist_domains_urls     "config" "whitelist_domains_url"
