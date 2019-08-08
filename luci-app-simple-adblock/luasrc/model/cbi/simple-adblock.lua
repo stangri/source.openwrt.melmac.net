@@ -178,7 +178,7 @@ end
 s:tab("advanced", translate("Advanced Configuration"))
 
 dns = s:taboption("advanced", ListValue, "dns", translate("DNS Service"), translate("Pick the DNS resolution option to create the adblock list for, see the") .. " "
-  .. [[<a href="]] .. readmeURL .. [[#dns-option" target="_blank">]]
+  .. [[<a href="]] .. readmeURL .. [[#dns-resolution-option" target="_blank">]]
   .. translate("README") .. [[</a>]] .. " " .. translate("for details"))
 dns:value("dnsmasq.addnhosts", translate("DNSMASQ Additional Hosts"))
 dns:value("dnsmasq.config", translate("DNSMASQ Config"))
