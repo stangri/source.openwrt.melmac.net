@@ -20,7 +20,7 @@ opkg update
 opkg install antminer-monitor
 ```
 
-If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](#add-custom-repo-to-your-router) first.
+If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](https://github.com/stangri/openwrt_packages/blob/master/README.md#how-to-use) first.
 
 ### Add custom repo to your router
 
