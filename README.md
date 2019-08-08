@@ -17,7 +17,7 @@ echo -e -n 'untrusted comment: LEDE usign key of Stan Grishin\nRWR//HUXxMwMVnx7f
 opkg update
 ```
 
-#### LEDE Project 17.01.x and OpenWrt 18.06.x (or Newer) Instructions
+#### LEDE Project 17.01.x and OpenWrt 18.06.x (or newer) Instructions
 
 ```sh
 opkg update
