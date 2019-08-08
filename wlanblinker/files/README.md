@@ -16,34 +16,8 @@ opkg update
 opkg install wlanblinker luci-app-wlanblinker
 ```
 
-If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](#add-custom-repo-to-your-router) first.
-
-### Add custom repo to your router
-
-If your router is not set up with the access to repository containing these packages you will need to add custom repository to your router by connecting to your router via ssh and running the following commands:
-
-#### OpenWrt 15.05.1 Instructions
-
-```sh
-opkg update; opkg install ca-certificates wget libopenssl
-echo -e -n 'untrusted comment: LEDE usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /tmp/stangri-repo.pub && opkg-key add /tmp/stangri-repo.pub
-! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://raw.githubusercontent.com/stangri/openwrt-repo/master' >> /etc/opkg/customfeeds.conf
-opkg update
-opkg install wlanblinker luci-app-wlanblinker
-```
-
-#### LEDE Project 17.01.x and OpenWrt 18.06.x Instructions
-
-```sh
-opkg update
-opkg list-installed | grep -q uclient-fetch || opkg install uclient-fetch
-opkg list-installed | grep -q libustream || opkg install libustream-mbedtls
-echo -e -n 'untrusted comment: LEDE usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /tmp/stangri-repo.pub && opkg-key add /tmp/stangri-repo.pub
-! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://raw.githubusercontent.com/stangri/openwrt-repo/master' >> /etc/opkg/customfeeds.conf
-opkg update
-opkg install wlanblinker luci-app-wlanblinker
-```
+If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router) first.
 
 ## Default Settings
 
-Default configuration has service disabled (use Web UI to enable/start service or run ```uci set wlanblinker.config.enabled=1```).
+Default configuration has service disabled (use Web UI to enable/start service or run ```uci set wlanblinker.config.enabled=1; uci commit wlanblinker;```).

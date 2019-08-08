@@ -71,7 +71,7 @@ If ```simple-adblock``` and ```luci-app-simple-adblock``` packages are not found
 
 ## Default Settings
 
-Default configuration has service disabled (use Web UI to enable/start service or run ```uci set simple-adblock.config.enabled=1```) and selected ad/malware lists suitable for routers with 64Mb RAM. The configuration file has lists in descending order starting with biggest ones, comment out or delete the lists you don't want or your router can't handle.
+Default configuration has service disabled (use Web UI to enable/start service or run ```uci set simple-adblock.config.enabled=1; uci commit simple-adblock;```) and selected ad/malware lists suitable for routers with 64Mb RAM. The configuration file has lists in descending order starting with biggest ones, comment out or delete the lists you don't want or your router can't handle.
 
 ## How to customize
 

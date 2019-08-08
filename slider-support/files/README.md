@@ -24,32 +24,8 @@ Please make sure that the [requirements](#requirements) are satisfied and instal
 - GL-Inet AR750: ```opkg update; opkg install slider-support-ar750;```.
 - GL-Inet MT300N: ```opkg update; opkg install slider-support-mt300n;```.
 
-If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](#add-custom-repo-to-your-router) first.
+If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router) first.
 
 ### Requirements
 
 While not required, the [```travelmate```](https://github.com/openwrt/packages/blob/master/net/travelmate/files/README.md) package is highly recommended. You will also need to create the WWAN interface (```trm_wwan``` is the recommended name as it is the default WWAN interface name used by ```travelmate``` and this service). This service also requires the following package to be installed on your router: ```relayd```. It should be automatically installed as a dependency during the service install.
-
-### Add custom repo to your router
-
-If your router is not set up with the access to repository containing these packages you will need to add custom repository to your router by connecting to your router via ssh and running the following commands:
-
-#### OpenWrt 15.05.1 Instructions
-
-```sh
-opkg update; opkg install ca-certificates wget libopenssl
-echo -e -n 'untrusted comment: LEDE usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /tmp/stangri-repo.pub && opkg-key add /tmp/stangri-repo.pub
-! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://raw.githubusercontent.com/stangri/openwrt-repo/master' >> /etc/opkg/customfeeds.conf
-opkg update
-```
-
-#### LEDE Project 17.01.x and OpenWrt 18.06.x Instructions
-
-```sh
-opkg update
-opkg list-installed | grep -q uclient-fetch || opkg install uclient-fetch
-opkg list-installed | grep -q libustream || opkg install libustream-mbedtls
-echo -e -n 'untrusted comment: LEDE usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /tmp/stangri-repo.pub && opkg-key add /tmp/stangri-repo.pub
-! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://raw.githubusercontent.com/stangri/openwrt-repo/master' >> /etc/opkg/customfeeds.conf
-opkg update
-```

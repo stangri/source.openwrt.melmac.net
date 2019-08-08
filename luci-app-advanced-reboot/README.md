@@ -36,6 +36,8 @@ opkg update
 opkg install luci-app-advanced-reboot
 ```
 
+If the ```luci-app-advanced-reboot``` package is not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router) first.
+
 ## Notes/Known Issues
 
 - When you reboot to a different partition, your current settings (WiFi SSID/password, etc.) will not apply to a different partition. Different partitions might have completely different settings and even firmware.
