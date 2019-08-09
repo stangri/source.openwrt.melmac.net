@@ -16,6 +16,7 @@ readonly addnhostsFile="/var/run/${packageName}.addnhosts"
 readonly addnhostsCache="/var/run/${packageName}.addnhosts.cache"
 readonly addnhostsGzip="/etc/${packageName}.addnhosts.gz"
 readonly addnhostsOutputFilter='s|^|127.0.0.1 |;s|$||'
+readonly addnhostsOutputFilterIPv6='s|^|:: |;s|$||'
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
 readonly dnsmasqCache="/var/run/${packageName}.dnsmasq.cache"
 readonly dnsmasqGzip="/etc/${packageName}.dnsmasq.gz"
@@ -96,7 +97,7 @@ export whitelist_domains_urls
 export blacklist_domains_urls
 export blacklist_hosts_urls
 export wan_if wan_gw wanphysdev dl_command serviceStatus dl_flag
-export outputFilter outputFile outputGzip outputCache
+export outputFilter outputFilterIPv6 outputFile outputGzip outputCache ipv6Enabled
 
 load_package_config() {
 	config_load "$packageName"
@@ -106,6 +107,7 @@ load_package_config() {
 	config_get_bool debug                 "config" "debug" 0
 	config_get_bool allowNonAscii         "config" "allow_non_ascii" 0
 	config_get_bool compressedCache       "config" "compressed_cache" 0
+	config_get_bool ipv6Enabled           "config" "ipv6_enabled" 0
 	config_get bootDelay                  "config" "boot_delay" "120"
 	config_get dlTimeout                  "config" "download_timeout" "20"
 	config_get curlRetry                  "config" "curl_retry" "3"
@@ -129,6 +131,7 @@ load_package_config() {
 			outputFile="$addnhostsFile"
 			outputCache="$addnhostsCache"
 			outputGzip="$addnhostsGzip"
+			[ "$ipv6Enabled" -gt 0 ] && outputFilterIPv6="$addnhostsOutputFilterIPv6"
 			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
 			rm -f "$serversFile" "$serversCache" "$serversGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
@@ -604,11 +607,21 @@ $(cat $A_TMP)"
 
 	output 2 "Formatting merged file "
 	tmpfs set message "$statusProcessing: formatting merged file"
-	if sed "$outputFilter" "$B_TMP" > "$A_TMP"; then
-		output_ok
+	if [ -z "$outputFilterIPv6" ]; then
+		if sed "$outputFilter" "$B_TMP" > "$A_TMP"; then
+			output_ok
+		else
+			output_fail
+			tmpfs add error "Error: Data file formatting."
+		fi
 	else
-		output_fail
-		tmpfs add error "Error: Data file formatting."
+		if sed "$outputFilter" "$B_TMP" > "$A_TMP" && \
+		   sed "$outputFilterIPv6" "$B_TMP" >> "$A_TMP"; then
+			output_ok
+		else
+			output_fail
+			tmpfs add error "Error: Data file formatting."
+		fi
 	fi
 
 	case "$targetDNS" in

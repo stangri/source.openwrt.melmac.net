@@ -186,6 +186,13 @@ dns:value("dnsmasq.servers", translate("DNSMASQ Servers File"))
 dns:value("unbound.config", translate("Unbound Config"))
 dns.default = "dnsmasq.servers"
 
+ipv6 = s:taboption("advanced", ListValue, "ipv6_enabled", translate("IPv6 Support"), translate("Add IPv6 entries to block-list"))
+ipv6:value("", translate("Do not add IPv6 entries"))
+ipv6:value("1", translate("Add IPv6 entries"))
+ipv6:depends({dns="dnsmasq.addnhosts"}) 
+ipv6.default = ""
+ipv6.rmempty = true
+
 o5 = s:taboption("advanced", Value, "boot_delay", translate("Delay (in seconds) for on-boot start"), translate("Run service after set delay on boot"))
 o5.default = 120
 o5.datatype = "range(1,600)"
