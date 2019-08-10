@@ -57,7 +57,7 @@ export ipv6Enabled ipsetEnabled ipruleEnabled dnsmasqEnabled icmpIface
 export ignoredIfaces="" supportedIfaces=""
 export appendLocalPolicy="" appendRemotePolicy=""
 export wanIface4 wanIface6 ifaceMark ifaceTableID ifacesListAll ifacesListSupported wanGW4 wanGW6
-export bootTimeout insertOption
+export bootTimeout insertOption defaultIface
 
 list_iface() { ifacesListAll="${ifacesListAll}${1} "; }
 list_supported_iface() { is_supported_interface "$1" && ifacesListSupported="${ifacesListSupported}${1} "; }
@@ -80,6 +80,7 @@ is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" 
 is_tunnel() { is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_tor "$1" || is_wg "$1"; }
 is_wan() { [ -n "$wanIface4" ] && [ "$1" = "$wanIface4" ]; }
 is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ]; }
+string_match_word() { echo "$1" | grep -q -w "$2"; }
 is_ignored_interface() { string_match_word "$ignoredIfaces" "$1"; }
 is_supported_interface() { string_match_word "$supportedIfaces" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; }; }
 is_mac_address() { expr "$1" : '[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]$' >/dev/null; }
@@ -90,22 +91,20 @@ is_domain() { [ "${1//[a-zA-Z-]}" != "$1" ]; }
 is_phys_dev() { [ "${1:0:1}" == "@" ] && ip route | grep -q "dev ^${1:1}"; }
 is_turris() { /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05'; }
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
-string_match_word() { echo "$1" | grep -q -w "$2"; }
 dnsmasq_kill() { killall -q -HUP dnsmasq; }
 dnsmasq_restart() { output 1 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
-get_iface_gw() {
-	local PROTO="${1}" NET_IF="${2}" NET_GLOBAL="1" NET_ADDR NET_GW
-	[ "$PROTO" == "-6" ] && NET_GLOBAL="1::"
-	NET_ADDR="$(ip "$PROTO" addr show dev "$NET_IF" 2>/dev/null | sed -n -e "/\sinet6*\s/{s/^\s*\w*\s//;s/\/.*$//p}" | sed -n -e "1p")"
-	[ -n "$NET_ADDR" ] && NET_GW="$(ip "${PROTO}" route get "${NET_GLOBAL}" from "${NET_ADDR}" dev "${NET_IF}" 2>/dev/null | sed -n -e "/\svia\s/{s/^.*\svia\s//;s/\s.*$//p}")"
-	echo "${NET_GW:-$NET_ADDR}"
+get_iface_gw(){
+	local iface="$1" family="${2:-ipv4}" nexthop address
+	nexthop="$(ubus call "network.interface.${iface}" status | jsonfilter -l1 -e "@['route'][0]['nexthop']")"
+	address="$(ubus call "network.interface.${iface}" status | jsonfilter -l1 -e "@['${family}-address'][0]['address']")"
+	echo "${nexthop:-$address}"
 }
 
 load_package_config() {
 	config_load "$packageName"
 	config_get_bool serviceEnabled      'config' 'enabled' 0
 	config_get_bool strictMode          'config' 'strict_enforcement' 1
-	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' 1
+	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' 0
 	config_get_bool ipsetEnabled        'config' 'ipset_enabled' 1
 	config_get_bool ipruleEnabled       'config' 'iprule_enabled' 0
 	config_get_bool dnsmasqEnabled      'config' 'dnsmasq_enabled' 0
@@ -132,6 +131,8 @@ load_package_config() {
 	fi 
 
 	. /lib/functions/network.sh
+	. /usr/share/libubox/jshn.sh
+	network_find_wan defaultIface
 }
 
 is_enabled() {
@@ -503,20 +504,14 @@ process_interface(){
 			;;
 
 		create)
-			if ! is_ipv4 "$gw4" || [ "$gw4" = "0.0.0.0" ]; then gw4="$(get_iface_gw -4 "$dev")"; fi
-			if ! is_ipv6 "$gw6" || [ "$gw6" = "::/0" ]; then gw6="$(get_iface_gw -6 "$dev6")"; fi
-#			if ! is_ipv4 "$gw4" || [ "$gw4" = "0.0.0.0" ]; then gw4="$(get_device_default_gw "$dev")"; fi
-#			if ! is_ipv6 "$gw6" || [ "$gw6" = "::/0" ]; then gw6="$(get_device_default_gw6 "$dev6")"; fi
-#			if ! is_ipv4 "$gw4" || [ "$gw4" = "0.0.0.0" ]; then gw4="$(get_device_gw "$dev")"; fi
-#			if ! is_ipv6 "$gw6" || [ "$gw6" = "::/0" ]; then gw6="$(get_device_gw6 "$dev6")"; fi
-#			if ! is_ipv4 "$gw4" || [ "$gw4" = "0.0.0.0" ]; then gw4="$(get_tunnel_gw "$dev")"; fi
-#			if ! is_ipv6 "$gw6" || [ "$gw6" = "::/0" ]; then gw6="$(get_tunnel_gw6 "$dev6")"; fi
-#			if ! is_ipv4 "$gw4" || [ "$gw4" = "0.0.0.0" ]; then gw4="$(get_device_bridge_gw "$dev")"; fi
+			if ! is_ipv4 "$gw4" || [ "$gw4" = "0.0.0.0" ]; then gw4="$(get_iface_gw "$iface" ipv4)"; fi
+			if ! is_ipv6 "$gw6" || [ "$gw6" = "::/0" ]; then gw6="$(get_iface_gw "$iface" ipv6)"; fi
 			eval "mark_${iface}=$ifaceMark"; eval "tid_${iface}=$ifaceTableID";
 
 			table_destroy "${ifaceTableID}" "${iface}"
-#			[ "$ipv6Enabled" -ne 0 ] && displayText="${iface}/${dev}/${gw4:-0.0.0.0}/${gw6:-::/0}" || displayText="${iface}/${dev}/${gw4:-0.0.0.0}"
-			[ "$ipv6Enabled" -ne 0 ] && displayText="${iface}/${gw4:-0.0.0.0}/${gw6:-::/0}" || displayText="${iface}/${gw4:-0.0.0.0}"
+			displayText="${iface}/${gw4:-0.0.0.0}"
+			[ "$ipv6Enabled" -ne 0 ] && displayText="${displayText}/${gw6:-::/0}"
+			[ "$iface" == "$defaultIface" ] && displayText="${displayText}${__OK__}"
 			output 2 "Creating table '$displayText' "
 			if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then
 				serviceStatusSummary="${serviceStatusSummary}${displayText} "
@@ -657,9 +652,9 @@ start_service() {
 			if [ "$strictMode" -ne 0 ] && [ "${serviceStatusSummary//0.0.0.0}" != "${serviceStatusSummary}" ]; then
 				serviceStatusSummary="(strict mode): ${serviceStatusSummary}"
 			fi
-			output "$serviceName started on ${serviceStatusSummary}"
+			output "$serviceName started on ${serviceStatusSummary}\\n"
 			if [ -z "$errorStatusSummary" ]; then
-				output_okn
+#				output_okn
 				tmpfs 'set' "Success: ${serviceStatusSummary}"
 			else
 				output "with errors "
@@ -719,7 +714,7 @@ service_triggers() {
 		procd_add_reload_trigger 'vpn-policy-routing'
 		procd_open_trigger
 			for n in $ifacesListSupported; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
-			output "$serviceName monitoring interfaces: $ifacesListSupported"; output_okn;
+#			output "$serviceName monitoring interfaces: $ifacesListSupported\\n"; # output_okn;
 #			for n in $ifacesListAll; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
 #			output "$serviceName monitoring ALL interfaces: $ifacesListAll"; output_okn;
 		procd_close_trigger
