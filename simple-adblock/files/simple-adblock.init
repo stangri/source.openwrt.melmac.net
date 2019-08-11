@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-PKG_VERSION=
+PKG_VERSION='1.7.1-13'
 
 export START=94
 export USE_PROCD=1
@@ -226,8 +226,7 @@ reload_dnsmasq() {
 					uci add_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
 					;;
 				dnsmasq.servers)
-					grep -q "$serversFile" /etc/config/dhcp && uci -q del dhcp.@dnsmasq[0].serversfile
-					uci set dhcp.@dnsmasq[0].serversfile="$serversFile"
+					! grep -q "$serversFile" /etc/config/dhcp && uci set dhcp.@dnsmasq[0].serversfile="$serversFile"
 					;;
 			esac
 
