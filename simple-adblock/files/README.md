@@ -4,26 +4,25 @@ A simple DNSMASQ/Unbound-based AdBlocking service for OpenWrt/LEDE Project.
 
 ## Features
 
-- Supports OpenWrt and LEDE Project.
-- Super-fast due to the nature of supported block lists and backgrounding of already downloaded data while next list is downloading.
+- Super-fast due to the nature of supported block lists and parallel downloading/processing of the blacklists.
 - Supports both hosts files and domains lists for blocking (to keep it lean and fast).
 - Everything is configurable from Web UI.
 - Allows you to easily add your own domains to whitelist or blacklist.
 - Allows you to easily add URLs to your own blocked hosts or domains lists to block/whitelist (just put whitelisted domains one per line).
 - Requires no configuration for the download utility wherever you want to use wget/libopenssl or uclient-fetch/libustream-mbedtls.
-- Installs dependencies automatically (DD/LEDE-default uclient-fetch libustream-mbedtls).
+- Installs dependencies automatically.
 - Doesn't stay in memory -- creates the list of blocked domains and then uses DNSMASQ/Unbound and firewall rules to serve NXDOMAIN or 127.0.0.1 (depending on settings) reply for blocked domains.
-- As some of the default lists are using https, reliably works with either wget/libopenssl or uclient-fetch/libustream-mbedtls.
+- As some of the default lists are using https, reliably works with either wget/libopenssl,  uclient-fetch/libustream-mbedtls or curl.
 - Very lightweight and easily hackable, the whole script is just one ```/etc/init.d/simple-adblock``` file.
 - Retains the downloaded/sorted AdBlocking list on service stop and reuses it on service start (use ```dl``` command if you want to force re-download of the list).
 - Blocks ads served over https (unlike PixelServ-derived solutions).
 - Proudly made in Canada, using locally-sourced electrons.
 
-If you want a more robust AdBlocking, supporting free memory detection and complex block lists, supporting IDN, check out [@dibdot's adblock](https://github.com/openwrt/packages/tree/master/net/adblock/files).
+If you want a more robust AdBlocking, supporting free memory detection and complex block lists, supporting IDN, check out [net/adblock](https://github.com/openwrt/packages/tree/master/net/adblock/files).
 
 ## Screenshot (luci-app-simple-adblock)
 
-![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/simple-adblock/screenshot06.png "screenshot")
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/simple-adblock/screenshot07.png "screenshot")
 
 ## Requirements
 
@@ -51,15 +50,15 @@ For IPv6 support additionally install ```ip6tables-mod-nat``` and ```kmod-ipt-na
 opkg update; opkg install ip6tables-mod-nat kmod-ipt-nat6
 ```
 
-### Speed up blocklist processing with coreutils-sort
+### Speed Up Blocklist Processing
 
 The ```coreutils-sort``` is an optional, but recommended package as it speeds up sorting and removing duplicates from the merged list dramatically. If opkg complains that it can't install ```coreutils-sort``` because /usr/bin/sort is already provided by busybox, you can run ```opkg --force-overwrite install coreutils-sort```.
 
-## Unmet dependencies
+## Unmet Dependencies
 
 If you are running a development (trunk/snapshot) build of OpenWrt/LEDE Project on your router and your build is outdated (meaning that packages of the same revision/commit hash are no longer available and when you try to satisfy the [requirements](#requirements) you get errors), please flash either current LEDE release image or current development/snapshot image.
 
-## How to install
+## How To Install
 
 Install ```simple-adblock``` and ```luci-app-simple-adblock``` packages from Web UI or run the following in the command line:
 
@@ -73,7 +72,7 @@ If ```simple-adblock``` and ```luci-app-simple-adblock``` packages are not found
 
 Default configuration has service disabled (use Web UI to enable/start service or run ```uci set simple-adblock.config.enabled=1; uci commit simple-adblock;```) and selected ad/malware lists suitable for routers with 64Mb RAM. The configuration file has lists in descending order starting with biggest ones, comment out or delete the lists you don't want or your router can't handle.
 
-## How to customize
+## How To Customize
 
 You can use Web UI (found in Services/Simple AdBlock) to add/remove/edit links to:
 
@@ -85,17 +84,17 @@ Please note that these lists **must** include either ```http://``` or ```https:/
 
 You can also use Web UI to add individual domains to be blocked or whitelisted.
 
-If you want to use CLI to customize ```simple-adblock``` config, you can probably figure out how to do it by looking at the contents of ```/etc/config/simple-adblock``` or output of the ```uci show simple-adblock``` command.
+If you want to use CLI to customize ```simple-adblock``` config, refer to the [Customization Settings](#customization-settings) section.
 
-## How to use
+## How To Use
 
 Once the service is enabled in the [config file](#default-settings), run ```/etc/init.d/simple-adblock start``` to start the service. Either ```/etc/init.d/simple-adblock restart``` or ```/etc/init.d/simple-adblock reload``` will only restart the service and/or re-donwload the lists if there were relevant changes in the config file since the last successful start. Had the previous start resulted in any error, either ```/etc/init.d/simple-adblock start```, ```/etc/init.d/simple-adblock restart``` or ```/etc/init.d/simple-adblock reload``` will attempt to re-download the lists.
 
-If you want to force simple-adblock to re-download the lists, run ```/etc/init.d/simple-adblock download```.
+If you want to force simple-adblock to re-download the lists, run ```/etc/init.d/simple-adblock dl```.
 
 If you want to check if the specific domain (or part of the domain name) is being blocked, run ```/etc/init.d/simple-adblock check test-domain.com```.
 
-## Configuration settings
+## Configuration Settings
 
 In the Web UI the ```simple-adblock``` settings are split into ```basic``` and ```advanced``` settings. The full list of configuration parameters of ```simple-adblock.config``` section is:
 
@@ -130,7 +129,7 @@ Currently supported options are:
 |```dnsmasq.servers```|Creates the DNSMASQ servers file ```/var/run/simple-adblock.servers``` and modifies DNSMASQ settings so that DNSMASQ replies with NXDOMAIN - "domain not found". This is a default setting as it allows quick reloads of DNSMASQ.|
 |```unbound.conf```|Creates the Unbound config file ```/var/lib/unbound/simple-adblock``` so that Unbound replies with NXDOMAIN - "domain not found".|
 
-## How does it work
+## How Does It Work
 
 This service downloads (and processes in the background, removing comments and other useless data) lists of hosts and domains to be blocked, combines those lists into one big block list, removes duplicates and sorts it and then removes your whitelisted domains from the block list before converting to to DNSMASQ/Unbound-compatible file and restarting DNSMASQ/Unbound if needed. The result of the process is that DNSMASQ/Unbound return NXDOMAIN or 127.0.0.1 (depending on settings) for the blocked domains.
 
