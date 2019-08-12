@@ -25,10 +25,10 @@ readonly serversFile="/var/run/${packageName}.servers"
 readonly serversCache="/var/run/${packageName}.servers.cache"
 readonly serversGzip="/etc/${packageName}.servers.gz"
 readonly serversOutputFilter='s|^|server=/|;s|$|/|'
-readonly unboundFile="/var/lib/unbound/${packageName}"
+readonly unboundFile="/var/lib/unbound/adb_list.${packageName}"
 readonly unboundCache="/var/run/${packageName}.unbound.cache"
 readonly unboundGzip="/etc/${packageName}.unbound.gz"
-readonly unboundOutputFilter='s|^|local-zone: "|;s|$|" refuse|'
+readonly unboundOutputFilter='s|^|local-zone: "|;s|$|" static|'
 readonly A_TMP="/var/simple-adblock.hosts.a.tmp"
 readonly B_TMP="/var/simple-adblock.hosts.b.tmp"
 readonly PIDFile="/var/run/${packageName}.pid"

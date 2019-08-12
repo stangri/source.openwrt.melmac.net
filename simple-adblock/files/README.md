@@ -144,4 +144,4 @@ Please head to [OpenWrt Forum](https://forum.openwrt.org/t/simple-adblock-fast-l
 
 ## Thanks
 
-I'd like to thank everyone who helped create, test and troubleshoot this service. Special thanks to [@hnyman](https://github.com/hnyman) for general package/luci guidance, [@dibdot](https://github.com/dibdot) for general guidance and block-list optimization code, [@ckuethe](https://github.com/ckuethe) for the curl support, non-ASCII filtering and compressed cache code and [@phasecat](https://forum.openwrt.org/u/phasecat/summary) for submitting bugs and testing.
+I'd like to thank everyone who helped create, test and troubleshoot this service. Special thanks to [@hnyman](https://github.com/hnyman) for general package/luci guidance, [@dibdot](https://github.com/dibdot) for general guidance and block-list optimization code, [@ckuethe](https://github.com/ckuethe) for the curl support, non-ASCII filtering and compressed cache code, [@EricLuehrsen](https://github.com/EricLuehrsen) for the Unbound support information and [@phasecat](https://forum.openwrt.org/u/phasecat/summary) for submitting bugs and testing.
