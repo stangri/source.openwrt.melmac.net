@@ -21,7 +21,7 @@ if not targetDNS or targetDNS == "" then
 end
 
 if targetDNS ~= "dnsmasq.addnhosts" and targetDNS ~= "dnsmasq.conf" and 
-	 targetDNS ~= "dnsmasq.servers" and targetDNS ~= "unbound.conf" then
+	 targetDNS ~= "dnsmasq.servers" and targetDNS ~= "unbound.adb_list" then
 	targetDNS = "dnsmasq.servers"
 end
 
@@ -37,8 +37,8 @@ elseif targetDNS == "dnsmasq.servers" then
 	outputFile="/var/run/" .. packageName .. ".servers"
 	outputCache="/var/run/" .. packageName .. ".servers.cache"
 	outputGzip="/etc/" .. packageName .. ".servers.gz"
-elseif targetDNS == "unbound.conf" then
-	outputFile="/var/lib/unbound/" .. packageName .. ""
+elseif targetDNS == "unbound.adb_list" then
+	outputFile="/var/lib/unbound/adb_list." .. packageName .. ""
 	outputCache="/var/run/" .. packageName .. ".unbound.cache"
 	outputGzip="/etc/" .. packageName .. ".unbound.gz"
 end
@@ -183,7 +183,7 @@ dns = s:taboption("advanced", ListValue, "dns", translate("DNS Service"), transl
 dns:value("dnsmasq.addnhosts", translate("DNSMASQ Additional Hosts"))
 dns:value("dnsmasq.config", translate("DNSMASQ Config"))
 dns:value("dnsmasq.servers", translate("DNSMASQ Servers File"))
-dns:value("unbound.config", translate("Unbound Config"))
+dns:value("unbound.adb_list", translate("Unbound AdBlock List"))
 dns.default = "dnsmasq.servers"
 
 ipv6 = s:taboption("advanced", ListValue, "ipv6_enabled", translate("IPv6 Support"), translate("Add IPv6 entries to block-list"))

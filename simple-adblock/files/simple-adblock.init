@@ -29,8 +29,8 @@ readonly unboundFile="/var/lib/unbound/adb_list.${packageName}"
 readonly unboundCache="/var/run/${packageName}.unbound.cache"
 readonly unboundGzip="/etc/${packageName}.unbound.gz"
 readonly unboundOutputFilter='s|^|local-zone: "|;s|$|" static|'
-readonly A_TMP="/var/simple-adblock.hosts.a.tmp"
-readonly B_TMP="/var/simple-adblock.hosts.b.tmp"
+readonly A_TMP="/var/${packageName}.hosts.a.tmp"
+readonly B_TMP="/var/${packageName}.hosts.b.tmp"
 readonly PIDFile="/var/run/${packageName}.pid"
 readonly jsonFile="/var/run/${packageName}.json"
 readonly hostsFilter='/localhost/d;/^#/d;/^[^0-9]/d;s/^0\.0\.0\.0.//;s/^127\.0\.0\.1.//;s/[[:space:]]*#.*$//;s/[[:cntrl:]]$//;s/[[:space:]]//g;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
@@ -52,19 +52,19 @@ readonly statusForceReloading='Force-Reloading'
 readonly statusProcessing='Processing'
 readonly statusStopped='Stopped'
 
-create_lock() { [ -e "$PIDFile" ] && return 1; touch "$PIDFile"; }
-remove_lock() { [ -e "$PIDFile" ] && rm -f "$PIDFile"; } # rm -f "/var/simple-adblock_tmp_*"; }
-trap remove_lock EXIT
-output_ok() { case $verbosity in 1) output 1 "$_OK_";; 2) output 2 "$__OK__\\n";; esac; }
-output_okn() { case $verbosity in 1) output 1 "$_OK_\\n";; 2) output 2 "$__OK__\\n";; esac; }
-output_fail() { case $verbosity in 1) output 1 "$_FAIL_";; 2) output 2 "$__FAIL__\\n";; esac; }
-output_failn() { case $verbosity in 1) output 1 "$_FAIL_\\n";; 2) output 2 "$__FAIL__\\n";; esac; }
 export logmsg
+create_lock() { [ -e "$PIDFile" ] && return 1; touch "$PIDFile"; }
+remove_lock() { [ -e "$PIDFile" ] && rm -f "$PIDFile"; }
+trap remove_lock EXIT
+output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
+output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
+output_fail() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
+output_failn() { output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output() {
 # Can take a single parameter (text) to be output at any verbosity
 # Or target verbosity level and text to be output at specifc verbosity
 	if [ $# -ne 1 ]; then
-		if [ ! $((verbosity & $1)) -gt 0 ]; then return 0; else shift; fi
+		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" == "$1" ]; then shift; else return 0; fi
 	fi
 	[ -t 1 ] && echo -e -n "$1"
 	local msg=$(echo -n "${1/$serviceName /service }" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g');
@@ -121,7 +121,7 @@ load_package_config() {
 	config_get blacklist_hosts_urls       "config" "blacklist_hosts_url"
 
 	if [ "$targetDNS" != "dnsmasq.addnhosts" ] && [ "$targetDNS" != "dnsmasq.conf" ] && \
-		 [ "$targetDNS" != "dnsmasq.servers" ] && [ "$targetDNS" != "unbound.conf" ]; then
+		 [ "$targetDNS" != "dnsmasq.servers" ] && [ "$targetDNS" != "unbound.adb_list" ]; then
 		targetDNS="dnsmasq.servers"
 	fi
 
@@ -154,7 +154,7 @@ load_package_config() {
 			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			;;
-		unbound.config)
+		unbound.adb_list)
 			outputFilter="$unboundOutputFilter"
 			outputFile="$unboundFile"
 			outputCache="$unboundCache"
@@ -190,11 +190,13 @@ is_enabled() {
 	fi
 
 	if [ "$serviceEnabled" -eq 0 ]; then
-		if [ "$1" == "on_start" ]; then
-			output "$packageName is currently disabled.\\n"
-			output "Run the following commands before starting service again:\\n"
-			output "uci set ${packageName}.config.enabled='1'; uci commit $packageName;\\n"
-		fi
+		case "$1" in
+			on_start)
+				output "$packageName is currently disabled.\\n"
+				output "Run the following commands before starting service again:\\n"
+				output "uci set ${packageName}.config.enabled='1'; uci commit $packageName;\\n"
+				;;
+		esac
 		return 1
 	fi
 
@@ -209,8 +211,9 @@ is_enabled() {
 
 dnsmasq_kill() { killall -q -HUP dnsmasq; }
 dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
-reload_dnsmasq() {
-	local param
+unbound_restart() { /etc/init.d/unbound restart >/dev/null 2>&1; }
+reload_resolver() {
+	local param output_text
 	case $1 in
 		on_start)
 			if [ ! -s "$outputFile" ]; then
@@ -219,72 +222,86 @@ reload_dnsmasq() {
 				output "$_ERROR_: $serviceName failed to create its data file!\\n"
 				return 1
 			fi
-
 			case "$targetDNS" in
 				dnsmasq.addnhosts)
 					uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
 					uci add_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
+					if [ -n "$(uci changes dhcp)" ]; then
+						uci commit dhcp
+						param=dnsmasq_restart
+						output_text="Restarting DNSMASQ"
+					else
+						param=dnsmasq_kill
+						output_text="Reloading DNSMASQ"
+					fi
+					;;
+				dnsmasq.conf)
+					param=dnsmasq_restart
+					output_text="Restarting DNSMASQ"
 					;;
 				dnsmasq.servers)
-					! grep -q "$serversFile" /etc/config/dhcp && uci set dhcp.@dnsmasq[0].serversfile="$serversFile"
+					if [ "$(uci -q get dhcp.@dnsmasq[0].serversfile)" != "$serversFile" ]; then
+						uci set dhcp.@dnsmasq[0].serversfile="$serversFile"
+						uci commit dhcp
+						param=dnsmasq_restart
+						output_text="Restarting DNSMASQ"
+					else
+						param=dnsmasq_kill
+						output_text="Reloading DNSMASQ"
+					fi
+					;;
+				unbound.adb_list)
+					param=unbound_restart
+					output_text="Restarting Unbound"
 					;;
 			esac
-
-			if [ -n "$(uci changes dhcp)" ] || [ "$targetDNS" == "dnsmasq.conf" ]; then
-				param=dnsmasq_restart
-			else
-				param=dnsmasq_kill
-			fi
-
-			output 3 "Restarting DNSMASQ "
-			tmpfs set message "restarting DNSMASQ"
-			[ -n "$(uci changes dhcp)" ] && uci commit dhcp
+			output 1 "$output_text "
+			output 2 "$output_text "
+			tmpfs set message "$output_text"
 			if eval "$param"; then
 				tmpfs set status "$statusSuccess"
 				led_on "$led"
 				output_okn
 			else 
-				output_failn
+				output_fail
 				tmpfs set status "$statusFail"
-				tmpfs add error "Error: DNSMASQ restart error."
-				output "$_ERROR_: $serviceName failed to restart DNSMASQ!\\n"
+				tmpfs add error "Error: $output_text error."
+				output "$_ERROR_: $serviceName $output_text error!\\n"
 				return 1
 			fi
 			;;
 		on_stop)
 			cacheOps 'create'
-			if [ "$targetDNS" == "dnsmasq.conf" ]; then
-				param="dnsmasq_restart"
-			else
-				param="dnsmasq_kill"
-			fi
-			output 3 "Reloading dnsmasq "
-			if eval "$param"; then
-				led_off "$led"
-				output_okn
-				output "$serviceName stopped.\\n"
-				tmpfs set status "$statusStopped"
-				tmpfs del message
-#				tmpfs del error
-				return 0
-			else
-				output_failn;
-				tmpfs set status "$statusFail"
-				tmpfs add error "Error: DNSMASQ restart error on stop."
-				output "$_ERROR_: $serviceName failed to restart DNSMASQ on stop!\\n"
-				return 1
-			fi
+			case "$targetDNS" in
+				dnsmasq.addnhosts | dnsmasq.servers)
+					if [ -n "$(uci changes dhcp)" ]; then 
+						uci -q commit dhcp
+						param=dnsmasq_restart
+					else
+						param=dnsmasq_kill
+					fi
+					;;
+				dnsmasq.conf)
+					param=dnsmasq_restart
+					;;
+				unbound.adb_list)
+					param=unbound_restart
+					;;
+			esac
+			eval "$param"
+			return $?
 			;;
-		quiet | *)
-			grep -q "$serversFile" /etc/config/dhcp && uci -q del dhcp.@dnsmasq[0].serversfile
-			uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
-			if [ -n "$(uci changes dhcp)" ] || [ "$targetDNS" == "dnsmasq.conf" ]; then
-				param=dnsmasq_restart
-			else
-				param=dnsmasq_kill
-			fi
-			[ -n "$(uci changes dhcp)" ] && uci commit dhcp
-			eval "$param" && return 0 || return 1
+		quiet)
+			case "$targetDNS" in
+				dnsmasq.addnhosts | dnsmasq.servers | dnsmasq.conf)
+					param=dnsmasq_restart
+					;;
+				unbound.adb_list)
+					param=unbound_restart
+					;;
+			esac
+			eval "$param"
+			return $?
 			;;
 	esac
 }
@@ -393,7 +410,9 @@ cacheOps(){
 			return $?
 			;;
 		test)
-			[ -s "$outputCache" ] && return 0 || return 1;;
+			[ -s "$outputCache" ]
+			return $?
+			;;
 		testGzip)
 			[ -s "$outputGzip" ] && gzip -t -c "$outputGzip"
 			return $?
@@ -492,8 +511,12 @@ download_lists() {
 	tmpfs set message "${statusDownloading}..."
 	rm -f "$A_TMP" "$B_TMP" "$outputFile" "$outputCache" "$outputGzip"
 	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
-		output 3 "Low free memory, restarting dnsmasq..."
-		if reload_dnsmasq 'quiet'; then output_okn; else output_failn; fi
+		output 3 "Low free memory, restarting resolver... "
+		if reload_resolver 'quiet'; then
+			output_okn
+		else 
+			output_fail
+		fi
 	fi
 	touch $A_TMP; touch $B_TMP;
 	output 1 "Downloading lists "
@@ -544,21 +567,21 @@ $(cat $A_TMP)"
 		if sort "$B_TMP" | uniq > "$A_TMP"; then
 			output_ok
 		else
-			output_fail
+			output_failn
 			tmpfs add error "Error: Sorting error."
 		fi
 	else
 		if sort "$B_TMP" | uniq | grep -E -v '[^a-zA-Z0-9=/.-]' > "$A_TMP"; then
 			output_ok
 		else
-			output_fail
+			output_failn
 			tmpfs add error "Error: Sorting error."
 		fi
 	fi
 
 	if [ "$targetDNS" == "dnsmasq.conf" ] || \
 	   [ "$targetDNS" == "dnsmasq.servers" ] || \
-		 [ "$targetDNS" == "unbound.conf" ]; then
+		 [ "$targetDNS" == "unbound.adb_list" ]; then
 		# TLD optimization written by Dirk Brenken (dev@brenken.org)
 		output 2 "Optimizing combined list "
 		tmpfs set message "$statusProcessing: optimizing combined list"
@@ -569,25 +592,25 @@ $(cat $A_TMP)"
 						if sort "$A_TMP" | uniq > "$B_TMP"; then
 							output_ok
 						else
-							output_fail
+							output_failn
 							tmpfs add error "Error: Data file optimization."
 							mv "$A_TMP" "$B_TMP"
 						fi
 					else
-						output_fail
+						output_failn
 						tmpfs add error "Error: Data file optimization."
 					fi
 				else
-					output_fail
+					output_failn
 					tmpfs add error "Error: Data file optimization."
 					mv "$A_TMP" "$B_TMP"
 				fi
 			else
-				output_fail
+				output_failn
 				tmpfs add error "Error: Data file optimization."
 			fi
 		else
-			output_fail
+			output_failn
 			tmpfs add error "Error: Data file optimization."
 			mv "$A_TMP" "$B_TMP"
 		fi
@@ -600,7 +623,7 @@ $(cat $A_TMP)"
 	if sed -i "$w_filter" "$B_TMP"; then
 		output_ok
 	else
-		output_fail
+		output_failn
 		tmpfs add error "Error: Whitelist processing."
 	fi
 
@@ -610,7 +633,7 @@ $(cat $A_TMP)"
 		if sed "$outputFilter" "$B_TMP" > "$A_TMP"; then
 			output_ok
 		else
-			output_fail
+			output_failn
 			tmpfs add error "Error: Data file formatting."
 		fi
 	else
@@ -618,7 +641,7 @@ $(cat $A_TMP)"
 		   sed "$outputFilterIPv6" "$B_TMP" >> "$A_TMP"; then
 			output_ok
 		else
-			output_fail
+			output_failn
 			tmpfs add error "Error: Data file formatting."
 		fi
 	fi
@@ -636,15 +659,15 @@ $(cat $A_TMP)"
 			output 2 "Creating DNSMASQ servers file "
 			tmpfs set message "$statusProcessing: creating DNSMASQ servers file"
 			;;
-		unbound.conf)
-			output 2 "Creating Unbound config file "
-			tmpfs set message "$statusProcessing: creating Unbound config file"
+		unbound.adb_list)
+			output 2 "Creating Unbound adb_list file "
+			tmpfs set message "$statusProcessing: creating Unbound adb_list file"
 			;;
 	esac
 	if mv "$A_TMP" "$outputFile"; then
 		output_ok
 	else
-		output_fail
+		output_failn
 		tmpfs add error "Error: moving data file '${A_TMP}' to '${outputFile}'."
 	fi
 	if [ "$compressedCache" -gt 0 ]; then
@@ -653,7 +676,7 @@ $(cat $A_TMP)"
 		if cacheOps 'createGzip'; then
 			output_ok
 		else
-			output_fail
+			output_failn
 			tmpfs add error "Error: creating compressed cache."
 		fi
 	else
@@ -665,7 +688,7 @@ $(cat $A_TMP)"
 	if [ $j -eq 0 ]; then
 		output_ok
 	else
-		output_fail
+		output_failn
 		tmpfs add error "Error: removing temporary files."
 	fi
 	output 1 "\\n"
@@ -730,21 +753,25 @@ start_service() {
 		case $action in
 			download)
 				if [ -s "$outputFile" ] || cacheOps 'test' || cacheOps 'testGzip'; then
-					output "Force-reloading $serviceName...\\n"
+					output 0 "Force-reloading $serviceName... "
+					output 3 "Force-reloading $serviceName...\\n"
 					tmpfs set status "$statusForceReloading"
 				else
-					output "Starting $serviceName...\\n"
+					output 0 "Starting $serviceName... "
+					output 3 "Starting $serviceName...\\n"
 					tmpfs set status "$statusStarting"
 				fi
 				download_lists
-				reload_dnsmasq 'on_start'
+				reload_resolver 'on_start'
 			;;
 			restart|start)
 				if [ "$action" == "restart" ]; then
-					output "Retarting $serviceName...\\n"
+					output 0 "Restarting $serviceName... "
+					output 3 "Restarting $serviceName...\\n"
 					tmpfs set status "$statusRestarting"
 				else
-					output "Starting $serviceName...\\n"
+					output 0 "Starting $serviceName... "
+					output 3 "Starting $serviceName...\\n"
 					tmpfs set status "$statusStarting"
 				fi
 				if cacheOps 'testGzip' && ! cacheOps 'test' && [ ! -s "$outputFile" ]; then
@@ -753,7 +780,7 @@ start_service() {
 					if cacheOps 'unpackGzip'; then
 						output_okn
 					else
-						output_failn
+						output_fail
 						output "$_ERROR_: $serviceName failed to unpack compressed cache!\\n"
 						tmpfs add error "Error: Failed to unpack compressed cache."
 						return 1
@@ -765,54 +792,49 @@ start_service() {
 					if cacheOps 'restore'; then 
 						output_okn
 					else 
-						output_failn
+						output_fail
 						tmpfs add error "Error: moving '$outputCache' to '$outputFile'."
 					fi
 				fi
-				reload_dnsmasq 'on_start'
+				reload_resolver 'on_start'
 			;;
 		esac
 
 		if [ -s "$outputFile" ] && [ "$(tmpfs get status)" != "$statusFail" ]; then
-			output "$serviceName is blocking $(wc -l < "$outputFile") domains "; output_okn;
+			output 0 "$__OK__\\n";
+			local c="$(wc -l < "$outputFile")"
+			output 3 "$serviceName is blocking $c domains "; output_okn
 			tmpfs del message
-			tmpfs set status "$statusSuccess: $(wc -l < "$outputFile") domains blocked (with ${targetDNS})."
+			tmpfs set status "$statusSuccess: $c domains blocked (with ${targetDNS})."
 			error="$(tmpfs get error)"
 			if [ -n "$error" ]; then
 				output "${error/Error:/$_ERROR_:}\\n"
 			fi
 		else
+			output 0 "$__FAIL__\\n";
 			tmpfs set status "$statusFail"
-			tmpfs add error "Error: Failed to create DNSMASQ blocklist."
+			tmpfs add error "Error: Failed to create blocklist."
 		fi
 		remove_lock
 	else
-		output "$serviceName: another instance is starting up "; output_failn;
+		output 3 "$serviceName: another instance is starting up "; output_fail
 		return 0
 	fi
 }
 
 service_started() { procd_set_config_changed firewall; }
 service_stopped() { procd_set_config_changed firewall; }
-restart_service() { rc_procd stop_service "restart"; rc_procd start_service "restart"; }
+restart_service() { rc_procd start_service "restart"; }
 reload_service() { restart_service; }
 restart() { restart_service; }
 reload() { restart_service; }
-dl() { rc_procd stop_service "restart"; rc_procd start_service "download"; }
+dl() { rc_procd start_service "download"; }
 
 killcache() {
 	rm -f "$addnhostsCache" "$addnhostsGzip"
 	rm -f "$dnsmasqCache" "$dnsmasqGzip"
 	rm -f "$serversCache" "$serversGzip"
 	rm -f "$unboundCache" "$unboundGzip"
-	grep -q "$serversFile" /etc/config/dhcp && uci -q del dhcp.@dnsmasq[0].serversfile
-	uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
-	if [ -n "$(uci changes dhcp)" ]; then 
-		uci -q commit dhcp
-		dnsmasq_restart
-	else
-		dnsmasq_kill
-	fi
 	return 0
 }
 
@@ -827,19 +849,23 @@ status() {
 
 stop_service() {
 	load_package_config
-	if [ "$serviceEnabled" -gt 0 ]; then
-		if [ -z "$1" ] && [ -s "$outputFile" ]; then
-			cacheOps 'backup'
-			output "Stopping $serviceName...\\n"
-			tmpfs del triggers
-			reload_dnsmasq 'on_stop'
-		fi
-	else
-		cacheOps 'backup'
-		reload_dnsmasq 'quiet'
-	fi
 	if is_chaos_calmer; then
 		fw3_setup 'stop'
+	fi
+	if [ -s "$outputFile" ]; then
+		output "Stopping $serviceName... "
+		tmpfs del triggers
+		if reload_resolver 'on_stop'; then
+			led_off "$led"
+			output 0 "$__OK__\\n"; output_okn
+			tmpfs set status "$statusStopped"
+			tmpfs del message
+		else 
+			output 0 "$__FAIL__\\n"; output_fail
+			tmpfs set status "$statusFail"
+			tmpfs add error "Error: error stopping $serviceName."
+			output "$_ERROR_:  error stopping $serviceName!\\n"
+		fi
 	fi
 }
 
