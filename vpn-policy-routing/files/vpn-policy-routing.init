@@ -215,7 +215,7 @@ is_wan_up() {
 	config_load 'network'
 	config_foreach list_supported_iface 'interface'
 	if [ -n "$wanGW" ]; then
-#		[ -z "$ipAddrOutput" ] && ip4AddrOutput="$(ip addr show 2>/dev/null)"	
+#		[ -z "$ipAddrOutput" ] && ipAddrOutput="$(ip addr show 2>/dev/null)"	
 		[ -z "$ip4RouteOutput" ] && ip4RouteOutput="$(ip -4 route 2>/dev/null)"	
 		[ -z "$ip6RouteOutput" ] && ip6RouteOutput="$(ip -6 route 2>/dev/null)"	
 		[ -z "$ifconfigOutput" ] && ifconfigOutput="$(ifconfig 2>/dev/null)"	
