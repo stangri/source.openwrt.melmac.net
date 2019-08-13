@@ -139,7 +139,7 @@ config.override_values = true
 config.override_depends = true
 config:tab("basic", translate("Basic Configuration"))
 
-verb = config:taboption("basic", ListValue, "verbosity", translate("Output verbosity"),translate("Controls both system log and console output verbosity"))
+verb = config:taboption("basic", ListValue, "verbosity", translate("Output verbosity"),translate("Controls both system log and console output verbosity."))
 verb:value("0", translate("Suppress/No output"))
 verb:value("1", translate("Condensed output"))
 verb:value("2", translate("Verbose output"))
@@ -147,25 +147,33 @@ verb.default = 2
 
 se = config:taboption("basic", ListValue, "strict_enforcement", translate("Strict enforcement"),translate("See the") .. " "
   .. [[<a href="]] .. readmeURL .. [[#strict-enforcement" target="_blank">]]
-  .. translate("README") .. [[</a>]] .. " " .. translate("for details"))
+  .. translate("README") .. [[</a>]] .. " " .. translate("for details."))
 se:value("0", translate("Do not enforce policies when their gateway is down"))
 se:value("1", translate("Strictly enforce policies when their gateway is down"))
 se.default = 1
 
-dnsmasq = config:taboption("basic", ListValue, "dnsmasq_enabled", translate("Use DNSMASQ for domain policies"),
+dnsmasq = config:taboption("basic", ListValue, "dnsmasq_ipset", translate("Use DNSMASQ ipset for domain policies"),
 	translate("Please check the" .. " "
   .. [[<a href="]] .. readmeURL .. [[#use-dnsmasq" target="_blank">]]
   .. translate("README") .. [[</a>]] .. " " .. translate("before enabling this option.")))
 dnsmasq:value("0", translate("Disabled"))
 dnsmasq:value("1", translate("Enabled"))
 
-ipset = config:taboption("basic", ListValue, "ipset_enabled", translate("Use ipsets"),
+remote_ipset = config:taboption("basic", ListValue, "remote_ipset", translate("Use ipset for remote policies"),
 	translate("Please check the") .. " "
   .. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]]
   .. translate("README") .. [[</a>]] .. " " .. translate("before changing this option."))
-ipset:depends({dnsmasq_enabled="0"})
-ipset:value("", translate("Disabled"))
-ipset:value("1", translate("Enabled"))
+remote_ipset:depends({dnsmasq_ipset="0"})
+remote_ipset:value("0", translate("Disabled"))
+remote_ipset:value("1", translate("Enabled"))
+remote_ipset.default = "1"
+
+local_ipset = config:taboption("basic", ListValue, "local_ipset", translate("Use ipset for local policies"),
+	translate("Please check the") .. " "
+  .. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]]
+  .. translate("README") .. [[</a>]] .. " " .. translate("before changing this option."))
+local_ipset:value("0", translate("Disabled"))
+local_ipset:value("1", translate("Enabled"))
 
 ipv6 = config:taboption("basic", ListValue, "ipv6_enabled", translate("IPv6 Support"))
 ipv6:value("0", translate("Disabled"))
@@ -178,41 +186,34 @@ config:tab("advanced", translate("Advanced Configuration"),
 
 supported = config:taboption("advanced", DynamicList, "supported_interface", translate("Supported Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be explicitly supported by the service. Can be useful if your OpenVPN tunnels have dev option other than tun* or tap*."))
 supported.optional = false
-supported.rmempty = true
 
 ignored = config:taboption("advanced", DynamicList, "ignored_interface", translate("Ignored Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be ignored by the service. Can be useful if running both VPN server and VPN client on the router."))
 ignored.optional = false
-ignored.rmempty = true
 
 timeout = config:taboption("advanced", Value, "boot_timeout", translate("Boot Time-out"), translate("Time (in seconds) for service to wait for WAN gateway discovery on boot."))
 timeout.optional = false
 timeout.rmempty = true
 
 insert = config:taboption("advanced", ListValue, "iptables_rule_option", translate("IPTables rule option"), translate("Select Append for -A and Insert for -I."))
-insert:value("", translate("Append"))
+insert:value("append", translate("Append"))
 insert:value("insert", translate("Insert"))
-insert.default = ""
-insert.rmempty = true
+insert.default = "append"
 
 iprule = config:taboption("advanced", ListValue, "iprule_enabled", translate("IP Rules Support"), translate("Add an ip rule, not an iptables entry for policies with just the local address. Use with caution to manipulte policies priorities."))
-iprule:value("", translate("Disabled"))
+iprule:value("0", translate("Disabled"))
 iprule:value("1", translate("Enabled"))
-iprule.rmempty = true
 
 enable_control = config:taboption("advanced", ListValue, "enable_control", translate("Show Enable Column"), translate("Shows the enable checkbox column for policies, allowing you to quickly enable/disable specific policy without deleting it."))
-enable_control:value("", translate("Disabled"))
+enable_control:value("0", translate("Disabled"))
 enable_control:value("1", translate("Enabled"))
-enable_control.rmempty = true
 
 proto_control = config:taboption("advanced", ListValue, "proto_control", translate("Show Protocol Column"), translate("Shows the protocol column for policies, allowing you to assign a TCP, UDP or TCP/UDP protocol to a policy."))
-proto_control:value("", translate("Disabled"))
+proto_control:value("0", translate("Disabled"))
 proto_control:value("1", translate("Enabled"))
-proto_control.rmempty = true
 
 chain_control = config:taboption("advanced", ListValue, "chain_control", translate("Show Chain Column"), translate("Shows the chain column for policies, allowing you to assign a TCP, UDP or TCP/UDP protocol to a policy."))
-chain_control:value("", translate("Disabled"))
+chain_control:value("0", translate("Disabled"))
 chain_control:value("1", translate("Enabled"))
-chain_control.rmempty = true
 
 icmp = config:taboption("advanced", ListValue, "icmp_interface", translate("Default ICMP Interface"), translate("Force the ICMP protocol interface."))
 icmp:value("", translate("No Change"))

@@ -53,7 +53,7 @@ output() {
 is_installed(){ [ -n "$(opkg list-installed "$1")" ]; }
 
 export serviceEnabled verbosity strictMode wanTableID wanMark fwMask
-export ipv6Enabled ipsetEnabled ipruleEnabled dnsmasqEnabled icmpIface
+export ipv6Enabled localIpset remoteIpset ipruleEnabled dnsmasqIpset icmpIface
 export ignoredIfaces="" supportedIfaces=""
 export appendLocalPolicy="" appendRemotePolicy=""
 export wanIface4 wanIface6 ifaceMark ifaceTableID ifacesListAll ifacesListSupported wanGW4 wanGW6
@@ -149,9 +149,10 @@ load_package_config() {
 	config_get_bool serviceEnabled      'config' 'enabled' 0
 	config_get_bool strictMode          'config' 'strict_enforcement' 1
 	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' 0
-	config_get_bool ipsetEnabled        'config' 'ipset_enabled' 1
+	config_get_bool dnsmasqIpset        'config' 'dnsmasq_ipset' 0
+	config_get_bool remoteIpset         'config' 'remote_ipset' 1
+	config_get_bool localIpset          'config' 'local_ipset' 0
 	config_get_bool ipruleEnabled       'config' 'iprule_enabled' 0
-	config_get_bool dnsmasqEnabled      'config' 'dnsmasq_enabled' 0
 	config_get appendLocalPolicy        'config' 'append_local_rules'
 	config_get appendRemotePolicy       'config' 'append_remote_rules'
 	config_get verbosity                'config' 'verbosity' '2'
@@ -189,13 +190,12 @@ is_enabled() {
 		fi
 		return 1
 	fi
-	if [ "$dnsmasqEnabled" -ne 0 ]; then
+	if [ "$dnsmasqIpset" -ne 0 ]; then
 		if ! dnsmasq --version | grep -q -w "ipset"; then
 			output "$_ERROR_: dnsmasq support is enabled in $packageName, but installed dnsmasq does not support ipsets!\\n"
-			dnsmasqEnabled=0
-		else
-			ipsetEnabled=1
+			dnsmasqIpset=0
 		fi
+		remoteIpset=1
 	fi
 }
 
@@ -252,27 +252,35 @@ ips() {
 	[ -n "$appendix" ] && appendix="_${appendix}"
 	case "$command" in
 		add_dnsmasq)
-			[ "$dnsmasqEnabled" -eq 0 ] && return 1
+			[ "$dnsmasqIpset" -eq 0 ] && return 1
 			[ "$ipv6Enabled" -ne 0 ] && ipset="${ipset},${ipset}6"
 			echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlagIpv4=1
 			if [ "$failFlagIpv4" -eq 0 ] && [ "$failFlagIpv6" -eq 0 ]; then return 0; else return 1; fi
 			;;
 		add)
-			[ "$ipsetEnabled" -eq 0 ] && return 1
+			if [ -z "$appendix" ]; then
+				[ "$remoteIpset" -eq 0 ] && return 1
+			else
+				[ "$localIpset" -eq 0 ] && return 1
+			fi
 			ipset -q -! $command "${ipset}${appendix}" $param comment "$comment" || failFlagIpv4=1
 			[ "$ipv6Enabled" -ne 0 ] && ipset -q -! "$command" "${ipset}6${appendix}" ${param/"family inet"/"family inet6"} comment "$comment" || failFlagIpv6=1
 			if [ "$failFlagIpv4" -eq 0 ] || [ "$failFlagIpv6" -eq 0 ]; then return 0; else return 1; fi
 			;;
 		create)
-			[ "$ipsetEnabled" -eq 0 ] && return 0
+			if [ -z "$appendix" ]; then
+				[ "$remoteIpset" -eq 0 ] && return 0
+			else
+				[ "$localIpset" -eq 0 ] && return 0
+			fi
 			ipset -q -! "$command" "${ipset}${appendix}" $param || failFlagIpv4=1
 			if [ "$ipv6Enabled" -ne 0 ]; then ipset -q -! "$command" "${ipset}6${appendix}" ${param/"family inet"/"family inet6"} || failFlagIpv6=1; fi
 			if [ "$failFlagIpv4" -eq 0 ] && [ "$failFlagIpv6" -eq 0 ]; then return 0; else return 1; fi
 			;;
 		destroy|flush)
-			[ "$ipsetEnabled" -eq 0 ] && return 0
 			ipset -q -! "$command" "${ipset}${appendix}" || failFlagIpv4=1
 			if [ "$ipv6Enabled" -ne 0 ]; then ipset -q -! "$command" "${ipset}6${appendix}" || failFlagIpv6=1; fi
+			return 0
 			if [ "$failFlagIpv4" -eq 0 ] && [ "$failFlagIpv6" -eq 0 ]; then return 0; else return 1; fi
 			;;
 	esac
@@ -368,11 +376,11 @@ r_process_policy(){
 		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 	elif [ -n "$laddr" ] && [ -z "$lport" ] && [ -z "$raddr" ] && [ -z "$rport" ] && [ "$proto" == "tcp" ] && [ "$chain" == "PREROUTING" ]; then
 		if is_mac_address "$laddr"; then
-			ips add "${iface}" "$laddr" "${comment}: $laddr" "local_mac" || ipsFailFlag=1
+			ips 'add' "${iface}" "$laddr" "${comment}: $laddr" "local_mac" || ipsFailFlag=1
 		else
 			# see if we can add ipset or iprule instead of the iptable entry
 			for i in $(resolveip "$laddr"); do
-				ips add "${iface}" "$i" "${comment}: $laddr $i" "local_ip" || \
+				ips 'add' "${iface}" "$i" "${comment}: $laddr $i" "local_ip" || \
 				ipr "$comment" "$iface" "$i" || \
 				insert_policy "$comment" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"
 			done
@@ -507,17 +515,23 @@ table_create(){
 			if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
 				ipt -t mangle -I VPR_PREROUTING -m dscp --dscp "${dscp}" -j MARK --set-xmark "${mark}/${fwMask}" || s=1
 			fi
-			if [ $ipsetEnabled -ne 0 ]; then
+			if [ $remoteIpset -ne 0 ]; then
 				ips 'create' "${iface}" 'hash:net family inet comment' && ips 'flush' "${iface}" || s=1
+				if [ "$ipv4_set" -ne 0 ]; then
+					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+				fi
+				if [ "$ipv6_set" -ne 0 ]; then
+					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+				fi
+			fi
+			if [ "$localIpset" -ne 0 ]; then
 				ips 'create' "${iface}" 'hash:net family inet comment' '' 'local_ip' && ips 'flush' "${iface}" '' '' 'local_ip' || s=1
 				ips 'create' "${iface}" 'hash:mac comment' '' 'local_mac' && ips 'flush' "${iface}" '' '' 'local_mac' || s=1
-				if [ $ipv4_set -ne 0 ]; then
-					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+				if [ "$ipv4_set" -ne 0 ]; then
 					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_local_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
 					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_local_mac" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
 				fi
-				if [ $ipv6_set -ne 0 ]; then
-					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+				if [ "$ipv6_set" -ne 0 ]; then
 					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_local_ip" src -j MARK --set-xmark "${mark}/${fwMask}" || s=1
 					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_local_mac" src -j MARK --set-xmark "${mark}/${fwMask}" || s=1
 				fi
@@ -608,6 +622,8 @@ convert_config(){
 	sed -i 's/local_ports/local_port/g' "/etc/config/${packageName}"
 	sed -i 's/remote_addresses/remote_address/g' "/etc/config/${packageName}"
 	sed -i 's/remote_ports/remote_port/g' "/etc/config/${packageName}"
+	sed -i 's/ipset_enabled/remote_ipset/g' "/etc/config/${packageName}"
+	sed -i 's/dnsmasq_enabled/dnsmasq_ipset/g' "/etc/config/${packageName}"
 	for i in udp_proto_enabled forward_chain_enabled input_chain_enabled output_chain_enabled; do
 		grep -q "$i" "/etc/config/${packageName}" && output "${_WARNING_}: $i setting is not supported in ${serviceName}.\\n"
 	done
@@ -653,6 +669,11 @@ start_service() {
 	is_enabled 'on_start' || return 1
 	is_wan_up || return 0
 	if create_lock; then
+		procd_open_instance "main"
+		procd_set_param command /bin/true
+		procd_set_param stdout 1
+		procd_set_param stderr 1
+		procd_close_instance
 		if [ -s "$dnsmasqFile" ]; then
 			dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
 			rm -f "$dnsmasqFile"
@@ -754,7 +775,8 @@ service_triggers() {
 
 		procd_open_validate
 			validate_config
-			validate_policies
+			validate_policy
+			validate_include
 		procd_close_validate
 
 		procd_add_reload_trigger 'firewall'
@@ -875,31 +897,43 @@ support() {
 validate_config() {
 	uci_validate_section "${packageName}" config "${1}" \
 		'enabled:bool:0' \
+		'verbosity:range(0,2):1' \
 		'strict_enforcement:bool:1' \
-		'ipv6_enabled:bool:1' \
-		'ipset_enabled:bool:1' \
+		'dnsmasq_ipset:bool:1' \
+		'local_ipset:bool:0' \
+		'remote_ipset:bool:1' \
+		'ipv6_enabled:bool:0' \
+		'supported_interfaces:list(string)' \
+		'ignored_interfaces:list(string)' \
+		'boot_timeout:integer:30' \
+		'iptables_rule_option:or("", "insert")' \
 		'iprule_enabled:bool:0' \
-		'dnsmasq_enabled:bool:0' \
+		'enable_control:bool:0' \
 		'proto_control:bool:0' \
 		'chain_control:bool:0' \
-		'verbosity:range(0,2):1' \
+		'icmp_interface:string' \
 		'wan_tid:integer:201' \
 		'wan_fw_mark:string' \
-		'fw_mask:string' \
-		'icmp_interface:string' \
-		'ignored_interfaces:list(string)' \
-		'supported_interfaces:list(string)'
+		'fw_mask:string'
 }
 
 # shellcheck disable=SC2120
-validate_policies() {
+validate_policy() {
 	uci_validate_section "${packageName}" policy "${1}" \
 		'name:string' \
+		'enabled:bool:0' \
 		'interface:string' \
 		'proto:or("tcp", "udp", "tcp udp")' \
 		'chain:or("PREROUTING", "FORWARD", "INPUT", "OUTPUT")' \
-		'local_addresses:list(or(string,cidr4,cidr6))' \
+		'local_addresses:list(or(string,cidr4,cidr6,macaddr,host,hostname,network))' \
 		'local_ports:list(or(port,portrange))' \
-		'remote_addresses:list(or(string,cidr4,cidr6))' \
+		'remote_addresses:list(or(string,cidr4,cidr6,host,hostname))' \
 		'remote_ports:list(or(port,portrange))'
+}
+
+# shellcheck disable=SC2120
+validate_include() {
+	uci_validate_section "${packageName}" include "${1}" \
+		'path:string' \
+		'enabled:bool:0'
 }
