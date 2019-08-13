@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-PKG_VERSION='1.7.1-13'
+PKG_VERSION=
 
 export START=94
 export USE_PROCD=1
