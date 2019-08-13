@@ -31,15 +31,15 @@ readonly userFile="/etc/${packageName}.user"
 create_lock() { [ -e "$PID" ] && return 1; touch "$PID"; }
 remove_lock() { [ -e "$PID" ] && rm -f "$PID"; }
 trap remove_lock EXIT
-output_ok() { case $verbosity in 1) output "$_OK_";; 2) output "$__OK__\\n";; esac; }
-output_okn() { case $verbosity in 1) output "$_OK_\\n";; 2) output "$__OK__\\n";; esac; }
-output_fail() { s=1; case $verbosity in 1) output "$_FAIL_";; 2) output "$__FAIL__\\n";; esac; }
-output_failn() { case $verbosity in 1) output "$_FAIL_\\n";; 2) output "$__FAIL__\\n";; esac; }
+output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
+output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
+output_fail() { s=1; output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
+output_failn() { output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output() {
 # Can take a single parameter (text) to be output at any verbosity
 # Or target verbosity level and text to be output at specifc verbosity
 	if [ $# -ne 1 ]; then
-		if [ ! $((verbosity & $1)) -gt 0 ]; then return 0; else shift; fi
+		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" == "$1" ]; then shift; else return 0; fi
 	fi
 	[ -t 1 ] && echo -e -n "$1"
 	local msg=$(echo -n "${1/$serviceName /service }" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g');
@@ -740,7 +740,11 @@ start_service() {
 	fi
 }
 
+restart() { reload; }
+restart_service() { reload; }
+
 stop_service() {
+	[ "$(tmpfs 'get')"  == "Stopped" ] && return 0
 	if create_lock; then
 		load_package_config
 		config_load 'network'; config_foreach process_interface 'interface' 'destroy'
@@ -755,7 +759,7 @@ stop_service() {
 		unset ifaceTableID; unset ifaceMark;
 		if [ -s "$dnsmasqFile" ]; then
 			rm -f "$dnsmasqFile"
-			dnsmasq_kill
+			dnsmasq_restart
 		fi
 		if [ "$serviceEnabled" -ne 0 ]; then
 			output "$serviceName stopped "; output_okn;
