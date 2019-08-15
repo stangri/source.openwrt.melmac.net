@@ -77,7 +77,6 @@ output() {
 }
 led_on(){ if [ -n "${1}" ] && [ -e "${1}/trigger" ]; then echo "default-on" > "${1}/trigger" 2>&1; fi; }
 led_off(){ if [ -n "${1}" ] &&  [ -e "${1}/trigger" ]; then echo "none" > "${1}/trigger" 2>&1; fi; }
-boot() { load_package_config; ( sleep "$bootDelay" && rc_procd start_service && rc_procd service_triggers | cat & ); }
 
 export serviceEnabled
 export forceDNS
@@ -692,6 +691,15 @@ $(cat $A_TMP)"
 		tmpfs add error "Error: removing temporary files."
 	fi
 	output 1 "\\n"
+}
+
+boot() { 
+	load_package_config
+	if create_lock; then
+		sleep "$bootDelay"
+		remove_lock
+		rc_procd start_service && rc_procd service_triggers
+	fi
 }
 
 start_service() {
