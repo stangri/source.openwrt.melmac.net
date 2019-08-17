@@ -148,13 +148,13 @@ s = m:section(NamedSection, "config", "simple-adblock", translate("Configuration
 -- General options
 s:tab("basic", translate("Basic Configuration"))
 
-o2 = s:taboption("basic", ListValue, "verbosity", translate("Output Verbosity Setting"),translate("Controls system log and console output verbosity"))
+o2 = s:taboption("basic", ListValue, "verbosity", translate("Output Verbosity Setting"),translate("Controls system log and console output verbosity."))
 o2:value("0", translate("Suppress output"))
 o2:value("1", translate("Some output"))
 o2:value("2", translate("Verbose output"))
 o2.default = 2
 
-o3 = s:taboption("basic", ListValue, "force_dns", translate("Force Router DNS"), translate("Forces Router DNS use on local devices, also known as DNS Hijacking"))
+o3 = s:taboption("basic", ListValue, "force_dns", translate("Force Router DNS"), translate("Forces Router DNS use on local devices, also known as DNS Hijacking."))
 o3:value("0", translate("Let local devices use their own DNS servers if set"))
 o3:value("1", translate("Force Router DNS server to all local devices"))
 o3.default = 1
@@ -167,7 +167,7 @@ end
 if #leds ~= 0 then
 	o4 = s:taboption("basic", Value, "led", translate("LED to indicate status"), translate("Pick the LED not already used in")
 		.. [[ <a href="]] .. luci.dispatcher.build_url("admin/system/leds") .. [[">]]
-		.. translate("System LED Configuration") .. [[</a>]])
+		.. translate("System LED Configuration") .. [[</a>]] .. ".")
 	o4.rmempty = false
 	o4:value("", translate("none"))
 	for k, v in ipairs(leds) do
@@ -179,48 +179,48 @@ s:tab("advanced", translate("Advanced Configuration"))
 
 dns = s:taboption("advanced", ListValue, "dns", translate("DNS Service"), translate("Pick the DNS resolution option to create the adblock list for, see the") .. " "
   .. [[<a href="]] .. readmeURL .. [[#dns-resolution-option" target="_blank">]]
-  .. translate("README") .. [[</a>]] .. " " .. translate("for details"))
+  .. translate("README") .. [[</a>]] .. " " .. translate("for details."))
 dns:value("dnsmasq.addnhosts", translate("DNSMASQ Additional Hosts"))
 dns:value("dnsmasq.config", translate("DNSMASQ Config"))
 dns:value("dnsmasq.servers", translate("DNSMASQ Servers File"))
 dns:value("unbound.adb_list", translate("Unbound AdBlock List"))
 dns.default = "dnsmasq.servers"
 
-ipv6 = s:taboption("advanced", ListValue, "ipv6_enabled", translate("IPv6 Support"), translate("Add IPv6 entries to block-list"))
+ipv6 = s:taboption("advanced", ListValue, "ipv6_enabled", translate("IPv6 Support"), translate("Add IPv6 entries to block-list."))
 ipv6:value("", translate("Do not add IPv6 entries"))
 ipv6:value("1", translate("Add IPv6 entries"))
 ipv6:depends({dns="dnsmasq.addnhosts"}) 
 ipv6.default = ""
 ipv6.rmempty = true
 
-o5 = s:taboption("advanced", Value, "boot_delay", translate("Delay (in seconds) for on-boot start"), translate("Run service after set delay on boot"))
+o5 = s:taboption("advanced", Value, "boot_delay", translate("Delay (in seconds) for on-boot start"), translate("Run service after set delay on boot."))
 o5.default = 120
 o5.datatype = "range(1,600)"
 
-o6 = s:taboption("advanced", Value, "download_timeout", translate("Download time-out (in seconds)"), translate("Stop the download if it is stalled for set number of seconds"))
+o6 = s:taboption("advanced", Value, "download_timeout", translate("Download time-out (in seconds)"), translate("Stop the download if it is stalled for set number of seconds."))
 o6.default = 10
 o6.datatype = "range(1,60)"
 
-o7 = s:taboption("advanced", Value, "curl_retry", translate("Curl download retry"), translate("If curl is installed and detected, it would retry download this many times on timeout/fail"))
+o7 = s:taboption("advanced", Value, "curl_retry", translate("Curl download retry"), translate("If curl is installed and detected, it would retry download this many times on timeout/fail."))
 o7.default = 3
 o7.datatype = "range(0,30)"
 
-o8 = s:taboption("advanced", ListValue, "parallel_downloads", translate("Simultaneous processing"), translate("Launch all lists downloads and processing simultaneously, reducing service start time"))
+o8 = s:taboption("advanced", ListValue, "parallel_downloads", translate("Simultaneous processing"), translate("Launch all lists downloads and processing simultaneously, reducing service start time."))
 o8:value("0", translate("Do not use simultaneous processing"))
 o8:value("1", translate("Use simultaneous processing"))
 o8.default = 1
 
-o9 = s:taboption("advanced", ListValue, "allow_non_ascii", translate("Allow Non-ASCII characters in DNSMASQ file"), translate("Only enable if your version of DNSMASQ supports the use of Non-ASCII characters, otherwise DNSMASQ will fail to start"))
+o9 = s:taboption("advanced", ListValue, "allow_non_ascii", translate("Allow Non-ASCII characters in DNSMASQ file"), translate("Only enable if your version of DNSMASQ supports the use of Non-ASCII characters, otherwise DNSMASQ will fail to start."))
 o9:value("0", translate("Do not allow Non-ASCII"))
 o9:value("1", translate("Allow Non-ASCII"))
 o9.default = "0"
 
-o10 = s:taboption("advanced", ListValue, "compressed_cache", translate("Store compressed cache file on router"), translate("Attempt to create a compressed cache of block-list in the persistent memory"))
+o10 = s:taboption("advanced", ListValue, "compressed_cache", translate("Store compressed cache file on router"), translate("Attempt to create a compressed cache of block-list in the persistent memory."))
 o10:value("0", translate("Do not store compressed cache"))
 o10:value("1", translate("Store compressed cache"))
 o10.default = "0"
 
-o11 = s:taboption("advanced", ListValue, "debug", translate("Enable Debugging"), translate("Enables debug output to /tmp/simple-adblock.log"))
+o11 = s:taboption("advanced", ListValue, "debug", translate("Enable Debugging"), translate("Enables debug output to /tmp/simple-adblock.log."))
 o11:value("0", translate("Disable Debugging"))
 o11:value("1", translate("Enable Debugging"))
 o11.default = "0"
@@ -228,27 +228,27 @@ o11.default = "0"
 
 s2 = m:section(NamedSection, "config", "simple-adblock", translate("Whitelist and Blocklist Management"))
 -- Whitelisted Domains
-d1 = s2:option(DynamicList, "whitelist_domain", translate("Whitelisted Domains"), translate("Individual domains to be whitelisted"))
+d1 = s2:option(DynamicList, "whitelist_domain", translate("Whitelisted Domains"), translate("Individual domains to be whitelisted."))
 d1.addremove = false
 d1.optional = false
 
 -- Blacklisted Domains
-d3 = s2:option(DynamicList, "blacklist_domain", translate("Blacklisted Domains"), translate("Individual domains to be blacklisted"))
+d3 = s2:option(DynamicList, "blacklist_domain", translate("Blacklisted Domains"), translate("Individual domains to be blacklisted."))
 d3.addremove = false
 d3.optional = false
 
 -- Whitelisted Domains URLs
-d2 = s2:option(DynamicList, "whitelist_domains_url", translate("Whitelisted Domain URLs"), translate("URLs to lists of domains to be whitelisted"))
+d2 = s2:option(DynamicList, "whitelist_domains_url", translate("Whitelisted Domain URLs"), translate("URLs to lists of domains to be whitelisted."))
 d2.addremove = false
 d2.optional = false
 
 -- Blacklisted Domains URLs
-d4 = s2:option(DynamicList, "blacklist_domains_url", translate("Blacklisted Domain URLs"), translate("URLs to lists of domains to be blacklisted"))
+d4 = s2:option(DynamicList, "blacklist_domains_url", translate("Blacklisted Domain URLs"), translate("URLs to lists of domains to be blacklisted."))
 d4.addremove = false
 d4.optional = false
 
 -- Blacklisted Hosts URLs
-d5 = s2:option(DynamicList, "blacklist_hosts_url", translate("Blacklisted Hosts URLs"), translate("URLs to lists of hosts to be blacklisted"))
+d5 = s2:option(DynamicList, "blacklist_hosts_url", translate("Blacklisted Hosts URLs"), translate("URLs to lists of hosts to be blacklisted."))
 d5.addremove = false
 d5.optional = false
 
