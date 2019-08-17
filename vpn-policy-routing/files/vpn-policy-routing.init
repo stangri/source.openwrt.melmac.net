@@ -33,7 +33,7 @@ remove_lock() { [ -e "$PID" ] && rm -f "$PID"; }
 trap remove_lock EXIT
 output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
 output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
-output_fail() { s=1; output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
+output_fail() { s=1; output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output_failn() { output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output() {
 # Can take a single parameter (text) to be output at any verbosity
@@ -338,10 +338,21 @@ insert_policy() {
 				else
 					param="$param -s $laddr"
 				fi
-				param="$param $appendLocalPolicy"
+				if [ "${appendLocalPolicy//-d}" != "$appendLocalPolicy" ] && [ -n "$raddr" ]; then
+					processPolicyStatus="${processPolicyStatus}${_ERROR_}: cannot append '$comment' policy with '$appendLocalPolicy' as destination is already set to '$raddr'\\n"
+				else
+					param="$param $appendLocalPolicy"
+				fi
 			fi
 			[ -n "$lport" ] && param="$param -m multiport --sport ${lport//-/:}"
-			[ -n "$raddr" ] && param="$param -d $raddr $appendRemotePolicy"
+			if [ -n "$raddr" ]; then 
+				if [ "${appendRemotePolicy//-s}" != "$appendRemotePolicy" ] && [ -n "$laddr" ]; then
+					param="$param -d $raddr"
+					processPolicyStatus="${processPolicyStatus}${_ERROR_}: cannot append '$comment' policy with '$appendRemotePolicy' as source is already set to '$laddr'\\n"
+				else
+					param="$param -d $raddr $appendRemotePolicy"
+				fi
+			fi
 			[ -n "$rport" ] && param="$param -m multiport --dport ${rport//-/:}"
 			[ -n "$comment" ] && param="$param -m comment --comment $(echo "$comment" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_')"
 			ipt "$param" || processPolicyStatus="${processPolicyStatus}${_ERROR_}: iptables $param\\n"
