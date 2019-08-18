@@ -248,7 +248,13 @@ ipt() {
 
 # shellcheck disable=SC2086
 ips() {
-	local command="$1" ipset="${2//-/_}" param="$3" comment="$4" appendix="$5" failFlagIpv4=0 failFlagIpv6=0
+	local command="$1" ipset="${2//-/_}" param="$3" comment="$4" appendix failFlagIpv4=0 failFlagIpv6=0
+	if [ "${ipset//_ip}" != "${ipset}" ]; then
+		ipset="${ipset//_ip}"; appendix='_ip';
+	elif [ "${ipset//_mac}" != "${ipset}" ]; then
+		ipset="${ipset//_mac}"; appendix='_mac';
+	fi
+	
 	[ -n "$appendix" ] && appendix="_${appendix}"
 	case "$command" in
 		add_dnsmasq)
@@ -387,11 +393,11 @@ r_process_policy(){
 		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 	elif [ -n "$laddr" ] && [ -z "$lport" ] && [ -z "$raddr" ] && [ -z "$rport" ] && [ "$proto" == "tcp" ] && [ "$chain" == "PREROUTING" ]; then
 		if is_mac_address "$laddr"; then
-			ips 'add' "${iface}" "$laddr" "${comment}: $laddr" "local_mac" || ipsFailFlag=1
+			ips 'add' "${iface}_mac" "$laddr" "${comment}: $laddr" || ipsFailFlag=1
 		else
 			# see if we can add ipset or iprule instead of the iptable entry
 			for i in $(resolveip "$laddr"); do
-				ips 'add' "${iface}" "$i" "${comment}: $laddr $i" "local_ip" || \
+				ips 'add' "${iface}_ip" "$i" "${comment}: $laddr $i" || \
 				ipr "$comment" "$iface" "$i" || \
 				insert_policy "$comment" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"
 			done
@@ -476,8 +482,8 @@ table_destroy(){
 		ip -4 route flush table "$tid";
 		ip -6 route flush table "$tid";
 		ips 'flush' "${iface}"; ips 'destroy' "${iface}";
-		ips 'flush' "${iface}" '' '' 'local_ip'; ips 'destroy' "${iface}" '' '' 'local_ip';
-		ips 'flush' "${iface}" '' '' 'local_mac'; ips 'destroy' "${iface}" '' '' 'local_mac';
+		ips 'flush' "${iface}_ip"; ips 'destroy' "${iface}_ip";
+		ips 'flush' "${iface}_mac"; ips 'destroy' "${iface}_mac";
 		ip -4 route flush cache
 		ip -6 route flush cache
 		return 0
@@ -536,15 +542,15 @@ table_create(){
 				fi
 			fi
 			if [ "$localIpset" -ne 0 ]; then
-				ips 'create' "${iface}" 'hash:net family inet comment' '' 'local_ip' && ips 'flush' "${iface}" '' '' 'local_ip' || s=1
-				ips 'create' "${iface}" 'hash:mac comment' '' 'local_mac' && ips 'flush' "${iface}" '' '' 'local_mac' || s=1
+				ips 'create' "${iface}_ip" 'hash:net family inet comment' && ips 'flush' "${iface}_ip" || s=1
+				ips 'create' "${iface}_mac" 'hash:mac comment' && ips 'flush' "${iface}_mac" || s=1
 				if [ "$ipv4_set" -ne 0 ]; then
-					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_local_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
-					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_local_mac" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
+					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
+					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_mac" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
 				fi
 				if [ "$ipv6_set" -ne 0 ]; then
-					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_local_ip" src -j MARK --set-xmark "${mark}/${fwMask}" || s=1
-					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_local_mac" src -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_ip" src -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+					ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_mac" src -j MARK --set-xmark "${mark}/${fwMask}" || s=1
 				fi
 			fi
 			if [ "$iface" = "$icmpIface" ]; then
@@ -705,16 +711,16 @@ start_service() {
 		ipt -t mangle -N VPR_INPUT; ipt -t mangle "$insertOption" INPUT -m mark --mark "0x00/${fwMask}" -j VPR_INPUT;
 		ipt -t mangle -N VPR_OUTPUT; ipt -t mangle "$insertOption" OUTPUT -m mark --mark "0x00/${fwMask}" -j VPR_OUTPUT;
 
-		output 1 'Processing interfaces '
+		output 1 'Processing Interfaces '
 		config_load 'network'; config_foreach process_interface 'interface' 'create';
 		output 1 '\n'
 		if is_config_enabled 'policy'; then
-			output 1 'Processing policies '
+			output 1 'Processing Policies '
 			config_load $packageName; config_foreach process_policy 'policy';
 			output 1 '\n'
 		fi
 		if is_config_enabled 'include'; then
-			output 1 'Processing user file(s) '
+			output 1 'Processing User File(s) '
 			config_load $packageName; config_foreach process_user_file 'include';
 			output 1 '\n'
 		fi
