@@ -68,7 +68,7 @@ vpr_find_iface() {
 	[ -z "$ifacesListAll" ] && config_foreach list_iface 'interface'
 	if [ -z "$iface" ] || is_tunnel "$iface"; then
 		for i in $ifacesListAll; do 
-			if [ "${i/#$2}" != "$i" ] || [ "${i%$2}" != "$i" ]; then break; else unset i; fi; 
+			if [ "${i/#$2}" != "$i" ] || [ "${i/%$2}" != "$i" ]; then break; else unset i; fi; 
 		done;
 	fi
 	[ -n "$i" ] && iface="$i"; 
@@ -81,8 +81,8 @@ is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}
 is_tor() { local dev; dev=$(uci -q get network."$1".ifname); [ "${dev:0:3}" = "tor" ]; }
 is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
 is_tunnel() { is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_tor "$1" || is_wg "$1"; }
-is_wan() { [ -n "$wanIface4" ] && [ "$1" = "$wanIface4" ]; }
-is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ]; }
+is_wan() { [ -n "$wanIface4" ] && [ "$1" = "$wanIface4" ] || [ "${1/#wan}" != "$1" ] || [ "${1/%wan}" != "$1" ]; }
+is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ] || [ "${1/#wan6}" != "$1" ] || [ "${1/%wan6}" != "$1" ]; }
 string_match_word() { echo "$1" | grep -q -w "$2"; }
 is_ignored_interface() { string_match_word "$ignoredIfaces" "$1"; }
 is_supported_interface() { string_match_word "$supportedIfaces" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; }; }
@@ -711,10 +711,10 @@ start_service() {
 			return 1
 		fi
 
-		ipt -t mangle -N VPR_PREROUTING; ipt -t mangle "$insertOption" PREROUTING -m mark --mark "0x00/${fwMask}" -j VPR_PREROUTING;
-		ipt -t mangle -N VPR_FORWARD; ipt -t mangle "$insertOption" FORWARD -m mark --mark "0x00/${fwMask}" -j VPR_FORWARD;
-		ipt -t mangle -N VPR_INPUT; ipt -t mangle "$insertOption" INPUT -m mark --mark "0x00/${fwMask}" -j VPR_INPUT;
-		ipt -t mangle -N VPR_OUTPUT; ipt -t mangle "$insertOption" OUTPUT -m mark --mark "0x00/${fwMask}" -j VPR_OUTPUT;
+		for i in PREROUTING FORWARD INPUT OUTPUT; do
+			ipt -t mangle -N "VPR_${i}"
+			ipt -t mangle "$insertOption" "$i" -m mark --mark "0x00/${fwMask}" -j "VPR_${i}"
+		done
 
 		output 1 'Processing Interfaces '
 		config_load 'network'; config_foreach process_interface 'interface' 'create';
@@ -766,17 +766,14 @@ restart() { reload; }
 restart_service() { reload; }
 
 stop_service() {
+	local i
 	[ "$(tmpfs 'get')"  == "Stopped" ] && return 0
 	if create_lock; then
 		load_package_config
-		ipt -t mangle -D PREROUTING -m mark --mark "0x00/${fwMask}" -j VPR_PREROUTING
-		ipt -t mangle -F VPR_PREROUTING; ipt -t mangle -X VPR_PREROUTING;
-		ipt -t mangle -D FORWARD -m mark --mark "0x00/${fwMask}" -j VPR_FORWARD
-		ipt -t mangle -F VPR_FORWARD; ipt -t mangle -X VPR_FORWARD;
-		ipt -t mangle -D INPUT -m mark --mark "0x00/${fwMask}" -j VPR_INPUT
-		ipt -t mangle -F VPR_INPUT; ipt -t mangle -X VPR_INPUT;
-		ipt -t mangle -D OUTPUT -m mark --mark "0x00/${fwMask}" -j VPR_OUTPUT
-		ipt -t mangle -F VPR_OUTPUT; ipt -t mangle -X VPR_OUTPUT;
+		for i in PREROUTING FORWARD INPUT OUTPUT; do
+			ipt -t mangle -D "${i}" -m mark --mark "0x00/${fwMask}" -j "VPR_${i}"
+			ipt -t mangle -F "VPR_${i}"; ipt -t mangle -X "VPR_${i}";
+		done
 		config_load 'network'; config_foreach process_interface 'interface' 'destroy'
 		unset ifaceTableID; unset ifaceMark;
 		if [ -s "$dnsmasqFile" ]; then
