@@ -322,7 +322,7 @@ uci:foreach("network", "interface", function(s)
 end)
 
 dscp = m:section(NamedSection, "config", "vpn-policy-routing", translate("DSCP Tagging"), translate("Set DSCP tags (in range between 1 and 63) for specific interfaces. See the") .. " "
-  .. [[<a href="]] .. readmeURL .. [[##dscp-tag-based-policies" target="_blank">]]
+  .. [[<a href="]] .. readmeURL .. [[#dscp-tag-based-policies" target="_blank">]]
   .. translate("README") .. [[</a>]] .. " " .. translate("for details."))
 uci:foreach("network", "interface", function(s)
 	local name=s['.name']
