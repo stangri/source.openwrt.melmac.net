@@ -67,7 +67,9 @@ vpr_find_iface() {
 	config_load 'network'; "network_find_$2" iface;
 	[ -z "$ifacesListAll" ] && config_foreach list_iface 'interface'
 	if [ -z "$iface" ] || is_tunnel "$iface"; then
-		for i in $ifacesListAll; do if [ "${i/#$2}" != "$i" ] || [ "${i%$2}" != "$i" ]; then break; else unset i; fi; done;
+		for i in $ifacesListAll; do 
+			if [ "${i/#$2}" != "$i" ] || [ "${i%$2}" != "$i" ]; then break; else unset i; fi; 
+		done;
 	fi
 	[ -n "$i" ] && iface="$i"; 
 	[ -n "$iface" ] && eval "$1=$iface";
@@ -177,6 +179,11 @@ load_package_config() {
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
 	network_find_wan defaultIface
+	vpr_find_iface wanIface4 'wan'
+	[ "$ipv6Enabled" -ne 0 ] && vpr_find_iface wanIface6 'wan6'
+	[ -n "$wanIface4" ] && network_get_gateway wanGW4 "$wanIface4"
+	[ -n "$wanIface6" ] && network_get_gateway6 wanGW6 "$wanIface6"
+	wanGW="${wanGW4:-$wanGW6}"
 }
 
 is_enabled() {
@@ -762,15 +769,15 @@ stop_service() {
 	[ "$(tmpfs 'get')"  == "Stopped" ] && return 0
 	if create_lock; then
 		load_package_config
-		config_load 'network'; config_foreach process_interface 'interface' 'destroy'
-		ipt -t mangle -D PREROUTING -m mark --mark "0x00/${fwMask}" -g VPR_PREROUTING
+		ipt -t mangle -D PREROUTING -m mark --mark "0x00/${fwMask}" -j VPR_PREROUTING
 		ipt -t mangle -F VPR_PREROUTING; ipt -t mangle -X VPR_PREROUTING;
-		ipt -t mangle -D FORWARD -m mark --mark "0x00/${fwMask}" -g VPR_FORWARD
+		ipt -t mangle -D FORWARD -m mark --mark "0x00/${fwMask}" -j VPR_FORWARD
 		ipt -t mangle -F VPR_FORWARD; ipt -t mangle -X VPR_FORWARD;
-		ipt -t mangle -D INPUT -m mark --mark "0x00/${fwMask}" -g VPR_INPUT
+		ipt -t mangle -D INPUT -m mark --mark "0x00/${fwMask}" -j VPR_INPUT
 		ipt -t mangle -F VPR_INPUT; ipt -t mangle -X VPR_INPUT;
-		ipt -t mangle -D OUTPUT -m mark --mark "0x00/${fwMask}" -g VPR_OUTPUT
+		ipt -t mangle -D OUTPUT -m mark --mark "0x00/${fwMask}" -j VPR_OUTPUT
 		ipt -t mangle -F VPR_OUTPUT; ipt -t mangle -X VPR_OUTPUT;
+		config_load 'network'; config_foreach process_interface 'interface' 'destroy'
 		unset ifaceTableID; unset ifaceMark;
 		if [ -s "$dnsmasqFile" ]; then
 			rm -f "$dnsmasqFile"
