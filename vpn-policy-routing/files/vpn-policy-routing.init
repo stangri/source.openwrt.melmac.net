@@ -254,8 +254,7 @@ ips() {
 	elif [ "${ipset//_mac}" != "${ipset}" ]; then
 		ipset="${ipset//_mac}"; appendix='_mac';
 	fi
-	
-	[ -n "$appendix" ] && appendix="_${appendix}"
+
 	case "$command" in
 		add_dnsmasq)
 			[ "$dnsmasqIpset" -eq 0 ] && return 1
