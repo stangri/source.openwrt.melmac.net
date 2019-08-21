@@ -49,11 +49,16 @@ if lanIPAddr and lanNetmask then
 	laPlaceholder = ip.new(lanIPAddr .. "/" .. lanNetmask )
 end
 
+function is_wan(name)
+	return name:sub(1,3) == "wan" or name:sub(-3) == "wan"
+end
+
 function is_supported_interface(arg)
 	local name=arg['.name']
 	local proto=arg['proto']
 	local ifname=arg['ifname']
 
+	if name and is_wan(name) then return true end
 	if name and supportedIfaces:match('%f[%w]' .. name .. '%f[%W]') then return true end
 	if name and not ignoredIfaces:match('%f[%w]' .. name .. '%f[%W]') then
 		if type(ifname) == "table" then
@@ -306,20 +311,26 @@ end
 gw = p:option(ListValue, "interface", translate("Interface"))
 -- gw.datatype = "network"
 gw.rmempty = false
-gw.default = "wan"
-gw:value("wan","WAN")
 uci:foreach("network", "interface", function(s)
 	local name=s['.name']
-	if is_supported_interface(s) then gw:value(name, string.upper(name)) end
+	if is_wan(name) then
+		gw:value(name, string.upper(name))
+		if not gw.default then gw.default = name end
+	elseif is_supported_interface(s) then 
+		gw:value(name, string.upper(name)) 
+	end
 end)
 
-dscp = m:section(NamedSection, "config", "vpn-policy-routing", translate("DSCP Tagging"), translate("Set DSCP tags (in range between 1 and 63) for specific interfaces."))
-wan = dscp:option(Value, "wan_dscp", translate("WAN DSCP Tag"))
-wan.datatype = "range(1,63)"
-wan.rmempty = true
+dscp = m:section(NamedSection, "config", "vpn-policy-routing", translate("DSCP Tagging"), translate("Set DSCP tags (in range between 1 and 63) for specific interfaces. See the") .. " "
+  .. [[<a href="]] .. readmeURL .. [[##dscp-tag-based-policies" target="_blank">]]
+  .. translate("README") .. [[</a>]] .. " " .. translate("for details."))
 uci:foreach("network", "interface", function(s)
 	local name=s['.name']
-	if is_supported_interface(s) then dscp:option(Value, name .. "_dscp", string.upper(name) .. " " .. translate("DSCP Tag")).rmempty = true end
+	if is_supported_interface(s) then 
+		local x = dscp:option(Value, name .. "_dscp", string.upper(name) .. " " .. translate("DSCP Tag"))
+		x.rmempty = true
+		x.datatype = "range(1,63)"
+	end
 end)
 
 -- Includes

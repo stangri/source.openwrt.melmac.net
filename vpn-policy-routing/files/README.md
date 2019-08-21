@@ -23,7 +23,7 @@ This service allows you to define rules (policies) for routing traffic via WAN o
 - Policies based on remote ports numbers. Same format/syntax and restrictions as local ports.
 - You can mix the IP addresses/subnets and device (or domain) names in one field separating them by space (like this: ```66.220.2.74 he.net tunnelbroker.net```).
 
-### DSCP-tag Based Policies
+### DSCP Tag-Based Policies
 
 You can also set policies for traffic with specific DSCP tag. On Windows 10, for example, you can mark traffic from specific apps with DSCP tags (instructions for tagging specific app traffic in Windows 10 can be found [here](http://serverfault.com/questions/769843/cannot-set-dscp-on-windows-10-pro-via-group-policy)).
 
@@ -359,6 +359,7 @@ If you don't want to post the ```/etc/init.d/vpn-policy-routing status``` output
 
 ## Notes/Known Issues
 
+- If your default routing is set to the VPN tunnel, then then true WAN intrface cannot be discovered using OpenWrt built-in functions, so service will assume your network interface(s) ending with or starting with '''wan''' is/are the WAN interface(s).
 - While you can select some down/inactive VPN tunnel in Web UI, the appropriate tunnel must be up/active for the policies to properly work without errors on service start.
 - If your ```OpenVPN``` interface has the device name different from tun\* or tap\*, please make sure that the tunnel is up before trying to assign it policies in Web UI.
 - When configuring an ```OpenVPN``` tunnel on your router, you **must** setup the firewall zone for the OpenVPN tunnel and firewall forwarding from ```lan``` (and ```guest``` if you have it) to the OpenVPN tunnel interface defined in ```/etc/config/network```. Sample configuration script:

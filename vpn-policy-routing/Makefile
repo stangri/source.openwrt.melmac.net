@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpn-policy-routing
-PKG_VERSION:=0.0.7
-PKG_RELEASE:=29
+PKG_VERSION:=0.1.0
+PKG_RELEASE:=0
 PKG_LICENSE:=GPL-3.0+
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 

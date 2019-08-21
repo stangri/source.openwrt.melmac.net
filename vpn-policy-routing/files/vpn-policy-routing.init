@@ -67,7 +67,7 @@ vpr_find_iface() {
 	config_load 'network'; "network_find_$2" iface;
 	[ -z "$ifacesListAll" ] && config_foreach list_iface 'interface'
 	if [ -z "$iface" ] || is_tunnel "$iface"; then
-		for i in $ifacesListAll; do if [ "${i%$2}" != "$i" ]; then break; else unset i; fi; done;
+		for i in $ifacesListAll; do if [ "${i/#$2}" != "$i" ] || [ "${i%$2}" != "$i" ]; then break; else unset i; fi; done;
 	fi
 	[ -n "$i" ] && iface="$i"; 
 	[ -n "$iface" ] && eval "$1=$iface";
@@ -169,11 +169,10 @@ load_package_config() {
 		verbosity=1
 	fi
 
-	if [ "$insertOption" == "insert" ]; then
-		insertOption="-I"
-	else
-		insertOption="-A"
-	fi 
+	case $insertOption in
+		insert|-i|-I) insertOption="-I";;
+		append|-a|-A|*) insertOption="-A";;
+	esac
 
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
