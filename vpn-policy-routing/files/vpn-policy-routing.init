@@ -67,15 +67,20 @@ export ifconfigOutput ipAddrOutput ip4RouteOutput ip6RouteOutput
 
 list_iface() { ifacesListAll="${ifacesListAll}${1} "; }
 list_supported_iface() { is_supported_interface "$1" && ifacesListSupported="${ifacesListSupported}${1} "; }
-vpr_find_iface() {
+vpr_find_true() {
 # shellcheck disable=SC2039
 	local iface i
 	config_load 'network'; "network_find_$2" iface;
 	[ -z "$ifacesListAll" ] && config_foreach list_iface 'interface'
 	if [ -z "$iface" ] || is_tunnel "$iface"; then
-		for i in $ifacesListAll; do 
-			if [ "${i/#$2}" != "$i" ] || [ "${i/%$2}" != "$i" ]; then break; else unset i; fi; 
-		done;
+		for i in $ifacesListAll; do
+			case "$2" in
+				wan)
+					if is_wan "$i"; then break; else unset i; fi;;
+				wan6)
+					if is_wan6 "$i"; then break; else unset i; fi;;
+			esac
+		done
 	fi
 	[ -n "$i" ] && iface="$i"; 
 	[ -n "$iface" ] && eval "$1=$iface";
@@ -88,7 +93,7 @@ is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}
 is_tor() { local dev; dev=$(uci -q get network."$1".ifname); [ "${dev:0:3}" = "tor" ]; }
 is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
 is_tunnel() { is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_tor "$1" || is_wg "$1"; }
-is_wan() { [ -n "$wanIface4" ] && [ "$1" = "$wanIface4" ] || ( [ "${1/#wan}" != "$1" ] && [ "${1/#wan6}" = "$1" ] ) || ( [ "${1/%wan}" != "$1" ] && [ "${1/%wan6}" = "$1" ] ); }
+is_wan() { [ -n "$wanIface4" ] && [ "$1" = "$wanIface4" ] || ( [ "${1/#wan}" != "$1" ] && [ "${1/#wan6}" = "$1" ] ) || [ "${1/%wan}" != "$1" ]; }
 is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ] || [ "${1/#wan6}" != "$1" ] || [ "${1/%wan6}" != "$1" ]; }
 string_match_word() { echo "$1" | grep -q -w "$2"; }
 is_ignored_interface() { string_match_word "$ignoredIfaces" "$1"; }
@@ -186,8 +191,8 @@ load_package_config() {
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
 	network_find_wan defaultIface
-	vpr_find_iface wanIface4 'wan'
-	[ "$ipv6Enabled" -ne 0 ] && vpr_find_iface wanIface6 'wan6'
+	vpr_find_true wanIface4 'wan'
+	[ "$ipv6Enabled" -ne 0 ] && vpr_find_true wanIface6 'wan6'
 	[ -n "$wanIface4" ] && network_get_gateway wanGW4 "$wanIface4"
 	[ -n "$wanIface6" ] && network_get_gateway6 wanGW6 "$wanIface6"
 	wanGW="${wanGW4:-$wanGW6}"
@@ -215,8 +220,8 @@ is_enabled() {
 is_wan_up() {
 	local sleepCount=1
 	while [ -z "$wanGW" ] ; do
-		vpr_find_iface wanIface4 'wan'
-		[ "$ipv6Enabled" -ne 0 ] && vpr_find_iface wanIface6 'wan6'
+		vpr_find_true wanIface4 'wan'
+		[ "$ipv6Enabled" -ne 0 ] && vpr_find_true wanIface6 'wan6'
 		[ -n "$wanIface4" ] && network_get_gateway wanGW4 "$wanIface4"
 		[ -n "$wanIface6" ] && network_get_gateway6 wanGW6 "$wanIface6"
 		wanGW="${wanGW4:-$wanGW6}"
