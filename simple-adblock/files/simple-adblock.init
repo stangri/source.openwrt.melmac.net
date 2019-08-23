@@ -362,6 +362,12 @@ tmpfs() {
 			;;
 		del)
 			case "$instance" in
+				all)
+					unset status;
+					unset message;
+					unset error;
+					unset stats;
+					;;
 				status)
 					unset status;;
 				message) 
@@ -496,13 +502,13 @@ process_url() {
 	if ! $dl_command "$1" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 1 "$_FAIL_"
 		output 2 "[DL] $type $label $__FAIL__\\n"
-		printf "%b" "Error: downloading '${1}'.\\n" >> "$sharedMemoryError"
+		echo "Error: downloading '${1}'." >> "$sharedMemoryError"
 	else
 		sed -i "$filter" "$R_TMP"
 		if [ ! -s "$R_TMP" ]; then
 			output 1 "$_FAIL_"
 			output 2 "[DL] $type $label $__FAIL__\\n"
-			printf "%b" "Error: parsing '${1}'.\\n" >> "$sharedMemoryError"
+			echo "Error: parsing '${1}'." >> "$sharedMemoryError"
 		else
 			cat "${R_TMP}" >> "$D_TMP"
 			output 1 "$_OK_"
@@ -769,10 +775,7 @@ start_service() {
 			;;
 		esac
 
-		tmpfs del status
-		tmpfs del error
-		tmpfs del message
-		tmpfs del stats
+		tmpfs del all
 		tmpfs set triggers
 
 		case $action in
