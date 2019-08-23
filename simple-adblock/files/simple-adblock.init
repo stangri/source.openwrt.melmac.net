@@ -54,8 +54,8 @@ readonly statusStarting='Starting'
 readonly statusForceReloading='Force-Reloading'
 readonly statusProcessing='Processing'
 readonly statusStopped='Stopped'
+readonly sharedMemoryError="/dev/shm/$packageName-error"
 
-export logmsg
 create_lock() { [ -e "$PIDFile" ] && return 1; touch "$PIDFile"; }
 remove_lock() { [ -e "$PIDFile" ] && rm -f "$PIDFile"; }
 trap remove_lock EXIT
@@ -65,20 +65,22 @@ output_fail() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
 output_failn() { output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 str_replace() { echo "$1" | sed -e "s/$2/$3/g"; }
 str_contains() { [ "$1" != "$(str_replace "$1" "$2" "")" ]; }
+readonly sharedMemoryOutput="/dev/shm/$packageName-output"
 output() {
 # Can take a single parameter (text) to be output at any verbosity
 # Or target verbosity level and text to be output at specifc verbosity
-	local msg
+	local msg memmsg
 	if [ $# -ne 1 ]; then
 		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; else return 0; fi
 	fi
 	[ -t 1 ] && printf "%b" "$1"
 	msg="$(printf "%s" "$(str_replace "$1" "$serviceName " "service ")" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g')";
 	if [ "$(printf "%b" "$msg" | wc -l)" -gt 0 ]; then
-		logger -t "${packageName:-service} [$$]" "$(printf "%b" "${logmsg}${msg}")"
-		logmsg=''
+		[ -s "$sharedMemoryOutput" ] && memmsg="$(cat "$sharedMemoryOutput")"
+		logger -t "${packageName:-service} [$$]" "$(printf "%b" "${memmsg}${msg}")"
+		rm -f "$sharedMemoryOutput"
 	else
-		logmsg="${logmsg}${msg}"
+		printf "%b" "$msg" >> "$sharedMemoryOutput"
 	fi
 }
 led_on(){ if [ -n "${1}" ] && [ -e "${1}/trigger" ]; then echo "default-on" > "${1}/trigger" 2>&1; fi; }
@@ -494,13 +496,13 @@ process_url() {
 	if ! $dl_command "$1" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 1 "$_FAIL_"
 		output 2 "[DL] $type $label $__FAIL__\\n"
-		printf "%b" "Error: downloading '${1}'.\\n" >> "${jsonFile}.error"
+		printf "%b" "Error: downloading '${1}'.\\n" >> "$sharedMemoryError"
 	else
 		sed -i "$filter" "$R_TMP"
 		if [ ! -s "$R_TMP" ]; then
 			output 1 "$_FAIL_"
 			output 2 "[DL] $type $label $__FAIL__\\n"
-			printf "%b" "Error: parsing '${1}'.\\n" >> "${jsonFile}.error"
+			printf "%b" "Error: parsing '${1}'.\\n" >> "$sharedMemoryError"
 		else
 			cat "${R_TMP}" >> "$D_TMP"
 			output 1 "$_OK_"
@@ -526,7 +528,7 @@ download_lists() {
 	fi
 	touch $A_TMP; touch $B_TMP;
 	output 1 "Downloading lists "
-	rm -f "${jsonFile}.error"
+	rm -f "$sharedMemoryError"
 	if [ -n "$blacklist_hosts_urls" ]; then
 		for hf in ${blacklist_hosts_urls}; do
 			if [ "$parallelDL" -gt 0 ]; then
@@ -555,8 +557,8 @@ download_lists() {
 		done
 	fi
 	wait
-	[ -s "${jsonFile}.error" ] && tmpfs add error "$(cat "${jsonFile}.error")"
-	rm -f "${jsonFile}.error"
+	[ -s "$sharedMemoryError" ] && tmpfs add error "$(cat "$sharedMemoryError")"
+	rm -f "$sharedMemoryError"
 	output 1 "\\n"
 
 	[ -n "$blacklist_domains" ] && for hf in ${blacklist_domains}; do echo "$hf" | sed "$domainsFilter" >> $B_TMP; done
