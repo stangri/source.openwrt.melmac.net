@@ -599,6 +599,7 @@ $(cat $A_TMP)"
 		# TLD optimization written by Dirk Brenken (dev@brenken.org)
 		output 2 "Optimizing combined list "
 		tmpfs set message "$statusProcessing: optimizing combined list"
+# 		 sed -E 'G;:t;s/(.*)(\.)(.*)(\n)(.*)/\1\4\5\2\3/;tt;s/(.*)\n(\.)(.*)/\3\2\1/'
 		if awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$A_TMP" > "$B_TMP"; then
 			if sort "$B_TMP" > "$A_TMP"; then
 				if awk '{if(NR=1){tld=$NF};while(getline){if($NF!~tld"\\."){print tld;tld=$NF}}print tld}' "$A_TMP" > "$B_TMP"; then
