@@ -131,6 +131,8 @@ In the Web UI the ```vpn-policy-routing``` settings are split into ```basic``` a
 |Advanced|proto_control|boolean|0|Shows ```Protocol``` column for policies, allowing to specify ```TCP``` (default), ```UDP``` or ```TCP/UDP``` protocol for ```iptables``` rules for policies.|
 |Advanced|chain_control|boolean|0|Shows ```Chain``` column for policies, allowing to specify ```PREROUTING``` (default), ```FORWARD```, ```INPUT```, or ```OUTPUT``` chain for ```iptables``` rules for policies.|
 |Advanced|icmp_interface|string||Set the default ICMP protocol interface (interface name in lower case). Use with caution.|
+|Advanced|append_local_rules|string||Append local IP Tables rules. Can be used to exclude local IP addresses from destinations for policies with local address set.|
+|Advanced|append_remote_rules|string||Append local IP Tables rules. Can be used to exclude remote IP addresses from sources for policies with remote address set.|
 |Advanced|wan_tid|integer|201|Starting (WAN) Table ID number for tables created by the ```vpn-policy-routing``` service.|
 |Advanced|wan_mark|hexadecimal|0x010000|Starting (WAN) fw mark for marks used by the ```vpn-policy-routing``` service. High starting mark is used to avoid conflict with SQM/QoS, this can be changed by user. Change with caution together with ```fw_mask```.|
 |Advanced|fw_mask|hexadecimal|0xff0000|FW Mask used by the ```vpn-policy-routing``` service. High mask is used to avoid conflict with SQM/QoS, this can be changed by user. Change with caution together with ```wan_mark```.|

@@ -352,7 +352,6 @@ insert_policy() {
 
 	for i in tcp udp; do
 		if [ "${proto//$i}" != "$proto" ]; then
-#			param="-t mangle $insertOption VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask} -p $i"
 			param="-t mangle -I VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask} -p $i"
 			if [ -n "$laddr" ]; then
 				if is_phys_dev "$laddr"; then
@@ -413,7 +412,6 @@ r_process_policy(){
 		if is_mac_address "$laddr"; then
 			ips 'add' "${iface}_mac" "$laddr" "${comment}: $laddr" || ipsFailFlag=1
 		else
-			# see if we can add ipset or iprule instead of the iptable entry
 			for i in $(resolveip "$laddr"); do
 				ips 'add' "${iface}_ip" "$i" "${comment}: $laddr $i" || \
 				ipr "$comment" "$iface" "$i" || \
@@ -421,7 +419,6 @@ r_process_policy(){
 			done
 		fi
 	elif [ -z "$laddr" ] && [ -z "$lport" ] && [ -n "$raddr" ] && [ -z "$rport" ] && [ "$proto" = "tcp" ] && [ "$chain" = "PREROUTING" ]; then
-		# see if we can add ipset or dnsmasq ipset instead of the iptable entry
 		if is_domain "$raddr"; then
 			if ! ips "add_dnsmasq" "${iface}" "$raddr" "${comment}"; then
 				for i in $(resolveip "$raddr"); do ips "add" "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1; done
@@ -478,7 +475,6 @@ process_policy(){
 		output_fail; return 1;
 	fi
 
-#	lport="$(echo $lport | sed -n 's/ \+/,/gp')"; rport="$(echo $rport | sed -n 's/ \+/,/gp')";
 	lport="${lport//  / }"; lport="${lport// /,}";
 	rport="${rport//  / }"; rport="${rport// /,}";
 	r_process_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
@@ -516,8 +512,6 @@ table_create(){
 	if [ -n "$tid" ] && [ -n "$mark" ] && [ -n "$iface" ]; then
 		table_destroy "$tid" "$iface" "$mark"
 
-#		if { [ -n "$gw4" ] && [ "$gw4" != "0.0.0.0" ]; } || [ "$strictMode" -ne 0 ]; then
-#			if [ -z "$gw4" ] || [ "$gw4" = "0.0.0.0" ]; then
 		if [ -n "$gw4" ] || [ "$strictMode" -ne 0 ]; then
 			if [ -z "$gw4" ]; then
 				ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
