@@ -1,5 +1,7 @@
 #!/bin/sh /etc/rc.common
-# Copyright 2017-2018 Stan Grishin (stangri@melmac.net)
+# Copyright 2017-2019 Stan Grishin (stangri@melmac.net)
+# shellcheck disable=SC2039
+# shellcheck disable=SC1091
 PKG_VERSION=
 
 export START=94
@@ -35,22 +37,25 @@ output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
 output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
 output_fail() { s=1; output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output_failn() { output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
+str_replace() { echo "$1" | sed -e "s/$2/$3/g"; }
+str_contains() { [ "$1" != "$(str_replace "$1" "$2" "")" ]; }
 output() {
 # Can take a single parameter (text) to be output at any verbosity
 # Or target verbosity level and text to be output at specifc verbosity
+	local msg
 	if [ $# -ne 1 ]; then
-		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" == "$1" ]; then shift; else return 0; fi
+		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; else return 0; fi
 	fi
-	[ -t 1 ] && echo -e -n "$1"
-	local msg=$(echo -n "${1/$serviceName /service }" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g');
-	if [ "$(echo -e -n "$msg" | wc -l)" -gt 0 ]; then
-		logger -t "${packageName:-service} [$$]" "$(echo -e -n "${logmsg}${msg}")"
+	[ -t 1 ] && printf "%b" "$1"
+	msg="$(printf "%s" "$(str_replace "$1" "$serviceName " "service ")" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g')";
+	if [ "$(printf "%b" "$msg" | wc -l)" -gt 0 ]; then
+		logger -t "${packageName:-service} [$$]" "$(printf "%b" "${logmsg}${msg}")"
 		logmsg=''
 	else
 		logmsg="${logmsg}${msg}"
 	fi
 }
-is_installed(){ [ -n "$(opkg list-installed "$1")" ]; }
+is_installed() { [ -n "$(opkg list-installed "$1")" ]; }
 
 export serviceEnabled verbosity strictMode wanTableID wanMark fwMask
 export ipv6Enabled localIpset remoteIpset ipruleEnabled dnsmasqIpset icmpIface
@@ -63,6 +68,7 @@ export ifconfigOutput ipAddrOutput ip4RouteOutput ip6RouteOutput
 list_iface() { ifacesListAll="${ifacesListAll}${1} "; }
 list_supported_iface() { is_supported_interface "$1" && ifacesListSupported="${ifacesListSupported}${1} "; }
 vpr_find_iface() {
+# shellcheck disable=SC2039
 	local iface i
 	config_load 'network'; "network_find_$2" iface;
 	[ -z "$ifacesListAll" ] && config_foreach list_iface 'interface'
@@ -74,6 +80,7 @@ vpr_find_iface() {
 	[ -n "$i" ] && iface="$i"; 
 	[ -n "$iface" ] && eval "$1=$iface";
 }
+
 is_l2tp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "l2tp" ]; }
 is_oc() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:11}" = "openconnect" ]; }
 is_ovpn() { local dev; dev=$(uci -q get network."$1".ifname); [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
@@ -81,7 +88,7 @@ is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}
 is_tor() { local dev; dev=$(uci -q get network."$1".ifname); [ "${dev:0:3}" = "tor" ]; }
 is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
 is_tunnel() { is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_tor "$1" || is_wg "$1"; }
-is_wan() { [ -n "$wanIface4" ] && [ "$1" = "$wanIface4" ] || [[ "${1/#wan}" != "$1" && "${1/#wan6}" == "$1" ]] || [[ "${1/%wan}" != "$1" && "${1/%wan6}" == "$1" ]]; }
+is_wan() { [ -n "$wanIface4" ] && [ "$1" = "$wanIface4" ] || ( [ "${1/#wan}" != "$1" ] && [ "${1/#wan6}" = "$1" ] ) || ( [ "${1/%wan}" != "$1" ] && [ "${1/%wan6}" = "$1" ] ); }
 is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ] || [ "${1/#wan6}" != "$1" ] || [ "${1/%wan6}" != "$1" ]; }
 string_match_word() { echo "$1" | grep -q -w "$2"; }
 is_ignored_interface() { string_match_word "$ignoredIfaces" "$1"; }
@@ -91,7 +98,7 @@ is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/
 is_ipv6() { ! is_mac_address "$1" && [ "${1//:}" != "$1" ]; }
 is_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
 is_domain() { [ "${1//[a-zA-Z-]}" != "$1" ]; }
-is_phys_dev() { [ "${1:0:1}" == "@" ] && echo "$ip4RouteOutput" | grep -q "^${1:1}"; }
+is_phys_dev() { [ "${1:0:1}" = "@" ] && echo "$ip4RouteOutput" | grep -q "^${1:1}"; }
 is_turris() { /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05'; }
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
 dnsmasq_kill() { killall -q -HUP dnsmasq; }
@@ -99,7 +106,7 @@ dnsmasq_restart() { output 1 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq resta
 
 get_device_default_gw() { 
 	local dev="$2" family="${3:-ipv4}"
-	if [ "$family" == "ipv4" ]; then
+	if [ "$family" = "ipv4" ]; then
 		echo "$ip4RouteOutput" | grep -Eso -m1 "via ([0-9]{1,3}\\.){3}[0-9]{1,3} dev $dev" | awk '{print $2}'
 	else
 		echo "$ip6RouteOutput" | grep -Eso -m1 "via ([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}(/([0-9]){0,2}){0,2} dev $dev" | awk '{print $2}' | awk -F "/" '{print $1}'
@@ -107,7 +114,7 @@ get_device_default_gw() {
 }
 get_device_gw() { 
 	local dev="$2" family="${3:-ipv4}"
-	if [ "$family" == "ipv4" ]; then
+	if [ "$family" = "ipv4" ]; then
 		echo "$ip4RouteOutput" | grep -Eso -m1 "^([0-9]{1,3}\\.){3}[0-9]{1,3} dev $dev" | awk '{print $1}'
 	else
 		echo "$ip6RouteOutput" | grep -Eso -m1 "^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}(/([0-9]){0,2}){0,2} dev $dev" | awk -F "/" '{print $1}'
@@ -115,7 +122,7 @@ get_device_gw() {
 }
 get_tunnel_gw() { 
 	local dev="$2" family="${3:-ipv4}"
-	if [ "$family" == "ipv4" ]; then
+	if [ "$family" = "ipv4" ]; then
 		echo "$ifconfigOutput" | grep "^${dev}" -A 3 | grep 'P-t-P' | awk '{print $3}' | awk -F ":" '{print $2}'
 	else
 		local gw6=$(echo "$ifconfigOutput" | grep "^${dev}" -A 3 | grep 'inet6 addr:' | awk '{print $3}'); echo ${gw6:+"${gw6%:*}:1"}
@@ -123,7 +130,7 @@ get_tunnel_gw() {
 }	
 get_device_bridge_gw() { 
 	local dev="$2" family="${3:-ipv4}"
-	if [ "$family" == "ipv4" ]; then
+	if [ "$family" = "ipv4" ]; then
 		echo "$ip4RouteOutput" | grep -m1 "dev $dev" | grep -Eso "src ([0-9]{1,3}\\.){3}[0-9]{1,3}" | awk '{print $2}'
 	fi
 }
@@ -133,7 +140,7 @@ get_iface_gw(){
 	nexthop="$(ubus call "network.interface.${iface}" status | jsonfilter -l1 -e "@['route'][0]['nexthop']")"
 	address="$(ubus call "network.interface.${iface}" status | jsonfilter -l1 -e "@['${family}-address'][0]['address']")"
 	gw="${nexthop:-$address}"
-	if [ "$family" == "ipv4" ]; then
+	if [ "$family" = "ipv4" ]; then
 		if ! is_ipv4 "$gw" || [ "$gw" = "0.0.0.0" ]; then gw="$(get_device_default_gw "$iface" "$dev" "$family")"; fi
 		if ! is_ipv4 "$gw" || [ "$gw" = "0.0.0.0" ]; then gw="$(get_device_gw "$iface" "$dev" "$family")"; fi
 		if ! is_ipv4 "$gw" || [ "$gw" = "0.0.0.0" ]; then gw="$(get_tunnel_gw "$iface" "$dev" "$family")"; fi
@@ -396,7 +403,7 @@ r_process_policy(){
 		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 	elif is_phys_dev "$laddr"; then
 		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
-	elif [ -n "$laddr" ] && [ -z "$lport" ] && [ -z "$raddr" ] && [ -z "$rport" ] && [ "$proto" == "tcp" ] && [ "$chain" == "PREROUTING" ]; then
+	elif [ -n "$laddr" ] && [ -z "$lport" ] && [ -z "$raddr" ] && [ -z "$rport" ] && [ "$proto" = "tcp" ] && [ "$chain" = "PREROUTING" ]; then
 		if is_mac_address "$laddr"; then
 			ips 'add' "${iface}_mac" "$laddr" "${comment}: $laddr" || ipsFailFlag=1
 		else
@@ -407,7 +414,7 @@ r_process_policy(){
 				insert_policy "$comment" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"
 			done
 		fi
-	elif [ -z "$laddr" ] && [ -z "$lport" ] && [ -n "$raddr" ] && [ -z "$rport" ] && [ "$proto" == "tcp" ] && [ "$chain" == "PREROUTING" ]; then
+	elif [ -z "$laddr" ] && [ -z "$lport" ] && [ -n "$raddr" ] && [ -z "$rport" ] && [ "$proto" = "tcp" ] && [ "$chain" = "PREROUTING" ]; then
 		# see if we can add ipset or dnsmasq ipset instead of the iptable entry
 		if is_domain "$raddr"; then
 			if ! ips "add_dnsmasq" "${iface}" "$raddr" "${comment}"; then
@@ -596,7 +603,7 @@ process_interface(){
 			table_destroy "${ifaceTableID}" "${iface}"
 			displayText="${iface}/${gw4:-0.0.0.0}"
 			[ "$ipv6Enabled" -ne 0 ] && displayText="${displayText}/${gw6:-::/0}"
-			[ "$iface" == "$defaultIface" ] && displayText="${displayText}${__OK__}"
+			[ "$iface" = "$defaultIface" ] && displayText="${displayText}${__OK__}"
 			output 2 "Creating table '$displayText' "
 			if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then
 				serviceStatusSummary="${serviceStatusSummary}${displayText} "
@@ -675,6 +682,7 @@ process_user_file(){
 		output_fail
 		return 1
 	fi
+# shellcheck disable=SC1090
 	if ! . "$path"; then
 		errorStatusSummary="${errorStatusSummary}${_ERROR_}: Error running custom user file '$path'\\n"
 		output_fail
@@ -767,7 +775,7 @@ restart_service() { reload; }
 
 stop_service() {
 	local i
-	[ "$(tmpfs 'get')"  == "Stopped" ] && return 0
+	[ "$(tmpfs 'get')"  = "Stopped" ] && return 0
 	if create_lock; then
 		load_package_config
 		for i in PREROUTING FORWARD INPUT OUTPUT; do
@@ -847,11 +855,11 @@ support() {
 			tableCount=$(ip rule list | grep -c 'fwmark') || tableCount=0
 			if [ -n "$set_d" ]; then route; else route | grep '^default'; fi
 			if [ -n "$set_d" ]; then ip rule list; fi # || ip rule list | grep 'fwmark'
-			i=0; while [ $i -lt $tableCount ]; do echo "IPv4 Table $((wanTableID + i)): $(ip route show table $((wanTableID + i)))"; echo "IPv4 Table $((wanTableID + i)) Rules:"; ip rule list | grep $((wanTableID + i)); let i++; done
+			i=0; while [ $i -lt $tableCount ]; do echo "IPv4 Table $((wanTableID + i)): $(ip route show table $((wanTableID + i)))"; echo "IPv4 Table $((wanTableID + i)) Rules:"; ip rule list | grep $((wanTableID + i)); i=$((i + 1)); done
 			[ "$ipv6Enabled" -ne 0 ] && {
 				i=0; while [ $i -lt $tableCount ]; do
 					ip -6 route show table $((wanTableID + i)) | while read -r param; do echo "IPv6 Table $((wanTableID + i)): $param"; done
-					let i++;
+					i=$((i + 1))
 				done; }
 		echo "============================================================"
 			if [ -z "$set_d" ]; then echo "IP Tables PREROUTING"; else echo "IP Tables"; fi
@@ -896,7 +904,7 @@ support() {
 		echo "============================================================"
 	} | input
 	if [ -n "$set_p" ]; then
-		echo -e -n "Pasting to paste.ee... "
+		printf "%b" "Pasting to paste.ee... "
 		if is_installed 'curl' && is_installed 'libopenssl' && is_installed 'ca-bundle'; then
 			json_init; json_add_string "description" "${packageName}-support"
 			json_add_array "sections"; json_add_object '0'
@@ -905,14 +913,14 @@ support() {
 			json_close_object; json_close_array; payload=$(json_dump)
 			out=$(curl -s -k "https://api.paste.ee/v1/pastes" -X "POST" -H "Content-Type: application/json" -H "X-Auth-Token:uVOJt6pNqjcEWu7qiuUuuxWQafpHhwMvNEBviRV2B" -d "$payload")
 			json_load "$out"; json_get_var id id; json_get_var s success
-			[ "$s" = "1" ] && echo -e "https://paste.ee/p/$id $__OK__" || echo -e "$__FAIL__"
+			[ "$s" = "1" ] && printf "%b" "https://paste.ee/p/$id $__OK__" || printf "%b" "$__FAIL__"
 			[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
 		else
-			echo -e "$__FAIL__"
-			echo -e "$_ERROR_: curl, libopenssl or ca-bundle were not found!\\nRun 'opkg update; opkg install curl libopenssl ca-bundle' to install them."
+			printf "%b" "$__FAIL__"
+			printf "%b" "$_ERROR_: curl, libopenssl or ca-bundle were not found!\\nRun 'opkg update; opkg install curl libopenssl ca-bundle' to install them."
 		fi
 	else
-		echo -e "Your support details have been logged to '/var/${packageName}-support'. $__OK__"
+		printf "%b" "Your support details have been logged to '/var/${packageName}-support'. $__OK__"
 	fi
 }
 
