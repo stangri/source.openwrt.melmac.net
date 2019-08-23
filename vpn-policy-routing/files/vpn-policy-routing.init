@@ -62,7 +62,7 @@ export ipv6Enabled localIpset remoteIpset ipruleEnabled dnsmasqIpset icmpIface
 export ignoredIfaces="" supportedIfaces=""
 export appendLocalPolicy="" appendRemotePolicy=""
 export wanIface4 wanIface6 ifaceMark ifaceTableID ifacesListAll ifacesListSupported wanGW4 wanGW6
-export bootTimeout insertOption defaultIface
+export bootTimeout insertOption
 export ifconfigOutput ipAddrOutput ip4RouteOutput ip6RouteOutput
 
 list_iface() { ifacesListAll="${ifacesListAll}${1} "; }
@@ -70,9 +70,10 @@ list_supported_iface() { is_supported_interface "$1" && ifacesListSupported="${i
 vpr_find_true() {
 # shellcheck disable=SC2039
 	local iface i
-	config_load 'network'; "network_find_$2" iface;
-	[ -z "$ifacesListAll" ] && config_foreach list_iface 'interface'
+	"network_find_$2" iface;
 	if [ -z "$iface" ] || is_tunnel "$iface"; then
+		unset ifacesListAll; config_load 'network';
+		config_foreach list_iface 'interface'
 		for i in $ifacesListAll; do
 			case "$2" in
 				wan)
@@ -93,7 +94,7 @@ is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}
 is_tor() { local dev; dev=$(uci -q get network."$1".ifname); [ "${dev:0:3}" = "tor" ]; }
 is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
 is_tunnel() { is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_tor "$1" || is_wg "$1"; }
-is_wan() { [ -n "$wanIface4" ] && [ "$1" = "$wanIface4" ] || ( [ "${1/#wan}" != "$1" ] && [ "${1/#wan6}" = "$1" ] ) || [ "${1/%wan}" != "$1" ]; }
+is_wan() { [ "$1" = "$wanIface4" ] || { [ "${1##wan}" != "$1" ] && [ "${1##wan6}" = "$1" ]; } || [ "${1%%wan}" != "$1" ]; }
 is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ] || [ "${1/#wan6}" != "$1" ] || [ "${1/%wan6}" != "$1" ]; }
 string_match_word() { echo "$1" | grep -q -w "$2"; }
 is_ignored_interface() { string_match_word "$ignoredIfaces" "$1"; }
@@ -106,6 +107,7 @@ is_domain() { [ "${1//[a-zA-Z-]}" != "$1" ]; }
 is_phys_dev() { [ "${1:0:1}" = "@" ] && echo "$ip4RouteOutput" | grep -q "^${1:1}"; }
 is_turris() { /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05'; }
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
+is_default_dev() { [ "$1" = "$(echo "$ip4RouteOutput" | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
 dnsmasq_kill() { killall -q -HUP dnsmasq; }
 dnsmasq_restart() { output 1 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
 
@@ -190,7 +192,6 @@ load_package_config() {
 
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
-	network_find_wan defaultIface
 	vpr_find_true wanIface4 'wan'
 	[ "$ipv6Enabled" -ne 0 ] && vpr_find_true wanIface6 'wan6'
 	[ -n "$wanIface4" ] && network_get_gateway wanGW4 "$wanIface4"
@@ -311,7 +312,7 @@ ips() {
 
 ipr()
 {
-	local comment="$1" tid=$(eval echo "\$tid_$2") laddr="$3" failFlagIpv4=0 failFlagIpv6=1
+	local comment="$1" tid=$(eval echo "\$tid_${2//-/_}") laddr="$3" failFlagIpv4=0 failFlagIpv6=1
 	[ "$ipruleEnabled" -ne 0 ] || return 1
 	ip -4 rule del from "$laddr" table "$tid" >/dev/null 2>&1
 	ip -4 rule add from "$laddr" table "$tid" >/dev/null 2>&1 || failFlagIpv4=1
@@ -324,7 +325,7 @@ ipr()
 
 insert_tor_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
-	local mark=$(eval echo "\$mark_$iface")
+	local mark=$(eval echo "\$mark_${iface//-/_}")
 	[ -z "$mark" ] && processPolicyStatus="${processPolicyStatus}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
 	param="-t mangle $insertOption VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
 	[ -n "$laddr" ] && param="$param -s $laddr"
@@ -338,7 +339,7 @@ insert_tor_policy() {
 
 insert_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-tcp}" chain="${8:-PREROUTING}"
-	local mark=$(eval echo "\$mark_$iface") param i
+	local mark=$(eval echo "\$mark_${iface//-/_}") param i
 	if [ "$ipv6Enabled" -eq 0 ]; then
 		is_ipv6 "$laddr" && return 0
 		is_ipv6 "$raddr" && return 0
@@ -603,12 +604,12 @@ process_interface(){
 		create)
 			gw4="$(get_iface_gw "$iface" "$dev" ipv4)"
 			gw6="$(get_iface_gw "$iface" "$dev6" ipv6)"
-			eval "mark_${iface}=$ifaceMark"; eval "tid_${iface}=$ifaceTableID";
+			eval "mark_${iface//-/_}=$ifaceMark"; eval "tid_${iface//-/_}=$ifaceTableID";
 
 			table_destroy "${ifaceTableID}" "${iface}"
 			displayText="${iface}/${gw4:-0.0.0.0}"
 			[ "$ipv6Enabled" -ne 0 ] && displayText="${displayText}/${gw6:-::/0}"
-			[ "$iface" = "$defaultIface" ] && displayText="${displayText}${__OK__}"
+			is_default_dev "$dev" && displayText="${displayText}${__OK__}"
 			output 2 "Creating table '$displayText' "
 			if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then
 				serviceStatusSummary="${serviceStatusSummary}${displayText} "
