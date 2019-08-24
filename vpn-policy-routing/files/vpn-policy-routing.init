@@ -929,11 +929,11 @@ support() {
 			[ "$s" = "1" ] && printf "%b" "https://paste.ee/p/$id $__OK__" || printf "%b" "$__FAIL__"
 			[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
 		else
-			printf "%b" "$__FAIL__"
-			printf "%b" "$_ERROR_: curl, libopenssl or ca-bundle were not found!\\nRun 'opkg update; opkg install curl libopenssl ca-bundle' to install them."
+			printf "%b" "$__FAIL__\\n"
+			printf "%b" "$_ERROR_: curl, libopenssl or ca-bundle were not found!\\nRun 'opkg update; opkg install curl libopenssl ca-bundle' to install them.\\n"
 		fi
 	else
-		printf "%b" "Your support details have been logged to '/var/${packageName}-support'. $__OK__"
+		printf "%b" "Your support details have been logged to '/var/${packageName}-support'. $__OK__\\n"
 	fi
 }
 
