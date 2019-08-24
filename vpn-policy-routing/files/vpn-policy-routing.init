@@ -107,9 +107,17 @@ is_domain() { [ "${1//[a-zA-Z-]}" != "$1" ]; }
 is_phys_dev() { [ "${1:0:1}" = "@" ] && echo "$ip4RouteOutput" | grep -q "^${1:1}"; }
 is_turris() { /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05'; }
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
-is_default_dev() { [ "$1" = "$(echo "$ip4RouteOutput" | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
 dnsmasq_kill() { killall -q -HUP dnsmasq; }
 dnsmasq_restart() { output 1 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
+is_default_dev() { [ "$1" = "$(echo "$ip4RouteOutput" | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
+is_supported_iface_dev() {
+	local dev="$1" n ndev
+	for n in $ifacesListSupported; do 
+		ndev="$(uci -q get "network.${n}.ifname" || echo "$n")"
+		if [ "$dev" = "$ndev" ]; then break; else unset ndev; fi
+	done
+	[ -n "$ndev" ]
+}
 
 get_device_default_gw() { 
 	local dev="$2" family="${3:-ipv4}"
@@ -506,6 +514,7 @@ table_destroy(){
 	fi
 }
 
+# shellcheck disable=SC2086
 table_create(){
 	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" dscp s=0 i ipv4_set=0 ipv6_set=0 ipv4_error=0 ipv6_error=0
 
@@ -518,6 +527,12 @@ table_create(){
 			else
 				ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 			fi
+			ip -4 route ls table main | grep -v 'br-lan' | while read -r i; do
+				idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
+				if ! is_supported_iface_dev "$idev"; then
+					ip -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
+				fi
+			done
 			ip -4 route flush cache || ipv4_error=1
 			ip -4 rule add fwmark "$mark" table "$tid" || ipv4_error=1
 			[ "$ipv4_error" -eq 0 ] && ipv4_set=1 || s=$ipv4_error
@@ -528,8 +543,8 @@ table_create(){
 				if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 					ip -6 route add unreachable default table "$tid" || ipv6_error=1
 				else
-					ip -6 route show | grep " dev $dev6 " | while read -r i; do
-						ip -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+					ip -6 route ls table main | grep " dev $dev6 " | while read -r i; do
+						ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
 					done
 				fi
 				ip -6 route flush cache || ipv6_error=1
