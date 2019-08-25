@@ -68,23 +68,18 @@ export ifconfigOutput ipAddrOutput ip4RouteOutput ip6RouteOutput
 list_iface() { ifacesListAll="${ifacesListAll}${1} "; }
 list_supported_iface() { is_supported_interface "$1" && ifacesListSupported="${ifacesListSupported}${1} "; }
 vpr_find_true() {
-# shellcheck disable=SC2039
-	local iface i
-	"network_find_$2" iface;
-	if [ -z "$iface" ] || is_tunnel "$iface"; then
+	local iface i param="$2"
+	[ "$param" = 'wan6' ] || param='wan'
+	"network_find_${param}" iface
+	is_tunnel "$iface" && unset iface
+	if [ -z "$iface" ]; then
 		unset ifacesListAll; config_load 'network';
 		config_foreach list_iface 'interface'
 		for i in $ifacesListAll; do
-			case "$2" in
-				wan)
-					if is_wan "$i"; then break; else unset i; fi;;
-				wan6)
-					if is_wan6 "$i"; then break; else unset i; fi;;
-			esac
+			if "is_${param}" "$i"; then break; else unset i; fi
 		done
 	fi
-	[ -n "$i" ] && iface="$i"; 
-	[ -n "$iface" ] && eval "$1=$iface";
+	eval "$1=${iface:-$i}"
 }
 
 is_l2tp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "l2tp" ]; }
