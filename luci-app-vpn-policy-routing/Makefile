@@ -1,4 +1,4 @@
-# Copyright 2017-2018 Stan Grishin (stangri@melmac.net)
+# Copyright 2017-2019 Stan Grishin (stangri@melmac.net)
 # This is free software, licensed under the GNU General Public License v3.
 
 include $(TOPDIR)/rules.mk
@@ -10,7 +10,7 @@ LUCI_TITLE:=VPN Policy-Based Routing Service Web UI
 LUCI_DESCRIPTION:=Provides Web UI for vpn-policy-routing service.
 LUCI_DEPENDS:=+luci-mod-admin-full +vpn-policy-routing
 LUCI_PKGARCH:=all
-PKG_RELEASE:=50
+PKG_RELEASE:=51
 
 include ../../luci.mk
 
