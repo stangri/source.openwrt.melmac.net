@@ -143,6 +143,18 @@ get_device_bridge_gw() {
 	fi
 }
 
+ip_get_gw(){
+		if [ "$1" = "$(uci -q get "network.${n}.ifname" || echo "$n")" ] || [ "$1" = "$(uci -q get "network.${n}.proto")-${n}" ] ; then return 0; fi
+
+	local iface="$1" dev="$2" family="${3:-ipv4}" nexthop address gw
+	if [ "$family" = "ipv4" ]; then
+		gw="$(ip -4 a list dev "$dev" | grep inet | awk '{print $2}')"
+		gw="${gw//\/*}"
+	else
+		gw="$(ip -6 a list dev "$dev" | grep inet6 | awk '{print $2}')"
+	fi
+}
+
 get_iface_gw(){
 	local iface="$1" dev="$2" family="${3:-ipv4}" nexthop address gw
 	nexthop="$(ubus call "network.interface.${iface}" status | jsonfilter -l1 -e "@['route'][0]['nexthop']")"
@@ -160,6 +172,10 @@ get_iface_gw(){
 	fi
 	echo "$gw"
 }
+
+vpr_get_device(){ local i; network_get_device i "$1"; echo "$i"; }
+vpr_get_gateway(){ local i; network_get_gateway i "$1"; echo "$i"; }
+vpr_get_gateway6(){ local i; network_get_gateway6 i "$1"; echo "$i"; }
 
 load_package_config() {
 	config_load "$packageName"
@@ -589,9 +605,9 @@ process_interface(){
 	[ $((ifaceMark)) -gt $((fwMask)) ] && return 1
 
 	network_get_device dev "$iface"
-	[ -z "$dev" ] && config_get dev "$iface" 'ifname'
 	if is_wan "$iface" && [ -n "$wanIface6" ]; then
-		config_get dev6 "$wanIface6" 'ifname'
+		network_get_device dev6 "$wanIface6"
+#		config_get dev6 "$wanIface6" 'ifname'
 	fi
 	[ -z "$dev6" ] && dev6="$dev"
 
@@ -602,17 +618,19 @@ process_interface(){
 			table_destroy "${ifaceTableID}" "${iface}" "${ifaceMark}"
 			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
 			;;
-
 		create)
-			gw4="$(get_iface_gw "$iface" "$dev" ipv4)"
-			gw6="$(get_iface_gw "$iface" "$dev6" ipv6)"
+			output 2 "Creating table '$displayText' "
 			eval "mark_${iface//-/_}=$ifaceMark"; eval "tid_${iface//-/_}=$ifaceTableID";
-
 			table_destroy "${ifaceTableID}" "${iface}"
+			network_get_gateway gw4 "$iface"
+			[ -z "$gw4" ] && gw4="$(ip -4 a list dev "$dev" | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
+			network_get_gateway6 gw6 "$iface"
+			[ -z "$gw6" ] && gw6="$(ip -6 a list dev "$dev" | grep inet6 | awk '{print $2}')"
+#			gw4="$(get_iface_gw "$iface" "$dev" ipv4)"
+#			gw6="$(get_iface_gw "$iface" "$dev6" ipv6)"
 			displayText="${iface}/${gw4:-0.0.0.0}"
 			[ "$ipv6Enabled" -ne 0 ] && displayText="${displayText}/${gw6:-::/0}"
 			is_default_dev "$dev" && displayText="${displayText}${__OK__}"
-			output 2 "Creating table '$displayText' "
 			if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then
 				serviceStatusSummary="${serviceStatusSummary}${displayText} "
 				output_ok
@@ -622,8 +640,6 @@ process_interface(){
 			fi
 			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
 			;;
-
-		*) return 1;;
 	esac
 	return $s
 }
