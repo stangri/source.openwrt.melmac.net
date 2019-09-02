@@ -107,7 +107,7 @@ dnsmasq_restart() { output 1 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq resta
 is_default_dev() { [ "$1" = "$(echo "$ip4RouteOutput" | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
 is_supported_iface_dev() {
 	for n in $ifacesListSupported; do 
-		if [ "$1" = "$(uci -q get "network.${n}.ifname" || echo "$n")" ]; then return 0; fi
+		if [ "$1" = "$(uci -q get "network.${n}.ifname" || echo "$n")" ] || [ "$1" = "$(uci -q get "network.${n}.proto")-${n}" ] ; then return 0; fi
 	done
 	return 1
 }
@@ -211,8 +211,8 @@ is_enabled() {
 		return 1
 	fi
 	if [ "$dnsmasqIpset" -ne 0 ]; then
-		if ! dnsmasq --version | grep -q -w "ipset"; then
-			output "$_ERROR_: dnsmasq support is enabled in $packageName, but installed dnsmasq does not support ipsets!\\n"
+		if ! dnsmasq --version 2>/dev/null | grep -q -w "ipset"; then
+			output "$_ERROR_: dnsmasq support is enabled in $packageName, but dnsmasq is either not installed or installed dnsmasq does not support ipsets!\\n"
 			dnsmasqIpset=0
 		fi
 		remoteIpset=1
@@ -853,7 +853,7 @@ support() {
 	{
 		echo "$status"
 		echo "============================================================"
-			dnsmasq --version | sed '/^$/,$d'
+			dnsmasq --version 2>/dev/null | sed '/^$/,$d'
 		[ -n "$1" ] && {
 			echo "============================================================"
 				echo "Resolving domains"
