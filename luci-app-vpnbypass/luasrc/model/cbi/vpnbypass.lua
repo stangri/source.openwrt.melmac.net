@@ -25,6 +25,7 @@ function en.write()
 	uci:commit(packageName)
 	if enabledFlag == "0" then
 		sys.init.stop(packageName)
+		sys.init.disable(packageName)
 	else
 		sys.init.enable(packageName)
 		sys.init.start(packageName)
