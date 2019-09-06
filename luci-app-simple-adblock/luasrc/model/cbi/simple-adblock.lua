@@ -182,6 +182,7 @@ dns = s:taboption("advanced", ListValue, "dns", translate("DNS Service"), transl
   .. translate("README") .. [[</a>]] .. " " .. translate("for details."))
 dns:value("dnsmasq.addnhosts", translate("DNSMASQ Additional Hosts"))
 dns:value("dnsmasq.conf", translate("DNSMASQ Config"))
+dns:value("dnsmasq.ipset", translate("DNSMASQ IP Set"))
 dns:value("dnsmasq.servers", translate("DNSMASQ Servers File"))
 dns:value("unbound.adb_list", translate("Unbound AdBlock List"))
 dns.default = "dnsmasq.servers"
@@ -190,6 +191,7 @@ ipv6 = s:taboption("advanced", ListValue, "ipv6_enabled", translate("IPv6 Suppor
 ipv6:value("", translate("Do not add IPv6 entries"))
 ipv6:value("1", translate("Add IPv6 entries"))
 ipv6:depends({dns="dnsmasq.addnhosts"}) 
+ipv6:depends({dns="dnsmasq.ipset"}) 
 ipv6.default = ""
 ipv6.rmempty = true
 

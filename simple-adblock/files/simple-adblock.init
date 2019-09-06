@@ -24,6 +24,11 @@ readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
 readonly dnsmasqCache="/var/run/${packageName}.dnsmasq.cache"
 readonly dnsmasqGzip="/etc/${packageName}.dnsmasq.gz"
 readonly dnsmasqOutputFilter='s|^|local=/|;s|$|/|'
+readonly ipsetFile="/var/dnsmasq.d/${packageName}.ipset"
+readonly ipsetCache="/var/run/${packageName}.ipset.cache"
+readonly ipsetGzip="/etc/${packageName}.ipset.gz"
+readonly ipsetOutputFilter='s|^|ipset=/|;s|$|/adb|'
+readonly ipsetOutputFilterIPv6='s|^|ipset=/|;s|$|/adb,adb6|'
 readonly serversFile="/var/run/${packageName}.servers"
 readonly serversCache="/var/run/${packageName}.servers.cache"
 readonly serversGzip="/etc/${packageName}.servers.gz"
@@ -128,7 +133,8 @@ load_package_config() {
 	config_get blacklist_hosts_urls       "config" "blacklist_hosts_url"
 
 	if [ "$targetDNS" != "dnsmasq.addnhosts" ] && [ "$targetDNS" != "dnsmasq.conf" ] && \
-		 [ "$targetDNS" != "dnsmasq.servers" ] && [ "$targetDNS" != "unbound.adb_list" ]; then
+		 [ "$targetDNS" != "dnsmasq.servers" ] && [ "$targetDNS" != "unbound.adb_list" ] && \
+		 [ "$targetDNS" != "dnsmasq.ipset" ] ; then
 		targetDNS="dnsmasq.servers"
 	fi
 
@@ -140,6 +146,7 @@ load_package_config() {
 			outputGzip="$addnhostsGzip"
 			[ "$ipv6Enabled" -gt 0 ] && outputFilterIPv6="$addnhostsOutputFilterIPv6"
 			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
+			rm -f "$ipsetFile" "$ipsetCache" "$ipsetGzip"
 			rm -f "$serversFile" "$serversCache" "$serversGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			;;
@@ -148,6 +155,18 @@ load_package_config() {
 			outputFile="$dnsmasqFile"
 			outputCache="$dnsmasqCache"
 			outputGzip="$dnsmasqGzip"
+			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
+			rm -f "$ipsetFile" "$ipsetCache" "$ipsetGzip"
+			rm -f "$serversFile" "$serversCache" "$serversGzip"
+			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
+			;;
+		dnsmasq.ipset)
+			outputFilter="$ipsetOutputFilter"
+			outputFile="$ipsetFile"
+			outputCache="$ipsetCache"
+			outputGzip="$ipsetGzip"
+			[ "$ipv6Enabled" -gt 0 ] && outputFilterIPv6="$ipsetOutputFilterIPv6"
+			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
 			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
 			rm -f "$serversFile" "$serversCache" "$serversGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
@@ -159,6 +178,7 @@ load_package_config() {
 			outputGzip="$serversGzip"
 			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
 			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
+			rm -f "$ipsetFile" "$ipsetCache" "$ipsetGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			;;
 		unbound.adb_list)
@@ -166,8 +186,9 @@ load_package_config() {
 			outputFile="$unboundFile"
 			outputCache="$unboundCache"
 			outputGzip="$unboundGzip"
-			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
 			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
+			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
+			rm -f "$ipsetFile" "$ipsetCache" "$ipsetGzip"
 			rm -f "$serversFile" "$serversCache" "$serversGzip"
 			;;
 	esac
@@ -246,6 +267,10 @@ reload_resolver() {
 					param=dnsmasq_restart
 					output_text="Restarting DNSMASQ"
 					;;
+				dnsmasq.ipset)
+					param=dnsmasq_restart
+					output_text="Restarting DNSMASQ"
+					;;
 				dnsmasq.servers)
 					if [ "$(uci -q get dhcp.@dnsmasq[0].serversfile)" != "$serversFile" ]; then
 						uci set dhcp.@dnsmasq[0].serversfile="$serversFile"
@@ -288,7 +313,7 @@ reload_resolver() {
 						param=dnsmasq_kill
 					fi
 					;;
-				dnsmasq.conf)
+				dnsmasq.conf | dnsmasq.ipset)
 					param=dnsmasq_restart
 					;;
 				unbound.adb_list)
@@ -300,7 +325,7 @@ reload_resolver() {
 			;;
 		quiet)
 			case "$targetDNS" in
-				dnsmasq.addnhosts | dnsmasq.servers | dnsmasq.conf)
+				dnsmasq.addnhosts | dnsmasq.conf | dnsmasq.ipset | dnsmasq.servers)
 					param=dnsmasq_restart
 					;;
 				unbound.adb_list)
@@ -457,7 +482,7 @@ remove_fw3_redirect() {
 	local name
 	config_get name "$1" "name"
 # shellcheck disable=SC2154
-	if [ -n "$name" ] && str_contains "$name" "simple-adblock"; then
+	if [ -n "$name" ] && str_contains "$name" "simple_adblock"; then
 		uci -q del "firewall.$1"
 	fi
 }
@@ -578,14 +603,14 @@ $(cat $A_TMP)"
 	output 2 "Sorting combined list "
 	tmpfs set message "$statusProcessing: sorting combined list"
 	if [ "$allowNonAscii" -gt 0 ]; then
-		if sort "$B_TMP" | uniq > "$A_TMP"; then
+		if sort -u "$B_TMP" > "$A_TMP"; then
 			output_ok
 		else
 			output_failn
 			tmpfs add error "Error: Sorting error."
 		fi
 	else
-		if sort "$B_TMP" | uniq | grep -E -v '[^a-zA-Z0-9=/.-]' > "$A_TMP"; then
+		if sort -u "$B_TMP" | grep -E -v '[^a-zA-Z0-9=/.-]' > "$A_TMP"; then
 			output_ok
 		else
 			output_failn
@@ -594,17 +619,18 @@ $(cat $A_TMP)"
 	fi
 
 	if [ "$targetDNS" = "dnsmasq.conf" ] || \
+	   [ "$targetDNS" = "dnsmasq.ipset" ] || \
 	   [ "$targetDNS" = "dnsmasq.servers" ] || \
 		 [ "$targetDNS" = "unbound.adb_list" ]; then
 		# TLD optimization written by Dirk Brenken (dev@brenken.org)
 		output 2 "Optimizing combined list "
 		tmpfs set message "$statusProcessing: optimizing combined list"
-# 		 sed -E 'G;:t;s/(.*)(\.)(.*)(\n)(.*)/\1\4\5\2\3/;tt;s/(.*)\n(\.)(.*)/\3\2\1/'
+# 	sed -E 'G;:t;s/(.*)(\.)(.*)(\n)(.*)/\1\4\5\2\3/;tt;s/(.*)\n(\.)(.*)/\3\2\1/' is actually slower than awk
 		if awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$A_TMP" > "$B_TMP"; then
 			if sort "$B_TMP" > "$A_TMP"; then
 				if awk '{if(NR=1){tld=$NF};while(getline){if($NF!~tld"\\."){print tld;tld=$NF}}print tld}' "$A_TMP" > "$B_TMP"; then
 					if awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$B_TMP" > "$A_TMP"; then
-						if sort "$A_TMP" | uniq > "$B_TMP"; then
+						if sort -u "$A_TMP" > "$B_TMP"; then
 							output_ok
 						else
 							output_failn
@@ -652,13 +678,25 @@ $(cat $A_TMP)"
 			tmpfs add error "Error: Data file formatting."
 		fi
 	else
-		if sed "$outputFilter" "$B_TMP" > "$A_TMP" && \
-		   sed "$outputFilterIPv6" "$B_TMP" >> "$A_TMP"; then
-			output_ok
-		else
-			output_failn
-			tmpfs add error "Error: Data file formatting."
-		fi
+		case "$targetDNS" in
+			dnsmasq.addnhosts)
+				if sed "$outputFilter" "$B_TMP" > "$A_TMP" && \
+					sed "$outputFilterIPv6" "$B_TMP" >> "$A_TMP"; then
+					output_ok
+				else
+					output_failn
+					tmpfs add error "Error: Data file formatting."
+				fi
+				;;
+			dnsmasq.ipset)
+				if sed "$outputFilterIPv6" "$B_TMP" > "$A_TMP"; then
+					output_ok
+				else
+					output_failn
+					tmpfs add error "Error: Data file formatting."
+				fi
+				;;
+		esac
 	fi
 
 	case "$targetDNS" in
@@ -669,6 +707,10 @@ $(cat $A_TMP)"
 		dnsmasq.conf)
 			output 2 "Creating DNSMASQ config file "
 			tmpfs set message "$statusProcessing: creating DNSMASQ config file"
+			;;
+		dnsmasq.ipset)
+			output 2 "Creating DNSMASQ ipset file "
+			tmpfs set message "$statusProcessing: creating DNSMASQ ipset file"
 			;;
 		dnsmasq.servers)
 			output 2 "Creating DNSMASQ servers file "
@@ -736,16 +778,56 @@ start_service() {
 				json_add_array firewall
 				json_add_object ""
 				json_add_string type redirect
-				json_add_string target "DNAT"
-				json_add_string src "lan"
-				json_add_string dest "lan"
-				json_add_string proto "tcpudp"
-				json_add_string src_dport "53"
-				json_add_string dest_port "53"
+				json_add_string name simple_adblock_dns_hijack
+				json_add_string target DNAT
+				json_add_string src lan
+				json_add_string dest lan
+				json_add_string proto tcpudp
+				json_add_string src_dport 53
+				json_add_string dest_port 53
 				json_add_string dest_ip "$ip"
-				json_add_string name "simple-adblock-dns-hijack"
-				json_add_string reflection "0"
+				json_add_string reflection 0
 				json_close_object
+#				if [ "$targetDNS" = "dnsmasq.ipset" ]; then
+					json_add_object ""
+					json_add_string type ipset
+					json_add_string name adb
+					json_add_string match dest_net
+					json_add_string family ipv4
+					json_add_string storage hash
+					json_add_string enabled 1
+					json_close_object
+					json_add_object ""
+					json_add_string type rule
+					json_add_string name simple_adblock_drop_ipset
+					json_add_string ipset adb
+					json_add_string family ipv4
+					json_add_string src '*'
+					json_add_string dest '*'
+					json_add_string target DROP
+					json_add_string enabled 1
+					json_close_object
+					if [ -n "$outputFilterIPv6" ]; then
+						json_add_object ""
+						json_add_string type ipset
+						json_add_string name adb6
+						json_add_string match dest_net
+						json_add_string family ipv6
+						json_add_string storage hash
+						json_add_string enabled 1
+						json_close_object
+						json_add_object ""
+						json_add_string type rule
+						json_add_string name simple_adblock_drop_ipset6
+						json_add_string ipset adb6
+						json_add_string family ipv6
+						json_add_string src '*'
+						json_add_string dest '*'
+						json_add_string target DROP
+						json_add_string enabled 1
+						json_close_object
+					fi
+#				fi
 				json_close_array
 				procd_close_data
 			fi
@@ -862,6 +944,7 @@ dl() { rc_procd start_service "download"; }
 killcache() {
 	rm -f "$addnhostsCache" "$addnhostsGzip"
 	rm -f "$dnsmasqCache" "$dnsmasqGzip"
+	rm -f "$ipsetCache" "$ipsetGzip"
 	rm -f "$serversCache" "$serversGzip"
 	rm -f "$unboundCache" "$unboundGzip"
 	return 0
@@ -912,6 +995,8 @@ check() {
 				grep "$string" "$outputFile" | sed 's|^127.0.0.1 ||;s|^:: ||;';;
 			dnsmasq.conf)
 				grep "$string" "$outputFile" | sed 's|local=/||;s|/$||;';;
+			dnsmasq.ipset)
+				grep "$string" "$outputFile" | sed 's|ipset=/||;s|/adb,adb6$||;';;
 			dnsmasq.servers)
 				grep "$string" "$outputFile" | sed 's|server=/||;s|/$||;';;
 			unbound.adb_list)
