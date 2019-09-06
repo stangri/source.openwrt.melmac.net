@@ -270,7 +270,7 @@ else
 	p:option(Value, "name", translate("Name"))
 end
 
-la = p:option(Value, "local_address", translate("Local addresses/devices"))
+la = p:option(Value, "local_address", translate("Local addresses / devices"))
 if laPlaceholder then
 	la.placeholder = laPlaceholder
 end
@@ -281,7 +281,7 @@ lp.datatype    = "list(neg(portrange))"
 lp.placeholder = "0-65535"
 lp.rmempty = true
 
-ra = p:option(Value, "remote_address", translate("Remote addresses/domains"))
+ra = p:option(Value, "remote_address", translate("Remote addresses / domains"))
 ra.placeholder = "0.0.0.0/0"
 ra.rmempty = true
 

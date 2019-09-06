@@ -548,6 +548,7 @@ process_interface(){
 	[ $((ifaceMark)) -gt $((fwMask)) ] && return 1
 
 	network_get_device dev "$iface"
+	[ -z "$dev" ] && config_get dev "$iface" 'ifname'
 	if is_wan "$iface" && [ -n "$wanIface6" ]; then
 		network_get_device dev6 "$wanIface6"
 #		config_get dev6 "$wanIface6" 'ifname'
