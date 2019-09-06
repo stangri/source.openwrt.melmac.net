@@ -63,7 +63,6 @@ export ignoredIfaces="" supportedIfaces=""
 export appendLocalPolicy="" appendRemotePolicy=""
 export wanIface4 wanIface6 ifaceMark ifaceTableID ifacesListAll ifacesListSupported wanGW4 wanGW6
 export bootTimeout insertOption
-export ifconfigOutput ipAddrOutput ip4RouteOutput ip6RouteOutput
 
 list_iface() { ifacesListAll="${ifacesListAll}${1} "; }
 list_supported_iface() { is_supported_interface "$1" && ifacesListSupported="${ifacesListSupported}${1} "; }
@@ -80,6 +79,19 @@ vpr_find_true() {
 		done
 	fi
 	eval "$1=${iface:-$i}"
+}
+
+vpr_get_gateway() {
+	local iface="$2" dev="$3" gw
+	network_get_gateway gw "$iface"
+	[ -z "$gw" ] && gw="$(ip -4 a list dev "$dev" | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
+	eval "$1=${gw}"
+}
+vpr_get_gateway6() {
+	local iface="$2" dev="$3" gw
+	network_get_gateway6 gw "$iface"
+	[ -z "$gw" ] && gw="$(ip -6 a list dev "$dev" | grep inet6 | awk '{print $2}')"
+	eval "$1=${gw}"
 }
 
 is_l2tp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "l2tp" ]; }
@@ -99,83 +111,18 @@ is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/
 is_ipv6() { ! is_mac_address "$1" && [ "${1//:}" != "$1" ]; }
 is_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
 is_domain() { [ "${1//[a-zA-Z-]}" != "$1" ]; }
-is_phys_dev() { [ "${1:0:1}" = "@" ] && echo "$ip4RouteOutput" | grep -q "^${1:1}"; }
+is_phys_dev() { [ "${1:0:1}" = "@" ] && ip -4 r | grep -q "^${1:1}"; }
 is_turris() { /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05'; }
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
 dnsmasq_kill() { killall -q -HUP dnsmasq; }
 dnsmasq_restart() { output 1 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
-is_default_dev() { [ "$1" = "$(echo "$ip4RouteOutput" | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
+is_default_dev() { [ "$1" = "$(ip -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
 is_supported_iface_dev() {
 	for n in $ifacesListSupported; do 
 		if [ "$1" = "$(uci -q get "network.${n}.ifname" || echo "$n")" ] || [ "$1" = "$(uci -q get "network.${n}.proto")-${n}" ] ; then return 0; fi
 	done
 	return 1
 }
-
-get_device_default_gw() { 
-	local dev="$2" family="${3:-ipv4}"
-	if [ "$family" = "ipv4" ]; then
-		echo "$ip4RouteOutput" | grep -Eso -m1 "via ([0-9]{1,3}\\.){3}[0-9]{1,3} dev $dev" | awk '{print $2}'
-	else
-		echo "$ip6RouteOutput" | grep -Eso -m1 "via ([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}(/([0-9]){0,2}){0,2} dev $dev" | awk '{print $2}' | awk -F "/" '{print $1}'
-	fi
-}
-get_device_gw() { 
-	local dev="$2" family="${3:-ipv4}"
-	if [ "$family" = "ipv4" ]; then
-		echo "$ip4RouteOutput" | grep -Eso -m1 "^([0-9]{1,3}\\.){3}[0-9]{1,3} dev $dev" | awk '{print $1}'
-	else
-		echo "$ip6RouteOutput" | grep -Eso -m1 "^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}(/([0-9]){0,2}){0,2} dev $dev" | awk -F "/" '{print $1}'
-	fi
-}
-get_tunnel_gw() { 
-	local dev="$2" family="${3:-ipv4}"
-	if [ "$family" = "ipv4" ]; then
-		echo "$ifconfigOutput" | grep "^${dev}" -A 3 | grep 'P-t-P' | awk '{print $3}' | awk -F ":" '{print $2}'
-	else
-		local gw6=$(echo "$ifconfigOutput" | grep "^${dev}" -A 3 | grep 'inet6 addr:' | awk '{print $3}'); echo ${gw6:+"${gw6%:*}:1"}
-	fi
-}	
-get_device_bridge_gw() { 
-	local dev="$2" family="${3:-ipv4}"
-	if [ "$family" = "ipv4" ]; then
-		echo "$ip4RouteOutput" | grep -m1 "dev $dev" | grep -Eso "src ([0-9]{1,3}\\.){3}[0-9]{1,3}" | awk '{print $2}'
-	fi
-}
-
-ip_get_gw(){
-		if [ "$1" = "$(uci -q get "network.${n}.ifname" || echo "$n")" ] || [ "$1" = "$(uci -q get "network.${n}.proto")-${n}" ] ; then return 0; fi
-
-	local iface="$1" dev="$2" family="${3:-ipv4}" nexthop address gw
-	if [ "$family" = "ipv4" ]; then
-		gw="$(ip -4 a list dev "$dev" | grep inet | awk '{print $2}')"
-		gw="${gw//\/*}"
-	else
-		gw="$(ip -6 a list dev "$dev" | grep inet6 | awk '{print $2}')"
-	fi
-}
-
-get_iface_gw(){
-	local iface="$1" dev="$2" family="${3:-ipv4}" nexthop address gw
-	nexthop="$(ubus call "network.interface.${iface}" status | jsonfilter -l1 -e "@['route'][0]['nexthop']")"
-	address="$(ubus call "network.interface.${iface}" status | jsonfilter -l1 -e "@['${family}-address'][0]['address']")"
-	gw="${nexthop:-$address}"
-	if [ "$family" = "ipv4" ]; then
-		if ! is_ipv4 "$gw" || [ "$gw" = "0.0.0.0" ]; then gw="$(get_device_default_gw "$iface" "$dev" "$family")"; fi
-		if ! is_ipv4 "$gw" || [ "$gw" = "0.0.0.0" ]; then gw="$(get_device_gw "$iface" "$dev" "$family")"; fi
-		if ! is_ipv4 "$gw" || [ "$gw" = "0.0.0.0" ]; then gw="$(get_tunnel_gw "$iface" "$dev" "$family")"; fi
-		if ! is_ipv4 "$gw" || [ "$gw" = "0.0.0.0" ]; then gw="$(get_device_bridge_gw "$iface" "$dev" "$family")"; fi
-	else
-		if ! is_ipv6 "$gw" || [ "$gw" = "::/0" ]; then gw="$(get_device_default_gw "$iface" "$dev" "$family")"; fi
-		if ! is_ipv6 "$gw" || [ "$gw" = "::/0" ]; then gw="$(get_device_gw "$iface" "$dev" "$family")"; fi
-		if ! is_ipv6 "$gw" || [ "$gw" = "::/0" ]; then gw="$(get_tunnel_gw "$iface" "$dev" "$family")"; fi
-	fi
-	echo "$gw"
-}
-
-vpr_get_device(){ local i; network_get_device i "$1"; echo "$i"; }
-vpr_get_gateway(){ local i; network_get_gateway i "$1"; echo "$i"; }
-vpr_get_gateway6(){ local i; network_get_gateway6 i "$1"; echo "$i"; }
 
 load_package_config() {
 	config_load "$packageName"
@@ -251,10 +198,6 @@ is_wan_up() {
 	config_load 'network'
 	config_foreach list_supported_iface 'interface'
 	if [ -n "$wanGW" ]; then
-#		[ -z "$ipAddrOutput" ] && ipAddrOutput="$(ip addr show 2>/dev/null)"	
-		[ -z "$ip4RouteOutput" ] && ip4RouteOutput="$(ip -4 route 2>/dev/null)"	
-		[ -z "$ip6RouteOutput" ] && ip6RouteOutput="$(ip -6 route 2>/dev/null)"	
-		[ -z "$ifconfigOutput" ] && ifconfigOutput="$(ifconfig 2>/dev/null)"	
 		return 0	
 	else	
 		output "$_ERROR_: $serviceName failed to discover WAN gateway!\\n"
@@ -622,12 +565,8 @@ process_interface(){
 			output 2 "Creating table '$displayText' "
 			eval "mark_${iface//-/_}=$ifaceMark"; eval "tid_${iface//-/_}=$ifaceTableID";
 			table_destroy "${ifaceTableID}" "${iface}"
-			network_get_gateway gw4 "$iface"
-			[ -z "$gw4" ] && gw4="$(ip -4 a list dev "$dev" | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
-			network_get_gateway6 gw6 "$iface"
-			[ -z "$gw6" ] && gw6="$(ip -6 a list dev "$dev" | grep inet6 | awk '{print $2}')"
-#			gw4="$(get_iface_gw "$iface" "$dev" ipv4)"
-#			gw6="$(get_iface_gw "$iface" "$dev6" ipv6)"
+			vpr_get_gateway gw4 "$iface" "$dev"
+			vpr_get_gateway6 gw6 "$iface" "$dev6"
 			displayText="${iface}/${gw4:-0.0.0.0}"
 			[ "$ipv6Enabled" -ne 0 ] && displayText="${displayText}/${gw6:-::/0}"
 			is_default_dev "$dev" && displayText="${displayText}${__OK__}"

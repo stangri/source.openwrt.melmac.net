@@ -138,10 +138,12 @@ function en.write()
 	http.redirect(dispatcher.build_url("admin/services/" .. packageName))
 end
 
--- General options
+-- General Options
 config = m:section(NamedSection, "config", "vpn-policy-routing", translate("Configuration"))
 config.override_values = true
 config.override_depends = true
+
+-- Basic Options
 config:tab("basic", translate("Basic Configuration"))
 
 verb = config:taboption("basic", ListValue, "verbosity", translate("Output verbosity"),translate("Controls both system log and console output verbosity."))
@@ -184,6 +186,7 @@ ipv6 = config:taboption("basic", ListValue, "ipv6_enabled", translate("IPv6 Supp
 ipv6:value("0", translate("Disabled"))
 ipv6:value("1", translate("Enabled"))
 
+-- Advanced Options
 config:tab("advanced", translate("Advanced Configuration"),
 	"<br/>&nbsp;&nbsp;&nbsp;&nbsp;<b>" .. translate("WARNING:") .. "</b>" .. " " .. translate("Please make sure to check the") .. " "
 	.. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]] .. translate("README") .. [[</a>]] .. " "
@@ -254,7 +257,7 @@ p.sortable  = true
 p.anonymous = true
 p.addremove = true
 
-enc = uci:get("vpn-policy-routing", "config", "enable_control")
+enc = tonumber(uci:get("vpn-policy-routing", "config", "enable_control"))
 if enc and enc ~= 0 then
 	le = p:option(Flag, "enabled", translate("Enabled"))
 	le.default = "1"
@@ -287,7 +290,7 @@ rp.datatype    = "list(neg(portrange))"
 rp.placeholder = "0-65535"
 rp.rmempty = true
 
-enc = uci:get("vpn-policy-routing", "config", "proto_control")
+enc = tonumber(uci:get("vpn-policy-routing", "config", "proto_control"))
 if enc and enc ~= 0 then
 	proto = p:option(ListValue, "proto", translate("Protocol"))
 	proto.rmempty = true
@@ -297,7 +300,7 @@ if enc and enc ~= 0 then
 	proto:value("tcp udp","TCP/UDP")
 end
 
-enc = uci:get("vpn-policy-routing", "config", "chain_control")
+enc = tonumber(uci:get("vpn-policy-routing", "config", "chain_control"))
 if enc and enc ~= 0 then
 	chain = p:option(ListValue, "chain", translate("Chain"))
 	chain.rmempty = true
