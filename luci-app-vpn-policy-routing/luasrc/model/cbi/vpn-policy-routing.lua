@@ -159,28 +159,22 @@ se:value("0", translate("Do not enforce policies when their gateway is down"))
 se:value("1", translate("Strictly enforce policies when their gateway is down"))
 se.default = 1
 
-dnsmasq = config:taboption("basic", ListValue, "dnsmasq_ipset", translate("Use DNSMASQ ipset for domain policies"),
-	translate("Please check the" .. " "
-  .. [[<a href="]] .. readmeURL .. [[#use-dnsmasq" target="_blank">]]
-  .. translate("README") .. [[</a>]] .. " " .. translate("before enabling this option.")))
-dnsmasq:value("0", translate("Disabled"))
-dnsmasq:value("1", translate("Enabled"))
-
-remote_ipset = config:taboption("basic", ListValue, "remote_ipset", translate("Use ipset for remote policies"),
+remote_ipset = config:taboption("basic", ListValue, "remote_ipset", translate("The ipset option for remote policies"),
 	translate("Please check the") .. " "
   .. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]]
   .. translate("README") .. [[</a>]] .. " " .. translate("before changing this option."))
-remote_ipset:depends({dnsmasq_ipset="0"})
-remote_ipset:value("0", translate("Disabled"))
-remote_ipset:value("1", translate("Enabled"))
-remote_ipset.default = "1"
+remote_ipset:value("", translate("Disabled"))
+remote_ipset:value("ipset", translate("Use ipset command"))
+remote_ipset:value("dnsmasq.ipset", translate("Use DNSMASQ ipset"))
+remote_ipset.default = ""
+remote_ipset.rmempty = true
 
-local_ipset = config:taboption("basic", ListValue, "local_ipset", translate("Use ipset for local policies"),
+local_ipset = config:taboption("basic", ListValue, "local_ipset", translate("The ipset option for local policies"),
 	translate("Please check the") .. " "
   .. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]]
   .. translate("README") .. [[</a>]] .. " " .. translate("before changing this option."))
 local_ipset:value("0", translate("Disabled"))
-local_ipset:value("1", translate("Enabled"))
+local_ipset:value("1", translate("Use ipset command"))
 
 ipv6 = config:taboption("basic", ListValue, "ipv6_enabled", translate("IPv6 Support"))
 ipv6:value("0", translate("Disabled"))
