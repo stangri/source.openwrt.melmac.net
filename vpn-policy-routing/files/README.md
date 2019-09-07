@@ -31,7 +31,7 @@ You can also set policies for traffic with specific DSCP tag. On Windows 10, for
 
 - Supports strict policy enforcement, even if the policy interface is down -- resulting in network being unreachable for specific policy (enabled by default).
 
-### Use DNSMASQ
+### Use DNSMASQ ipset
 
 - Service can be set to utilize ```dnsmasq```'s ```ipset``` support. This requires the ```dnsmasq-full``` to be installed (see [How to install dnsmasq-full](#how-to-install-dnsmasq-full)) and it significantly improves the start up time because ```dnsmasq``` resolves the domain names and adds them to appropriate ```ipset``` in background. Another benefit of using ```dnsmasq```'s ```ipset``` is that it also automatically adds third-level domains to the ```ipset```: if ```domain.com``` is added to the policy, this policy will affect all ```*.domain.com``` subdomains. This also works for top-level domains as well, a policy targeting the ```at``` for example, will affect all the ```*.at``` domains.
 
@@ -118,8 +118,8 @@ In the Web UI the ```vpn-policy-routing``` settings are split into ```basic``` a
 |Basic|enabled|boolean|0|Enable/disable the ```vpn-policy-routing``` service.|
 |Basic|verbosity|integer|2|Can be set to 0, 1 or 2 to control the console and system log output verbosity of the ```vpn-policy-routing``` service.|
 |Basic|strict_enforcement|boolean|1|Enforce policies when their interface is down. See [Strict enforcement](#strict-enforcement) for more details.|
-|Basic|dnsmasq_ipset|boolean|0|Enable/disable use of ```dnsmasq``` for ```ipset``` entries. See [Use DNSMASQ](#use-dnsmasq) for more details. Assumes ```remote_ipset=1```. Make sure the [requirements](#requirements) are met.|
-|Basic|remote_ipset|boolean|1|Enable/disable use of ```ipset``` entries for compatible remote policies (policies with only a remote hostname and no other fields set). This speeds up service start-up and operation. Make sure the [requirements](#requirements) are met. This setting is hidden in Web UI unless ```Use DNSMASQ for domain policies``` is disabled.|
+[requirements](#requirements) are met.|
+|Basic|remote_ipset|string||Enable/disable use of one of the ipset options for compatible remote policies (policies with only a remote hostname and no other fields set). This speeds up service start-up and operation. Currently supported options are ```none```,  ```ipset``` and ```dnsmasq.ipset``` (see [Use DNSMASQ ipset](#use-dnsmasq-ipset) for more details). Make sure the [requirements](#requirements) are met.|
 |Basic|local_ipset|boolean|0|Enable/disable use of ```ipset``` entries for compatible local policies (policies with only a local IP address or MAC address and no other fields set). Using ```ipset``` for local IPs/MACs is faster than using ```iptables``` rules, however it makes it impossible to enforce policies priority/order. Make sure the [requirements](#requirements) are met.|
 |Basic|ipv6_enabled|boolean|0|Enable/disable IPv6 support.|
 |Advanced|supported_interface|list/string||Allows to specify the space-separated list of interface names (in lower case) to be explicitly supported by the ```vpn-policy-routing``` service. Can be useful if your OpenVPN tunnels have dev option other than tun\* or tap\*.|
