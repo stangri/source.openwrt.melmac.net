@@ -84,13 +84,17 @@ vpr_find_true() {
 vpr_get_gateway() {
 	local iface="$2" dev="$3" gw
 	network_get_gateway gw "$iface"
-	[ -z "$gw" ] && gw="$(ip -4 a list dev "$dev" | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
+	if [ -z "$gw" ]; then
+		gw="$(ip -4 a list dev "$dev" 2>/dev/null | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
+	fi
 	eval "$1=${gw}"
 }
 vpr_get_gateway6() {
 	local iface="$2" dev="$3" gw
 	network_get_gateway6 gw "$iface"
-	[ -z "$gw" ] && gw="$(ip -6 a list dev "$dev" | grep inet6 | awk '{print $2}')"
+	if [ -z "$gw" ]; then
+		gw="$(ip -6 a list dev "$dev" 2>/dev/null | grep inet6 | awk '{print $2}')"
+	fi
 	eval "$1=${gw}"
 }
 
@@ -551,7 +555,7 @@ process_interface(){
 	[ -z "$dev" ] && config_get dev "$iface" 'ifname'
 	if is_wan "$iface" && [ -n "$wanIface6" ]; then
 		network_get_device dev6 "$wanIface6"
-#		config_get dev6 "$wanIface6" 'ifname'
+		[ -z "$dev6" ] && config_get dev6 "$wanIface6" 'ifname'
 	fi
 	[ -z "$dev6" ] && dev6="$dev"
 
@@ -568,7 +572,11 @@ process_interface(){
 			table_destroy "${ifaceTableID}" "${iface}"
 			vpr_get_gateway gw4 "$iface" "$dev"
 			vpr_get_gateway6 gw6 "$iface" "$dev6"
-			displayText="${iface}/${gw4:-0.0.0.0}"
+			if [ "$iface" = "$dev" ]; then
+				displayText="${iface}/${gw4:-0.0.0.0}"
+			else
+				displayText="${iface}/${dev}/${gw4:-0.0.0.0}"
+			fi
 			[ "$ipv6Enabled" -ne 0 ] && displayText="${displayText}/${gw6:-::/0}"
 			is_default_dev "$dev" && displayText="${displayText}${__OK__}"
 			if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then

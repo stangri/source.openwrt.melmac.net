@@ -130,6 +130,7 @@ In the Web UI the ```vpn-policy-routing``` settings are split into ```basic``` a
 |Advanced|enable_control|boolean|0|Shows ```Enable``` checkbox column for policies, allowing to quickly enable/disable specific policy without deleting it.|
 |Advanced|proto_control|boolean|0|Shows ```Protocol``` column for policies, allowing to specify ```TCP``` (default), ```UDP``` or ```TCP/UDP``` protocol for ```iptables``` rules for policies.|
 |Advanced|chain_control|boolean|0|Shows ```Chain``` column for policies, allowing to specify ```PREROUTING``` (default), ```FORWARD```, ```INPUT```, or ```OUTPUT``` chain for ```iptables``` rules for policies.|
+|Advanced|sort_control|boolean|1|Shows the Up/Down buttons for policies, allowing you to move a policy up or down in the list/priority.|
 |Advanced|icmp_interface|string||Set the default ICMP protocol interface (interface name in lower case). Use with caution.|
 |Advanced|append_local_rules|string||Append local IP Tables rules. Can be used to exclude local IP addresses from destinations for policies with local address set.|
 |Advanced|append_remote_rules|string||Append local IP Tables rules. Can be used to exclude remote IP addresses from sources for policies with remote address set.|

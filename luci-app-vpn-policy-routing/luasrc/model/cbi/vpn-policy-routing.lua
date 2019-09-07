@@ -219,9 +219,14 @@ proto_control = config:taboption("advanced", ListValue, "proto_control", transla
 proto_control:value("0", translate("Disabled"))
 proto_control:value("1", translate("Enabled"))
 
-chain_control = config:taboption("advanced", ListValue, "chain_control", translate("Show Chain Column"), translate("Shows the chain column for policies, allowing you to assign a TCP, UDP or TCP/UDP protocol to a policy."))
+chain_control = config:taboption("advanced", ListValue, "chain_control", translate("Show Chain Column"), translate("Shows the chain column for policies, allowing you to assign a PREROUTING, FORWARD, INPUT or OUTPUT chain to a policy."))
 chain_control:value("0", translate("Disabled"))
 chain_control:value("1", translate("Enabled"))
+
+sort_control = config:taboption("advanced", ListValue, "sort_control", translate("Show Up/Down Buttons"), translate("Shows the Up/Down buttons for policies, allowing you to move a policy up or down in the list."))
+sort_control:value("0", translate("Disabled"))
+sort_control:value("1", translate("Enabled"))
+sort_control.default = "1"
 
 icmp = config:taboption("advanced", ListValue, "icmp_interface", translate("Default ICMP Interface"), translate("Force the ICMP protocol interface."))
 icmp:value("", translate("No Change"))
@@ -253,7 +258,10 @@ fwmask.placeholder = "0xff0000"
 -- Policies
 p = m:section(TypedSection, "policy", translate("Policies"), translate("Comment, interface and at least one other field are required. Multiple local and remote addresses/devices/domains and ports can be space separated. Placeholders below represent just the format/syntax and will not be used if fields are left blank."))
 p.template = "cbi/tblsection"
-p.sortable  = true
+enc = tonumber(uci:get("vpn-policy-routing", "config", "sort_control"))
+if not enc and enc ~= 0 then
+	p.sortable  = true
+end
 p.anonymous = true
 p.addremove = true
 
