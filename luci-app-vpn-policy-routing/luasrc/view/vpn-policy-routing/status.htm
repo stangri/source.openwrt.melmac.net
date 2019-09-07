@@ -7,8 +7,7 @@ This is free software, licensed under the Apache License, Version 2.0
 
 <textarea rows="<%=select(2, self:cfgvalue(section):gsub(' ', '\n'))%>"
   style="border:none;box-shadow:none;background:transparent;font-weight:bold;line-height:20px;width:50em;resize:none;"
-  disabled="disabled">
-  <%=self:cfgvalue(section):gsub(' ', '\n')%>
+  disabled="disabled"><%=self:cfgvalue(section):gsub(' ', '\n')%>
 </textarea>
 
 <%+cbi/valuefooter%>
