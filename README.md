@@ -11,7 +11,7 @@ To add this repo to your OpenWrt/LEDE Project router run the following commands:
 #### OpenWrt 15.05.1 Instructions
 
 ```sh
-opkg update; opkg install ca-certificates wget libopenssl
+opkg update; opkg install ca-certificates wget libopenssl;
 echo -e -n 'untrusted comment: OpenWrt usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /tmp/stangri-repo.pub && opkg-key add /tmp/stangri-repo.pub
 ! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://raw.githubusercontent.com/stangri/openwrt-repo/master' >> /etc/opkg/customfeeds.conf
 opkg update
@@ -20,9 +20,7 @@ opkg update
 #### LEDE Project 17.01.x and OpenWrt 18.06.x (or newer) Instructions
 
 ```sh
-opkg update
-opkg list-installed | grep -q uclient-fetch || opkg install uclient-fetch
-opkg list-installed | grep -q libustream || opkg install libustream-mbedtls
+opkg update; opkg install uclient-fetch libustream-mbedtls ca-bundle ca-certificates;
 echo -e -n 'untrusted comment: OpenWrt usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /tmp/stangri-repo.pub && opkg-key add /tmp/stangri-repo.pub
 ! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://raw.githubusercontent.com/stangri/openwrt-repo/master' >> /etc/opkg/customfeeds.conf
 opkg update
