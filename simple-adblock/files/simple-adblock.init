@@ -483,7 +483,7 @@ cacheOps() {
 
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
 
-fw3_setup() {
+fwOps() {
 	local action="$1" ip="$2"
 	case "$action" in
 	on_stop)
@@ -492,7 +492,7 @@ fw3_setup() {
 		uci -q del firewall.simple_adblock_rule
 		;;
 	on_start)
-		if ! uci -q get firewall.simple_adblock_redirect; then
+		if ! uci -q get firewall.simple_adblock_redirect >/dev/null; then
 			uci -q set firewall.simple_adblock_redirect=redirect
 			uci -q set firewall.simple_adblock_redirect.name=simple_adblock_dns_hijack
 			uci -q set firewall.simple_adblock_redirect.target=DNAT
@@ -505,29 +505,50 @@ fw3_setup() {
 			uci -q set firewall.simple_adblock_redirect.reflection=0
 		fi
 		if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
-			if ! uci -q get firewall.simple_adblock_ipset; then
+			if ! uci -q get firewall.simple_adblock_ipset >/dev/null; then
 				uci -q set firewall.simple_adblock_ipset=ipset
 				uci -q set firewall.simple_adblock_ipset.name=adb
 				uci -q set firewall.simple_adblock_ipset.match=dest_net
 				uci -q set firewall.simple_adblock_ipset.storage=hash
 				uci -q set firewall.simple_adblock_ipset.enabled=1
 			fi
-			if ! uci -q get firewall.simple_adblock_rule; then
+			if ! uci -q get firewall.simple_adblock_rule >/dev/null; then
 				uci -q set firewall.simple_adblock_rule=rule
-				uci -q set firewall.simple_adblock_rule.name=simple_adblock_ipset_reject
+				uci -q set firewall.simple_adblock_rule.name=simple_adblock_ipset_rule
 				uci -q set firewall.simple_adblock_rule.ipset=adb
-				uci -q set firewall.simple_adblock_rule.src='*'
+				uci -q set firewall.simple_adblock_rule.src=lan
 				uci -q set firewall.simple_adblock_rule.dest='*'
-				uci -q set firewall.simple_adblock_rule.proto=tcp
+				uci -q set firewall.simple_adblock_rule.proto=tcpudp
 				uci -q set firewall.simple_adblock_rule.target=REJECT
 				uci -q set firewall.simple_adblock_rule.enabled=1
 			fi
+		else
+			uci -q del firewall.simple_adblock_ipset
+			uci -q del firewall.simple_adblock_rule
 		fi
 		;;
 	esac
 	if [ -n "$(uci changes firewall)" ]; then
 		uci -q commit firewall
-		/etc/init.d/firewall restart >/dev/null 2>&1
+		/etc/init.d/firewall reload >/dev/null 2>&1
+	fi
+}
+
+ipsetOps() {
+	if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
+		if ! uci -q get firewall.simple_adblock_ipset >/dev/null; then
+			uci -q set firewall.simple_adblock_ipset=ipset
+			uci -q set firewall.simple_adblock_ipset.name=adb
+			uci -q set firewall.simple_adblock_ipset.match=dest_net
+			uci -q set firewall.simple_adblock_ipset.storage=hash
+			uci -q set firewall.simple_adblock_ipset.enabled=1
+		fi
+	else
+		uci -q del firewall.simple_adblock_ipset
+	fi
+	if [ -n "$(uci changes firewall)" ]; then
+		uci -q commit firewall
+		/etc/init.d/firewall reload >/dev/null 2>&1
 	fi
 }
 
@@ -787,8 +808,8 @@ start_service() {
 		network_get_ipaddr ip 'lan'
 # shellcheck disable=SC2154
 		if [ "$forceDNS" -ne 0 ] && [ -n "$ip" ]; then
-			if is_chaos_calmer || [ "$targetDNS" = 'dnsmasq.ipset' ]; then
-				fw3_setup 'on_start' "$ip"
+			if is_chaos_calmer; then
+				fwOps 'on_start' "$ip"
 			else
 				procd_open_data
 				json_add_array firewall
@@ -804,21 +825,22 @@ start_service() {
 				json_add_string dest_ip "$ip"
 				json_add_string reflection 0
 				json_close_object
+				ipsetOps 'on_start'
 				if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
 					json_add_object ''
 					json_add_string type ipset
-					json_add_string name adb
+					json_add_string name adbprocd
 					json_add_string match dest_net
 					json_add_string storage hash
 					json_add_string enabled 1
 					json_close_object
 					json_add_object ''
 					json_add_string type rule
-					json_add_string name simple_adblock_reject_ipset
+					json_add_string name simple_adblock_ipset_rule
 					json_add_string ipset adb
-					json_add_string src '*'
+					json_add_string src lan
 					json_add_string dest '*'
-					json_add_string proto tcp
+					json_add_string proto tcpudp
 					json_add_string target REJECT
 					json_add_string enabled 1
 					json_close_object
@@ -956,7 +978,7 @@ status() {
 
 stop_service() {
 	load_package_config
-	fw3_setup 'on_stop'
+	fwOps 'on_stop'
 	if [ -s "$outputFile" ]; then
 		output "Stopping $serviceName... "
 		tmpfs del triggers
