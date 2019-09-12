@@ -253,7 +253,7 @@ fwmask.placeholder = "0xff0000"
 p = m:section(TypedSection, "policy", translate("Policies"), translate("Comment, interface and at least one other field are required. Multiple local and remote addresses/devices/domains and ports can be space separated. Placeholders below represent just the format/syntax and will not be used if fields are left blank."))
 p.template = "cbi/tblsection"
 enc = tonumber(uci:get("vpn-policy-routing", "config", "sort_control"))
-if not enc and enc ~= 0 then
+if enc and enc ~= 0 then
 	p.sortable  = true
 end
 p.anonymous = true
