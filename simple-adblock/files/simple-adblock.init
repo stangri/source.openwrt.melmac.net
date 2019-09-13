@@ -827,13 +827,13 @@ start_service() {
 				json_close_object
 				ipsetOps 'on_start'
 				if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
-					json_add_object ''
-					json_add_string type ipset
-					json_add_string name adbprocd
-					json_add_string match dest_net
-					json_add_string storage hash
-					json_add_string enabled 1
-					json_close_object
+#					json_add_object ''
+#					json_add_string type ipset
+#					json_add_string name adb
+#					json_add_string match dest_net
+#					json_add_string storage hash
+#					json_add_string enabled 1
+#					json_close_object
 					json_add_object ''
 					json_add_string type rule
 					json_add_string name simple_adblock_ipset_rule
