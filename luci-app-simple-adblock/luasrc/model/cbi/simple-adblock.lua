@@ -15,13 +15,31 @@ local dispatcher = require "luci.dispatcher"
 local enabledFlag = uci:get(packageName, "config", "enabled")
 local command, outputFile, outputCache, outputGzip
 local targetDNS = uci:get(packageName, "config", "dns")
+local dnsmasqIPSET = luci.sys.call("dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'")
+
+function checkDnsmasqIpset()
+	if sys.call("dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'") ~= 0 then
+		return true
+	else
+		return false
+	end
+end
+
+function checkDnsmasqIDN()
+	if sys.call("dnsmasq -v 2>/dev/null | grep -q 'no-IDN' || ! dnsmasq -v 2>/dev/null | grep -q -w 'IDN'") ~= 0 then
+		return true
+	else
+		return false
+	end
+end
 
 if not targetDNS or targetDNS == "" then
 	targetDNS = "dnsmasq.servers"
 end
 
 if targetDNS ~= "dnsmasq.addnhosts" and targetDNS ~= "dnsmasq.conf" and 
-	 targetDNS ~= "dnsmasq.servers" and targetDNS ~= "unbound.adb_list" then
+	 targetDNS ~= "dnsmasq.ipset" and targetDNS ~= "dnsmasq.servers" and 
+	 targetDNS ~= "unbound.adb_list" then
 	targetDNS = "dnsmasq.servers"
 end
 
@@ -182,7 +200,9 @@ dns = s:taboption("advanced", ListValue, "dns", translate("DNS Service"), transl
   .. translate("README") .. [[</a>]] .. " " .. translate("for details."))
 dns:value("dnsmasq.addnhosts", translate("DNSMASQ Additional Hosts"))
 dns:value("dnsmasq.conf", translate("DNSMASQ Config"))
-dns:value("dnsmasq.ipset", translate("DNSMASQ IP Set"))
+if checkDnsmasqIpset() then
+	dns:value("dnsmasq.ipset", translate("DNSMASQ IP Set"))
+end
 dns:value("dnsmasq.servers", translate("DNSMASQ Servers File"))
 dns:value("unbound.adb_list", translate("Unbound AdBlock List"))
 dns.default = "dnsmasq.servers"
@@ -191,7 +211,6 @@ ipv6 = s:taboption("advanced", ListValue, "ipv6_enabled", translate("IPv6 Suppor
 ipv6:value("", translate("Do not add IPv6 entries"))
 ipv6:value("1", translate("Add IPv6 entries"))
 ipv6:depends({dns="dnsmasq.addnhosts"}) 
-ipv6:depends({dns="dnsmasq.ipset"}) 
 ipv6.default = ""
 ipv6.rmempty = true
 
@@ -211,11 +230,6 @@ o8 = s:taboption("advanced", ListValue, "parallel_downloads", translate("Simulta
 o8:value("0", translate("Do not use simultaneous processing"))
 o8:value("1", translate("Use simultaneous processing"))
 o8.default = 1
-
-o9 = s:taboption("advanced", ListValue, "allow_non_ascii", translate("Allow Non-ASCII characters in DNSMASQ file"), translate("Only enable if your version of DNSMASQ supports the use of Non-ASCII characters, otherwise DNSMASQ will fail to start."))
-o9:value("0", translate("Do not allow Non-ASCII"))
-o9:value("1", translate("Allow Non-ASCII"))
-o9.default = "0"
 
 o10 = s:taboption("advanced", ListValue, "compressed_cache", translate("Store compressed cache file on router"), translate("Attempt to create a compressed cache of block-list in the persistent memory."))
 o10:value("0", translate("Do not store compressed cache"))
