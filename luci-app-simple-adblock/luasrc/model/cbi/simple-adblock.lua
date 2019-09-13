@@ -15,23 +15,10 @@ local dispatcher = require "luci.dispatcher"
 local enabledFlag = uci:get(packageName, "config", "enabled")
 local command, outputFile, outputCache, outputGzip
 local targetDNS = uci:get(packageName, "config", "dns")
-local dnsmasqIPSET = luci.sys.call("dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'")
-
-function checkDnsmasqIpset()
-	if sys.call("dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'") ~= 0 then
-		return true
-	else
-		return false
-	end
-end
-
-function checkDnsmasqIDN()
-	if sys.call("dnsmasq -v 2>/dev/null | grep -q 'no-IDN' || ! dnsmasq -v 2>/dev/null | grep -q -w 'IDN'") ~= 0 then
-		return true
-	else
-		return false
-	end
-end
+local checkDnsmasq = sys.call("which dnsmasq >/dev/null 2>&1") == 0 and true
+local checkUnbound = sys.call("which unbound >/dev/null 2>&1") == 0 and true
+local checkDnsmasqIpset = sys.call("dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'") ~= 0
+   and sys.call("ipset help hash:net >/dev/null 2>&1") and true
 
 if not targetDNS or targetDNS == "" then
 	targetDNS = "dnsmasq.servers"
@@ -195,16 +182,34 @@ end
 
 s:tab("advanced", translate("Advanced Configuration"))
 
-dns = s:taboption("advanced", ListValue, "dns", translate("DNS Service"), translate("Pick the DNS resolution option to create the adblock list for, see the") .. " "
-  .. [[<a href="]] .. readmeURL .. [[#dns-resolution-option" target="_blank">]]
-  .. translate("README") .. [[</a>]] .. " " .. translate("for details."))
-dns:value("dnsmasq.addnhosts", translate("DNSMASQ Additional Hosts"))
-dns:value("dnsmasq.conf", translate("DNSMASQ Config"))
-if checkDnsmasqIpset() then
-	dns:value("dnsmasq.ipset", translate("DNSMASQ IP Set"))
+local dns_descr = translate("Pick the DNS resolution option to create the adblock list for, see the") .. " "
+		.. [[<a href="]] .. readmeURL .. [[#dns-resolution-option" target="_blank">]]
+		.. translate("README") .. [[</a>]] .. " " .. translate("for details.")
+
+if not checkDnsmasq then
+	dns_descr = dns_descr .. "</br>" .. translate("Please note that") .. " <i>dnsmasq.addnhosts</i> " .. translate("is not supported on this system.")
+	dns_descr = dns_descr .. "</br>" .. translate("Please note that") .. " <i>dnsmasq.conf</i> " .. translate("is not supported on this system.")
+	dns_descr = dns_descr .. "</br>" .. translate("Please note that") .. " <i>dnsmasq.ipset</i> " .. translate("is not supported on this system.")
+	dns_descr = dns_descr .. "</br>" .. translate("Please note that") .. " <i>dnsmasq.servers</i> " .. translate("is not supported on this system.")
+elseif not checkDnsmasqIpset then 
+	dns_descr = dns_descr .. "</br>" .. translate("Please note that") .. " <i>dnsmasq.ipset</i> " .. translate("is not supported on this system.")
 end
-dns:value("dnsmasq.servers", translate("DNSMASQ Servers File"))
-dns:value("unbound.adb_list", translate("Unbound AdBlock List"))
+if not checkUnbound then 
+	dns_descr = dns_descr .. "</br>" .. translate("Please note that") .. " <i>unbound.adb_list</i> " .. translate("is not supported on this system.")
+end
+
+dns = s:taboption("advanced", ListValue, "dns", translate("DNS Service"), dns_descr)
+if checkDnsmasq then
+	dns:value("dnsmasq.addnhosts", translate("DNSMASQ Additional Hosts"))
+	dns:value("dnsmasq.conf", translate("DNSMASQ Config"))
+	if checkDnsmasqIpset then
+		dns:value("dnsmasq.ipset", translate("DNSMASQ IP Set"))
+	end
+	dns:value("dnsmasq.servers", translate("DNSMASQ Servers File"))
+end
+if checkUnbound then
+	dns:value("unbound.adb_list", translate("Unbound AdBlock List"))
+end
 dns.default = "dnsmasq.servers"
 
 ipv6 = s:taboption("advanced", ListValue, "ipv6_enabled", translate("IPv6 Support"), translate("Add IPv6 entries to block-list."))

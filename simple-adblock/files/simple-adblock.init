@@ -391,7 +391,7 @@ tmpfs() {
 				stats) 
 					echo "$stats"; return;;
 				triggers)
-					curReload="$allowDnsmasqIDN $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetDNS"
+					curReload="$parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetDNS"
 					curRestart="$compressedCache $forceDNS $led"
 					if [ "$curReload" != "$readReload" ]; then
 						ret='download'
@@ -445,7 +445,7 @@ tmpfs() {
 				stats) 
 					stats="$value";;
 				triggers) 
-					readReload="$allowDnsmasqIDN $parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetDNS"
+					readReload="$parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetDNS"
 					readRestart="$compressedCache $forceDNS $led"
 					;;
 			esac
