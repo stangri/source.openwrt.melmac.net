@@ -97,7 +97,7 @@ if tmpfs and tmpfs['data'] then
 	end
 end
 
-m = Map("vpn-policy-routing", translate("Openconnect, OpenVPN, PPTP, Wireguard and WAN Policy-Based Routing"))
+m = Map("vpn-policy-routing", translate("VPN and WAN Policy-Based Routing"))
 st = m:section(NamedSection, "config", "vpn-policy-routing", translate("Service Status") .. tmpfsVersion)
 local packageName = "vpn-policy-routing"
 local enabledFlag = uci:get(packageName, "config", "enabled")
