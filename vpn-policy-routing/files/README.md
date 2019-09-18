@@ -126,16 +126,17 @@ In the Web UI the ```vpn-policy-routing``` settings are split into ```basic``` a
 |Advanced|boot_timeout|number|30|Allows to specify the time (in seconds) for ```vpn-policy-routing``` service to wait for WAN gateway discovery on boot. Can be useful on devices with ADSL modem built in.|
 |Advanced|iptables_rule_option|append/insert|append|Allows to specify the iptables parameter for rules: ```-A``` for ```append``` and ```-I``` for ```insert```. Append is generally speaking more compatible with other packages/firewall rules. Recommended to change to ```insert``` only to improve compatibility with the ```mwan3``` package.|
 |Advanced|iprule_enabled|boolean|0|Add an ```ip rule```, not an ```iptables``` entry for policies with just the local address. Use with caution to manipulate policies priorities.|
-|Advanced|enable_control|boolean|0|Shows ```Enable``` checkbox column for policies, allowing to quickly enable/disable specific policy without deleting it.|
-|Advanced|proto_control|boolean|0|Shows ```Protocol``` column for policies, allowing to specify ```TCP``` (default), ```UDP``` or ```TCP/UDP``` protocol for ```iptables``` rules for policies.|
-|Advanced|chain_control|boolean|0|Shows ```Chain``` column for policies, allowing to specify ```PREROUTING``` (default), ```FORWARD```, ```INPUT```, or ```OUTPUT``` chain for ```iptables``` rules for policies.|
-|Advanced|sort_control|boolean|1|Shows the Up/Down buttons for policies, allowing you to move a policy up or down in the list/priority.|
 |Advanced|icmp_interface|string||Set the default ICMP protocol interface (interface name in lower case). Use with caution.|
 |Advanced|append_local_rules|string||Append local IP Tables rules. Can be used to exclude local IP addresses from destinations for policies with local address set.|
 |Advanced|append_remote_rules|string||Append local IP Tables rules. Can be used to exclude remote IP addresses from sources for policies with remote address set.|
 |Advanced|wan_tid|integer|201|Starting (WAN) Table ID number for tables created by the ```vpn-policy-routing``` service.|
 |Advanced|wan_mark|hexadecimal|0x010000|Starting (WAN) fw mark for marks used by the ```vpn-policy-routing``` service. High starting mark is used to avoid conflict with SQM/QoS, this can be changed by user. Change with caution together with ```fw_mask```.|
 |Advanced|fw_mask|hexadecimal|0xff0000|FW Mask used by the ```vpn-policy-routing``` service. High mask is used to avoid conflict with SQM/QoS, this can be changed by user. Change with caution together with ```wan_mark```.|
+|Web UI|webui_enable_column|boolean|0|Shows ```Enable``` checkbox column for policies, allowing to quickly enable/disable specific policy without deleting it.|
+|Web UI|webui_protocol_column|boolean|0|Shows ```Protocol``` column for policies, allowing to specify the protocol for ```iptables``` rules for policies.|
+|Web UI|webui_supported_protocol|list|0|List of protocols to display in the ```Protocol``` column for policies.|
+|Web UI|webui_chain_column|boolean|0|Shows ```Chain``` column for policies, allowing to specify ```PREROUTING``` (default), ```FORWARD```, ```INPUT```, or ```OUTPUT``` chain for ```iptables``` rules for policies.|
+|Web UI|webui_sorting|boolean|1|Shows the Up/Down buttons for policies, allowing you to move a policy up or down in the list/priority.|
 ||wan_dscp|integer||Allows use of [DSCP-tag based policies](#dscp-tag-based-policies) for WAN interface.|
 ||{interface_name}_dscp|integer||Allows use of [DSCP-tag based policies](#dscp-tag-based-policies) for a VPN interface.|
 
@@ -146,14 +147,14 @@ Each policy may have a combination of the options below, please note that the ``
 |Option|Default|Description|
 | --- | --- | --- |
 |name||Policy name, it **must** be set.|
-|enabled|1|Enable/disable policy. To display the ```Enable``` checkbox column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Enable Column``` in the ```Advanced``` tab.|
+|enabled|1|Enable/disable policy. To display the ```Enable``` checkbox column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Enable Column``` in the ```Web UI``` tab.|
 |interface||Policy interface, it **must** be set.|
 |local_address||List of space-separated local/source IP addresses, CIDRs, hostnames or mac addresses (colon-separated). You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
 |local_port||List of space-separated local/source ports or port-ranges.|
 |remote_address||List of space-separated remote/target IP addresses, CIDRs or hostnames/domain names.|
 |remote_port||List of space-separated remote/target ports or port-ranges.|
-|proto|tcp|Policy protocol, can be either ```tcp```, ```udp``` or ```tcp udp```. This setting is case-sensitive. To display the ```Protocol``` column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Protocol Column``` in the ```Advanced``` tab.|
-|chain|PREROUTING|Policy chain, can be either ```PREROUTING```, ```FORWARDING```, ```INPUT``` or ```OUTPUT```. This setting is case-sensitive. To display the ```Chain``` column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Chain Column``` in the ```Advanced``` tab.|
+|proto|all|Policy protocol, can be any valid protocol from ```/etc/protocols``` for CLI/uci or can be selected from the values set in ```webui_supported_protocol```. To display the ```Protocol``` column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Protocol Column``` in the ```Web UI``` tab.|
+|chain|PREROUTING|Policy chain, can be either ```PREROUTING```, ```FORWARDING```, ```INPUT``` or ```OUTPUT```. This setting is case-sensitive. To display the ```Chain``` column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Chain Column``` in the ```Web UI``` tab.|
 
 ### Example Policies
 
@@ -354,10 +355,10 @@ Please head to [OpenWrt Forum](https://forum.openwrt.org/t/vpn-policy-based-rout
 If things are not working as intended, please include the following in your post:
 
 - content of ```/etc/config/vpn-policy-routing```
-- the output of ```/etc/init.d/vpn-policy-routing status```
+- the output of ```/etc/init.d/vpn-policy-routing support```
 - the output of ```/etc/init.d/vpn-policy-routing reload``` with verbosity setting set to 2
 
-If you don't want to post the ```/etc/init.d/vpn-policy-routing status``` output in a public forum, there's a way to have the support details automatically uploaded to my account at paste.ee by running: ```/etc/init.d/vpn-policy-routing status -p```. You need to have the following packages installed to enable paste.ee upload functionality: ```curl libopenssl ca-bundle```. WARNING: while paste.ee uploads are unlisted, they are still publicly available.
+If you don't want to post the ```/etc/init.d/vpn-policy-routing support``` output in a public forum, there's a way to have the support details automatically uploaded to my account at paste.ee by running: ```/etc/init.d/vpn-policy-routing support -p```. You need to have the following packages installed to enable paste.ee upload functionality: ```curl libopenssl ca-bundle```. WARNING: while paste.ee uploads are unlisted, they are still publicly available.
 
 ## Notes/Known Issues
 

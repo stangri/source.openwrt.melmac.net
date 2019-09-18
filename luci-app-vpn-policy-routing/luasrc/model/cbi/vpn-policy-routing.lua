@@ -186,11 +186,11 @@ config:tab("advanced", translate("Advanced Configuration"),
 	.. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]] .. translate("README") .. [[</a>]] .. " "
 	.. translate("before changing anything in this section! Change any of the settings below with extreme caution!") .. "<br/><br/>")
 
-supported = config:taboption("advanced", DynamicList, "supported_interface", translate("Supported Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be explicitly supported by the service. Can be useful if your OpenVPN tunnels have dev option other than tun* or tap*."))
-supported.optional = false
+supportedIface = config:taboption("advanced", DynamicList, "supported_interface", translate("Supported Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be explicitly supported by the service. Can be useful if your OpenVPN tunnels have dev option other than tun* or tap*."))
+supportedIface.optional = false
 
-ignored = config:taboption("advanced", DynamicList, "ignored_interface", translate("Ignored Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be ignored by the service. Can be useful if running both VPN server and VPN client on the router."))
-ignored.optional = false
+ignoredIface = config:taboption("advanced", DynamicList, "ignored_interface", translate("Ignored Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be ignored by the service. Can be useful if running both VPN server and VPN client on the router."))
+ignoredIface.optional = false
 
 timeout = config:taboption("advanced", Value, "boot_timeout", translate("Boot Time-out"), translate("Time (in seconds) for service to wait for WAN gateway discovery on boot."))
 timeout.optional = false
@@ -204,23 +204,6 @@ insert.default = "append"
 iprule = config:taboption("advanced", ListValue, "iprule_enabled", translate("IP Rules Support"), translate("Add an ip rule, not an iptables entry for policies with just the local address. Use with caution to manipulte policies priorities."))
 iprule:value("0", translate("Disabled"))
 iprule:value("1", translate("Enabled"))
-
-enable_control = config:taboption("advanced", ListValue, "enable_control", translate("Show Enable Column"), translate("Shows the enable checkbox column for policies, allowing you to quickly enable/disable specific policy without deleting it."))
-enable_control:value("0", translate("Disabled"))
-enable_control:value("1", translate("Enabled"))
-
-proto_control = config:taboption("advanced", ListValue, "proto_control", translate("Show Protocol Column"), translate("Shows the protocol column for policies, allowing you to assign a TCP, UDP or TCP/UDP protocol to a policy."))
-proto_control:value("0", translate("Disabled"))
-proto_control:value("1", translate("Enabled"))
-
-chain_control = config:taboption("advanced", ListValue, "chain_control", translate("Show Chain Column"), translate("Shows the chain column for policies, allowing you to assign a PREROUTING, FORWARD, INPUT or OUTPUT chain to a policy."))
-chain_control:value("0", translate("Disabled"))
-chain_control:value("1", translate("Enabled"))
-
-sort_control = config:taboption("advanced", ListValue, "sort_control", translate("Show Up/Down Buttons"), translate("Shows the Up/Down buttons for policies, allowing you to move a policy up or down in the list."))
-sort_control:value("0", translate("Disabled"))
-sort_control:value("1", translate("Enabled"))
-sort_control.default = "1"
 
 icmp = config:taboption("advanced", ListValue, "icmp_interface", translate("Default ICMP Interface"), translate("Force the ICMP protocol interface."))
 icmp:value("", translate("No Change"))
@@ -249,17 +232,40 @@ fwmask = config:taboption("advanced", Value, "fw_mask", translate("Service FW Ma
 fwmask.rmempty = true
 fwmask.placeholder = "0xff0000"
 
+config:tab("webui", translate("Web UI Configuration"))
+
+webui_enable_column = config:taboption("webui", ListValue, "webui_enable_column", translate("Show Enable Column"), translate("Shows the enable checkbox column for policies, allowing you to quickly enable/disable specific policy without deleting it."))
+webui_enable_column:value("0", translate("Disabled"))
+webui_enable_column:value("1", translate("Enabled"))
+
+webui_protocol_column = config:taboption("webui", ListValue, "webui_protocol_column", translate("Show Protocol Column"), translate("Shows the protocol column for policies, allowing you to assign a specific protocol to a policy."))
+webui_protocol_column:value("0", translate("Disabled"))
+webui_protocol_column:value("1", translate("Enabled"))
+
+webui_supported_protocol = config:taboption("webui", DynamicList, "webui_supported_protocol", translate("Supported Protocols"), translate("Display these protocols in protocol column in Web UI."))
+webui_supported_protocol.optional = false
+
+webui_chain_column = config:taboption("webui", ListValue, "webui_chain_column", translate("Show Chain Column"), translate("Shows the chain column for policies, allowing you to assign a PREROUTING, FORWARD, INPUT or OUTPUT chain to a policy."))
+webui_chain_column:value("0", translate("Disabled"))
+webui_chain_column:value("1", translate("Enabled"))
+
+webui_sorting = config:taboption("webui", ListValue, "webui_sorting", translate("Show Up/Down Buttons"), translate("Shows the Up/Down buttons for policies, allowing you to move a policy up or down in the list."))
+webui_sorting:value("0", translate("Disabled"))
+webui_sorting:value("1", translate("Enabled"))
+webui_sorting.default = "1"
+
+
 -- Policies
 p = m:section(TypedSection, "policy", translate("Policies"), translate("Comment, interface and at least one other field are required. Multiple local and remote addresses/devices/domains and ports can be space separated. Placeholders below represent just the format/syntax and will not be used if fields are left blank."))
 p.template = "cbi/tblsection"
-enc = tonumber(uci:get("vpn-policy-routing", "config", "sort_control"))
-if enc and enc ~= 0 then
+enc = tonumber(uci:get("vpn-policy-routing", "config", "webui_sorting"))
+if not enc or enc ~= 0 then
 	p.sortable  = true
 end
 p.anonymous = true
 p.addremove = true
 
-enc = tonumber(uci:get("vpn-policy-routing", "config", "enable_control"))
+enc = tonumber(uci:get("vpn-policy-routing", "config", "webui_enable_column"))
 if enc and enc ~= 0 then
 	le = p:option(Flag, "enabled", translate("Enabled"))
 	le.default = "1"
@@ -292,17 +298,17 @@ rp.datatype    = "list(neg(portrange))"
 rp.placeholder = "0-65535"
 rp.rmempty = true
 
-enc = tonumber(uci:get("vpn-policy-routing", "config", "proto_control"))
+enc = tonumber(uci:get("vpn-policy-routing", "config", "webui_protocol_column"))
 if enc and enc ~= 0 then
 	proto = p:option(ListValue, "proto", translate("Protocol"))
 	proto.rmempty = true
-	proto.default = "tcp"
-	proto:value("tcp","TCP")
-	proto:value("udp","UDP")
-	proto:value("tcp udp","TCP/UDP")
+	enc = uci:get_list("vpn-policy-routing", "config", "webui_supported_protocol")
+	for key,value in pairs(enc) do
+		proto:value(value:lower(), value:gsub(" ", "/"):upper())
+	end
 end
 
-enc = tonumber(uci:get("vpn-policy-routing", "config", "chain_control"))
+enc = tonumber(uci:get("vpn-policy-routing", "config", "webui_chain_column"))
 if enc and enc ~= 0 then
 	chain = p:option(ListValue, "chain", translate("Chain"))
 	chain.rmempty = true
