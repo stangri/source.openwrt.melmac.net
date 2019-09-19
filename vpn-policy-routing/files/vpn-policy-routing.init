@@ -129,7 +129,7 @@ is_supported_iface_dev() {
 	done
 	return 1
 }
-is_supported_protocol () { grep -o '^[^#]*' /etc/protocols | grep . | awk '{print $1}' | grep -q "$1"; }
+is_supported_protocol () { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
 
 load_package_config() {
 	config_load "$packageName"
@@ -307,7 +307,7 @@ ipr()
 }
 
 insert_tor_policy() {
-	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-all}" chain="${8:-PREROUTING}"
+	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$7" chain="${8:-PREROUTING}"
 	local mark=$(eval echo "\$mark_${iface//-/_}")
 	[ -z "$mark" ] && processPolicyError="${processPolicyError}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
 	param="-t mangle $insertOption VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
@@ -321,7 +321,7 @@ insert_tor_policy() {
 }
 
 insert_policy() {
-	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="${7:-all}" chain="${8:-PREROUTING}"
+	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$7" chain="${8:-PREROUTING}"
 	local mark=$(eval echo "\$mark_${iface//-/_}") param i
 	if [ "$ipv6Enabled" -eq 0 ]; then
 		is_ipv6 "$laddr" && return 0
@@ -331,6 +331,18 @@ insert_policy() {
 	if [ -z "$mark" ]; then
 		processPolicyError="${processPolicyError}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
 		return 0
+	fi
+
+	if [ -z "$proto" ]; then
+		if [ -z "${lport}${raddr}${rport}" ] && [ -n "$laddr" ]; then
+			proto='all'
+		elif [ -z "${laddr}${lport}${rport}" ] && [ -n "$raddr" ]; then
+			proto='all'
+		elif [ -n "$lport" ] || [ -n "$rport" ]; then 
+			proto='tcp udp'
+		else
+			proto='tcp'
+		fi
 	fi
 
 	for i in $proto; do
@@ -392,19 +404,19 @@ r_process_policy(){
 	# process TOR, netmask, physical device and mac-address separately, so we don't send them to resolveip
 	if is_tor "$iface"; then
 		insert_tor_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
-	elif is_netmask "$laddr" || is_netmask "$raddr"; then
-		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
+#	elif is_netmask "$laddr" || is_netmask "$raddr"; then
+#		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 	elif is_phys_dev "$laddr"; then
 		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
-	elif [ -n "$laddr" ] && [ -z "$lport" ] && [ -z "$raddr" ] && [ -z "$rport" ] && [ "$chain" = 'PREROUTING' ]; then
+	elif [ -n "$laddr" ] && [ -z "${lport}${raddr}${rport}" ] && [ "$chain" = 'PREROUTING' ]; then
 		if is_mac_address "$laddr"; then
-			if [ "$proto" != 'all' ] && [ "$localIpset" -ne 0 ]; then
-				processPolicyWarning="${processPolicyWarning}${_WARNING_}: please set 'proto' to 'all' for policy '$comment', mac-address '$laddr'.\\n"
+			if [ -n "$proto" ] && [ "$proto" != 'all' ] && [ "$localIpset" -ne 0 ]; then
+				processPolicyWarning="${processPolicyWarning}${_WARNING_}: please unset 'proto' or set 'proto' to 'all' for policy '$comment', mac-address '$laddr'.\\n"
 			fi
 			ips 'add' "${iface}_mac" "$laddr" "${comment}: $laddr" || ipsFailFlag=1
 		else
-			if [ "$proto" != "all" ] && [ "$localIpset" -ne 0 ]; then
-				processPolicyWarning="${processPolicyWarning}${_WARNING_}: please set 'proto' to 'all' for policy '$comment', address '$laddr'.\\n"
+			if [ -n "$proto" ] && [ "$proto" != "all" ] && [ "$localIpset" -ne 0 ]; then
+				processPolicyWarning="${processPolicyWarning}${_WARNING_}: please unset 'proto' or set 'proto' to 'all' for policy '$comment', address '$laddr'.\\n"
 			fi
 			if ! ips 'add' "${iface}_ip" "$laddr" "${comment}: $laddr"; then
 				for i in $(resolveip "$laddr"); do
@@ -413,22 +425,17 @@ r_process_policy(){
 				done
 			fi
 		fi
-	elif [ -z "$laddr" ] && [ -z "$lport" ] && [ -n "$raddr" ] && [ -z "$rport" ] && [ "$chain" = 'PREROUTING' ]; then
-		if is_domain "$raddr"; then
-			if [ -n "$remoteIpset" ]; then
-				if [ "$proto" != 'all' ]; then
-					processPolicyWarning="${processPolicyWarning}${_WARNING_}: please set 'proto' to 'all' for policy '$comment', domain '$raddr'.\\n"
-				fi
-				case "$remoteIpset" in
-				ipset)
-					ips 'add' "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1;;
-				dnsmasq.ipset)
-					ips 'add_dnsmasq' "${iface}" "$raddr" "${comment}" || ipsFailFlag=1;;
-				esac
-			fi
-		else
-			ips 'add' "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1
+	elif [ -n "$raddr" ] && [ -z "${laddr}${lport}${rport}" ] && [ "$chain" = 'PREROUTING' ] && [ -n "$remoteIpset" ]; then
+		if [ -n "$proto" ] && [ "$proto" != 'all' ]; then
+			processPolicyWarning="${processPolicyWarning}${_WARNING_}: please unset 'proto' or set 'proto' to 'all' for policy '$comment', domain '$raddr'.\\n"
 		fi
+		case "$remoteIpset" in
+		ipset)
+			ips 'add' "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1;;
+		dnsmasq.ipset)
+			if is_domain "$raddr"; then ips 'add_dnsmasq' "${iface}" "$raddr" "${comment}" || ipsFailFlag=1
+			else ips 'add' "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1; fi;;
+		esac
 	elif is_mac_address "$laddr"; then
 		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 	else
@@ -456,11 +463,13 @@ process_policy(){
 	config_get lport   "$1" 'local_port'
 	config_get raddr   "$1" 'remote_address'
 	config_get rport   "$1" 'remote_port'
-	config_get proto   "$1" 'proto' 'all'
+	config_get proto   "$1" 'proto'
 	config_get chain   "$1" 'chain' 'PREROUTING'
 	config_get_bool enabled "$1" 'enabled' 1
 
 	[ "$enabled" -gt 0 ] || return 0
+	[ "$proto" = 'auto' ] && unset proto
+	[ "$proto" = 'AUTO' ] && unset proto
 
 	comment="${comment:-$name}"
 	output 2 "Routing '$comment' via $iface "
@@ -469,7 +478,7 @@ process_policy(){
 		errorStatusSummary="${errorStatusSummary}${_ERROR_}: policy name is empty!\\n"
 		output_fail; return 1;
  	fi
-	if [ -z "$laddr" ] && [ -z "$lport" ] && [ -z "$raddr" ] && [ -z "$rport" ]; then
+	if [ -z "${laddr}${lport}${raddr}${rport}" ]; then
 		errorStatusSummary="${errorStatusSummary}${_ERROR_}: policy '$comment' missing all IPs/ports!\\n"
 		output_fail; return 1;
 	fi
@@ -559,19 +568,19 @@ table_create(){
 		fi
 		if [ -n "$remoteIpset" ]; then
 			if ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}"; then
-				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}" dst $appendRemotePolicy -j MARK --set-xmark "${mark}/${fwMask}" || s=1
 			else
 			s=1
 			fi
 		fi
 		if [ "$localIpset" -ne 0 ]; then
 			if ips 'create' "${iface}_ip" 'hash:net comment' && ips 'flush' "${iface}_ip"; then
-				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
+				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_ip" src $appendLocalPolicy -j MARK --set-mark "${mark}/${fwMask}" || s=1
 			else
 			s=1
 			fi
 			if ips 'create' "${iface}_mac" 'hash:mac comment' && ips 'flush' "${iface}_mac"; then
-				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_mac" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
+				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_mac" src $appendLocalPolicy -j MARK --set-mark "${mark}/${fwMask}" || s=1
 			else
 			s=1
 			fi

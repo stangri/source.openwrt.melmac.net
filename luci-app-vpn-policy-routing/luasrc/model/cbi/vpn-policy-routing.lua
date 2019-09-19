@@ -301,22 +301,32 @@ rp.rmempty = true
 enc = tonumber(uci:get("vpn-policy-routing", "config", "webui_protocol_column"))
 if enc and enc ~= 0 then
 	proto = p:option(ListValue, "proto", translate("Protocol"))
+	proto:value("", "AUTO")
+	proto.default = ""
 	proto.rmempty = true
 	enc = uci:get_list("vpn-policy-routing", "config", "webui_supported_protocol")
-	for key,value in pairs(enc) do
+	local count = 0
+	for key, value in pairs(enc) do
+		count = count + 1
 		proto:value(value:lower(), value:gsub(" ", "/"):upper())
+	end
+	if count == 0 then
+		enc = { "tcp", "udp", "tcp udp", "icmp", "all" }
+		for key,value in pairs(enc) do
+			proto:value(value:lower(), value:gsub(" ", "/"):upper())
+		end
 	end
 end
 
 enc = tonumber(uci:get("vpn-policy-routing", "config", "webui_chain_column"))
 if enc and enc ~= 0 then
 	chain = p:option(ListValue, "chain", translate("Chain"))
+	chain:value("", "PREROUTING")
+	chain:value("FORWARD", "FORWARD")
+	chain:value("INPUT", "INPUT")
+	chain:value("OUTPUT", "OUTPUT")
+	chain.default = ""
 	chain.rmempty = true
-	chain.default = "PREROUTING"
-	chain:value("PREROUTING")
-	chain:value("FORWARD")
-	chain:value("INPUT")
-	chain:value("OUTPUT")
 end
 
 gw = p:option(ListValue, "interface", translate("Interface"))
