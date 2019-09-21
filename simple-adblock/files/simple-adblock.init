@@ -506,70 +506,93 @@ cacheOps() {
 }
 
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
+is_ipset_fw3() { ! opkg compare-versions "$(sed -ne 's/^Version: //p' /usr/lib/opkg/info/firewall.control)" "<" "2019-09-18"; }
 
-fwOps() {
-	local action="$1" ip="$2"
+fw3Ops() {
+	local action="$1" param="$2" ip="$4"
 	case "$action" in
-	on_stop)
-		uci -q del firewall.simple_adblock_redirect
-		uci -q del firewall.simple_adblock_ipset
-		uci -q del firewall.simple_adblock_rule
-		;;
-	on_start)
-		if ! uci -q get firewall.simple_adblock_redirect >/dev/null; then
-			uci -q set firewall.simple_adblock_redirect=redirect
-			uci -q set firewall.simple_adblock_redirect.name=simple_adblock_dns_hijack
-			uci -q set firewall.simple_adblock_redirect.target=DNAT
-			uci -q set firewall.simple_adblock_redirect.src=lan
-			uci -q set firewall.simple_adblock_redirect.dest=lan
-			uci -q set firewall.simple_adblock_redirect.proto=tcpudp
-			uci -q set firewall.simple_adblock_redirect.src_dport=53
-			uci -q set firewall.simple_adblock_redirect.dest_port=53
-			uci -q set firewall.simple_adblock_redirect.dest_ip="$ip"
-			uci -q set firewall.simple_adblock_redirect.reflection=0
-		fi
-		if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
-			if ! uci -q get firewall.simple_adblock_ipset >/dev/null; then
-				uci -q set firewall.simple_adblock_ipset=ipset
-				uci -q set firewall.simple_adblock_ipset.name=adb
-				uci -q set firewall.simple_adblock_ipset.match=dest_net
-				uci -q set firewall.simple_adblock_ipset.storage=hash
-				uci -q set firewall.simple_adblock_ipset.enabled=1
-			fi
-			if ! uci -q get firewall.simple_adblock_rule >/dev/null; then
-				uci -q set firewall.simple_adblock_rule=rule
-				uci -q set firewall.simple_adblock_rule.name=simple_adblock_ipset_rule
-				uci -q set firewall.simple_adblock_rule.ipset=adb
-				uci -q set firewall.simple_adblock_rule.src=lan
-				uci -q set firewall.simple_adblock_rule.dest='*'
-				uci -q set firewall.simple_adblock_rule.proto=tcpudp
-				uci -q set firewall.simple_adblock_rule.target=REJECT
-				uci -q set firewall.simple_adblock_rule.enabled=1
-			fi
-		else
-			uci -q del firewall.simple_adblock_ipset
-			uci -q del firewall.simple_adblock_rule
-		fi
-		;;
+		remove)
+			case "$param" in
+				dns_redirect) uci -q del firewall.simple_adblock_dns_redirect;;
+				ipset)        uci -q del firewall.simple_adblock_ipset;;
+				ipset_rule)   uci -q del firewall.simple_adblock_ipset_rule;;
+				*)
+					uci -q del firewall.simple_adblock_dns_redirect
+					uci -q del firewall.simple_adblock_ipset
+					uci -q del firewall.simple_adblock_ipset_rule
+					;;
+			esac
+			;;
+		insert)
+			case "$param" in
+				dns_redirect)
+					if ! uci -q get firewall.simple_adblock_dns_redirect >/dev/null; then
+						uci -q set firewall.simple_adblock_dns_redirect=redirect
+						uci -q set firewall.simple_adblock_dns_redirect.name=simple_adblock_dns_hijack
+						uci -q set firewall.simple_adblock_dns_redirect.target=DNAT
+						uci -q set firewall.simple_adblock_dns_redirect.src=lan
+						uci -q set firewall.simple_adblock_dns_redirect.dest=lan
+						uci -q set firewall.simple_adblock_dns_redirect.proto=tcpudp
+						uci -q set firewall.simple_adblock_dns_redirect.src_dport=53
+						uci -q set firewall.simple_adblock_dns_redirect.dest_port=53
+						uci -q set firewall.simple_adblock_dns_redirect.dest_ip="$ip"
+						uci -q set firewall.simple_adblock_dns_redirect.reflection=0
+					fi
+					;;
+				ipset)
+					if ! uci -q get firewall.simple_adblock_ipset >/dev/null; then
+						uci -q set firewall.simple_adblock_ipset=ipset
+						uci -q set firewall.simple_adblock_ipset.name=adb
+						uci -q set firewall.simple_adblock_ipset.match=dest_net
+						uci -q set firewall.simple_adblock_ipset.storage=hash
+						uci -q set firewall.simple_adblock_ipset.enabled=1
+					fi
+					;;
+				ipset_rule)
+					if ! uci -q get firewall.simple_adblock_ipset_rule >/dev/null; then
+						uci -q set firewall.simple_adblock_ipset_rule=rule
+						uci -q set firewall.simple_adblock_ipset_rule.name=simple_adblock_ipset_rule
+						uci -q set firewall.simple_adblock_ipset_rule.ipset=adb
+						uci -q set firewall.simple_adblock_ipset_rule.src=lan
+						uci -q set firewall.simple_adblock_ipset_rule.dest='*'
+						uci -q set firewall.simple_adblock_ipset_rule.proto=tcpudp
+						uci -q set firewall.simple_adblock_ipset_rule.target=REJECT
+						uci -q set firewall.simple_adblock_ipset_rule.enabled=1
+					fi
+					;;
+				*)
+					if ! uci -q get firewall.simple_adblock_dns_redirect >/dev/null; then
+						uci -q set firewall.simple_adblock_dns_redirect=redirect
+						uci -q set firewall.simple_adblock_dns_redirect.name=simple_adblock_dns_hijack
+						uci -q set firewall.simple_adblock_dns_redirect.target=DNAT
+						uci -q set firewall.simple_adblock_dns_redirect.src=lan
+						uci -q set firewall.simple_adblock_dns_redirect.dest=lan
+						uci -q set firewall.simple_adblock_dns_redirect.proto=tcpudp
+						uci -q set firewall.simple_adblock_dns_redirect.src_dport=53
+						uci -q set firewall.simple_adblock_dns_redirect.dest_port=53
+						uci -q set firewall.simple_adblock_dns_redirect.dest_ip="$ip"
+						uci -q set firewall.simple_adblock_dns_redirect.reflection=0
+					fi
+					if ! uci -q get firewall.simple_adblock_ipset >/dev/null; then
+						uci -q set firewall.simple_adblock_ipset=ipset
+						uci -q set firewall.simple_adblock_ipset.name=adb
+						uci -q set firewall.simple_adblock_ipset.match=dest_net
+						uci -q set firewall.simple_adblock_ipset.storage=hash
+						uci -q set firewall.simple_adblock_ipset.enabled=1
+					fi
+					if ! uci -q get firewall.simple_adblock_ipset_rule >/dev/null; then
+						uci -q set firewall.simple_adblock_ipset_rule=rule
+						uci -q set firewall.simple_adblock_ipset_rule.name=simple_adblock_ipset_rule
+						uci -q set firewall.simple_adblock_ipset_rule.ipset=adb
+						uci -q set firewall.simple_adblock_ipset_rule.src=lan
+						uci -q set firewall.simple_adblock_ipset_rule.dest='*'
+						uci -q set firewall.simple_adblock_ipset_rule.proto=tcpudp
+						uci -q set firewall.simple_adblock_ipset_rule.target=REJECT
+						uci -q set firewall.simple_adblock_ipset_rule.enabled=1
+					fi
+					;;
+		esac
 	esac
-	if [ -n "$(uci changes firewall)" ]; then
-		uci -q commit firewall
-		/etc/init.d/firewall reload >/dev/null 2>&1
-	fi
-}
-
-ipsetOps() {
-	if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
-		if ! uci -q get firewall.simple_adblock_ipset >/dev/null; then
-			uci -q set firewall.simple_adblock_ipset=ipset
-			uci -q set firewall.simple_adblock_ipset.name=adb
-			uci -q set firewall.simple_adblock_ipset.match=dest_net
-			uci -q set firewall.simple_adblock_ipset.storage=hash
-			uci -q set firewall.simple_adblock_ipset.enabled=1
-		fi
-	else
-		uci -q del firewall.simple_adblock_ipset
-	fi
 	if [ -n "$(uci changes firewall)" ]; then
 		uci -q commit firewall
 		/etc/init.d/firewall reload >/dev/null 2>&1
@@ -831,15 +854,23 @@ start_service() {
 		procd_set_param stderr 1
 		network_get_ipaddr ip 'lan'
 # shellcheck disable=SC2154
-		if [ "$forceDNS" -ne 0 ] && [ -n "$ip" ]; then
-			if is_chaos_calmer; then
-				fwOps 'on_start' "$ip"
-			else
+		if is_chaos_calmer; then
+			if [ "$forceDNS" -ne 0 ] && [ -n "$ip" ]; then
+				fw3Ops 'insert' 'dns_redirect' "$ip"
+			fi
+			if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
+				fw3Ops 'insert' 'ipset'
+				fw3Ops 'insert' 'ipset_rule'
+			fi
+		else
+			if [ "$forceDNS" -ne 0 ] || [ "$targetDNS" = 'dnsmasq.ipset' ]; then
 				procd_open_data
 				json_add_array firewall
+			fi
+			if [ "$forceDNS" -ne 0 ] && [ -n "$ip" ]; then
 				json_add_object ''
 				json_add_string type redirect
-				json_add_string name simple_adblock_dns_hijack
+				json_add_string name simple_adblock_dns_redirect
 				json_add_string target DNAT
 				json_add_string src lan
 				json_add_string dest lan
@@ -849,26 +880,33 @@ start_service() {
 				json_add_string dest_ip "$ip"
 				json_add_string reflection 0
 				json_close_object
-				ipsetOps 'on_start'
-				if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
-#					json_add_object ''
-#					json_add_string type ipset
-#					json_add_string name adb
-#					json_add_string match dest_net
-#					json_add_string storage hash
-#					json_add_string enabled 1
-#					json_close_object
+			fi
+			if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
+				if ! is_ipset_fw3; then
+					fw3Ops 'insert' 'ipset'
+				else
 					json_add_object ''
-					json_add_string type rule
-					json_add_string name simple_adblock_ipset_rule
-					json_add_string ipset adb
-					json_add_string src lan
-					json_add_string dest '*'
-					json_add_string proto tcpudp
-					json_add_string target REJECT
+					json_add_string type ipset
+					json_add_string name adb
+					json_add_string match dest_net
+					json_add_string storage hash
 					json_add_string enabled 1
 					json_close_object
 				fi
+				json_add_object ''
+				json_add_string type rule
+				json_add_string name simple_adblock_ipset_rule
+				json_add_string ipset adb
+				json_add_string src lan
+				json_add_string dest '*'
+				json_add_string proto tcpudp
+				json_add_string target REJECT
+				json_add_string enabled 1
+				json_close_object
+			else
+				fw3Ops 'remove' 'ipset'
+			fi
+			if [ "$forceDNS" -ne 0 ] || [ "$targetDNS" = 'dnsmasq.ipset' ]; then
 				json_close_array
 				procd_close_data
 			fi
@@ -1002,7 +1040,7 @@ status() {
 
 stop_service() {
 	load_package_config
-	fwOps 'on_stop'
+	fw3Ops 'remove' 'all'
 	if [ -s "$outputFile" ]; then
 		output "Stopping $serviceName... "
 		tmpfs del triggers
