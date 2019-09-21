@@ -549,11 +549,11 @@ config wireguard_wgclient
 config interface 'wgserver'
   option proto 'wireguard'
   option listen_port '61820'
-  list addresses '192.168.200.1'
+  list addresses '192.168.200.1/24'
   ...
 
 config wireguard_wgserver
-  list allowed_ips '192.168.200.0/24'
+  list allowed_ips '192.168.200.1/24'
   option route_allowed_ips '1'
   ...
 ```
