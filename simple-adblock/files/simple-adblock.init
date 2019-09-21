@@ -91,7 +91,7 @@ led_on(){ if [ -n "${1}" ] && [ -e "${1}/trigger" ]; then echo 'default-on' > "$
 led_off(){ if [ -n "${1}" ] &&  [ -e "${1}/trigger" ]; then echo 'none' > "${1}/trigger" 2>&1; fi; }
 
 export serviceEnabled forceDNS parallelDL debug allowIDN compressedCache     
-export targetDNS bootDelay dlTimeout curlRetry verbosity led
+export targetDNS bootDelay dlTimeout curlRetry verbosity led dnsInstance
 export whitelist_domains blacklist_domains
 export whitelist_domains_urls blacklist_domains_urls blacklist_hosts_urls
 export wan_if wan_gw wanphysdev dl_command serviceStatus dl_flag
@@ -111,6 +111,7 @@ load_package_config() {
 	config_get verbosity                  'config' 'verbosity' '2'
 	config_get led        	              'config' 'led'
 	config_get targetDNS                  'config' 'dns' 'dnsmasq.servers'
+	config_get dnsInstance                'config' 'dns_instance' '0'
 	config_get whitelist_domains          'config' 'whitelist_domain'
 	config_get blacklist_domains          'config' 'blacklist_domain'
 	config_get whitelist_domains_urls     'config' 'whitelist_domains_url'
@@ -261,43 +262,43 @@ reload_resolver() {
 			fi
 			case "$targetDNS" in
 				dnsmasq.addnhosts)
-					if [ "$(uci -q get dhcp.@dnsmasq[0].serversfile)" = "$serversFile" ]; then
-						uci -q del dhcp.@dnsmasq[0].serversfile
+					if [ "$(uci -q get dhcp.@dnsmasq["$dnsInstance"].serversfile)" = "$serversFile" ]; then
+						uci -q del dhcp.@dnsmasq["$dnsInstance"].serversfile
 					fi
-					if ! uci -q get dhcp.@dnsmasq[0].addnhosts | grep -q "$addnhostsFile"; then
-						uci add_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
+					if ! uci -q get dhcp.@dnsmasq["$dnsInstance"].addnhosts | grep -q "$addnhostsFile"; then
+						uci add_list dhcp.@dnsmasq["$dnsInstance"].addnhosts="$addnhostsFile"
 					fi
 					param=dnsmasq_kill
 					output_text='Reloading DNSMASQ'
 					;;
 				dnsmasq.conf)
-					uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
-					if [ "$(uci -q get dhcp.@dnsmasq[0].serversfile)" = "$serversFile" ]; then
-						uci -q del dhcp.@dnsmasq[0].serversfile
+					uci -q del_list dhcp.@dnsmasq["$dnsInstance"].addnhosts="$addnhostsFile"
+					if [ "$(uci -q get dhcp.@dnsmasq["$dnsInstance"].serversfile)" = "$serversFile" ]; then
+						uci -q del dhcp.@dnsmasq["$dnsInstance"].serversfile
 					fi
 					param=dnsmasq_restart
 					output_text='Restarting DNSMASQ'
 					;;
 				dnsmasq.ipset)
-					uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
-					if [ "$(uci -q get dhcp.@dnsmasq[0].serversfile)" = "$serversFile" ]; then
-						uci -q del dhcp.@dnsmasq[0].serversfile
+					uci -q del_list dhcp.@dnsmasq["$dnsInstance"].addnhosts="$addnhostsFile"
+					if [ "$(uci -q get dhcp.@dnsmasq["$dnsInstance"].serversfile)" = "$serversFile" ]; then
+						uci -q del dhcp.@dnsmasq["$dnsInstance"].serversfile
 					fi
 					param=dnsmasq_restart
 					output_text='Restarting DNSMASQ'
 					;;
 				dnsmasq.servers)
-					uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
-					if [ "$(uci -q get dhcp.@dnsmasq[0].serversfile)" != "$serversFile" ]; then
-						uci set dhcp.@dnsmasq[0].serversfile="$serversFile"
+					uci -q del_list dhcp.@dnsmasq["$dnsInstance"].addnhosts="$addnhostsFile"
+					if [ "$(uci -q get dhcp.@dnsmasq["$dnsInstance"].serversfile)" != "$serversFile" ]; then
+						uci set dhcp.@dnsmasq["$dnsInstance"].serversfile="$serversFile"
 					fi
 					param=dnsmasq_kill
 					output_text='Reloading DNSMASQ'
 					;;
 				unbound.adb_list)
-					uci -q del_list dhcp.@dnsmasq[0].addnhosts="$addnhostsFile"
-					if [ "$(uci -q get dhcp.@dnsmasq[0].serversfile)" = "$serversFile" ]; then
-						uci -q del dhcp.@dnsmasq[0].serversfile
+					uci -q del_list dhcp.@dnsmasq["$dnsInstance"].addnhosts="$addnhostsFile"
+					if [ "$(uci -q get dhcp.@dnsmasq["$dnsInstance"].serversfile)" = "$serversFile" ]; then
+						uci -q del dhcp.@dnsmasq["$dnsInstance"].serversfile
 					fi
 					param=unbound_restart
 					output_text='Restarting Unbound'
