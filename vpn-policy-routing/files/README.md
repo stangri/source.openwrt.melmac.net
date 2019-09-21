@@ -434,6 +434,7 @@ Relevant part of ```/etc/config/vpn-policy-routing```:
 ```text
 config vpn-policy-routing 'config'
   list ignored_interface 'wgserver'
+  ...
 
 config policy
   option name 'Wireguard Server'
@@ -527,6 +528,7 @@ Relevant part of ```/etc/config/vpn-policy-routing```:
 config vpn-policy-routing 'config'
   list ignored_interface 'wgserver'
   option append_local_rules '! -d 192.168.200.0/24'
+  ...
 ```
 
 The recommended network/firewall settings are below.
