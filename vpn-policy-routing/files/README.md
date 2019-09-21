@@ -695,19 +695,19 @@ If you don't want to post the ```/etc/init.d/vpn-policy-routing support``` outpu
 - If your default routing is set to the VPN tunnel, then then true WAN intrface cannot be discovered using OpenWrt built-in functions, so service will assume your network interface(s) ending with or starting with '''wan''' is/are the WAN interface(s).
 - While you can select some down/inactive VPN tunnel in Web UI, the appropriate tunnel must be up/active for the policies to properly work without errors on service start.
 - If your ```OpenVPN``` interface has the device name different from tun\* or tap\*, please make sure that the tunnel is up before trying to assign it policies in Web UI.
-- Service does not alter the default routing. Depending on your VPN tunnel settings (and settings of the VPN server you are connecting to), the default routing might be set to go via WAN or via VPN tunnel. This service affects only routing of the traffic matching the policies. If you want to override default routing, consider adding the following to your OpenVPN tunnel config:
-
-  ```text
-  option route_nopull '1'
-  ```
-
-  or, for newer OpenVPN client/server combinations:
+- Service does not alter the default routing. Depending on your VPN tunnel settings (and settings of the VPN server you are connecting to), the default routing might be set to go via WAN or via VPN tunnel. This service affects only routing of the traffic matching the policies. If you want to override default routing, add the following to your OpenVPN 2.4 and newer client config:
 
   ```text
   list pull_filter 'ignore "redirect-gateway"'
   ```
 
-  or set the following option for your Wireguard tunnel config:
+  or, for OpenVPN 2.3 and below:
+
+  ```text
+  option route_nopull '1'
+  ```
+
+  or set the following option for your Wireguard (client) config:
 
   ```text
   option route_allowed_ips '0'
