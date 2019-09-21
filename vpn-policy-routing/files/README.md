@@ -72,6 +72,17 @@ Each policy can result in either a new ```iptables``` rule or, if ```ipset``` or
 - If there are conflicting ```ipset``` entries for different interfaces, the priority is given to the interface which is listed first in the ```/etc/config/network``` file.
 - If set, the ```DSCP``` policies trump all other policies, including ```ipset``` ones.
 
+## How to install
+
+Please make sure that the [requirements](#requirements) are satisfied and install ```vpn-policy-routing``` and ```luci-app-vpn-policy-routing``` from Web UI or connect to your router via ssh and run the following commands:
+
+```sh
+opkg update
+opkg install vpn-policy-routing luci-app-vpn-policy-routing
+```
+
+If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router) first.OpenWrt
+
 ## Requirements
 
 This service requires the following packages to be installed on your router: ```ipset```, ```resolveip```, ```ip-full``` (or a ```busybox``` built with ```ip``` support), ```kmod-ipt-ipset``` and ```iptables```.
@@ -93,17 +104,6 @@ opkg update; opkg remove dnsmasq; opkg install dnsmasq-full
 ### Unmet dependencies
 
 If you are running a development (trunk/snapshot) build of OpenWrt on your router and your build is outdated (meaning that packages of the same revision/commit hash are no longer available and when you try to satisfy the [requirements](#requirements) you get errors), please flash either current OpenWrt release image or current development/snapshot image.
-
-## How to install
-
-Please make sure that the [requirements](#requirements) are satisfied and install ```vpn-policy-routing``` and ```luci-app-vpn-policy-routing``` from Web UI or connect to your router via ssh and run the following commands:
-
-```sh
-opkg update
-opkg install vpn-policy-routing luci-app-vpn-policy-routing
-```
-
-If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router) first.OpenWrt
 
 ## Default Settings
 
@@ -158,6 +158,55 @@ Each policy may have a combination of the options below, please note that the ``
 
 ### Example Policies
 
+#### Single IP, IP Range, Local Machine, Local MAC Address
+
+The following policies route traffic from a single IP address, a range of IP addresses or a local machine (requires definition as DHCP host record in DHCP config) via WAN.
+
+```text
+config policy
+  option name 'Local IP'
+  option interface 'wan'
+  option local_address '192.168.1.70'
+
+config policy
+  option name 'Local Subnet'
+  option interface 'wan'
+  option local_address '192.168.1.81/29'
+
+config policy
+  option name 'Local Machine'
+  option interface 'wan'
+  option local_address 'dell-ubuntu'
+
+config policy
+  option name 'Local MAC Address'
+  option interface 'wan'
+  option local_address '00:0F:EA:91:04:08'
+```
+
+#### Logmein Hamachi
+
+The following policy routes LogMeIn Hamachi zero-setup VPN traffic via WAN.
+
+```text
+config policy
+  option name 'LogmeIn Hamachi'
+  option interface 'wan'
+  option remote_address '25.0.0.0/8 hamachi.cc hamachi.com logmein.com'
+```
+
+#### SIP Port
+
+The following policy routes standard SIP port traffic via WAN for both TCP and UDP protocols.
+
+```text
+config policy
+  option name 'SIP Ports'
+  option interface 'wan'
+  option remote_port '5060'
+  option proto 'tcp udp'
+```
+
 #### Plex Media Server
 
 The following policies route Plex Media Server traffic via WAN. Please note, you'd still need to open the port in the firewall either manually or with the UPnP.
@@ -190,61 +239,367 @@ config policy
   option remote_address 'emby.media app.emby.media tv.emby.media'
 ```
 
-#### Logmein Hamachi
+#### Local OpenVPN Server + OpenVPN Client (Scenario 1)
 
-The following policy routes LogMeIn Hamachi zero-setup VPN traffic via WAN.
+If the OpenVPN client on your router is used as default routing (for the whole internet), make sure your settings are as following (three dots on the line imply other options can be listed in the section as well).
 
-```text
-config policy
-  option name 'LogmeIn Hamachi'
-  option interface 'wan'
-  option remote_address '25.0.0.0/8 hamachi.cc hamachi.com logmein.com'
-```
-
-#### SIP Port
-
-The following policy routes standard SIP port traffic via WAN for both TCP and UDP protocols.
+Relevant part of ```/etc/config/vpn-policy-routing```:
 
 ```text
-config policy
-  option name 'SIP Ports'
-  option interface 'wan'
-  option remote_port '5060'
-  option proto 'tcp udp'
-```
+config vpn-policy-routing 'config'
+  list ignored_interface 'vpnserver'
+  ...
 
-#### Local OpenVPN Server (Scenario 1)
-
-If the VPN Client on your router is used as default routing (for the whole internet), you'll need to run local OpenVPN Server with TCP protocol (at port 1194) and apply the following settings:
-
-```text
-list ignored_interface 'vpnserver'
 config policy
   option name 'OpenVPN Server'
   option interface 'wan'
+  option proto 'tcp'
   option local_port '1194'
   option chain 'OUTPUT'
 ```
 
-The relevant parts of the OpenVPN Server config would be:
+The network/firewall/openvpn settings are below.
+
+Relevant part of ```/etc/config/network``` (**DO NOT** modify default OpenWrt network settings for neither ```wan``` nor ```lan```):
 
 ```text
+config interface 'vpnclient'
+  option proto 'none'
+  option ifname 'ovpnc0'
+
+config interface 'vpnserver'
+  option proto 'none'
+  option ifname 'ovpns0'
+  option auto '1'
+```
+
+Relevant part of ```/etc/config/firewall``` (**DO NOT** modify default OpenWrt firewall settings for neither ```wan``` nor ```lan```):
+
+```text
+config zone
+  option name 'vpnclient'
+  option network 'vpnclient'
+  option input 'REJECT'
+  option forward 'ACCEPT'
+  option output 'REJECT'
+  option masq '1'
+  option mtu_fix '1'
+
+config forwarding
+  option src 'lan'
+  option dest 'vpnclient'
+
+config zone
+  option name 'vpnserver'
+  option network 'vpnserver'
+  option input 'ACCEPT'
+  option forward 'REJECT'
+  option output 'ACCEPT'
+  option masq '1'
+
+config forwarding
+  option src 'vpnserver'
+  option dest 'wan'
+
+config forwarding
+  option src 'vpnserver'
+  option dest 'lan'
+
+config forwarding
+  option src 'vpnserver'
+  option dest 'vpnclient'
+
+config rule
+  option name 'Allow-OpenVPN-Inbound'
+  option target 'ACCEPT'
+  option src '*'
+  option proto 'tcp'
+  option dest_port '1194'
+```
+
+Relevant part of ```/etc/config/openvpn```:
+
+```text
+config openvpn 'vpnclient'
+  option client '1'
+  option dev_type 'tun'
+  option dev 'ovpnc0'
+  option proto 'udp'
+  option remote 'some.domain.com 1197' # DO NOT USE PORT 1194 for VPN Client
+
 config openvpn 'vpnserver'
-        option port '1194'
-        option proto 'tcp'
-        option server '192.168.200.0 255.255.255.0'
+  option port '1194'
+  option proto 'tcp'
+  option server '192.168.200.0 255.255.255.0'
 ```
 
-#### Local OpenVPN Server (Scenario 2)
+#### Local OpenVPN Server + OpenVPN Client (Scenario 2)
 
-If the VPN Client is **not** used as default routing and you selectively pick local devices to use the VPN tunnel, you will need to apply the following settings:
+If the OpenVPN client is **not** used as default routing and you create policies to selectively use the OpenVPN client, make sure your settings are as following (three dots on the line imply other options can be listed in the section as well).
+
+Relevant part of ```/etc/config/vpn-policy-routing```:
 
 ```text
-list ignored_interface 'vpnserver'
-option append_local_rules '! -d 192.168.200.0/24'
+config vpn-policy-routing 'config'
+  list ignored_interface 'vpnserver'
+  option append_local_rules '! -d 192.168.200.0/24'
+  ...
 ```
 
-Refer to the OpenVPN Server config in the example above.
+The network/firewall/openvpn settings are below.
+
+Relevant part of ```/etc/config/network``` (**DO NOT** modify default OpenWrt network settings for neither ```wan``` nor ```lan```):
+
+```text
+config interface 'vpnclient'
+  option proto 'none'
+  option ifname 'ovpnc0'
+
+config interface 'vpnserver'
+  option proto 'none'
+  option ifname 'ovpns0'
+  option auto '1'
+```
+
+Relevant part of ```/etc/config/firewall``` (**DO NOT** modify default OpenWrt firewall settings for neither ```wan``` nor ```lan```):
+
+```text
+config zone
+  option name 'vpnclient'
+  option network 'vpnclient'
+  option input 'REJECT'
+  option forward 'ACCEPT'
+  option output 'REJECT'
+  option masq '1'
+  option mtu_fix '1'
+
+config forwarding
+  option src 'lan'
+  option dest 'vpnclient'
+
+config zone
+  option name 'vpnserver'
+  option network 'vpnserver'
+  option input 'ACCEPT'
+  option forward 'REJECT'
+  option output 'ACCEPT'
+  option masq '1'
+
+config forwarding
+  option src 'vpnserver'
+  option dest 'wan'
+
+config forwarding
+  option src 'vpnserver'
+  option dest 'lan'
+
+config forwarding
+  option src 'vpnserver'
+  option dest 'vpnclient'
+
+config rule
+  option name 'Allow-OpenVPN-Inbound'
+  option target 'ACCEPT'
+  option src '*'
+  option proto 'tcp'
+  option dest_port '1194'
+```
+
+Relevant part of ```/etc/config/openvpn```:
+
+```text
+config openvpn 'vpnclient'
+  option client '1'
+  option dev_type 'tun'
+  option dev 'ovpnc0'
+  option proto 'udp'
+  option remote 'some.domain.com 1197' # DO NOT USE PORT 1194 for VPN Client
+  list pull_filter 'ignore "redirect-gateway"' # for OpenVPN 2.4 and later
+  option route_nopull '1' # for OpenVPN earlier than 2.4
+
+config openvpn 'vpnserver'
+  option port '1194'
+  option proto 'tcp'
+  option server '192.168.200.0 255.255.255.0'
+```
+
+#### Local Wireguard Server + Wireguard Client (Scenario 1)
+
+Yes, I'm aware that technically there are no clients nor servers in Wireguard, it's all peers, but for the sake of README readability I will use the terminology similar to the OpenVPN Server + Client setups.
+
+If the Wireguard tunnel on your router is used as default routing (for the whole internet), make sure your settings are as following (three dots on the line imply other options can be listed in the section as well).
+
+Relevant part of ```/etc/config/vpn-policy-routing```:
+
+```text
+config vpn-policy-routing 'config'
+  list ignored_interface 'wgserver'
+
+config policy
+  option name 'Wireguard Server'
+  option interface 'wan'
+  option proto 'tcp'
+  option local_port '61820'
+  option chain 'OUTPUT'
+```
+
+The recommended network/firewall settings are below.
+
+Relevant part of ```/etc/config/network``` (**DO NOT** modify default OpenWrt network settings for neither ```wan``` nor ```lan```):
+
+```text
+config interface 'wgclient'
+  option proto 'wireguard'
+  ...
+
+config wireguard_wgclient
+  list allowed_ips '0.0.0.0/0'
+  list allowed_ips '::0/0'
+  option endpoint_port '51820'
+  option route_allowed_ips '1'
+  ...
+
+config interface 'wgserver'
+  option proto 'wireguard'
+  option listen_port '61820'
+  list addresses '192.168.200.1'
+  ...
+
+config wireguard_wgserver
+  list allowed_ips '192.168.200.0/24'
+  option route_allowed_ips '1'
+  ...
+```
+
+Relevant part of ```/etc/config/firewall``` (**DO NOT** modify default OpenWrt firewall settings for neither ```wan``` nor ```lan```):
+
+```text
+config zone
+  option name 'wgclient'
+  option network 'wgclient'
+  option input 'REJECT'
+  option forward 'ACCEPT'
+  option output 'REJECT'
+  option masq '1'
+  option mtu_fix '1'
+
+config forwarding
+  option src 'lan'
+  option dest 'wgclient'
+
+config zone
+  option name 'wgserver'
+  option network 'wgserver'
+  option input 'ACCEPT'
+  option forward 'REJECT'
+  option output 'ACCEPT'
+  option masq '1'
+
+config forwarding
+  option src 'wgserver'
+  option dest 'wan'
+
+config forwarding
+  option src 'wgserver'
+  option dest 'lan'
+
+config forwarding
+  option src 'wgserver'
+  option dest 'wgclient'
+
+config rule
+  option name 'Allow-WG-Inbound'
+  option target 'ACCEPT'
+  option src '*'
+  option proto 'tcp'
+  option dest_port '61820'
+```
+
+#### Local Wireguard Server + Wireguard Client (Scenario 2)
+
+Yes, I'm aware that technically there are no clients nor servers in Wireguard, it's all peers, but for the sake of README readability I will use the terminology similar to the OpenVPN Server + Client setups.
+
+If the Wireguard client is **not** used as default routing and you create policies to selectively use the Wireguard client, make sure your settings are as following (three dots on the line imply other options can be listed in the section as well).
+
+Relevant part of ```/etc/config/vpn-policy-routing```:
+
+```text
+config vpn-policy-routing 'config'
+  list ignored_interface 'wgserver'
+  option append_local_rules '! -d 192.168.200.0/24'
+```
+
+The recommended network/firewall settings are below.
+
+Relevant part of ```/etc/config/network``` (**DO NOT** modify default OpenWrt network settings for neither ```wan``` nor ```lan```):
+
+```text
+config interface 'wgclient'
+  option proto 'wireguard'
+  ...
+
+config wireguard_wgclient
+  list allowed_ips '0.0.0.0/0'
+  list allowed_ips '::0/0'
+  option endpoint_port '51820'
+  option route_allowed_ips '1'
+  ...
+
+config interface 'wgserver'
+  option proto 'wireguard'
+  option listen_port '61820'
+  list addresses '192.168.200.1'
+  ...
+
+config wireguard_wgserver
+  list allowed_ips '192.168.200.0/24'
+  option route_allowed_ips '1'
+  ...
+```
+
+Relevant part of ```/etc/config/firewall``` (**DO NOT** modify default OpenWrt firewall settings for neither ```wan``` nor ```lan```):
+
+```text
+config zone
+  option name 'wgclient'
+  option network 'wgclient'
+  option input 'REJECT'
+  option forward 'ACCEPT'
+  option output 'REJECT'
+  option masq '1'
+  option mtu_fix '1'
+
+config forwarding
+  option src 'lan'
+  option dest 'wgclient'
+
+config zone
+  option name 'wgserver'
+  option network 'wgserver'
+  option input 'ACCEPT'
+  option forward 'REJECT'
+  option output 'ACCEPT'
+  option masq '1'
+
+config forwarding
+  option src 'wgserver'
+  option dest 'wan'
+
+config forwarding
+  option src 'wgserver'
+  option dest 'lan'
+
+config forwarding
+  option src 'wgserver'
+  option dest 'wgclient'
+
+config rule
+  option name 'Allow-WG-Inbound'
+  option target 'ACCEPT'
+  option src '*'
+  option proto 'tcp'
+  option dest_port '61820'
+```
 
 #### Netflix Domains
 
@@ -255,32 +610,6 @@ config policy
   option name 'Netflix Domains'
   option interface 'wan'
   option remote_address 'amazonaws.com netflix.com nflxext.com nflximg.net nflxso.net nflxvideo.net dvd.netflix.com'
-```
-
-#### Single IP, IP Range, Local Machine, Local MAC Address
-
-The following policies route traffic from a single IP address, a range of IP addresses or a local machine (requires definition as DHCP host record in DHCP config) via WAN.
-
-```text
-config policy
-  option name 'Local IP'
-  option interface 'wan'
-  option local_address '192.168.1.70'
-
-config policy
-  option name 'Local Subnet'
-  option interface 'wan'
-  option local_address '192.168.1.81/29'
-
-config policy
-  option name 'Local Machine'
-  option interface 'wan'
-  option local_address 'dell-ubuntu'
-
-config policy
-  option name 'Local MAC Address'
-  option interface 'wan'
-  option local_address '00:0F:EA:91:04:08'
 ```
 
 ### Custom User Files
@@ -365,32 +694,6 @@ If you don't want to post the ```/etc/init.d/vpn-policy-routing support``` outpu
 - If your default routing is set to the VPN tunnel, then then true WAN intrface cannot be discovered using OpenWrt built-in functions, so service will assume your network interface(s) ending with or starting with '''wan''' is/are the WAN interface(s).
 - While you can select some down/inactive VPN tunnel in Web UI, the appropriate tunnel must be up/active for the policies to properly work without errors on service start.
 - If your ```OpenVPN``` interface has the device name different from tun\* or tap\*, please make sure that the tunnel is up before trying to assign it policies in Web UI.
-- When configuring an ```OpenVPN``` tunnel on your router, you **must** setup the firewall zone for the OpenVPN tunnel and firewall forwarding from ```lan``` (and ```guest``` if you have it) to the OpenVPN tunnel interface defined in ```/etc/config/network```. Sample configuration script:
-
-  ```sh
-  uci set network.vpnc='interface'
-  uci set network.vpnc.proto='none'
-  uci set network.vpnc.ifname='ovpnc0'
-  uci commit network
-  uci add firewall zone
-  uci set firewall.@zone[-1].name='vpnc'
-  uci set firewall.@zone[-1].network='vpnc'
-  uci set firewall.@zone[-1].input='REJECT'
-  uci set firewall.@zone[-1].forward='REJECT'
-  uci set firewall.@zone[-1].output='ACCEPT'
-  uci set firewall.@zone[-1].masq='1'
-  uci set firewall.@zone[-1].mtu_fix='1'
-  uci add firewall forwarding
-  uci set firewall.@forwarding[-1].src='lan'
-  uci set firewall.@forwarding[-1].dest='vpnc'
-  if uci -q get network.guest.proto; then
-    uci add firewall forwarding
-    uci set firewall.@forwarding[-1].src='guest'
-    uci set firewall.@forwarding[-1].dest='vpnc'
-  fi
-  uci commit firewall
-  ```
-
 - Service does not alter the default routing. Depending on your VPN tunnel settings (and settings of the VPN server you are connecting to), the default routing might be set to go via WAN or via VPN tunnel. This service affects only routing of the traffic matching the policies. If you want to override default routing, consider adding the following to your OpenVPN tunnel config:
 
   ```text

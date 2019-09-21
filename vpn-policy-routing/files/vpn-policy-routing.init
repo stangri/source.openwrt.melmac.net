@@ -91,7 +91,7 @@ vpr_get_gateway() {
 vpr_get_gateway6() {
 	local iface="$2" dev="$3" gw
 	network_get_gateway6 gw "$iface"
-	if [ -z "$gw" ] || [ "$gw" = '::/0' ] || [ "$gw" = '::0/0' ]; then
+	if [ -z "$gw" ] || [ "$gw" = '::/0' ] || [ "$gw" = '::0/0' ] || [ "$gw" = '::' ]; then
 		gw="$(ip -6 a list dev "$dev" 2>/dev/null | grep inet6 | awk '{print $2}')"
 	fi
 	eval "$1=${gw}"
@@ -680,6 +680,7 @@ convert_config(){
 	sed -i 's/proto_control/webui_protocol_column/g' "/etc/config/${packageName}"
 	sed -i 's/chain_control/webui_chain_column/g' "/etc/config/${packageName}"
 	sed -i 's/sort_control/webui_sorting/g' "/etc/config/${packageName}"
+	sync
 	config_load "$packageName"
 	config_get_bool dnsmasqIpset        'config' 'dnsmasq_ipset' 0
 	config_get      remoteIpset         'config' 'remote_ipset'
