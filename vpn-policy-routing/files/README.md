@@ -542,7 +542,6 @@ config wireguard_wgclient
   list allowed_ips '0.0.0.0/0'
   list allowed_ips '::0/0'
   option endpoint_port '51820'
-  option route_allowed_ips '1'
   ...
 
 config interface 'wgserver'
