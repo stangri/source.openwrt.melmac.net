@@ -142,13 +142,15 @@ In the Web UI the ```vpn-policy-routing``` settings are split into ```basic``` a
 
 ### Policy Options
 
-Each policy may have a combination of the options below, please note that the ```name``` and ```interface```  options are required.
+Each policy may have a combination of the options below, the ```name``` and ```interface```  options are required.
+
+The ```local_address```, ```local_port```, ```remote_address``` and ```remote_port``` options supports parameter negation, for example if you want to **exclude** remote port 80 from the policy, set ```remote_port="!80"``` (notice lack of space between ```!``` and parameter).
 
 |Option|Default|Description|
 | --- | --- | --- |
-|name||Policy name, it **must** be set.|
+|**name**||Policy name, it **must** be set.|
 |enabled|1|Enable/disable policy. To display the ```Enable``` checkbox column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Enable Column``` in the ```Web UI``` tab.|
-|interface||Policy interface, it **must** be set.|
+|**interface**||Policy interface, it **must** be set.|
 |local_address||List of space-separated local/source IP addresses, CIDRs, hostnames or mac addresses (colon-separated). You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
 |local_port||List of space-separated local/source ports or port-ranges.|
 |remote_address||List of space-separated remote/target IP addresses, CIDRs or hostnames/domain names.|
