@@ -55,7 +55,7 @@ output() {
 		logmsg="${logmsg}${msg}"
 	fi
 }
-is_installed() { [ -n "$(opkg list-installed "$1")" ]; }
+is_installed() { [ -s "/usr/lib/opkg/info/${1}.control" ]; }
 
 export serviceEnabled verbosity strictMode wanTableID wanMark fwMask
 export ipv6Enabled localIpset remoteIpset ipruleEnabled icmpIface
