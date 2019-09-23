@@ -22,6 +22,7 @@ This service allows you to define rules (policies) for routing traffic via WAN o
 - Policies based on remote IPs/subnets or domain names. Same format/syntax as local IPs/subnets.
 - Policies based on remote ports numbers. Same format/syntax and restrictions as local ports.
 - You can mix the IP addresses/subnets and device (or domain) names in one field separating them by space (like this: ```66.220.2.74 he.net tunnelbroker.net```).
+- See [Policy Options](#policy-options) section for more information.
 
 ### DSCP Tag-Based Policies
 
@@ -47,28 +48,44 @@ You can also set policies for traffic with specific DSCP tag. On Windows 10, for
 
 ## Screenshot (luci-app-vpn-policy-routing)
 
-Basic Settings
-![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot03-basic.png "screenshot")
-Advanced Settings
-![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot03-advanced.png "screenshot")
+Service Status
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot04-status.png "Service Status")
+
+Configuration - Basic Configuration
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot04-config-basic.png "Basic Configuration")
+
+Configuration - Advanced Configuration
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot04-config-advanced.png "Advanced Configuration")
+
+Configuration - WebUI Configuration
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot04-config-webui.png "WebUI Configuration")
+
+Policies
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot04-policies.png "Policies")
+
+DSCP Tagging
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot04-dscp.png "DSCP Tagging")
+
+Custom User File Includes
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot04-userfiles.png "Custom User File Includes")
 
 ## How it works
 
-On start, this service creates routing tables for each supported interface (WAN/WAN6 and VPN tunnels) which are used to route specially marked packets. Service adds new ```VPR_PREROUTING``` chain in the ```mangle``` table's ```PREROUTING``` chain (can be optionally set to create chains in the ```FORWARD```, ```INPUT``` and ```OUTPUT``` chains of ```mangle``` table, see [Additional settings](#additional-settings) for details). Evaluation and marking of packets happens in the ```VPR_PREROUTING``` (and if enabled, also in ```VPR_FORWARD```, ```VPR_INPUT``` and ```VPR_OUTPUT```) chains. If enabled, the service also creates the ```ipset``` per each supported interface and the corresponding ```iptables``` rule for marking packets matching the ```ipset```. The service then processes the user-created policies.
+On start, this service creates routing tables for each supported interface (WAN/WAN6 and VPN tunnels) which are used to route specially marked packets. For he ```mangle``` table's ```PREROUTING```, ```FORWARD```, ```INPUT``` and ```OUTPUT``` chains, the service creates correspindong ```VPR_*``` chains to which policies are assigned. Evaluation and marking of packets happens in these ```VPR_*``` chains. If enabled, the service also creates the remote/local ipsets per each supported interface and the corresponding ```iptables``` rule for marking packets matching the ```ipset```. The service then processes the user-created policies.
 
 ### Processing Policies
 
-Each policy can result in either a new ```iptables``` rule or, if ```ipset``` or use of ```dnsmasq``` are enabled, an ```ipset``` or a ```dnsmasq```'s ```ipset``` entry.
+Each policy can result in either a new ```iptables``` rule or, if ```local_ipset``` or ```remote_ipset``` are enabled, an ```ipset``` or a ```dnsmasq```'s ```ipset``` entry.
 
-- Policies with local IP addresses or local device names are always created as ```iptables``` rules.
+- Policies with local MAC-addresses, IP addresses or local device names can be created as ```iptables``` rules or ```ipset``` entries.
 - Policies with local or remote ports are always created as ```iptables``` rules.
-- Policies with local or remote netmasks are always created as ```iptables``` rules.
-- Policies with **only** remote IP address or a domain name are created as ```dnsmasq```'s ```ipset``` or an ```ipset``` (if enabled).
+- Policies with local or remote netmasks can be created as ```iptables``` rules or ```ipset``` entries.
+- Policies with **only** remote IP address or a domain name can be created as ```iptables``` rules or ```dnsmasq```'s ```ipset``` or an ```ipset``` (if enabled).
 
 ### Policies Priorities
 
-- If support for ```dnsmasq```'s ```ipset``` and ```ipset``` is disabled, then only ```iptables``` rules are created. The policy priority is the same as its order as listed in Web UI and ```/etc/config/vpn-policy-routing```. The higher the policy is in the Web UI and configuration file, the higher its priority is.
-- If support for ```dnsmasq```'s ```ipset``` and ```ipset``` is enabled, then the ```ipset``` entries have the highest priority (irrelevant of their position in the policies list) and the other policies are processed in the same order as they are listed in Web UI and ```/etc/config/vpn-policy-routing```.
+- If support for ```local_ipstet``` and ```remote_ipset``` is disabled, then only ```iptables``` rules are created. The policy priority is the same as its order as listed in Web UI and ```/etc/config/vpn-policy-routing```. The higher the policy is in the Web UI and configuration file, the higher its priority is.
+- If support for ```local_ipstet``` and ```remote_ipset``` is enabled, then the ```ipset``` entries have the highest priority (irrelevant of their position in the policies list) and the other policies are processed in the same order as they are listed in Web UI and ```/etc/config/vpn-policy-routing```.
 - If there are conflicting ```ipset``` entries for different interfaces, the priority is given to the interface which is listed first in the ```/etc/config/network``` file.
 - If set, the ```DSCP``` policies trump all other policies, including ```ipset``` ones.
 
@@ -81,7 +98,7 @@ opkg update
 opkg install vpn-policy-routing luci-app-vpn-policy-routing
 ```
 
-If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router) first.OpenWrt
+If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router) first.
 
 ## Requirements
 
@@ -98,7 +115,7 @@ opkg update; opkg install ipset resolveip ip-full kmod-ipt-ipset iptables
 If you want to use ```dnsmasq```'s ```ipset``` support, you will need to install ```dnsmasq-full``` instead of the ```dnsmasq```. To do that, connect to your router via ssh and run the following command:
 
 ```sh
-opkg update; opkg remove dnsmasq; opkg install dnsmasq-full
+opkg update; opkg remove dnsmasq; opkg install dnsmasq-full;
 ```
 
 ### Unmet dependencies
@@ -111,7 +128,7 @@ Default configuration has service disabled (use Web UI to enable/start service o
 
 ## Additional settings
 
-In the Web UI the ```vpn-policy-routing``` settings are split into ```basic``` and ```advanced``` settings. The full list of configuration parameters of ```vpn-policy-routing.config``` section is:
+As per screenshots above, in the Web UI the ```vpn-policy-routing``` configuration is split into ```Basic```, ```Advanced``` and ```WebUI``` settings. The full list of configuration parameters of ```vpn-policy-routing.config``` section is:
 
 |Web UI Section|Parameter|Type|Default|Description|
 | --- | --- | --- | --- | --- |
@@ -162,7 +179,7 @@ The ```local_address```, ```local_port```, ```remote_address``` and ```remote_po
 
 #### Single IP, IP Range, Local Machine, Local MAC Address
 
-The following policies route traffic from a single IP address, a range of IP addresses or a local machine (requires definition as DHCP host record in DHCP config) via WAN.
+The following policies route traffic from a single IP address, a range of IP addresses, a local machine (requires definition as DHCP host record in DHCP config), a MAC-address of a local device and finally all of the above via WAN.
 
 ```text
 config policy
@@ -184,6 +201,12 @@ config policy
   option name 'Local MAC Address'
   option interface 'wan'
   option local_address '00:0F:EA:91:04:08'
+
+config policy
+  option name 'Local Devices'
+  option interface 'wan'
+  option local_address '192.168.1.70 192.168.1.81/29 dell-ubuntu 00:0F:EA:91:04:08'
+  
 ```
 
 #### Logmein Hamachi
@@ -328,11 +351,13 @@ config openvpn 'vpnclient'
   option dev 'ovpnc0'
   option proto 'udp'
   option remote 'some.domain.com 1197' # DO NOT USE PORT 1194 for VPN Client
+  ...
 
 config openvpn 'vpnserver'
   option port '1194'
   option proto 'tcp'
   option server '192.168.200.0 255.255.255.0'
+  ...
 ```
 
 #### Local OpenVPN Server + OpenVPN Client (Scenario 2)
@@ -418,11 +443,13 @@ config openvpn 'vpnclient'
   option remote 'some.domain.com 1197' # DO NOT USE PORT 1194 for VPN Client
   list pull_filter 'ignore "redirect-gateway"' # for OpenVPN 2.4 and later
   option route_nopull '1' # for OpenVPN earlier than 2.4
+  ...
 
 config openvpn 'vpnserver'
   option port '1194'
   option proto 'tcp'
   option server '192.168.200.0 255.255.255.0'
+  ...
 ```
 
 #### Local Wireguard Server + Wireguard Client (Scenario 1)
@@ -617,7 +644,7 @@ config policy
 
 ### Custom User Files
 
-If the custom user file includes are set, the service will load and execute them after setting up ip tables and ipsets, processing policies and before restarting ```dnsmasq```. This allows, for example, to add large numbers of domains/IP addresses to ipsets without manually adding all of them to the config file.
+If the custom user file includes are set, the service will load and execute them after setting up ip tables and ipsets and processing policies. This allows, for example, to add large numbers of domains/IP addresses to ipsets without manually adding all of them to the config file.
 
 Two example custom user-files are provided: ```/etc/vpn-policy-routing.aws.user``` and ```/etc/vpn-policy-routing.netflix.user```. They are provided to pull the AWS and Netflix IP addresses into the ```wan``` ipset respectively.
 
@@ -625,7 +652,7 @@ Two example custom user-files are provided: ```/etc/vpn-policy-routing.aws.user`
 
 |Option|Default|Description|
 | --- | --- | --- |
-|path||Path to a custom user file (in a form of shell script), it **must** be set.|
+|**path**||Path to a custom user file (in a form of shell script), it **must** be set.|
 |enabled|1|Enable/disable setting.|
 
 #### Example Includes
@@ -690,33 +717,37 @@ If things are not working as intended, please include the following in your post
 - the output of ```/etc/init.d/vpn-policy-routing support```
 - the output of ```/etc/init.d/vpn-policy-routing reload``` with verbosity setting set to 2
 
-If you don't want to post the ```/etc/init.d/vpn-policy-routing support``` output in a public forum, there's a way to have the support details automatically uploaded to my account at paste.ee by running: ```/etc/init.d/vpn-policy-routing support -p```. You need to have the following packages installed to enable paste.ee upload functionality: ```curl libopenssl ca-bundle```. WARNING: while paste.ee uploads are unlisted, they are still publicly available.
+If you don't want to post the ```/etc/init.d/vpn-policy-routing support``` output in a public forum, there's a way to have the support details automatically uploaded to my account at paste.ee by running: ```/etc/init.d/vpn-policy-routing support -p```. You need to have the following packages installed to enable paste.ee upload functionality: ```curl libopenssl ca-bundle```.
+
+WARNING: while paste.ee uploads are unlisted/not indexed at the web-site, they are still publicly available.
 
 ## Notes/Known Issues
 
-- If your default routing is set to the VPN tunnel, then then true WAN intrface cannot be discovered using OpenWrt built-in functions, so service will assume your network interface(s) ending with or starting with '''wan''' is/are the WAN interface(s).
-- While you can select some down/inactive VPN tunnel in Web UI, the appropriate tunnel must be up/active for the policies to properly work without errors on service start.
-- If your ```OpenVPN``` interface has the device name different from tun\* or tap\*, please make sure that the tunnel is up before trying to assign it policies in Web UI.
-- Service does not alter the default routing. Depending on your VPN tunnel settings (and settings of the VPN server you are connecting to), the default routing might be set to go via WAN or via VPN tunnel. This service affects only routing of the traffic matching the policies. If you want to override default routing, add the following to your OpenVPN 2.4 and newer client config:
+- If your default routing is set to the VPN tunnel, then the true WAN intrface cannot be discovered using OpenWrt built-in functions, so service will assume your network interface ending with or starting with '''wan''' is the true WAN interface.
+- The service does **NOT** support the "killswitch" router mode (where if you stop the VPN tunnel, you have no internet connection). For proper operation, leave all the default OpenWrt ```network``` and ```firewall``` settings for ```lan``` and ```wan``` intact.
+- If your ```OpenVPN``` interface has the device name different from tun\* or tap\*, is not up and is not explicitly listed in ```supported_interface``` option, it may not be available in the policies ```Interface``` drop-down within WebUI.
+- Service does not alter the default routing. Depending on your VPN tunnel settings (and settings of the VPN server you are connecting to), the default routing might be set to go via WAN or via VPN tunnel. This service affects only routing of the traffic matching the policies. If you want to override default routing, add the following:
+  
+  - For OpenVPN 2.4 and newer client config:
 
-  ```text
-  list pull_filter 'ignore "redirect-gateway"'
-  ```
+     ```text
+     list pull_filter 'ignore "redirect-gateway"'
+     ```
 
-  or, for OpenVPN 2.3 and below:
+  - For OpenVPN 2.3 and older client config:
 
-  ```text
-  option route_nopull '1'
-  ```
+     ```text
+     option route_nopull '1'
+     ```
 
-  or set the following option for your Wireguard (client) config:
+  - For your Wireguard (client) config:
 
-  ```text
-  option route_allowed_ips '0'
-  ```
+     ```text
+     option route_allowed_ips '0'
+     ```
 
 - Routing Wireguard traffic requires setting `rp_filter = 2`. Please refer to [issue #41](https://github.com/stangri/openwrt_packages/issues/41) for more details.
 
 ## Thanks
 
-I'd like to thank everyone who helped create, test and troubleshoot this service. Without contributions from [@hnyman](https://github.com/hnyman), [@dibdot](https://github.com/dibdot), [@danrl](https://github.com/danrl), [@tohojo](https://github.com/tohojo), [@cybrnook](https://github.com/cybrnook), [@nidstigator](https://github.com/nidstigator), [@AndreBL](https://github.com/AndreBL) and [@dz0ny](https://github.com/dz0ny) and rigorous testing/bugreporting by [@dziny](https://github.com/dziny), [@bluenote73](https://github.com/bluenote73), [@buckaroo](https://github.com/pgera), [@Alexander-r](https://github.com/Alexander-r) and [n8v8R](https://github.com/n8v8R) it wouldn't have been possible. Wireguard support is courtesy of [Mullvad](https://www.mullvad.net) and [WireVPN](https://www.wirevpn.net).
+I'd like to thank everyone who helped create, test and troubleshoot this service. Without contributions from [@hnyman](https://github.com/hnyman), [@dibdot](https://github.com/dibdot), [@danrl](https://github.com/danrl), [@tohojo](https://github.com/tohojo), [@cybrnook](https://github.com/cybrnook), [@nidstigator](https://github.com/nidstigator), [@AndreBL](https://github.com/AndreBL) and [@dz0ny](https://github.com/dz0ny) and rigorous testing/bugreporting by [@dziny](https://github.com/dziny), [@bluenote73](https://github.com/bluenote73), [@buckaroo](https://github.com/pgera), [@Alexander-r](https://github.com/Alexander-r) and [n8v8R](https://github.com/n8v8R) it wouldn't have been possible. Wireguard/IPv6 support is courtesy of [Mullvad](https://www.mullvad.net), [IVPN](https://www.ivpn.net/) and [WireVPN](https://www.wirevpn.net).
