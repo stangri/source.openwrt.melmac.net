@@ -73,6 +73,11 @@ str_contains() { test "$1" != "$(str_replace "$1" "$2" '')"; }
 compare_versions() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
 is_ipset_procd() { compare_versions "$(sed -ne 's/^Version: //p' /usr/lib/opkg/info/firewall.control)" "2019-09-18"; }
+led_on(){ if [ -n "${1}" ] && [ -e "${1}/trigger" ]; then echo 'default-on' > "${1}/trigger" 2>&1; fi; }
+led_off(){ if [ -n "${1}" ] &&  [ -e "${1}/trigger" ]; then echo 'none' > "${1}/trigger" 2>&1; fi; }
+dnsmasq_kill() { killall -q -HUP dnsmasq; }
+dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
+unbound_restart() { /etc/init.d/unbound restart >/dev/null 2>&1; }
 
 output() {
 # Can take a single parameter (text) to be output at any verbosity
@@ -91,8 +96,6 @@ output() {
 		printf "%b" "$msg" >> "$sharedMemoryOutput"
 	fi
 }
-led_on(){ if [ -n "${1}" ] && [ -e "${1}/trigger" ]; then echo 'default-on' > "${1}/trigger" 2>&1; fi; }
-led_off(){ if [ -n "${1}" ] &&  [ -e "${1}/trigger" ]; then echo 'none' > "${1}/trigger" 2>&1; fi; }
 
 export serviceEnabled forceDNS parallelDL debug allowIDN compressedCache     
 export targetDNS bootDelay dlTimeout curlRetry verbosity led dnsInstance
@@ -251,9 +254,6 @@ is_enabled() {
 	output "$_ERROR_: $serviceName failed to discover WAN gateway.\\n"; return 1;
 }
 
-dnsmasq_kill() { killall -q -HUP dnsmasq; }
-dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
-unbound_restart() { /etc/init.d/unbound restart >/dev/null 2>&1; }
 reload_resolver() {
 	local param output_text
 	case $1 in
