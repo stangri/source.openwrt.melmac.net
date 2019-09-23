@@ -46,7 +46,7 @@ You can also set policies for traffic with specific DSCP tag. On Windows 10, for
 - Doesn't stay in memory, creates the routing tables and ```iptables``` rules/```ipset``` entries which are automatically updated when supported/monitored interface changes.
 - Proudly made in Canada, using locally-sourced electrons.
 
-## Screenshot (luci-app-vpn-policy-routing)
+## Screenshots (luci-app-vpn-policy-routing)
 
 Service Status
 ![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/vpn-policy-routing/screenshot04-status.png "Service Status")

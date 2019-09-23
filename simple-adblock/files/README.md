@@ -21,9 +21,23 @@ A simple DNSMASQ/Unbound-based AdBlocking service for OpenWrt/LEDE Project.
 
 If you want a more robust AdBlocking, supporting free memory detection and complex block lists, supporting IDN, check out [net/adblock](https://github.com/openwrt/packages/tree/master/net/adblock/files).
 
-## Screenshot (luci-app-simple-adblock)
+## Screenshots (luci-app-simple-adblock)
 
-![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/simple-adblock/screenshot07.png "screenshot")
+Service Status
+
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/simple-adblock/screenshot08-status.png "Service Status")
+
+Configuration - Basic Configuration
+
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/simple-adblock/screenshot08-config-basic.png "Configuration - Basic Configuration")
+
+Configuration - Advanced Configuration
+
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/simple-adblock/screenshot08-config-advanced.png "Configuration - Advanced Configuration")
+
+Whitelist and Blocklist Management
+
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/simple-adblock/screenshot08-lists.png "Whitelist and Blocklist Management")
 
 ## Requirements
 
