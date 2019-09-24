@@ -39,6 +39,8 @@ output_fail() { s=1; output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
 str_replace() { echo "$1" | sed -e "s/$2/$3/g"; }
 str_contains() { [ "$1" != "$(str_replace "$1" "$2" "")" ]; }
+# shellcheck disable=SC2018,SC2019
+str_to_lower() { echo "$1" | tr 'A-Z' 'a-z'; }
 output() {
 # Can take a single parameter (text) to be output at any verbosity
 # Or target verbosity level and text to be output at specifc verbosity
@@ -321,7 +323,7 @@ insert_tor_policy() {
 }
 
 insert_policy() {
-	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$7" chain="${8:-PREROUTING}"
+	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}"
 	local mark=$(eval echo "\$mark_${iface//-/_}") param i valueNeg value
 	if [ "$ipv6Enabled" -eq 0 ]; then
 		is_ipv6 "$laddr" && return 0
@@ -333,7 +335,7 @@ insert_policy() {
 		return 0
 	fi
 
-	if [ -z "$proto" ]; then
+	if [ -z "$proto" ] || [ "$proto" = 'all' ]; then
 		if [ -z "${lport}${raddr}${rport}" ] && [ -n "$laddr" ]; then
 			proto='all'
 		elif [ -z "${laddr}${lport}${rport}" ] && [ -n "$raddr" ]; then
