@@ -496,7 +496,7 @@ config interface 'wgserver'
   ...
 
 config wireguard_wgserver
-  list allowed_ips '192.168.200.0/24'
+  list allowed_ips '192.168.200.2/32'
   option route_allowed_ips '1'
   ...
 ```
@@ -582,7 +582,7 @@ config interface 'wgserver'
   ...
 
 config wireguard_wgserver
-  list allowed_ips '192.168.200.1/24'
+  list allowed_ips '192.168.200.2/32'
   option route_allowed_ips '1'
   ...
 ```
