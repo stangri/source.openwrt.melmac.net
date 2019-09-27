@@ -665,6 +665,16 @@ config include
   option path '/etc/vpn-policy-routing.aws.user'
 ```
 
+## Notes/Known Issues
+
+1. <a name="footnote1"> </a> See [note about multiple OpenVPN clients](#multiple-openvpn-clients).
+
+2. <a name="footnote2"> </a> If your ```OpenVPN``` interface has the device name different from tun\* or tap\*, is not up and is not explicitly listed in ```supported_interface``` option, it may not be available in the policies ```Interface``` drop-down within WebUI.
+
+3. <a name="footnote3"> </a> If your default routing is set to the VPN tunnel, then the true WAN interface cannot be discovered using OpenWrt built-in functions, so service will assume your network interface ending with or starting with '''wan''' is the true WAN interface.
+
+4. <a name="footnote4"> </a> The service does **NOT** support the "killswitch" router mode (where if you stop the VPN tunnel, you have no internet connection). For proper operation, leave all the default OpenWrt ```network``` and ```firewall``` settings for ```lan``` and ```wan``` intact.
+
 ### Multiple OpenVPN Clients
 
 If you use multiple OpenVPN clients on your router, the order in which their devices are named (tun0, tun1, etc) is not guaranteed by OpenWrt/LEDE Project. The following settings are recommended in this case.
@@ -704,16 +714,6 @@ config vpn-policy-routing 'config'
   list supported_interface 'vpnclient0 vpnclient1'
   ...
 ```
-
-## Notes/Known Issues
-
-1. <a name="footnote1"> </a> See [note about multiple OpenVPN clients](#multiple-openvpn-clients).
-
-2. <a name="footnote2"> </a> If your ```OpenVPN``` interface has the device name different from tun\* or tap\*, is not up and is not explicitly listed in ```supported_interface``` option, it may not be available in the policies ```Interface``` drop-down within WebUI.
-
-3. <a name="footnote3"> </a> If your default routing is set to the VPN tunnel, then the true WAN interface cannot be discovered using OpenWrt built-in functions, so service will assume your network interface ending with or starting with '''wan''' is the true WAN interface.
-
-4. <a name="footnote4"> </a> The service does **NOT** support the "killswitch" router mode (where if you stop the VPN tunnel, you have no internet connection). For proper operation, leave all the default OpenWrt ```network``` and ```firewall``` settings for ```lan``` and ```wan``` intact.
 
 ### A Word About Default Routing
 
