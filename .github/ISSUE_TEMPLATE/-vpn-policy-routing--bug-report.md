@@ -54,7 +54,7 @@ A clear and concise description of what you expected to happen.
 
    ```
 
-2. Output of ```/etc/init.d/vpn-policy-routing status```:
+2. Output of ```/etc/init.d/vpn-policy-routing support```:
 
    ```sh
 
