@@ -11,11 +11,9 @@ This service allows you to define rules (policies) for routing traffic via WAN o
 - Any policy can target either WAN or a VPN tunnel interface.
 - L2TP tunnels supported (with protocol names l2tp\*).
 - Openconnect tunnels supported (with protocol names openconnect\*).
-- OpenVPN tunnels supported (with device names tun\* or tap\*)[^1].
+- OpenVPN tunnels supported (with device names tun\* or tap\*).<sup>[1](#footnote1)</sup> <sup>[2](#footnote2)</sup>
 - PPTP tunnels supported (with protocol names pptp\*).
 - Wireguard tunnels supported (with protocol names wireguard\*).
-
-[^1]: See [note about multiple OpenVPN clients](#multiple-openvpn-clients) and note about OpenVPN device names at the [Known Issues](#notes-known-issues) section.
 
 ### IPv4/IPv6/Port-Based Policies
 
@@ -709,11 +707,13 @@ config vpn-policy-routing 'config'
 
 ## Notes/Known Issues
 
-- If your default routing is set to the VPN tunnel, then the true WAN interface cannot be discovered using OpenWrt built-in functions, so service will assume your network interface ending with or starting with '''wan''' is the true WAN interface.
+1. <a name="footnote1"> </a> See [note about multiple OpenVPN clients](#multiple-openvpn-clients).
 
-- The service does **NOT** support the "killswitch" router mode (where if you stop the VPN tunnel, you have no internet connection). For proper operation, leave all the default OpenWrt ```network``` and ```firewall``` settings for ```lan``` and ```wan``` intact.
+2. <a name="footnote2"> </a> If your ```OpenVPN``` interface has the device name different from tun\* or tap\*, is not up and is not explicitly listed in ```supported_interface``` option, it may not be available in the policies ```Interface``` drop-down within WebUI.
 
-- If your ```OpenVPN``` interface has the device name different from tun\* or tap\*, is not up and is not explicitly listed in ```supported_interface``` option, it may not be available in the policies ```Interface``` drop-down within WebUI.
+3. <a name="footnote3"> </a> If your default routing is set to the VPN tunnel, then the true WAN interface cannot be discovered using OpenWrt built-in functions, so service will assume your network interface ending with or starting with '''wan''' is the true WAN interface.
+
+4. <a name="footnote4"> </a> The service does **NOT** support the "killswitch" router mode (where if you stop the VPN tunnel, you have no internet connection). For proper operation, leave all the default OpenWrt ```network``` and ```firewall``` settings for ```lan``` and ```wan``` intact.
 
 ### A Word About Default Routing
 
