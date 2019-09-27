@@ -40,7 +40,7 @@ Two example custom user-files are provided: ```/etc/vpn-policy-routing.aws.user`
 
 ### Use DNSMASQ ipset
 
-- Service can be set to utilize ```dnsmasq```'s ```ipset``` support. This requires the ```dnsmasq-full``` to be installed (see [How to install dnsmasq-full](#how-to-install-dnsmasq-full)) and it significantly improves the start up time because ```dnsmasq``` resolves the domain names and adds them to appropriate ```ipset``` in background. Another benefit of using ```dnsmasq```'s ```ipset``` is that it also automatically adds third-level domains to the ```ipset```: if ```domain.com``` is added to the policy, this policy will affect all ```*.domain.com``` subdomains. This also works for top-level domains as well, a policy targeting the ```at``` for example, will affect all the ```*.at``` domains.
+- Service can be set to utilize ```dnsmasq```'s ```ipset``` support, which requires the ```dnsmasq-full``` package to be installed (see [How to install dnsmasq-full](#how-to-install-dnsmasq-full)). As a benefit, this also significantly improves the start up time because ```dnsmasq``` resolves the domain names and adds them to appropriate ```ipset``` in background. Another benefit of using ```dnsmasq```'s ```ipset``` is that it also automatically adds third-level domains to the ```ipset```: if ```domain.com``` is added to the policy, this policy will affect all ```*.domain.com``` subdomains. This also works for top-level domains as well, a policy targeting the ```at``` for example, will affect all the ```*.at``` domains.
 
 ### Customization
 
@@ -50,7 +50,7 @@ Two example custom user-files are provided: ```/etc/vpn-policy-routing.aws.user`
 ### Other Features
 
 - Doesn't stay in memory, creates the routing tables and ```iptables``` rules/```ipset``` entries which are automatically updated when supported/monitored interface changes.
-- Proudly made in Canada, using locally-sourced electrons.
+- Proudly made in :maple_leaf: Canada :maple_leaf: , using locally-sourced electrons.
 
 ## Screenshots (luci-app-vpn-policy-routing)
 
