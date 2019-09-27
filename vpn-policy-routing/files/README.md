@@ -665,7 +665,7 @@ config include
   option path '/etc/vpn-policy-routing.aws.user'
 ```
 
-## Notes/Known Issues
+## Footnotes/Known Issues
 
 1. <a name="footnote1"> </a> See [note about multiple OpenVPN clients](#multiple-openvpn-clients).
 
