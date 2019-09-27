@@ -1,7 +1,7 @@
 ---
-name: Bug report (VPN Policy Routing)
+name: Bug report (Slider Support)
 about: Create a report to help us improve
-title: [vpn-policy-routing] Issue
+title: [slider-support] Issue
 labels: ''
 assignees: ''
 
@@ -30,7 +30,7 @@ A clear and concise description of what the bug is.
 
    ```
 
-4. ```/etc/config/vpn-policy-routing```
+4. ```/etc/config/slider-support```
 
    ```sh
 
@@ -46,15 +46,15 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**VPN Policy Routing run-time information**
+**Slider Support run-time information**
 
-1. Output of ```/etc/init.d/vpn-policy-routing reload``` with ```verbosity``` set to 2:
+1. Output of ```logread -e slider-support``` after running ```/etc/init.d/slider-support restart```:
 
    ```sh
 
    ```
 
-2. Output of ```/etc/init.d/vpn-policy-routing status```:
+2. Output of ```iptables-save```:
 
    ```sh
 
