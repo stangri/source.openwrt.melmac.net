@@ -77,7 +77,7 @@ Custom User File Includes
 
 ## How It Works
 
-On start, this service creates routing tables for each supported interface (WAN/WAN6 and VPN tunnels) which are used to route specially marked packets. For he ```mangle``` table's ```PREROUTING```, ```FORWARD```, ```INPUT``` and ```OUTPUT``` chains, the service creates correspindong ```VPR_*``` chains to which policies are assigned. Evaluation and marking of packets happens in these ```VPR_*``` chains. If enabled, the service also creates the remote/local ipsets per each supported interface and the corresponding ```iptables``` rule for marking packets matching the ```ipset```. The service then processes the user-created policies.
+On start, this service creates routing tables for each supported interface (WAN/WAN6 and VPN tunnels) which are used to route specially marked packets. For the ```mangle``` table's ```PREROUTING```, ```FORWARD```, ```INPUT``` and ```OUTPUT``` chains, the service creates correspindong ```VPR_*``` chains to which policies are assigned. Evaluation and marking of packets happens in these ```VPR_*``` chains. If enabled, the service also creates the remote/local ipsets per each supported interface and the corresponding ```iptables``` rule for marking packets matching the ```ipset```. The service then processes the user-created policies.
 
 ### Processing Policies
 
@@ -753,11 +753,11 @@ Some browsers, like [Mozilla Firefox](https://support.mozilla.org/en-US/kb/firef
 
 ### A Word About Cloudflare's 1.1.1.1 App
 
-Cloudflare has released an app for [iOS](https://itunes.apple.com/us/app/1-1-1-1-faster-internet/id1423538627) and [Android](https://play.google.com/store/apps/details?id=com.cloudflare.onedotonedotonedotone) wich can also be configured to route traffic thru their own VPN tunnel (WARP+).
+Cloudflare has released an app for [iOS](https://itunes.apple.com/us/app/1-1-1-1-faster-internet/id1423538627) and [Android](https://play.google.com/store/apps/details?id=com.cloudflare.onedotonedotonedotone), which can also be configured to route traffic thru their own VPN tunnel (WARP+).
 
 If you use Cloudlfare's VPN tunnel (WARP+), none of the policies you set up with the VPN Policy Routing will take effect on your mobile device. Disable WARP+ for your home WiFi to keep VPN Policy Routing affecting your mobile device.
 
-If you just use the private DNS queries (WARP), the abovementioned [A Word About DNS-over-HTTPS](#a-word-about-DNS-over-HTTPS) applies. You can also disable WARP for your home WiFi to keep VPN Policy Routing affecting your mobile device.
+If you just use the private DNS queries (WARP), [A Word About DNS-over-HTTPS](#a-word-about-DNS-over-HTTPS) applies. You can also disable WARP for your home WiFi to keep VPN Policy Routing affecting your mobile device.
 
 ## Discussion
 
