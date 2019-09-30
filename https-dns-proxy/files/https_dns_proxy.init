@@ -19,10 +19,7 @@ append_parm() {
 }
 
 start_instance() {
-	local cfg="$1" param enabled
-
-	config_get  enabled "$cfg" 'enabled' '1'
-	[ "$enabled" -gt 0 ] || return 0
+	local cfg="$1" param
 
 	append_parm "$cfg" 'listen_addr' '-a' '127.0.0.1'
 	append_parm "$cfg" 'listen_port' '-p' '5053'
