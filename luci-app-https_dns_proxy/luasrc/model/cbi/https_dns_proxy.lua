@@ -54,9 +54,14 @@ uci:foreach("https_dns_proxy", "https_dns_proxy", function(s)
     n = n + 1
 end)
 
+en = s3:option(Flag, "enabled", translate("Enabled"))
+en.optional = false
+en.default = "1"
+
 prov = s3:option(ListValue, "url_prefix", translate("Provider"))
 prov:value("https://cloudflare-dns.com/dns-query?ct=application/dns-json&","Cloudflare")
 prov:value("https://dns.google.com/resolve?","Google")
+prov:value("https://dns.quad9.net/dns-query?","Quad9")
 prov.write = function(self, section, value)
   local la_val = la:formvalue(section)
   local lp_val = lp:formvalue(section)
@@ -65,9 +70,12 @@ prov.write = function(self, section, value)
   if value and value:match("cloudflare") then
     uci:set("https_dns_proxy", section, "bootstrap_dns", "1.1.1.1,1.0.0.1")
     uci:set("https_dns_proxy", section, "url_prefix", "https://cloudflare-dns.com/dns-query?ct=application/dns-json&")
-  else
+  elseif value and value:match("google") then
     uci:set("https_dns_proxy", section, "bootstrap_dns", "8.8.8.8,8.8.4.4")
     uci:set("https_dns_proxy", section, "url_prefix", "https://dns.google.com/resolve?")
+  elseif value and value:match("quad9") then
+    uci:set("https_dns_proxy", section, "bootstrap_dns", "9.9.9.9,149.112.112.112")
+    uci:set("https_dns_proxy", section, "url_prefix", "https://dns.quad9.net/dns-query?")
   end
   uci:set("https_dns_proxy", section, "user", "nobody")
   uci:set("https_dns_proxy", section, "group", "nogroup")
@@ -75,8 +83,8 @@ prov.write = function(self, section, value)
   if n == 0 then
     uci:delete("dhcp", "@dnsmasq[0]", "server")
   end
-  uci_del_list("dhcp", "@dnsmasq[0]", "server", tostring(la_val) .. ":" .. tostring(lp_val))
-  uci_add_list("dhcp", "@dnsmasq[0]", "server", tostring(la_val) .. ":" .. tostring(lp_val))
+  uci_del_list("dhcp", "@dnsmasq[0]", "server", tostring(la_val) .. "#" .. tostring(lp_val))
+  uci_add_list("dhcp", "@dnsmasq[0]", "server", tostring(la_val) .. "#" .. tostring(lp_val))
   uci:save("dhcp")
 end
 
