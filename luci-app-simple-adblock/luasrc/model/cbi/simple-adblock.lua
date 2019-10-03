@@ -153,7 +153,7 @@ s = m:section(NamedSection, "config", "simple-adblock", translate("Configuration
 -- General options
 s:tab("basic", translate("Basic Configuration"))
 
-o2 = s:taboption("basic", ListValue, "verbosity", translate("Output Verbosity Setting"),translate("Controls system log and console output verbosity."))
+o2 = s:taboption("basic", ListValue, "verbosity", translate("Output Verbosity Setting"), translate("Controls system log and console output verbosity."))
 o2:value("0", translate("Suppress output"))
 o2:value("1", translate("Some output"))
 o2:value("2", translate("Verbose output"))
