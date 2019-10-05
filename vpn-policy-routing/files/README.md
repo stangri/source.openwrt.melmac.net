@@ -554,7 +554,7 @@ config rule
   option name 'Allow-WG-Inbound'
   option target 'ACCEPT'
   option src '*'
-  option proto 'tcp'
+  option proto 'udp'
   option dest_port '61820'
 ```
 
@@ -640,7 +640,7 @@ config rule
   option name 'Allow-WG-Inbound'
   option target 'ACCEPT'
   option src '*'
-  option proto 'tcp'
+  option proto 'udp'
   option dest_port '61820'
 ```
 
