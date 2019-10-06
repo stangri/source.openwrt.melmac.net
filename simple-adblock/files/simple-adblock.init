@@ -1003,7 +1003,7 @@ start_service() {
 	else
 		output 0 "$__FAIL__\\n";
 		tmpfs set status "$statusFail"
-		tmpfs add error 'Error: Failed to create blocklist.'
+		tmpfs add error 'Error: Failed to create blocklist or restart DNS resolver.'
 	fi
 	remove_lock
 }
