@@ -10,6 +10,7 @@ local util = require "luci.util"
 local sys = require "luci.sys"
 local jsonc = require "luci.jsonc"
 local fs = require "nixio.fs"
+local nutil = require "nixio.util"
 local http = require "luci.http"
 local dispatcher = require "luci.dispatcher"
 local enabledFlag = uci:get(packageName, "config", "enabled")
@@ -78,7 +79,7 @@ if tmpfs and tmpfs['data'] then
 	end
 end
 
-h = m:section(NamedSection, "config", "simple-adblock", translate("Service Control") .. tmpfsVersion)
+h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status") .. tmpfsVersion)
 
 if tmpfsStatus:match("ing") then
 	ss = h:option(DummyValue, "_dummy", translate("Service Status"))
@@ -166,8 +167,8 @@ o3.default = 1
 
 local sysfs_path = "/sys/class/leds/"
 local leds = {}
-if nixio.fs.access(sysfs_path) then
-	leds = nixio.util.consume((nixio.fs.dir(sysfs_path)))
+if fs.access(sysfs_path) then
+	leds = nutil.consume((fs.dir(sysfs_path)))
 end
 if #leds ~= 0 then
 	o4 = s:taboption("basic", Value, "led", translate("LED to indicate status"), translate("Pick the LED not already used in")
