@@ -475,7 +475,7 @@ cacheOps() {
 	local R_TMP
 	case "$1" in
 		create|backup)
-			[ -s "$outputFile" ] && { mv "$outputFile" "$outputCache"; touch "$outputFile"; } >/dev/null 2>/dev/null
+			[ -s "$outputFile" ] && { mv -f "$outputFile" "$outputCache"; true > "$outputFile"; } >/dev/null 2>/dev/null
 			return $?
 			;;
 		restore|use)
