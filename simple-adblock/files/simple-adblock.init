@@ -939,6 +939,9 @@ start_service() {
 	fi
 
 	if [ "$action" = 'restore' ]; then
+		output 0 "Starting $serviceName... "
+		output 3 "Starting $serviceName...\\n"
+		tmpfs set status "$statusStarting"
 		if cacheOps 'testGzip' && ! cacheOps 'test' && [ ! -s "$outputFile" ]; then
 			output 3 'Found compressed cache file, unpacking it '
 			tmpfs set message 'found compressed cache file, unpacking it.'
@@ -955,7 +958,7 @@ start_service() {
 			tmpfs set message 'found cache file, reusing it.'
 			if cacheOps 'restore'; then 
 				output_okn
-				action='start'
+				dnsOps 'on_start'
 			else 
 				output_fail
 				output "$_ERROR_: $serviceName failed to move '$outputCache' to '$outputFile'!\\n"
