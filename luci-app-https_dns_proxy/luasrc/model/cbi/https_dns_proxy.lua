@@ -44,19 +44,34 @@ m.template="cbi/map"
 
 s3 = m:section(TypedSection, "https_dns_proxy", translate("Instances"), translate("When you add/remove any instances below, they will be used to override the 'DNS forwardings' section of ")
 		.. [[ <a href="]] .. dispatcher.build_url("admin/network/dhcp") .. [[">]]
-		.. translate("DHCP and DNS") .. [[</a>]] .. ".")
+    .. translate("DHCP and DNS") .. [[</a>]] .. ".</br>"
+    .. translate("For more information on different options check ")
+		.. [[ <a href="https://adguard.com/en/adguard-dns/overview.html#instruction">]]
+    .. "AdGuard.com" .. [[</a>]] .. ", "
+		.. [[ <a href="https://cleanbrowsing.org/guides/dnsoverhttps">]]
+    .. "CleanBrowsing.org" .. [[</a>]] .. " " .. translate("and") .. " "
+		.. [[ <a href="https://www.quad9.net/doh-quad9-dns-servers/">]]
+    .. "Quad9.net" .. [[</a>]] .. ".")
 s3.template = "cbi/tblsection"
 s3.sortable  = false
 s3.anonymous = true
 s3.addremove = true
 
 prov = s3:option(ListValue, "url_prefix", translate("Provider"))
-prov:value("https://cloudflare-dns.com/dns-query?ct=application/dns-json&","Cloudflare")
-prov:value("https://dns.google.com/resolve?","Google")
-prov:value("https://dns.quad9.net:5053/dns-query?","Quad9 (Recommended)")
-prov:value("https://dns9.quad9.net:5053/dns-query?","Quad9 (Secured)")
-prov:value("https://dns10.quad9.net:5053/dns-query?","Quad9 (Unsecured)")
-prov:value("https://dns11.quad9.net:5053/dns-query?","Quad9 (Secured with ECS Support)")
+prov:value("https://dns.adguard.com/dns-query?", "AdGuard (Standard)")
+prov:value("https://dns-family.adguard.com/dns-query?", "AdGuard (Family Protection)")
+prov:value("https://doh.cleanbrowsing.org/doh/security-filter/?ct&", "CleanBrowsing (Security Filter)")
+prov:value("https://doh.cleanbrowsing.org/doh/family-filter/?ct&", "CleanBrowsing (Family Filter)")
+prov:value("https://doh.cleanbrowsing.org/doh/adult-filter/?ct&", "CleanBrowsing (Adult Filter)")
+prov:value("https://cloudflare-dns.com/dns-query?ct=application/dns-json&", "Cloudflare")
+prov:value("https://dns.digitale-gesellschaft.ch/dns-query?", "Digitale Gesellschaft (CH)")
+prov:value("https://doh.dns.sb/dns-query?", "DNS.SB")
+prov:value("https://dns.google.com/resolve?", "Google")
+prov:value("https://dns.quad9.net:5053/dns-query?", "Quad9 (Recommended)")
+prov:value("https://dns9.quad9.net:5053/dns-query?", "Quad9 (Secured)")
+prov:value("https://dns10.quad9.net:5053/dns-query?", "Quad9 (Unsecured)")
+prov:value("https://dns11.quad9.net:5053/dns-query?", "Quad9 (Secured with ECS Support)")
+prov.default = "google"
 prov.forcewrite = true
 prov.write = function(self, section, value)
   if not value then return end
@@ -71,9 +86,30 @@ prov.write = function(self, section, value)
   local lp_val = lp:formvalue(section)
   if not la_val or la_val == "" then la_val = "127.0.0.1" end
   if not lp_val or lp_val == "" then lp_val = n + 5053 end
-  if value:match("cloudflare") then
+  if value:match("dns\.adguard") then
+    uci:set("https_dns_proxy", section, "bootstrap_dns", "176.103.130.130,176.103.130.131")
+    uci:set("https_dns_proxy", section, "url_prefix", "https://dns.adguard.com/dns-query?ct&")
+  elseif value:match("family\.adguard") then
+    uci:set("https_dns_proxy", section, "bootstrap_dns", "176.103.130.132,176.103.130.134")
+    uci:set("https_dns_proxy", section, "url_prefix", "https://dns-family.adguard.com/dns-query?ct&")
+  elseif value:match("cleanbrowsing\.org/doh/security") then
+    uci:set("https_dns_proxy", section, "bootstrap_dns", "185.228.168.168")
+    uci:set("https_dns_proxy", section, "url_prefix", "https://doh.cleanbrowsing.org/doh/security-filter/?ct&")
+  elseif value:match("cleanbrowsing\.org/doh/family") then
+    uci:set("https_dns_proxy", section, "bootstrap_dns", "185.228.168.168")
+    uci:set("https_dns_proxy", section, "url_prefix", "https://doh.cleanbrowsing.org/doh/family-filter/?ct&")
+  elseif value:match("cleanbrowsing\.org/doh/adult") then
+    uci:set("https_dns_proxy", section, "bootstrap_dns", "185.228.168.168")
+    uci:set("https_dns_proxy", section, "url_prefix", "https://doh.cleanbrowsing.org/doh/adult-filter/?ct&")
+  elseif value:match("cloudflare") then
     uci:set("https_dns_proxy", section, "bootstrap_dns", "1.1.1.1,1.0.0.1")
     uci:set("https_dns_proxy", section, "url_prefix", "https://cloudflare-dns.com/dns-query?ct=application/dns-json&")
+  elseif value:match("gesellschaft\.ch") then
+    uci:set("https_dns_proxy", section, "bootstrap_dns", "185.95.218.42,185.95.218.43")
+    uci:set("https_dns_proxy", section, "url_prefix", "https://dns.digitale-gesellschaft.ch/dns-query?")
+  elseif value:match("dns\.sb") then
+    uci:set("https_dns_proxy", section, "bootstrap_dns", "185.222.222.222,185.184.222.222")
+    uci:set("https_dns_proxy", section, "url_prefix", "https://doh.dns.sb/dns-query?")
   elseif value:match("google") then
     uci:set("https_dns_proxy", section, "bootstrap_dns", "8.8.8.8,8.8.4.4")
     uci:set("https_dns_proxy", section, "url_prefix", "https://dns.google.com/resolve?")
