@@ -64,9 +64,10 @@ prov:value("https://doh.cleanbrowsing.org/doh/security-filter/?ct&", "CleanBrows
 prov:value("https://doh.cleanbrowsing.org/doh/family-filter/?ct&", "CleanBrowsing (Family Filter)")
 prov:value("https://doh.cleanbrowsing.org/doh/adult-filter/?ct&", "CleanBrowsing (Adult Filter)")
 prov:value("https://cloudflare-dns.com/dns-query?ct=application/dns-json&", "Cloudflare")
-prov:value("https://dns.digitale-gesellschaft.ch/dns-query?", "Digitale Gesellschaft (CH)")
+prov:value("https://dns.digitale-gesellschaft.ch/dns-query?", "Digitale Gesellschaft (ch)")
 prov:value("https://doh.dns.sb/dns-query?", "DNS.SB")
 prov:value("https://dns.google.com/resolve?", "Google")
+prov:value("https://odvr.nic.cz/doh?", "ODVR (nic.cz)")
 prov:value("https://dns.quad9.net:5053/dns-query?", "Quad9 (Recommended)")
 prov:value("https://dns9.quad9.net:5053/dns-query?", "Quad9 (Secured)")
 prov:value("https://dns10.quad9.net:5053/dns-query?", "Quad9 (Unsecured)")
@@ -113,6 +114,9 @@ prov.write = function(self, section, value)
   elseif value:match("google") then
     uci:set("https_dns_proxy", section, "bootstrap_dns", "8.8.8.8,8.8.4.4")
     uci:set("https_dns_proxy", section, "url_prefix", "https://dns.google.com/resolve?")
+  elseif value:match("odvr\.nic\.cz") then
+    uci:set("https_dns_proxy", section, "bootstrap_dns", "193.17.47.1,185.43.135.1")
+    uci:set("https_dns_proxy", section, "url_prefix", "https://odvr.nic.cz/doh?")
   elseif value:match("dns\.quad9") then
     uci:set("https_dns_proxy", section, "bootstrap_dns", "9.9.9.9,149.112.112.112")
     uci:set("https_dns_proxy", section, "url_prefix", "https://dns.quad9.net:5053/dns-query?")
