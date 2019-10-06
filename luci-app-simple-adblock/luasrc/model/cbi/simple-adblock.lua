@@ -78,9 +78,9 @@ if tmpfs and tmpfs['data'] then
 	end
 end
 
-h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status") .. tmpfsVersion)
+h = m:section(NamedSection, "config", "simple-adblock", translate("Service Control") .. tmpfsVersion)
 
-if tmpfsStatus and tmpfsStatus:match("ing") then
+if tmpfsStatus:match("ing") then
 	ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 	ss.template = "simple-adblock/status"
 	ss.value = tmpfsStatus .. '...'
@@ -126,7 +126,7 @@ else
 			reload.inputstyle = "apply important"
 			function reload.write()
 				sys.exec("/etc/init.d/simple-adblock reload")
-				http.redirect(dispatcher.build_url("admin/services/" .. packageName))
+				http.redirect(dispatcher.build_url("admin", "services", packageName))
 			end
 		end
 	end
@@ -140,12 +140,12 @@ else
 		uci:save(packageName)
 		uci:commit(packageName)
 		if enabledFlag == "0" then
-			luci.sys.init.stop(packageName)
+			sys.init.stop(packageName)
 		else
-			luci.sys.init.enable(packageName)
-			luci.sys.init.start(packageName)
+			sys.init.enable(packageName)
+			sys.init.start(packageName)
 		end
-		luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. packageName))
+		http.redirect(dispatcher.build_url("admin", "services", packageName))
 	end
 end
 
@@ -171,7 +171,7 @@ if nixio.fs.access(sysfs_path) then
 end
 if #leds ~= 0 then
 	o4 = s:taboption("basic", Value, "led", translate("LED to indicate status"), translate("Pick the LED not already used in")
-		.. [[ <a href="]] .. luci.dispatcher.build_url("admin/system/leds") .. [[">]]
+		.. [[ <a href="]] .. dispatcher.build_url("admin", "system", "leds") .. [[">]]
 		.. translate("System LED Configuration") .. [[</a>]] .. ".")
 	o4.rmempty = false
 	o4:value("", translate("none"))

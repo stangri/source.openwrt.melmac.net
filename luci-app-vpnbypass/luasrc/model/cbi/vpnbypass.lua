@@ -31,9 +31,9 @@ function en.write()
 		sys.init.start(packageName)
 	end
 	if dispatcher.lookup("admin/vpn") then
-		http.redirect(dispatcher.build_url("admin/vpn/" .. packageName))
+		http.redirect(dispatcher.build_url("admin", "vpn", packageName))
 	else
-		http.redirect(dispatcher.build_url("admin/services/" .. packageName))
+		http.redirect(dispatcher.build_url("admin", "services", packageName))
 	end
 end
 
