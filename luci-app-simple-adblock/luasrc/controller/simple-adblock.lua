@@ -20,7 +20,7 @@ function action_simple_adblock()
 	elseif luci.http.formvalue("dl") then
 		luci.util.exec("/etc/init.d/simple-adblock dl")
 	end
-	http.redirect(dispatcher.build_url("admin", "services", packageName))
+	luci.http.redirect(luci.dispatcher.build_url("admin", "services", packageName))
 end
 
 
