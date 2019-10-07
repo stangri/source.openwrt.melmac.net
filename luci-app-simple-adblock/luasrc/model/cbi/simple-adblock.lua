@@ -91,11 +91,10 @@ if tmpfsStatus:match("ing") then
 		sm.value = tmpfsMessage
 	end
 else
-	en = h:option(Button, "__toggle")
-	if enabledFlag ~= "1" or tmpfsStatus:match("Stopped") then
-		en.title      = translate("Service is disabled/stopped")
-		en.inputtitle = translate("Enable/Start")
-		en.inputstyle = "apply important"
+	if tmpfsStatus:match("Stopped") then
+		ss = h:option(DummyValue, "_dummy", translate("Service Status"))
+		ss.template = "simple-adblock/status"
+		ss.value = tmpfsStatus
 		if fs.access(outputCache) then
 			sm = h:option(DummyValue, "_dummy", translate("Info"))
 			sm.template = "simple-adblock/status"
@@ -106,9 +105,6 @@ else
 			sm.value = "Compressed cache file found."
 		end
 	else
-		en.title      = translate("Service is enabled/started")
-		en.inputtitle = translate("Stop/Disable")
-		en.inputstyle = "reset important"
 		ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 		ss.template = "simple-adblock/status"
 		ss.value = tmpfsStatus
@@ -121,33 +117,10 @@ else
 			es = h:option(DummyValue, "_dummy", translate("Collected Errors"))
 			es.template = "simple-adblock/status"
 			es.value = tmpfsError
-			reload = h:option(Button, "__reload")
-			reload.title      = translate("Service started with error")
-			reload.inputtitle = translate("Reload")
-			reload.inputstyle = "apply important"
-			function reload.write()
-				sys.exec("/etc/init.d/simple-adblock reload")
-				http.redirect(dispatcher.build_url("admin", "services", packageName))
-			end
 		end
 	end
-	function en.write()
-		if tmpfsStatus and tmpfsStatus:match("Stopped") then
-			enabledFlag = "1"
-		else
-			enabledFlag = enabledFlag == "1" and "0" or "1"
-		end
-		uci:set(packageName, "config", "enabled", enabledFlag)
-		uci:save(packageName)
-		uci:commit(packageName)
-		if enabledFlag == "0" then
-			sys.init.stop(packageName)
-		else
-			sys.init.enable(packageName)
-			sys.init.start(packageName)
-		end
-		http.redirect(dispatcher.build_url("admin", "services", packageName))
-	end
+	buttons = h:option(DummyValue, "_dummy")
+	buttons.template = "simple-adblock/buttons"
 end
 
 s = m:section(NamedSection, "config", "simple-adblock", translate("Configuration"))

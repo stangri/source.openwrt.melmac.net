@@ -1,0 +1,102 @@
+<%#
+  Copyright 2019 Stan Grishin <stangri@melmac.net>
+-%>
+
+<%-
+	local packageName = "simple-adblock"
+	local uci = require "luci.model.uci".cursor()
+	local util = require "luci.util"
+	local sys = require "luci.sys"
+	local jsonc = require "luci.jsonc"
+	local fs = require "nixio.fs"
+	local nutil = require "nixio.util"
+	local http = require "luci.http"
+	local dispatcher = require "luci.dispatcher"
+	local enabledFlag = uci:get(packageName, "config", "enabled")
+	local tmpfs
+	if fs.access("/var/run/" .. packageName .. ".json") then
+		tmpfs = jsonc.parse(util.trim(sys.exec("cat /var/run/" .. packageName .. ".json")))
+	end
+
+	local tmpfsVersion, tmpfsStatus, tmpfsMessage, tmpfsError, tmpfsStats = "", "Stopped"
+	if tmpfs and tmpfs['data'] then
+		if tmpfs['data']['status'] and tmpfs['data']['status'] ~= "" then
+			tmpfsStatus = tmpfs['data']['status']
+		end
+		if tmpfs['data']['message'] and tmpfs['data']['message'] ~= "" then
+			tmpfsMessage = tmpfs['data']['message']
+		end
+		if tmpfs['data']['error'] and tmpfs['data']['error'] ~= "" then
+			tmpfsError = tmpfs['data']['error']
+		end
+		if tmpfs['data']['stats'] and tmpfs['data']['stats'] ~= "" then
+			tmpfsStats = tmpfs['data']['stats']
+		end
+		if tmpfs['data']['version'] and tmpfs['data']['version'] ~= "" then
+			tmpfsVersion = " (" .. packageName .. " " .. tmpfs['data']['version'] .. ")"
+		end
+	end
+-%>
+
+<div class="cbi-value"><label class="cbi-value-title">Service Control</label>
+	<div class="cbi-value-field">
+		<form method="post" action="<%=url("admin/services/simple-adblock-action")%>">
+			<input type="hidden" name="token" value="<%=token%>" />
+			<%-
+				local style
+				if tmpfsStatus == "Stopped" then
+					style = "cbi-button cbi-button-apply important"
+				else
+					style = "cbi-button cbi-button-apply -disabled"
+				end
+			-%>
+			<input type="submit" class="<%=style%>" name="start" value="<%:Start%>" />
+			&nbsp;
+			<%-
+				local style
+				if tmpfsStatus == "Stopped" then
+					style = "cbi-button cbi-button-apply -disabled"
+				else
+					style = "cbi-button cbi-button-apply important"
+				end
+			-%>
+			<input type="submit" class="<%=style%>" name="dl" value="<%:Force Re-Download%>" />
+			&nbsp;
+			<%-
+				local style
+				if tmpfsStatus == "Stopped" then
+					style = "cbi-button cbi-button-reset -disabled"
+				else
+					style = "cbi-button cbi-button-reset important"
+				end
+			-%>
+			<input type="submit" class="<%=style%>" name="stop" value="<%:Stop%>" />
+			&nbsp;
+			&nbsp;
+			&nbsp;
+			&nbsp;
+			&nbsp;
+			&nbsp;
+			<%-
+				local style
+				if enabledFlag ~= "1" then
+					style = "cbi-button cbi-button-apply important"
+				else
+					style = "cbi-button cbi-button-apply -disabled"
+				end
+			-%>
+			<input type="submit" class="<%=style%>" name="enable" value="<%:Enable%>" />
+			&nbsp;
+			<%-
+				local style
+				if enabledFlag ~= "1" then
+					style = "cbi-button cbi-button-reset -disabled"
+				else
+					style = "cbi-button cbi-button-reset important"
+				end
+			-%>
+			<input type="submit" class="<%=style%>" name="disable" value="<%:Disable%>" />
+			&nbsp;
+		</form>
+	</div>
+</div>
