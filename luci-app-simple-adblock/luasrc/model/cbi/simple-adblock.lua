@@ -75,7 +75,7 @@ if tmpfs and tmpfs['data'] then
 		tmpfsStats = tmpfs['data']['stats']
 	end
 	if tmpfs['data']['version'] and tmpfs['data']['version'] ~= "" then
-		tmpfsVersion = " (" .. packageName .. " " .. tmpfs['data']['version'] .. ")"
+		tmpfsVersion = " [" .. packageName .. " " .. tmpfs['data']['version'] .. "]"
 	end
 end
 

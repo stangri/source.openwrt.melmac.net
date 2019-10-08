@@ -13,7 +13,7 @@
 	local http = require "luci.http"
 	local dispatcher = require "luci.dispatcher"
 	local enabledFlag = uci:get(packageName, "config", "enabled")
-	local tmpfs
+	local tmpfs style
 	if fs.access("/var/run/" .. packageName .. ".json") then
 		tmpfs = jsonc.parse(util.trim(sys.exec("cat /var/run/" .. packageName .. ".json")))
 	end
@@ -43,7 +43,6 @@
 		<form method="post" action="<%=url("admin/services/simple-adblock-action")%>">
 			<input type="hidden" name="token" value="<%=token%>" />
 			<%-
-				local style
 				if tmpfsStatus == "Stopped" then
 					style = "cbi-button cbi-button-apply important"
 				else
@@ -53,7 +52,6 @@
 			<input type="submit" class="<%=style%>" name="start" value="<%:Start%>" />
 			&nbsp;
 			<%-
-				local style
 				if tmpfsStatus == "Stopped" then
 					style = "cbi-button cbi-button-apply -disabled"
 				else
@@ -63,7 +61,6 @@
 			<input type="submit" class="<%=style%>" name="dl" value="<%:Force Re-Download%>" />
 			&nbsp;
 			<%-
-				local style
 				if tmpfsStatus == "Stopped" then
 					style = "cbi-button cbi-button-reset -disabled"
 				else
@@ -78,7 +75,6 @@
 			&nbsp;
 			&nbsp;
 			<%-
-				local style
 				if enabledFlag ~= "1" then
 					style = "cbi-button cbi-button-apply important"
 				else
@@ -88,7 +84,6 @@
 			<input type="submit" class="<%=style%>" name="enable" value="<%:Enable%>" />
 			&nbsp;
 			<%-
-				local style
 				if enabledFlag ~= "1" then
 					style = "cbi-button cbi-button-reset -disabled"
 				else

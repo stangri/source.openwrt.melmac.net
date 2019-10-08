@@ -22,5 +22,3 @@ function action_simple_adblock()
 	end
 	luci.http.redirect(luci.dispatcher.build_url("admin", "services", packageName))
 end
-
-
