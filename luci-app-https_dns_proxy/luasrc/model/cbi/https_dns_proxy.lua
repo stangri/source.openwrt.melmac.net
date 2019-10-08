@@ -44,35 +44,37 @@ m.template="cbi/map"
 
 s3 = m:section(TypedSection, "https_dns_proxy", translate("Instances"), translate("When you add/remove any instances below, they will be used to override the 'DNS forwardings' section of ")
 		.. [[ <a href="]] .. dispatcher.build_url("admin/network/dhcp") .. [[">]]
-    .. translate("DHCP and DNS") .. [[</a>]] .. ".</br>"
-    .. translate("For more information on different options check ")
-		.. [[ <a href="https://adguard.com/en/adguard-dns/overview.html#instruction">]]
-    .. "AdGuard.com" .. [[</a>]] .. ", "
-		.. [[ <a href="https://cleanbrowsing.org/guides/dnsoverhttps">]]
-    .. "CleanBrowsing.org" .. [[</a>]] .. " " .. translate("and") .. " "
-		.. [[ <a href="https://www.quad9.net/doh-quad9-dns-servers/">]]
-    .. "Quad9.net" .. [[</a>]] .. ".")
+    .. translate("DHCP and DNS") .. [[</a>]] .. "."
+--    .. "</br>"
+--    .. translate("For more information on different options check ")
+--		.. [[ <a href="https://adguard.com/en/adguard-dns/overview.html#instruction">]]
+--    .. "AdGuard.com" .. [[</a>]] .. ", "
+--		.. [[ <a href="https://cleanbrowsing.org/guides/dnsoverhttps">]]
+--    .. "CleanBrowsing.org" .. [[</a>]] .. " " .. translate("and") .. " "
+--		.. [[ <a href="https://www.quad9.net/doh-quad9-dns-servers/">]]
+--    .. "Quad9.net" .. [[</a>]] .. "."
+    )
 s3.template = "cbi/tblsection"
 s3.sortable  = false
 s3.anonymous = true
 s3.addremove = true
 
 prov = s3:option(ListValue, "url_prefix", translate("Provider"))
-prov:value("https://dns.adguard.com/dns-query?", "AdGuard (Standard)")
-prov:value("https://dns-family.adguard.com/dns-query?", "AdGuard (Family Protection)")
-prov:value("https://doh.cleanbrowsing.org/doh/security-filter/?ct&", "CleanBrowsing (Security Filter)")
-prov:value("https://doh.cleanbrowsing.org/doh/family-filter/?ct&", "CleanBrowsing (Family Filter)")
-prov:value("https://doh.cleanbrowsing.org/doh/adult-filter/?ct&", "CleanBrowsing (Adult Filter)")
+-- prov:value("https://dns.adguard.com/dns-query?", "AdGuard (Standard)")
+-- prov:value("https://dns-family.adguard.com/dns-query?", "AdGuard (Family Protection)")
+-- prov:value("https://doh.cleanbrowsing.org/doh/security-filter/?ct&", "CleanBrowsing (Security Filter)")
+-- prov:value("https://doh.cleanbrowsing.org/doh/family-filter/?ct&", "CleanBrowsing (Family Filter)")
+-- prov:value("https://doh.cleanbrowsing.org/doh/adult-filter/?ct&", "CleanBrowsing (Adult Filter)")
 prov:value("https://cloudflare-dns.com/dns-query?ct=application/dns-json&", "Cloudflare")
-prov:value("https://dns.digitale-gesellschaft.ch/dns-query?", "Digitale Gesellschaft (ch)")
+-- prov:value("https://dns.digitale-gesellschaft.ch/dns-query?", "Digitale Gesellschaft (ch)")
 prov:value("https://doh.dns.sb/dns-query?", "DNS.SB")
 prov:value("https://dns.google.com/resolve?", "Google")
-prov:value("https://odvr.nic.cz/doh?", "ODVR (nic.cz)")
-prov:value("https://dns.quad9.net:5053/dns-query?", "Quad9 (Recommended)")
-prov:value("https://dns9.quad9.net:5053/dns-query?", "Quad9 (Secured)")
-prov:value("https://dns10.quad9.net:5053/dns-query?", "Quad9 (Unsecured)")
-prov:value("https://dns11.quad9.net:5053/dns-query?", "Quad9 (Secured with ECS Support)")
-prov.default = "google"
+-- prov:value("https://odvr.nic.cz/doh?", "ODVR (nic.cz)")
+-- prov:value("https://dns.quad9.net:5053/dns-query?", "Quad9 (Recommended)")
+-- prov:value("https://dns9.quad9.net:5053/dns-query?", "Quad9 (Secured)")
+-- prov:value("https://dns10.quad9.net:5053/dns-query?", "Quad9 (Unsecured)")
+-- prov:value("https://dns11.quad9.net:5053/dns-query?", "Quad9 (Secured with ECS Support)")
+prov.default = "https://dns.google.com/resolve?"
 prov.forcewrite = true
 prov.write = function(self, section, value)
   if not value then return end
@@ -157,7 +159,7 @@ lp.datatype = "port"
 lp.value    = n + 5053
 
 sa = s3:option(Value, "subnet_addr", translate("Subnet address"))
-sa.datatype = "ip4prefix"
+sa.datatype = "host"
 sa.rmempty  = true
 
 ps = s3:option(Value, "proxy_server", translate("Proxy server"))
