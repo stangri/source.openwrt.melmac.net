@@ -13,7 +13,9 @@ local ip = require "luci.ip"
 local fs = require "nixio.fs"
 local jsonc = require "luci.jsonc"
 local http = require "luci.http"
+local nutil = require "nixio.util"
 local dispatcher = require "luci.dispatcher"
+local enabledFlag = uci:get(packageName, "config", "enabled")
 local enc
 
 local t = uci:get("vpn-policy-routing", "config", "supported_interface")
@@ -93,57 +95,35 @@ if tmpfs and tmpfs['data'] then
 		tmpfsStatus = tmpfsStatus:gsub('\\033[^ ]*', '✓')
 	end
 	if tmpfs['data']['version'] and tmpfs['data']['version'] ~= "" then
-		tmpfsVersion = " (" .. packageName .. " " .. tmpfs['data']['version'] .. ")"
+		tmpfsVersion = " [" .. packageName .. " " .. tmpfs['data']['version'] .. "]"
 	end
 end
 
 m = Map("vpn-policy-routing", translate("VPN and WAN Policy-Based Routing"))
-st = m:section(NamedSection, "config", "vpn-policy-routing", translate("Service Status") .. tmpfsVersion)
-local packageName = "vpn-policy-routing"
-local enabledFlag = uci:get(packageName, "config", "enabled")
-en = st:option(Button, "__toggle")
-if enabledFlag ~= "1" or tmpfsStatus:match("Stopped") then
-	en.title      = translate("Service is disabled/stopped")
-	en.inputtitle = translate("Enable/Start")
-	en.inputstyle = "apply important"
+
+h = m:section(NamedSection, "config", packageName .. "", translate("Service Status") .. tmpfsVersion)
+
+if tmpfsStatus:match("ing") then
+	ss = h:option(DummyValue, "_dummy", translate("Service Status"))
+	ss.template = packageName .. "/status"
+	ss.value = tmpfsStatus .. '...'
+	if tmpfsMessage then
+		sm = h:option(DummyValue, "_dummy", translate("Task"))
+		sm.template = packageName .. "/status"
+		sm.value = tmpfsMessage
+	end
 else
-	en.title      = translate("Service is enabled/started")
-	en.inputtitle = translate("Stop/Disable")
-	en.inputstyle = "reset important"
-	ds = st:option(DummyValue, "_dummy", translate("Service Status"))
-	ds.template = "vpn-policy-routing/status"
-	ds.value = tmpfsStatus
-	if not tmpfsStatus:match("Success") then
-		reload = st:option(Button, "__reload")
-		reload.title      = translate("Service started with error(s)")
-		reload.inputtitle = translate("Reload")
-		reload.inputstyle = "apply important"
-		function reload.write()
-			sys.exec("/etc/init.d/vpn-policy-routing reload")
-			if dispatcher.lookup("admin/vpn") then
-				http.redirect(dispatcher.build_url("admin", "vpn", packageName))
-			else
-				http.redirect(dispatcher.build_url("admin", "services", packageName))
-			end
-		end
-	end
-end
-function en.write()
-	enabledFlag = enabledFlag == "1" and "0" or "1"
-	uci:set(packageName, "config", "enabled", enabledFlag)
-	uci:save(packageName)
-	uci:commit(packageName)
-	if enabledFlag == "0" then
-		sys.init.stop(packageName)
+	if tmpfsStatus:match("Stopped") then
+		ss = h:option(DummyValue, "_dummy", translate("Service Status"))
+		ss.template = packageName .. "/status"
+		ss.value = tmpfsStatus
 	else
-		sys.init.enable(packageName)
-		sys.init.start(packageName)
+		ss = h:option(DummyValue, "_dummy", translate("Service Status"))
+		ss.template = packageName .. "/status"
+		ss.value = tmpfsStatus
 	end
-	if dispatcher.lookup("admin/vpn") then
-		http.redirect(dispatcher.build_url("admin", "vpn", packageName))
-	else
-		http.redirect(dispatcher.build_url("admin", "services", packageName))
-	end
+	buttons = h:option(DummyValue, "_dummy")
+	buttons.template = packageName .. "/buttons"
 end
 
 -- General Options
