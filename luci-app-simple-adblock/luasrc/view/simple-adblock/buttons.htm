@@ -4,18 +4,9 @@
 
 <%-
 	local packageName = "simple-adblock"
-	local uci = require "luci.model.uci".cursor()
-	local util = require "luci.util"
-	local sys = require "luci.sys"
-	local jsonc = require "luci.jsonc"
-	local fs = require "nixio.fs"
-	local nutil = require "nixio.util"
-	local http = require "luci.http"
-	local dispatcher = require "luci.dispatcher"
-	local enabledFlag = uci:get(packageName, "config", "enabled")
-	local tmpfs style
-	if fs.access("/var/run/" .. packageName .. ".json") then
-		tmpfs = jsonc.parse(util.trim(sys.exec("cat /var/run/" .. packageName .. ".json")))
+	local enabledFlag = luci.model.uci.cursor():get(packageName, "config", "enabled")
+	if nixio.fs.access("/var/run/" .. packageName .. ".json") then
+		tmpfs = luci.jsonc.parse(luci.util.trim(luci.sys.exec("cat /var/run/" .. packageName .. ".json")))
 	end
 
 	local tmpfsVersion, tmpfsStatus, tmpfsMessage, tmpfsError, tmpfsStats = "", "Stopped"
@@ -40,58 +31,60 @@
 
 <div class="cbi-value"><label class="cbi-value-title">Service Control</label>
 	<div class="cbi-value-field">
-		<form method="post" action="<%=url("admin/services/simple-adblock-action")%>">
-			<input type="hidden" name="token" value="<%=token%>" />
-			<%-
+		<%-
 				if tmpfsStatus == "Stopped" then
 					style = "cbi-button cbi-button-apply important"
 				else
 					style = "cbi-button cbi-button-apply -disabled"
 				end
 			-%>
-			<input type="submit" class="<%=style%>" name="start" value="<%:Start%>" />
-			&nbsp;
-			<%-
+		<input type="button" class="<%=style%>" value="<%:Start%>"
+			onclick="(new XHR()).post('<%=url("admin/services/" ..  packageName .. "-action")%>', { token: '<%= token %>', start: true }, function() { location.reload() })" />
+		&nbsp;
+		<%-
 				if tmpfsStatus == "Stopped" then
 					style = "cbi-button cbi-button-apply -disabled"
 				else
 					style = "cbi-button cbi-button-apply important"
 				end
 			-%>
-			<input type="submit" class="<%=style%>" name="dl" value="<%:Force Re-Download%>" />
-			&nbsp;
-			<%-
+		<input type="button" class="<%=style%>" value="<%:Force Re-Download%>"
+			onclick="(new XHR()).post('<%=url("admin/services/" ..  packageName .. "-action")%>', { token: '<%= token %>', dl: true }, function() { location.reload() })" />
+		&nbsp;
+		<%-
 				if tmpfsStatus == "Stopped" then
 					style = "cbi-button cbi-button-reset -disabled"
 				else
 					style = "cbi-button cbi-button-reset important"
 				end
 			-%>
-			<input type="submit" class="<%=style%>" name="stop" value="<%:Stop%>" />
-			&nbsp;
-			&nbsp;
-			&nbsp;
-			&nbsp;
-			&nbsp;
-			&nbsp;
-			<%-
+		<input type="button" class="<%=style%>" value="<%:Stop%>"
+			onclick="(new XHR()).post('<%=url("admin/services/" ..  packageName .. "-action")%>', { token: '<%= token %>', stop: true }, function() { location.reload() })" />
+		&nbsp;
+		&nbsp;
+		&nbsp;
+		&nbsp;
+		&nbsp;
+		&nbsp;
+		<%-
 				if enabledFlag ~= "1" then
 					style = "cbi-button cbi-button-apply important"
 				else
 					style = "cbi-button cbi-button-apply -disabled"
 				end
 			-%>
-			<input type="submit" class="<%=style%>" name="enable" value="<%:Enable%>" />
-			&nbsp;
-			<%-
+		<input type="button" class="<%=style%>" value="<%:Enable%>"
+			onclick="(new XHR()).post('<%=url("admin/services/" ..  packageName .. "-action")%>', { token: '<%= token %>', enable: true }, function() { location.reload() })" />
+		&nbsp;
+		<%-
 				if enabledFlag ~= "1" then
 					style = "cbi-button cbi-button-reset -disabled"
 				else
 					style = "cbi-button cbi-button-reset important"
 				end
 			-%>
-			<input type="submit" class="<%=style%>" name="disable" value="<%:Disable%>" />
-			&nbsp;
-		</form>
+		<input type="button" class="<%=style%>" value="<%:Disable%>"
+			onclick="(new XHR()).post('<%=url("admin/services/" ..  packageName .. "-action")%>', { token: '<%= token %>', disable: true }, function() { location.reload() })" />
+		&nbsp;
 	</div>
 </div>

@@ -14,11 +14,10 @@ function action_simple_adblock()
 	elseif luci.http.formvalue("stop") then
 		luci.sys.init.stop(packageName)
 	elseif luci.http.formvalue("enable") then
-		luci.sys.init.enable(packageName)
+		luci.util.exec("uci set " .. packageName .. ".config.enabled=1; uci commit " .. packageName)
 	elseif luci.http.formvalue("disable") then
-		luci.sys.init.disable(packageName)
+		luci.util.exec("uci set " .. packageName .. ".config.enabled=0; uci commit " .. packageName)
 	elseif luci.http.formvalue("dl") then
-		luci.util.exec("/etc/init.d/simple-adblock dl")
+		luci.util.exec("/etc/init.d/" .. packageName .. " dl")
 	end
-	luci.http.redirect(luci.dispatcher.build_url("admin", "services", packageName))
 end
