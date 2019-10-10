@@ -1,10 +1,9 @@
 module("luci.controller.simple-adblock", package.seeall)
 function index()
-	if not nixio.fs.access("/etc/config/simple-adblock") then
-		return
+	if nixio.fs.access("/etc/config/simple-adblock") then
+		entry({"admin", "services", "simple-adblock"}, cbi("simple-adblock"), _("Simple AdBlock"))
+		entry({"admin", "services", "simple-adblock-action"}, post("action_simple_adblock")).leaf = true
 	end
-	entry({"admin", "services", "simple-adblock"}, cbi("simple-adblock"), _("Simple AdBlock"))
-	entry({"admin", "services", "simple-adblock-action"}, post("action_simple_adblock")).leaf = true
 end
 
 function action_simple_adblock()
