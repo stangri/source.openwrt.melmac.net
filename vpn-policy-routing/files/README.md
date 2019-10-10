@@ -767,6 +767,9 @@ Please head to [OpenWrt Forum](https://forum.openwrt.org/t/vpn-policy-based-rout
 
 If things are not working as intended, please include the following in your post:
 
+- content of ```/etc/config/dhcp```
+- content of ```/etc/config/firewall```
+- content of ```/etc/config/network```
 - content of ```/etc/config/vpn-policy-routing```
 - the output of ```/etc/init.d/vpn-policy-routing support```
 - the output of ```/etc/init.d/vpn-policy-routing reload``` with verbosity setting set to 2
