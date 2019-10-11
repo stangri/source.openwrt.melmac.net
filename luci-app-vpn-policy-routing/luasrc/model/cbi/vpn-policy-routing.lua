@@ -266,7 +266,7 @@ end
 la.rmempty = true
 
 lp = p:option(Value, "local_port", translate("Local ports"))
-lp.datatype    = "list(neg(portrange))"
+lp.datatype    = "list(neg(or(portrange, ',')))"
 lp.placeholder = "0-65535"
 lp.rmempty = true
 
@@ -275,7 +275,7 @@ ra.placeholder = "0.0.0.0/0"
 ra.rmempty = true
 
 rp = p:option(Value, "remote_port", translate("Remote ports"))
-rp.datatype    = "list(neg(portrange))"
+rp.datatype    = "list(neg(or(portrange, ',')))"
 rp.placeholder = "0-65535"
 rp.rmempty = true
 
