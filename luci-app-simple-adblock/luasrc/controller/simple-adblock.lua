@@ -2,21 +2,23 @@ module("luci.controller.simple-adblock", package.seeall)
 function index()
 	if nixio.fs.access("/etc/config/simple-adblock") then
 		entry({"admin", "services", "simple-adblock"}, cbi("simple-adblock"), _("Simple AdBlock"))
-		entry({"admin", "services", "simple-adblock-action"}, post("action_simple_adblock")).leaf = true
+		entry({"admin", "services", "simple-adblock", "action"}, call("simple_adblock_action"), nil).leaf = true
 	end
 end
 
-function action_simple_adblock()
+function simple_adblock_action(name)
 	local packageName = "simple-adblock"
-	if luci.http.formvalue("start") then
+	if name == "start" then
 		luci.sys.init.start(packageName)
-	elseif luci.http.formvalue("stop") then
+	elseif name == "action" then
+		luci.util.exec("/etc/init.d/" .. packageName .. " dl >/dev/null 2>&1")
+	elseif name == "stop" then
 		luci.sys.init.stop(packageName)
-	elseif luci.http.formvalue("enable") then
+	elseif name == "enable" then
 		luci.util.exec("uci set " .. packageName .. ".config.enabled=1; uci commit " .. packageName)
-	elseif luci.http.formvalue("disable") then
+	elseif name == "disable" then
 		luci.util.exec("uci set " .. packageName .. ".config.enabled=0; uci commit " .. packageName)
-	elseif luci.http.formvalue("dl") then
-		luci.util.exec("/etc/init.d/" .. packageName .. " dl")
 	end
+	luci.http.prepare_content("text/plain")
+	luci.http.write("0")
 end
