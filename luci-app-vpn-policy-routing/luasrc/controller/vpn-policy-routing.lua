@@ -6,21 +6,23 @@ function index()
 		else
 			entry({"admin", "services", "vpn-policy-routing"}, cbi("vpn-policy-routing"), _("VPN Policy Routing"))
 		end
-	entry({"admin", "services", "vpn-policy-routing-action"}, post("action_vpn_policy_routing")).leaf = true
+		entry({"admin", "services", "vpn-policy-routing", "action"}, call("vpn_policy_routing_action"), nil).leaf = true
 	end
 end
 
-function action_vpn_policy_routing()
+function vpn_policy_routing_action(name)
 	local packageName = "vpn-policy-routing"
-	if luci.http.formvalue("start") then
+	if name == "start" then
 		luci.sys.init.start(packageName)
-	elseif luci.http.formvalue("stop") then
+	elseif name == "action" then
+		luci.util.exec("/etc/init.d/" .. packageName .. " reload >/dev/null 2>&1")
+	elseif name == "stop" then
 		luci.sys.init.stop(packageName)
-	elseif luci.http.formvalue("enable") then
+	elseif name == "enable" then
 		luci.util.exec("uci set " .. packageName .. ".config.enabled=1; uci commit " .. packageName)
-	elseif luci.http.formvalue("disable") then
+	elseif name == "disable" then
 		luci.util.exec("uci set " .. packageName .. ".config.enabled=0; uci commit " .. packageName)
-	elseif luci.http.formvalue("reload") then
-		luci.util.exec("/etc/init.d/" .. packageName .. " reload")
 	end
+	luci.http.prepare_content("text/plain")
+	luci.http.write("0")
 end

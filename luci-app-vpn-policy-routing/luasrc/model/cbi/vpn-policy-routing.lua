@@ -107,21 +107,14 @@ if tmpfsStatus:match("ing") then
 	ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 	ss.template = packageName .. "/status"
 	ss.value = tmpfsStatus .. '...'
-	if tmpfsMessage then
-		sm = h:option(DummyValue, "_dummy", translate("Task"))
-		sm.template = packageName .. "/status"
-		sm.value = tmpfsMessage
-	end
 else
+	ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 	if tmpfsStatus:match("Stopped") then
-		ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 		ss.template = packageName .. "/status"
-		ss.value = tmpfsStatus
 	else
-		ss = h:option(DummyValue, "_dummy", translate("Service Status"))
-		ss.template = packageName .. "/status"
-		ss.value = tmpfsStatus
+		ss.template = packageName .. "/status-textarea"
 	end
+	ss.value = tmpfsStatus
 	buttons = h:option(DummyValue, "_dummy")
 	buttons.template = packageName .. "/buttons"
 end
