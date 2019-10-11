@@ -118,7 +118,7 @@ else
 		end
 		if tmpfsError then
 			es = h:option(DummyValue, "_dummy", translate("Collected Errors"))
-			es.template = "simple-adblock/status"
+			es.template = "simple-adblock/error"
 			es.value = tmpfsError
 			reload = h:option(Button, "__reload")
 			reload.title      = translate("Service started with error")
