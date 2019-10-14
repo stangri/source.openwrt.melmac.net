@@ -1019,22 +1019,22 @@ validate_config() {
 		'enabled:bool:0' \
 		'verbosity:range(0,2):1' \
 		'strict_enforcement:bool:1' \
-		'dest_ipset:string' \
 		'src_ipset:bool:0' \
-		'dest_ipset:bool:1' \
+		'dest_ipset:string' \
 		'ipv6_enabled:bool:0' \
-		'supported_interfaces:list(string)' \
-		'ignored_interfaces:list(string)' \
+		'supported_interface:list(string)' \
+		'ignored_interface:list(string)' \
 		'boot_timeout:integer:30' \
-		'iptables_rule_option:or("", "insert")' \
+		'iptables_rule_option:or("", "append", "insert")' \
 		'iprule_enabled:bool:0' \
-		'enable_control:bool:0' \
-		'proto_control:bool:0' \
-		'chain_control:bool:0' \
+		'webui_enable_column:bool:0' \
+		'webui_protocol_column:bool:0' \
+		'webui_supported_protocol:list(string)' \
+		'webui_chain_column:bool:0' \
 		'icmp_interface:string' \
 		'wan_tid:integer:201' \
-		'wan_fw_mark:string' \
-		'fw_mask:string'
+		'wan_fw_mark:hex' \
+		'fw_mask:hex'
 }
 
 # shellcheck disable=SC2120
@@ -1042,13 +1042,13 @@ validate_policy() {
 	uci_validate_section "${packageName}" policy "${1}" \
 		'name:string' \
 		'enabled:bool:0' \
-		'interface:string' \
+		'interface:network' \
 		'proto:or(string)' \
-		'chain:or("PREROUTING", "FORWARD", "INPUT", "OUTPUT")' \
-		'src_addr:list(or(string,cidr4,cidr6,macaddr,host,hostname,network))' \
-		'src_port:list(or(port,portrange))' \
-		'dest_addr:list(or(string,cidr4,cidr6,host,hostname))' \
-		'dest_port:list(or(port,portrange))'
+		'chain:or("", "PREROUTING", "FORWARD", "INPUT", "OUTPUT")' \
+		'src_addr:list(neg(or(host,network,macaddr)))' \
+		'src_port:list(neg(or(portrange, string)))' \
+		'dest_addr:list(neg(host))' \
+		'dest_port:list(neg(or(portrange, string)))'
 }
 
 # shellcheck disable=SC2120

@@ -204,14 +204,17 @@ append_remote.rmempty = true
 wantid = config:taboption("advanced", Value, "wan_tid", translate("WAN Table ID"), translate("Starting (WAN) Table ID number for tables created by the service."))
 wantid.rmempty = true
 wantid.placeholder = "201"
+wantid.datatype    = 'and(uinteger, min(201))'
 
 wanmark = config:taboption("advanced", Value, "wan_mark", translate("WAN Table FW Mark"), translate("Starting (WAN) FW Mark for marks used by the service. High starting mark is used to avoid conflict with SQM/QoS. Change with caution together with") .. " " .. translate("Service FW Mask") .. ".")
 wanmark.rmempty = true
 wanmark.placeholder = "0x010000"
+wanmark.datatype    = 'and(hex, min(0x010000))'
 
 fwmask = config:taboption("advanced", Value, "fw_mask", translate("Service FW Mask"), translate("FW Mask used by the service. High mask is used to avoid conflict with SQM/QoS. Change with caution together with") .. " " .. translate("WAN Table FW Mark") .. ".")
 fwmask.rmempty = true
 fwmask.placeholder = "0xff0000"
+fwmask.datatype    = 'and(hex, min(0xff0000))'
 
 config:tab("webui", translate("Web UI Configuration"))
 
@@ -272,7 +275,7 @@ lp.placeholder = "0-65535"
 lp.rmempty = true
 
 ra = p:option(Value, "dest_addr", translate("Remote addresses / domains"))
-ra.datatype    = 'list(host)'
+ra.datatype    = 'list(neg(host))'
 ra.placeholder = "0.0.0.0/0"
 ra.rmempty = true
 
