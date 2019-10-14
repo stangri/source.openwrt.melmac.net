@@ -209,12 +209,12 @@ wantid.datatype    = 'and(uinteger, min(201))'
 wanmark = config:taboption("advanced", Value, "wan_mark", translate("WAN Table FW Mark"), translate("Starting (WAN) FW Mark for marks used by the service. High starting mark is used to avoid conflict with SQM/QoS. Change with caution together with") .. " " .. translate("Service FW Mask") .. ".")
 wanmark.rmempty = true
 wanmark.placeholder = "0x010000"
-wanmark.datatype    = 'and(hex, min(0x010000))'
+wanmark.datatype    = "hex(8)"
 
 fwmask = config:taboption("advanced", Value, "fw_mask", translate("Service FW Mask"), translate("FW Mask used by the service. High mask is used to avoid conflict with SQM/QoS. Change with caution together with") .. " " .. translate("WAN Table FW Mark") .. ".")
 fwmask.rmempty = true
 fwmask.placeholder = "0xff0000"
-fwmask.datatype    = 'and(hex, min(0xff0000))'
+fwmask.datatype    = "hex(8)"
 
 config:tab("webui", translate("Web UI Configuration"))
 

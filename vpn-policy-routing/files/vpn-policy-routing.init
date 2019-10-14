@@ -1033,8 +1033,8 @@ validate_config() {
 		'webui_chain_column:bool:0' \
 		'icmp_interface:string' \
 		'wan_tid:integer:201' \
-		'wan_fw_mark:hex' \
-		'fw_mask:hex'
+		'wan_fw_mark:hex(8)' \
+		'fw_mask:hex(8)'
 }
 
 # shellcheck disable=SC2120
