@@ -92,7 +92,7 @@ local tmpfsVersion, tmpfsStatus = "", "Stopped"
 if tmpfs and tmpfs['data'] then
 	if tmpfs['data']['status'] and tmpfs['data']['status'] ~= "" then
 		tmpfsStatus = tmpfs['data']['status']
-		tmpfsStatus = tmpfsStatus:gsub('\\033[^ ]*', ' ✓')
+		tmpfsStatus = tmpfsStatus:gsub('\\033[^ ]*', '&nbsp;✓')
 	end
 	if tmpfs['data']['version'] and tmpfs['data']['version'] ~= "" then
 		tmpfsVersion = " [" .. packageName .. " " .. tmpfs['data']['version'] .. "]"
