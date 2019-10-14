@@ -92,7 +92,7 @@ local tmpfsVersion, tmpfsStatus = "", "Stopped"
 if tmpfs and tmpfs['data'] then
 	if tmpfs['data']['status'] and tmpfs['data']['status'] ~= "" then
 		tmpfsStatus = tmpfs['data']['status']
-		tmpfsStatus = tmpfsStatus:gsub('\\033[^ ]*', '✓')
+		tmpfsStatus = tmpfsStatus:gsub('\\033[^ ]*', 'âœ“')
 	end
 	if tmpfs['data']['version'] and tmpfs['data']['version'] ~= "" then
 		tmpfsVersion = " [" .. packageName .. " " .. tmpfs['data']['version'] .. "]"
@@ -140,22 +140,22 @@ se:value("0", translate("Do not enforce policies when their gateway is down"))
 se:value("1", translate("Strictly enforce policies when their gateway is down"))
 se.default = 1
 
-remote_ipset = config:taboption("basic", ListValue, "remote_ipset", translate("The ipset option for remote policies"),
+dest_ipset = config:taboption("basic", ListValue, "dest_ipset", translate("The ipset option for remote policies"),
 	translate("Please check the") .. " "
   .. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]]
   .. translate("README") .. [[</a>]] .. " " .. translate("before changing this option."))
-remote_ipset:value("", translate("Disabled"))
-remote_ipset:value("ipset", translate("Use ipset command"))
-remote_ipset:value("dnsmasq.ipset", translate("Use DNSMASQ ipset"))
-remote_ipset.default = ""
-remote_ipset.rmempty = true
+dest_ipset:value("", translate("Disabled"))
+dest_ipset:value("ipset", translate("Use ipset command"))
+dest_ipset:value("dnsmasq.ipset", translate("Use DNSMASQ ipset"))
+dest_ipset.default = ""
+dest_ipset.rmempty = true
 
-local_ipset = config:taboption("basic", ListValue, "local_ipset", translate("The ipset option for local policies"),
+src_ipset = config:taboption("basic", ListValue, "src_ipset", translate("The ipset option for local policies"),
 	translate("Please check the") .. " "
   .. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]]
   .. translate("README") .. [[</a>]] .. " " .. translate("before changing this option."))
-local_ipset:value("0", translate("Disabled"))
-local_ipset:value("1", translate("Use ipset command"))
+src_ipset:value("0", translate("Disabled"))
+src_ipset:value("1", translate("Use ipset command"))
 
 ipv6 = config:taboption("basic", ListValue, "ipv6_enabled", translate("IPv6 Support"))
 ipv6:value("0", translate("Disabled"))
@@ -195,10 +195,10 @@ uci:foreach("network", "interface", function(s)
 end)
 icmp.rmempty = true
 
-append_local = config:taboption("advanced", Value, "append_local_rules", translate("Append local IP Tables rules"), translate("Special instructions to append iptables rules for local IPs/netmasks/devices."))
+append_local = config:taboption("advanced", Value, "append_src_rules", translate("Append local IP Tables rules"), translate("Special instructions to append iptables rules for local IPs/netmasks/devices."))
 append_local.rmempty = true
 
-append_remote = config:taboption("advanced", Value, "append_remote_rules", translate("Append remote IP Tables rules"), translate("Special instructions to append iptables rules for remote IPs/netmasks."))
+append_remote = config:taboption("advanced", Value, "append_dest_rules", translate("Append remote IP Tables rules"), translate("Special instructions to append iptables rules for remote IPs/netmasks."))
 append_remote.rmempty = true
 
 wantid = config:taboption("advanced", Value, "wan_tid", translate("WAN Table ID"), translate("Starting (WAN) Table ID number for tables created by the service."))
@@ -259,23 +259,25 @@ else
 	p:option(Value, "name", translate("Name"))
 end
 
-la = p:option(Value, "local_address", translate("Local addresses / devices"))
+la = p:option(Value, "src_addr", translate("Local addresses / devices"))
 if laPlaceholder then
 	la.placeholder = laPlaceholder
 end
 la.rmempty = true
+la.datatype    = 'list(neg(or(host,network,macaddr)))'
 
-lp = p:option(Value, "local_port", translate("Local ports"))
-lp.datatype    = "list(neg(or(portrange, ',')))"
+lp = p:option(Value, "src_port", translate("Local ports"))
+lp.datatype    = 'list(neg(or(portrange, string)))'
 lp.placeholder = "0-65535"
 lp.rmempty = true
 
-ra = p:option(Value, "remote_address", translate("Remote addresses / domains"))
+ra = p:option(Value, "dest_addr", translate("Remote addresses / domains"))
+ra.datatype    = 'list(host)'
 ra.placeholder = "0.0.0.0/0"
 ra.rmempty = true
 
-rp = p:option(Value, "remote_port", translate("Remote ports"))
-rp.datatype    = "list(neg(or(portrange, ',')))"
+rp = p:option(Value, "dest_port", translate("Remote ports"))
+rp.datatype    = 'list(neg(or(portrange, string)))'
 rp.placeholder = "0-65535"
 rp.rmempty = true
 
@@ -311,7 +313,7 @@ if enc and enc ~= 0 then
 end
 
 gw = p:option(ListValue, "interface", translate("Interface"))
--- gw.datatype = "network"
+gw.datatype = "network"
 gw.rmempty = false
 uci:foreach("network", "interface", function(s)
 	local name=s['.name']

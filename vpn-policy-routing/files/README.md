@@ -81,7 +81,7 @@ On start, this service creates routing tables for each supported interface (WAN/
 
 ### Processing Policies
 
-Each policy can result in either a new ```iptables``` rule or, if ```local_ipset``` or ```remote_ipset``` are enabled, an ```ipset``` or a ```dnsmasq```'s ```ipset``` entry.
+Each policy can result in either a new ```iptables``` rule or, if ```src_ipset``` or ```dest_ipset``` are enabled, an ```ipset``` or a ```dnsmasq```'s ```ipset``` entry.
 
 - Policies with local MAC-addresses, IP addresses or local device names can be created as ```iptables``` rules or ```ipset``` entries.
 - Policies with local or remote ports are always created as ```iptables``` rules.
@@ -90,10 +90,10 @@ Each policy can result in either a new ```iptables``` rule or, if ```local_ipset
 
 ### Policies Priorities
 
-- If support for ```local_ipstet``` and ```remote_ipset``` is disabled, then only ```iptables``` rules are created. The policy priority is the same as its order as listed in Web UI and ```/etc/config/vpn-policy-routing```. The higher the policy is in the Web UI and configuration file, the higher its priority is.
-- If support for ```local_ipstet``` and ```remote_ipset``` is enabled, then the ```ipset``` entries have the highest priority (irrelevant of their position in the policies list) and the other policies are processed in the same order as they are listed in Web UI and ```/etc/config/vpn-policy-routing```.
+- If support for ```src_ipset``` and ```dest_ipset``` is disabled, then only ```iptables``` rules are created. The policy priority is the same as its order as listed in Web UI and ```/etc/config/vpn-policy-routing```. The higher the policy is in the Web UI and configuration file, the higher its priority is.
+- If support for ```src_ipset``` and ```dest_ipset``` is enabled, then the ```ipset``` entries have the highest priority (irrelevant of their position in the policies list) and the other policies are processed in the same order as they are listed in Web UI and ```/etc/config/vpn-policy-routing```.
 - If there are conflicting ```ipset``` entries for different interfaces, the priority is given to the interface which is listed first in the ```/etc/config/network``` file.
-- If set, the ```DSCP``` policies trump all other policies, including ```ipset``` ones.
+- If set, the ```DSCP``` policies trump all other policies, including the ```ipset``` ones.
 
 ## How To Install
 
@@ -137,8 +137,8 @@ As per screenshots above, in the Web UI the ```vpn-policy-routing``` configurati
 |Basic|enabled|boolean|0|Enable/disable the ```vpn-policy-routing``` service.|
 |Basic|verbosity|integer|2|Can be set to 0, 1 or 2 to control the console and system log output verbosity of the ```vpn-policy-routing``` service.|
 |Basic|strict_enforcement|boolean|1|Enforce policies when their interface is down. See [Strict enforcement](#strict-enforcement) for more details.|
-|Basic|remote_ipset|string|none|Enable/disable use of one of the ipset options for compatible remote policies (policies with only a remote hostname and no other fields set). This speeds up service start-up and operation. Currently supported options are ```none```,  ```ipset``` and ```dnsmasq.ipset``` (see [Use DNSMASQ ipset](#use-dnsmasq-ipset) for more details). Make sure the [requirements](#requirements) are met.|
-|Basic|local_ipset|boolean|0|Enable/disable use of ```ipset``` entries for compatible local policies (policies with only a local IP address or MAC address and no other fields set). Using ```ipset``` for local IPs/MACs is faster than using ```iptables``` rules, however it makes it impossible to enforce policies priority/order. Make sure the [requirements](#requirements) are met.|
+|Basic|dest_ipset|string|none|Enable/disable use of one of the ipset options for compatible remote policies (policies with only a remote hostname and no other fields set). This speeds up service start-up and operation. Currently supported options are ```none```,  ```ipset``` and ```dnsmasq.ipset``` (see [Use DNSMASQ ipset](#use-dnsmasq-ipset) for more details). Make sure the [requirements](#requirements) are met.|
+|Basic|src_ipset|boolean|0|Enable/disable use of ```ipset``` entries for compatible local policies (policies with only a local IP address or MAC address and no other fields set). Using ```ipset``` for local IPs/MACs is faster than using ```iptables``` rules, however it makes it impossible to enforce policies priority/order. Make sure the [requirements](#requirements) are met.|
 |Basic|ipv6_enabled|boolean|0|Enable/disable IPv6 support.|
 |Advanced|supported_interface|list/string||Allows to specify the space-separated list of interface names (in lower case) to be explicitly supported by the ```vpn-policy-routing``` service. Can be useful if your OpenVPN tunnels have dev option other than tun\* or tap\*.|
 |Advanced|ignored_interface|list/string||Allows to specify the space-separated list of interface names (in lower case) to be ignored by the ```vpn-policy-routing``` service. Can be useful if running both VPN server and VPN client on the router.|
@@ -146,8 +146,8 @@ As per screenshots above, in the Web UI the ```vpn-policy-routing``` configurati
 |Advanced|iptables_rule_option|append/insert|append|Allows to specify the iptables parameter for rules: ```-A``` for ```append``` and ```-I``` for ```insert```. Append is generally speaking more compatible with other packages/firewall rules. Recommended to change to ```insert``` only to improve compatibility with the ```mwan3``` package.|
 |Advanced|iprule_enabled|boolean|0|Add an ```ip rule```, not an ```iptables``` entry for policies with just the local address. Use with caution to manipulate policies priorities.|
 |Advanced|icmp_interface|string||Set the default ICMP protocol interface (interface name in lower case). Use with caution.|
-|Advanced|append_local_rules|string||Append local IP Tables rules. Can be used to exclude local IP addresses from destinations for policies with local address set.|
-|Advanced|append_remote_rules|string||Append local IP Tables rules. Can be used to exclude remote IP addresses from sources for policies with remote address set.|
+|Advanced|append_src_rules|string||Append local IP Tables rules. Can be used to exclude local IP addresses from destinations for policies with local address set.|
+|Advanced|append_dest_rules|string||Append local IP Tables rules. Can be used to exclude remote IP addresses from sources for policies with remote address set.|
 |Advanced|wan_tid|integer|201|Starting (WAN) Table ID number for tables created by the ```vpn-policy-routing``` service.|
 |Advanced|wan_mark|hexadecimal|0x010000|Starting (WAN) fw mark for marks used by the ```vpn-policy-routing``` service. High starting mark is used to avoid conflict with SQM/QoS, this can be changed by user. Change with caution together with ```fw_mask```.|
 |Advanced|fw_mask|hexadecimal|0xff0000|FW Mask used by the ```vpn-policy-routing``` service. High mask is used to avoid conflict with SQM/QoS, this can be changed by user. Change with caution together with ```wan_mark```.|
@@ -167,17 +167,17 @@ Default configuration has service disabled (use Web UI to enable/start service o
 
 Each policy may have a combination of the options below, the ```name``` and ```interface```  options are required.
 
-The ```local_address```, ```local_port```, ```remote_address``` and ```remote_port``` options supports parameter negation, for example if you want to **exclude** remote port 80 from the policy, set ```remote_port="!80"``` (notice lack of space between ```!``` and parameter).
+The ```src_addr```, ```src_port```, ```dest_addr``` and ```dest_port``` options supports parameter negation, for example if you want to **exclude** remote port 80 from the policy, set ```dest_port="!80"``` (notice lack of space between ```!``` and parameter).
 
 |Option|Default|Description|
 | --- | --- | --- |
 |**name**||Policy name, it **must** be set.|
 |enabled|1|Enable/disable policy. To display the ```Enable``` checkbox column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Enable Column``` in the ```Web UI``` tab.|
 |**interface**||Policy interface, it **must** be set.|
-|local_address||List of space-separated local/source IP addresses, CIDRs, hostnames or mac addresses (colon-separated). You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
-|local_port||List of space-separated local/source ports or port-ranges.|
-|remote_address||List of space-separated remote/target IP addresses, CIDRs or hostnames/domain names.|
-|remote_port||List of space-separated remote/target ports or port-ranges.|
+|src_addr||List of space-separated local/source IP addresses, CIDRs, hostnames or mac addresses (colon-separated). You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
+|src_port||List of space-separated local/source ports or port-ranges.|
+|dest_addr||List of space-separated remote/target IP addresses, CIDRs or hostnames/domain names.|
+|dest_port||List of space-separated remote/target ports or port-ranges.|
 |proto|all|Policy protocol, can be any valid protocol from ```/etc/protocols``` for CLI/uci or can be selected from the values set in ```webui_supported_protocol```. To display the ```Protocol``` column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Protocol Column``` in the ```Web UI``` tab.|
 |chain|PREROUTING|Policy chain, can be either ```PREROUTING```, ```FORWARDING```, ```INPUT``` or ```OUTPUT```. This setting is case-sensitive. To display the ```Chain``` column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Chain Column``` in the ```Web UI``` tab.|
 
@@ -198,27 +198,27 @@ The following policies route traffic from a single IP address, a range of IP add
 config policy
   option name 'Local IP'
   option interface 'wan'
-  option local_address '192.168.1.70'
+  option src_addr '192.168.1.70'
 
 config policy
   option name 'Local Subnet'
   option interface 'wan'
-  option local_address '192.168.1.81/29'
+  option src_addr '192.168.1.81/29'
 
 config policy
   option name 'Local Machine'
   option interface 'wan'
-  option local_address 'dell-ubuntu'
+  option src_addr 'dell-ubuntu'
 
 config policy
   option name 'Local MAC Address'
   option interface 'wan'
-  option local_address '00:0F:EA:91:04:08'
+  option src_addr '00:0F:EA:91:04:08'
 
 config policy
   option name 'Local Devices'
   option interface 'wan'
-  option local_address '192.168.1.70 192.168.1.81/29 dell-ubuntu 00:0F:EA:91:04:08'
+  option src_addr '192.168.1.70 192.168.1.81/29 dell-ubuntu 00:0F:EA:91:04:08'
   
 ```
 
@@ -230,7 +230,7 @@ The following policy routes LogMeIn Hamachi zero-setup VPN traffic via WAN.
 config policy
   option name 'LogmeIn Hamachi'
   option interface 'wan'
-  option remote_address '25.0.0.0/8 hamachi.cc hamachi.com logmein.com'
+  option dest_addr '25.0.0.0/8 hamachi.cc hamachi.com logmein.com'
 ```
 
 #### SIP Port
@@ -241,7 +241,7 @@ The following policy routes standard SIP port traffic via WAN for both TCP and U
 config policy
   option name 'SIP Ports'
   option interface 'wan'
-  option remote_port '5060'
+  option dest_port '5060'
   option proto 'tcp udp'
 ```
 
@@ -253,12 +253,12 @@ The following policies route Plex Media Server traffic via WAN. Please note, you
 config policy
   option name 'Plex Local Server'
   option interface 'wan'
-  option local_port '32400'
+  option src_port '32400'
 
 config policy
   option name 'Plex Remote Servers'
   option interface 'wan'
-  option remote_address 'plex.tv my.plexapp.com'
+  option dest_addr 'plex.tv my.plexapp.com'
 ```
 
 #### Emby Media Server
@@ -269,12 +269,12 @@ The following policy route Emby traffic via WAN. Please note, you'd still need t
 config policy
   option name 'Emby Local Server'
   option interface 'wan'
-  option local_port '8096 8920'
+  option src_port '8096 8920'
 
 config policy
   option name 'Emby Remote Servers'
   option interface 'wan'
-  option remote_address 'emby.media app.emby.media tv.emby.media'
+  option dest_addr 'emby.media app.emby.media tv.emby.media'
 ```
 
 #### Local OpenVPN Server + OpenVPN Client (Scenario 1)
@@ -292,7 +292,7 @@ config policy
   option name 'OpenVPN Server'
   option interface 'wan'
   option proto 'tcp'
-  option local_port '1194'
+  option src_port '1194'
   option chain 'OUTPUT'
 ```
 
@@ -382,7 +382,7 @@ Relevant part of ```/etc/config/vpn-policy-routing```:
 ```text
 config vpn-policy-routing 'config'
   list ignored_interface 'vpnserver'
-  option append_local_rules '! -d 192.168.200.0/24'
+  option append_src_rules '! -d 192.168.200.0/24'
   ...
 ```
 
@@ -482,7 +482,7 @@ config policy
   option name 'Wireguard Server'
   option interface 'wan'
   option proto 'tcp'
-  option local_port '61820'
+  option src_port '61820'
   option chain 'OUTPUT'
 ```
 
@@ -569,7 +569,7 @@ Relevant part of ```/etc/config/vpn-policy-routing```:
 ```text
 config vpn-policy-routing 'config'
   list ignored_interface 'wgserver'
-  option append_local_rules '! -d 192.168.200.0/24'
+  option append_src_rules '! -d 192.168.200.0/24'
   ...
 ```
 
@@ -652,7 +652,7 @@ The following policy should route US Netflix traffic via WAN. For capturing inte
 config policy
   option name 'Netflix Domains'
   option interface 'wan'
-  option remote_address 'amazonaws.com netflix.com nflxext.com nflximg.net nflxso.net nflxvideo.net dvd.netflix.com'
+  option dest_addr 'amazonaws.com netflix.com nflxext.com nflximg.net nflxso.net nflxvideo.net dvd.netflix.com'
 ```
 
 #### Example Includes
@@ -745,11 +745,11 @@ If you want to target traffic using HTTP/3 protocol, you can use the ```AUTO``` 
 
 ### A Word About DNS-over-HTTPS
 
-Some browsers, like [Mozilla Firefox](https://support.mozilla.org/en-US/kb/firefox-dns-over-https#w_about-dns-over-https) or [Google Chrome/Chromium](https://blog.chromium.org/2019/09/experimenting-with-same-provider-dns.html) have [DNS-over-HTTPS proxy](https://en.wikipedia.org/wiki/DNS_over_HTTPS) built-in. Their requests to web-sites cannot be affected if the ```dnsmasq.ipset``` is set for the ```remote_ipset``` option. To fix this, you can try either of the following:
+Some browsers, like [Mozilla Firefox](https://support.mozilla.org/en-US/kb/firefox-dns-over-https#w_about-dns-over-https) or [Google Chrome/Chromium](https://blog.chromium.org/2019/09/experimenting-with-same-provider-dns.html) have [DNS-over-HTTPS proxy](https://en.wikipedia.org/wiki/DNS_over_HTTPS) built-in. Their requests to web-sites cannot be affected if the ```dnsmasq.ipset``` is set for the ```dest_ipset``` option. To fix this, you can try either of the following:
 
-  1. Disable the DNS-over-HTTPS support in your browser and use the OpenWrt's [net/https-dns-proxy](https://github.com/openwrt/packages/tree/master/net/https-dns-proxy) package and set it up either [manually](https://openwrt.org/docs/guide-user/services/dns/doh_dnsmasq_https-dns-proxy?s[]=https&s[]=dns&s[]=proxy) or auto-magically with [https-dns-proxy luci app](https://github.com/openwrt/luci/tree/master/applications/luci-app-https_dns_proxy). You can then continue to use ```dnsmasq.ipset``` setting for the ```remote_ipset``` in VPN Policy Routing.
+  1. Disable the DNS-over-HTTPS support in your browser and use the OpenWrt's [net/https-dns-proxy](https://github.com/openwrt/packages/tree/master/net/https-dns-proxy) package and set it up either [manually](https://openwrt.org/docs/guide-user/services/dns/doh_dnsmasq_https-dns-proxy?s[]=https&s[]=dns&s[]=proxy) or auto-magically with [https-dns-proxy luci app](https://github.com/openwrt/luci/tree/master/applications/luci-app-https_dns_proxy). You can then continue to use ```dnsmasq.ipset``` setting for the ```dest_ipset``` in VPN Policy Routing.
 
-  2. Continue using DNS-over-HTTPS in your browser (which, by the way, also limits your options for router-level AdBlocking as described [in ```dnsmasq.ipset``` option description here](https://github.com/openwrt/packages/tree/master/net/simple-adblock/files#dns-resolution-option)), you than would either have to disable the  ```remote_ipset``` or switch it to ```ipset```. Please note, you will lose all the benefits of [```dnsmasq.ipset```](#use-dnsmasq-ipset) option.
+  2. Continue using DNS-over-HTTPS in your browser (which, by the way, also limits your options for router-level AdBlocking as described [in ```dnsmasq.ipset``` option description here](https://github.com/openwrt/packages/tree/master/net/simple-adblock/files#dns-resolution-option)), you than would either have to disable the  ```dest_ipset``` or switch it to ```ipset```. Please note, you will lose all the benefits of [```dnsmasq.ipset```](#use-dnsmasq-ipset) option.
 
 ### A Word About Cloudflare's 1.1.1.1 App
 
