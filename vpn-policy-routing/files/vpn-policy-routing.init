@@ -1031,6 +1031,7 @@ validate_config() {
 		'webui_protocol_column:bool:0' \
 		'webui_supported_protocol:list(string)' \
 		'webui_chain_column:bool:0' \
+		'webui_sorting:bool:1' \
 		'icmp_interface:string' \
 		'wan_tid:integer:201' \
 		'wan_fw_mark:hex(8)' \
