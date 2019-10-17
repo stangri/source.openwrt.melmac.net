@@ -101,7 +101,7 @@ end
 
 m = Map("vpn-policy-routing", translate("VPN and WAN Policy-Based Routing"))
 
-h = m:section(NamedSection, "config", packageName .. "", translate("Service Status") .. tmpfsVersion)
+h = m:section(NamedSection, "config", packageName, translate("Service Status") .. tmpfsVersion)
 
 if tmpfsStatus:match("ing") then
 	ss = h:option(DummyValue, "_dummy", translate("Service Status"))
