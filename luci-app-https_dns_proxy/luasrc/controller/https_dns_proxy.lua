@@ -89,6 +89,7 @@ end
 
 function servers_apply_doh()
 	local n = 0
+	uci:delete("dhcp", "@dnsmasq[0]", "server")
 	uci:foreach("https_dns_proxy", "https_dns_proxy", function(s)
 		local la_val, lp_val
 		la_val = s[".listen_addr"] or "127.0.0.1"

@@ -163,10 +163,10 @@ if tmpfsStatusCode == -1 then
   ss.value = tmpfsStatus
 else
     if tmpfsStatusCode == 0 then
-    ss.template = packageName .. "/status"
-  else
-    ss.template = packageName .. "/status-textarea"
-  end
+      ss.template = packageName .. "/status"
+    else
+      ss.template = packageName .. "/status-textarea"
+    end
   ss.value = tmpfsStatus
   buttons = h:option(DummyValue, "_dummy")
   buttons.template = packageName .. "/buttons"
