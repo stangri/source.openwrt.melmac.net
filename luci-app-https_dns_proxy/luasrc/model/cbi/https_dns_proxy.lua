@@ -123,7 +123,7 @@ if not tmpfsVersion or tmpfsVersion == "" then
   tmpfsVersion = ""
   tmpfsStatus = packageName .. " " .. translate("is not installed or not found")
 else  
-  tmpfsVersion = " " .. packageName .. " [" .. tmpfsVersion .. "]"
+  tmpfsVersion = " [" .. packageName .. tmpfsVersion .. "]"
   if not ubusStatus or not ubusStatus[packageName] then
     tmpfsStatusCode = 0
     tmpfsStatus = translate("Stopped")
