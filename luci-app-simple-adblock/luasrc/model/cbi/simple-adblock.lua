@@ -69,9 +69,39 @@ if tmpfs and tmpfs['data'] then
 		tmpfsStats = tmpfs['data']['stats']
 	end
 	if tmpfs['data']['version'] and tmpfs['data']['version'] ~= "" then
-		tmpfsVersion = " [" .. packageName .. " " .. tmpfs['data']['version'] .. "]"
+		tmpfsVersion = packageName .. " " .. tmpfs['data']['version']
+	else 
+		tmpfsVersion = packageName
 	end
 end
+
+local statusTable = {}
+local errorTable = {}
+statusTable["statusNoInstall"] = packageName .. translate("is not installed or not found")
+statusTable["statusStopped"] = translate("Stopped")
+statusTable["statusStarting"] = translate("Starting")
+statusTable["statusRestarting"] = translate("Restarting")
+statusTable["statusForceReloading"] = translate("Force Reloading")
+statusTable["statusDownloading"] = translate("Downloading")
+statusTable["statusError"] = translate("Error")
+statusTable["statusWarning"] = translate("Warning")
+statusTable["statusFail"] = translate("Fail")
+statusTable["statusSuccess"] = translate("Success")
+errorTable["errorOutputFileCreate"] = translate("failed to create") .. " '" .. outputFile .. "' " .. translate("file")
+errorTable["errorFailDNSReload"] = translate("failed to restart/reload DNS resolver")
+errorTable["errorSharedMemory"] = translate("failed to access shared memory")
+errorTable["errorSorting"] = translate("failed to sort data file")
+errorTable["errorOptimization"] = translate("failed to optimize data file")
+errorTable["errorWhitelistProcessing"] = translate("failed to process whitelist")
+errorTable["errorDataFileFormatting"] = translate("failed to format data file")
+errorTable["errorMovingDataFile"] = translate("failed to move temporary data file to") .. " '" .. outputFile .. "'"
+errorTable["errorCreatingCompressedCache"] = translate("failed to create compressed cache")
+errorTable["errorRemovingTempFiles"] = translate("failed to remove temporary files")
+errorTable["errorRestoreCompressedCache"] = translate("failed to unpack compressed cache")
+errorTable["errorRestoreCache"] = translate("failed to move") .. " '" .. outputCache .. "' " .. translate("to") .. " '" .. outputFile .. "'"
+errorTable["errorOhSnap"] = translate("failed to create blocklist or restart DNS resolver")
+errorTable["errorStopping"] = translate("failed to stop") .. " " .. packageName
+errorTable["errorDNSReload"] = translate("failed to reload/restart DNS resolver")
 
 m = Map("simple-adblock", translate("Simple AdBlock Settings"))
 m.apply_on_parse = true
@@ -79,35 +109,46 @@ m.on_after_apply = function(self)
  	sys.call("/etc/init.d/simple-adblock restart")
 end
 
-h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status") .. tmpfsVersion)
+h = m:section(NamedSection, "config", "simple-adblock", translate("Service Status") .. " [" .. tmpfsVersion .. "]")
 
-if tmpfsStatus:match("ing") then
+if tmpfsStatus == "statusStarting" or
+	 tmpfsStatus == "statusRestarting" or
+	 tmpfsStatus == "statusForceReloading" or
+	 tmpfsStatus == "statusDownloading" then
 	ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 	ss.template = "simple-adblock/status"
-	ss.value = tmpfsStatus .. '...'
+	ss.value = statusTable[tmpfsStatus] .. '...'
 	if tmpfsMessage then
 		sm = h:option(DummyValue, "_dummy", translate("Task"))
 		sm.template = "simple-adblock/status"
 		sm.value = tmpfsMessage
 	end
 else
-	if tmpfsStatus:match("Stopped") then
+	if tmpfsStatus == "statusStopped" then
 		ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 		ss.template = "simple-adblock/status"
-		ss.value = tmpfsStatus
+		ss.value = statusTable[tmpfsStatus]
 		if fs.access(outputCache) then
 			sm = h:option(DummyValue, "_dummy", translate("Info"))
 			sm.template = "simple-adblock/status"
-			sm.value = "Cache file containing " .. util.trim(sys.exec("wc -l < " .. outputCache)) .. " domains found."
+			sm.value = translate("Cache file containing") .. " " .. util.trim(sys.exec("wc -l < " .. outputCache)) .. " " .. translate("domains found") .. "."
 		elseif fs.access(outputGzip) then
 			sm = h:option(DummyValue, "_dummy", translate("Info"))
 			sm.template = "simple-adblock/status"
-			sm.value = "Compressed cache file found."
+			sm.value = translate("Compressed cache file found") .. "."
 		end
 	else
 		ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 		ss.template = "simple-adblock/status"
-		ss.value = tmpfsStatus
+		if tmpfsStatus == "statusSuccess" then
+--			ss.value = tmpfsStats
+			ss.value = tmpfsVersion .. " " .. translate("is blocking") .. 
+				" " .. util.trim(sys.exec("wc -l < " .. outputFile)) .. 
+				" " .. translate("domains") .. " (" .. translate("with") .. 
+				" " .. targetDNS .. ")."
+		else
+			ss.value = statusTable[tmpfsStatus]
+		end
 		if tmpfsMessage then
 			ms = h:option(DummyValue, "_dummy", translate("Message"))
 			ms.template = "simple-adblock/status"
@@ -116,7 +157,10 @@ else
 		if tmpfsError then
 			es = h:option(DummyValue, "_dummy", translate("Collected Errors"))
 			es.template = "simple-adblock/error"
-			es.value = tmpfsError
+			es.value = ""
+			for token in string.gmatch(tmpfsError,'%w+') do
+				es.value = es.value .. translate("Error") .. ": " .. errorTable[token] .. ".\n"
+			end
 		end
 	end
 	buttons = h:option(DummyValue, "_dummy")
