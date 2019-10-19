@@ -54,7 +54,8 @@ if fs.access("/var/run/" .. packageName .. ".json") then
 	tmpfs = jsonc.parse(util.trim(sys.exec("cat /var/run/" .. packageName .. ".json")))
 end
 
-local tmpfsVersion, tmpfsStatus, tmpfsMessage, tmpfsError, tmpfsStats = "", "Stopped"
+local tmpfsVersion, tmpfsStatus = "", "Stopped"
+local tmpfsMessage, tmpfsError, tmpfsStats
 if tmpfs and tmpfs['data'] then
 	if tmpfs['data']['status'] and tmpfs['data']['status'] ~= "" then
 		tmpfsStatus = tmpfs['data']['status']
@@ -102,6 +103,8 @@ errorTable["errorRestoreCache"] = translate("failed to move") .. " '" .. outputC
 errorTable["errorOhSnap"] = translate("failed to create blocklist or restart DNS resolver")
 errorTable["errorStopping"] = translate("failed to stop") .. " " .. packageName
 errorTable["errorDNSReload"] = translate("failed to reload/restart DNS resolver")
+errorTable["errorDownloadingList"] = translate("failed to download")
+errorTable["errorParsingList"] = translate("failed to parse")
 
 m = Map("simple-adblock", translate("Simple AdBlock Settings"))
 m.apply_on_parse = true
@@ -158,8 +161,14 @@ else
 			es = h:option(DummyValue, "_dummy", translate("Collected Errors"))
 			es.template = "simple-adblock/error"
 			es.value = ""
-			for token in string.gmatch(tmpfsError,'%w+') do
-				es.value = es.value .. translate("Error") .. ": " .. errorTable[token] .. ".\n"
+			local err, e, url
+			for err in tmpfsError:gmatch("[%p%w]+") do
+				if err:match("=") then
+					e,url = err:match("(.+)=(.+)")
+					es.value = es.value .. translate("Error") .. ": " .. errorTable[e] .. " " .. url .. ".\n"
+				else
+					es.value = es.value .. translate("Error") .. ": " .. errorTable[err] .. ".\n"
+				end
 			end
 		end
 	end

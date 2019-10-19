@@ -96,6 +96,8 @@ getErrorText() {
 		errorOhSnap) _ret="failed to create blocklist or restart DNS resolver";;
 		errorStopping) _ret="failed to stop $serviceName";;
 		errorDNSReload) _ret="failed to reload/restart DNS resolver";;
+		errorDownloadingList) _ret="failed to download";;
+		errorParsingList) _ret="failed to parse";;
 	esac
 	printf "%b" "$_ret"
 }
@@ -107,8 +109,8 @@ output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
 output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
 output_fail() { output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
-str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
-str_contains() { test "$1" != "$(str_replace "$1" "$2" '')"; }
+# str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
+# str_contains() { test "$1" != "$(str_replace "$1" "$2" '')"; }
 compare_versions() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
 is_ipset_procd() { compare_versions "$(sed -ne 's/^Version: //p' /usr/lib/opkg/info/firewall.control)" "2019-09-18"; }
@@ -127,7 +129,7 @@ output() {
 		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; else return 0; fi
 	fi
 	[ -t 1 ] && printf "%b" "$1"
-	msg="$(printf "%s" "$(str_replace "$1" "$serviceName " "service ")" | sed 's|\\033\[[0-9]\?;\?[0-9]\?[0-9]\?m||g')";
+	msg="${1//$serviceName /service }";
 	if [ "$(printf "%b" "$msg" | wc -l)" -gt 0 ]; then
 		[ -s "$sharedMemoryOutput" ] && memmsg="$(cat "$sharedMemoryOutput")"
 		logger -t "${packageName:-service} [$$]" "$(printf "%b" "${memmsg}${msg}")"
@@ -138,7 +140,7 @@ output() {
 }
 
 export serviceEnabled forceDNS parallelDL debug allowIDN compressedCache     
-export targetDNS bootDelay dlTimeout curlRetry verbosity led dnsInstance
+export targetDNS bootDelay dlTimeout curlRetry verbosity=1 led dnsInstance
 export whitelist_domains blacklist_domains
 export whitelist_domains_urls blacklist_domains_urls blacklist_hosts_urls
 export wan_if wan_gw wanphysdev dl_command serviceStatus dl_flag
@@ -412,15 +414,14 @@ dnsOps() {
 }
 
 tmpfs() {
-	local action="$1" instance="$2" value="$3" 
-	local status message error stats code
+	local action="$1" instance="$2" value="$3"
+	local status message error stats
 	local readReload readRestart curReload curRestart ret
 	if [ -s "$jsonFile" ]; then
 		status="$(jsonfilter -i $jsonFile -l1 -e "@['data']['status']")"
 		message="$(jsonfilter -i $jsonFile -l1 -e "@['data']['message']")"
 		error="$(jsonfilter -i $jsonFile -l1 -e "@['data']['error']")"
 		stats="$(jsonfilter -i $jsonFile -l1 -e "@['data']['stats']")"
-		code="$(jsonfilter -i $jsonFile -l1 -e "@['data']['code']")"
 		readReload="$(jsonfilter -i $jsonFile -l1 -e "@['data']['reload']")"
 		readRestart="$(jsonfilter -i $jsonFile -l1 -e "@['data']['restart']")"
 	fi
@@ -435,8 +436,6 @@ tmpfs() {
 					printf "%b" "$error"; return;;
 				stats) 
 					printf "%b" "$stats"; return;;
-				code) 
-					printf "%b" "$code"; return;;
 				triggers)
 					curReload="$parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetDNS"
 					curRestart="$compressedCache $forceDNS $led"
@@ -459,8 +458,6 @@ tmpfs() {
 					[ -n "$error" ] && error="$error $value" || error="$value";;
 				stats) 
 					[ -n "$stats" ] && stats="$stats $value" || stats="$value";;
-				code) 
-					[ -n "$code" ] && code="$code $value" || stats="$value";;
 			esac
 			;;
 		del)
@@ -470,7 +467,6 @@ tmpfs() {
 					unset message;
 					unset error;
 					unset stats;
-					unset code;
 					;;
 				status)
 					unset status;;
@@ -480,8 +476,6 @@ tmpfs() {
 					unset error;;
 				stats) 
 					unset stats;;
-				code) 
-					unset code;;
 				triggers) 
 					unset readReload; unset readRestart;;
 			esac
@@ -496,8 +490,6 @@ tmpfs() {
 					error="$value";;
 				stats) 
 					stats="$value";;
-				code) 
-					code="$value";;
 				triggers) 
 					readReload="$parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetDNS"
 					readRestart="$compressedCache $forceDNS $led"
@@ -512,7 +504,6 @@ tmpfs() {
   json_add_string message "$message"
   json_add_string error "$error"
   json_add_string stats "$stats"
-  json_add_string code "$code"
   json_add_string reload "$readReload"
   json_add_string restart "$readRestart"
   json_close_object
@@ -671,13 +662,13 @@ process_url() {
 	if ! $dl_command "$1" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 1 "$_FAIL_"
 		output 2 "[DL] $type $label $__FAIL__\\n"
-		echo "Error: downloading '${1}'." >> "$sharedMemoryError"
+		echo "errorDownloadingList=${1}" >> "$sharedMemoryError"
 	else
 		sed -i "$filter" "$R_TMP"
 		if [ ! -s "$R_TMP" ]; then
 			output 1 "$_FAIL_"
 			output 2 "[DL] $type $label $__FAIL__\\n"
-			echo "Error: parsing '${1}'." >> "$sharedMemoryError"
+			echo "errorParsingList=${1}" >> "$sharedMemoryError"
 		else
 			cat "${R_TMP}" >> "$D_TMP"
 			output 1 "$_OK_"
@@ -734,9 +725,13 @@ download_lists() {
 		done
 	fi
 	wait
-	[ -s "$sharedMemoryError" ] && tmpfs add error "errorSharedMemory"
-	rm -f "$sharedMemoryError"
 	output 1 '\n'
+	if [ -s "$sharedMemoryError" ]; then
+		while IFS= read -r line; do
+			tmpfs add error "$line"
+		done < "$sharedMemoryError"
+		rm -f "$sharedMemoryError"
+	fi
 
 	[ -n "$blacklist_domains" ] && for hf in ${blacklist_domains}; do echo "$hf" | sed "$domainsFilter" >> $B_TMP; done
 	whitelist_domains="${whitelist_domains}
@@ -1084,8 +1079,9 @@ showstatus() {
 	local message="$(tmpfs get message)"
 	local error="$(tmpfs get error)"
 	local stats="$(tmpfs get stats)"
+	local c url
 	if [ "$status" = "statusSuccess" ]; then
-		output "$stats "; output_okn
+		output "$stats "; output_okn;
 	else
 		[ -n "$status" ] && status="$(getStatusText "$status")"
 		if [ -n "$status" ] && [ -n "$message" ]; then 
@@ -1094,9 +1090,16 @@ showstatus() {
 		[ -n "$status" ] && output "$serviceName $status\\n"
 	fi
 	if [ -n "$error" ]; then
-		output 'Collected errors:\\n'
 		for c in $error; do
-			output "$_ERROR_: $(getErrorText "$c")!\\n"
+			url="${c##*=}"
+			c="${c%=*}"
+			case "$c" in
+				errorDownloadingList|errorParsingList)
+					output "$_ERROR_: $(getErrorText "$c") $url!\\n";;
+				*)
+					output "$_ERROR_: $(getErrorText "$c")!\\n";;
+			esac
+			let n=n+1
 		done
 	fi
 }
@@ -1109,11 +1112,11 @@ stop_service() {
 		cacheOps 'create'
 		if dnsOps 'on_stop'; then
 			led_off "$led"
-			output 0 "$__OK__\\n"; output_okn
+			output 0 "$__OK__\\n"; output_okn;
 			tmpfs set status "statusStopped"
 			tmpfs del message
 		else 
-			output 0 "$__FAIL__\\n"; output_fail
+			output 0 "$__FAIL__\\n"; output_fail;
 			tmpfs set status "statusFail"
 			tmpfs add error "errorStopping"
 			output "$_ERROR_: $(getErrorText 'errorStopping')!\\n"
