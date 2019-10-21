@@ -3,7 +3,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_LICENSE:=GPL-3.0+
+PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 LUCI_TITLE:=Fakeinternet Web UI

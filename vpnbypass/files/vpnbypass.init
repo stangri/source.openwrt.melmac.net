@@ -62,11 +62,11 @@ is_supported_interface() { if is_wan "$1" || is_ovpn "$1"; then return 0; else r
 
 # shellcheck disable=SC2086
 ipt() {
-    local d; 
-    d="${*//-A/-D}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1;
-    d="${*//-I/-D}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
-    d="${*//-N/-F}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
-    d="${*//-N/-X}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
+  local d; 
+  d="${*//-A/-D}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
+  d="${*//-I/-D}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
+  d="${*//-N/-F}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
+  d="${*//-N/-X}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
 	d="$*"; iptables $d >/dev/null 2>&1 || output "\\n$__ERROR__: iptables $d\\n"
 }
 
@@ -84,10 +84,11 @@ start_service() {
 	procd_set_param stderr 1
 	procd_close_instance
 
-	iptables -t mangle -D PREROUTING -m mark --mark 0x00/${FW_MASK} -g VPNBYPASS >/dev/null 2>&1
+	ipt -t mangle -D PREROUTING -m mark --mark 0x00/${FW_MASK} -g VPNBYPASS >/dev/null 2>&1
 	ipt -t mangle -N VPNBYPASS; ipt -t mangle -A PREROUTING -m mark --mark 0x00/${FW_MASK} -g VPNBYPASS;
 	ipt -t mangle -A VPNBYPASS -m set --match-set $IPSET dst -j MARK --set-mark ${FW_MARK}/${FW_MASK}
-	ip rule del fwmark "$FW_MARK" table "$TID" >/dev/null 2>&1; ipset -q flush "$IPSET"; ipset -q destroy "$IPSET";
+	ip rule del fwmark "$FW_MARK" table "$TID" >/dev/null 2>&1; 
+	ipset -q flush "$IPSET"; ipset -q destroy "$IPSET";
 	ip route flush table "$TID"; ip route flush cache;
 	ip route add default via "$wan_gw" table "$TID"; ip route flush cache;
 	ipset -q -exist create "$IPSET" hash:ip; ipset -q flush "$IPSET"
@@ -102,7 +103,8 @@ start_service() {
 
 stop_service() {
   load_package_config
-	ip rule del fwmark "$FW_MARK" table "$TID" >/dev/null 2>&1; ipset -q flush "$IPSET"; ipset -q destroy "$IPSET";
+	ip rule del fwmark "$FW_MARK" table "$TID" >/dev/null 2>&1; 
+	ipset -q flush "$IPSET"; ipset -q destroy "$IPSET";
 	ip route flush table "$TID"; ip route flush cache;
 	ipt -t mangle -D PREROUTING -m mark --mark 0x00/${FW_MASK} -g VPNBYPASS
 	ipt -t mangle -F VPNBYPASS; ipt -t mangle -X VPNBYPASS;

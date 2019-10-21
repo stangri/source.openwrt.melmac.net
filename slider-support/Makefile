@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=slider-support
 PKG_VERSION:=0.0.2
 PKG_RELEASE:=9
-PKG_LICENSE:=GPL-3.0+
+PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 include $(INCLUDE_DIR)/package.mk

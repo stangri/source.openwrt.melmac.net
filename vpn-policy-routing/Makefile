@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=vpn-policy-routing
 PKG_VERSION:=0.2.0
 PKG_RELEASE:=3
-PKG_LICENSE:=GPL-3.0+
+PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 include $(INCLUDE_DIR)/package.mk
