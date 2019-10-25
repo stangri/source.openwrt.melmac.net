@@ -2,15 +2,15 @@
 
 ## Description
 
-This service can be used to configure router to sniff packets to/from monitored device on the device running Wireshark app.
+This service can be used to configure a router to sniff packets to/from a monitored device on the device running the Wireshark application.
 
-Pick an IP address of the monitored device, an IP address of the deivce running Wireshark app and start the service (from Web UI or manually).
+Pick an IP address of the monitored device, an IP address of the device running the Wireshark application and start the service (from the Web UI or manually).
 
-In the Wireshark app, set the filter to monitored IP, for example if the IP of the device you want to sniff packets to/from is 192.168.1.121, then set the Wireshark filter to ```(ip.src == 192.168.9.121) || (ip.dst == 192.168.9.121)```.
+In the Wireshark app, set the filter to the monitored IP, for example if the IP of the device you want to sniff packets to/from is 192.168.1.121, then set the Wireshark filter to ```(ip.src == 192.168.9.121) || (ip.dst == 192.168.9.121)```.
 
 ## How to install
 
-Install ```wireshark-helper``` and ```luci-app-wireshark-helper``` packages from Web UI or run the following in the command line:
+Install ```wireshark-helper``` and ```luci-app-wireshark-helper``` packages from the Web UI or run the following in a command line:
 
 ```sh
 opkg update; opkg install wireshark-helper luci-app-wireshark-helper
