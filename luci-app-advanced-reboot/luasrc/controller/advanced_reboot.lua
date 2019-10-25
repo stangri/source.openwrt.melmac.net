@@ -38,7 +38,7 @@ function get_partition_os_info()
   if fs.access("/alt/rom/etc/os-release") then
     ap_info = util.trim(util.exec('. /alt/rom/etc/os-release && echo "$PRETTY_NAME"'))
   end
---  alt_partition_unmount(op_ubi)
+  alt_partition_unmount(op_ubi)
   return cp_info, ap_info
 end
 
