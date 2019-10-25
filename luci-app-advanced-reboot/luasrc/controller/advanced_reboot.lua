@@ -125,7 +125,7 @@ for i=1, #devices do
     if p2_os and p2_version then p2_os = p2_os .. " (Linux " .. p2_version .. ")" end
 
     if device_name == "ZyXEL NBG6817" then
-      if not zyxelFlagPartition then zyxelFlagPartition = util.trim(util.exec("source /lib/functions.sh; find_mtd_part 0:DUAL_FLAG")) end
+      if not zyxelFlagPartition then zyxelFlagPartition = util.trim(util.exec(". /lib/functions.sh; find_mtd_part 0:DUAL_FLAG")) end
       if not zyxelFlagPartition then
         errorMessage = errorMessage or "" .. i18n.translate("Unable to find Dual Boot Flag Partition." .. " ")
         util.perror(i18n.translate("Unable to find Dual Boot Flag Partition."))
@@ -219,7 +219,7 @@ function action_altreboot()
         end
       end
     else -- NetGear device
-      if not zyxelFlagPartition then zyxelFlagPartition = util.trim(util.exec("source /lib/functions.sh; find_mtd_part 0:DUAL_FLAG")) end
+      if not zyxelFlagPartition then zyxelFlagPartition = util.trim(util.exec(". /lib/functions.sh; find_mtd_part 0:DUAL_FLAG")) end
       if not zyxelFlagPartition then
         errorMessage = errorMessage .. i18n.translate("Unable to find Dual Boot Flag Partition." .. " ")
         util.perror(i18n.translate("Unable to find Dual Boot Flag Partition."))
