@@ -2,7 +2,7 @@
 
 ## Description
 
-This package allows you to reboot to alternative partition on supported (dual-partition) routers. This package overwrites default Reboot (System --> Reboot) page.
+This package allows you to reboot to an alternative partition on supported (dual-partition) routers. This package overwrites the default Reboot (System --> Reboot) page.
 
 ## Supported Devices
 
@@ -21,7 +21,7 @@ If you're interested in having your device supported, please check [LEDE Projet 
 
 ## How to install
 
-Install ```luci-mod-alt-reboot``` package from Web UI or run the following in the command line:
+Install ```luci-mod-alt-reboot``` package from the Web UI or run the following in a command line:
 
 ```sh
 opkg update
@@ -32,7 +32,7 @@ If the ```luci-mod-alt-reboot``` package is not found in the official feed/repo 
 
 ## How to uninstall
 
-Run the following commands in ssh session to your router:
+Run the following commands in an ssh session on your router:
 
 ```sh
 cp /rom/usr/lib/lua/luci/controller/admin/system.lua /usr/lib/lua/luci/controller/admin/system.lua
@@ -41,9 +41,9 @@ cp /rom/usr/lib/lua/luci/view/admin_system/reboot.htm /usr/lib/lua/luci/view/adm
 
 ## Notes/Known Issues
 
-- When you reboot to a different partition, your current settings (Wireless, etc.) will not apply to a different partition. Different partitions might have completely different settings and firmware.
-- If you reboot to a partition which doesn't allow you to switch boot partitions (like stock Linksys firmware), you might not be able to boot back to OpenWrt/LEDE Project unless you reflash it, loosing all the settings.
-- Some devices allow you to trigger reboot to alternative partition by interrupting boot 3 times in a row (by resetting/switching off the device or pulling power). As these methods might be different for different devices, do your own homework.
+- When you reboot to an alternate different partition, your current settings (Wireless, etc.) will not apply to the current different partition. Different partitions may have completely different settings and firmware.
+- If you reboot to a partition which does not allow you to switch boot partitions (like stock Linksys firmware), you may not be able to boot back to OpenWrt/LEDE Project unless you reflash it, losing all the settings.
+- Some devices allow you to trigger a reboot to an alternative partition by interrupting boot 3 times in a row (by resetting/switching off the device or pulling power). As these methods vary for different devices, do your own homework on figuring out the method appropriate for your device.
 
 ## Thanks
 
