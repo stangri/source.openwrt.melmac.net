@@ -25,21 +25,21 @@
     <div class="tr cbi-section-table-titles">
       <div class="th cbi-section-table-cell"><%:Partition%></div>
       <div class="th cbi-section-table-cell"><%:Status%></div>
-      <div class="th cbi-section-table-cell"><%:Firmware/OS (Kernel)%></div>
-      <div class="th cbi-section-table-cell"><%:Action%></div>
+      <div class="th cbi-section-table-cell"><%:Firmware%></div>
+      <div class="th cbi-section-table-cell"><%:Reboot%></div>
     </div>
-    <div class="tr cbi-section-table-row">
+    <div class="tr cbi-section-table-row cbi-rowstyle-1">
       <div class="td">
-        <%=string.format("%X", boot_envvar1_partition_one)%>
+        <%=string.format("%X", bev1p1)%>
       </div>
       <div class="td">
-        <%- if boot_envvar1_partition_one == current_partition then -%><%:Current%><%- else -%><%:Alternative%><%- end -%>
+        <%- if bev1p1 == current_partition then -%><%:Current%><%- else -%><%:Alternative%><%- end -%>
       </div>
       <div class="td">
-        <%=partition_one_os%>
+        <%=p1_os%>
       </div>
       <div class="td">
-        <%- if boot_envvar1_partition_one == current_partition then -%>
+        <%- if bev1p1 == current_partition then -%>
         <form method="post" action="<%=url('admin/system/advanced_reboot/reboot')%>">
           <input type="hidden" name="token" value="<%=token%>" />
           <input id="reboot-button" type="submit" class="cbi-button cbi-button-apply important" value="<%:Reboot to current partition%>" />
@@ -52,18 +52,18 @@
         <%- end -%>
       </div>
     </div>
-    <div class="tr cbi-section-table-row">
+    <div class="tr cbi-section-table-row cbi-rowstyle-2">
       <div class="td">
-        <%=string.format("%X", boot_envvar1_partition_two)%>
+        <%=string.format("%X", bev1p2)%>
       </div>
       <div class="td">
-        <%- if boot_envvar1_partition_two == current_partition then -%><%:Current%><%- else -%><%:Alternative%><%- end -%>
+        <%- if bev1p2 == current_partition then -%><%:Current%><%- else -%><%:Alternative%><%- end -%>
       </div>
       <div class="td">
-        <%=partition_two_os%>
+        <%=p2_os%>
       </div>
       <div class="td">
-        <%- if boot_envvar1_partition_two == current_partition then -%>
+        <%- if bev1p2 == current_partition then -%>
           <form method="post" action="<%=url('admin/system/advanced_reboot/reboot')%>">
           	<input type="hidden" name="token" value="<%=token%>" />
             <input id="reboot-button" type="submit" class="cbi-button cbi-button-apply important" value="<%:Reboot to current partition%>" />
