@@ -45,10 +45,10 @@ end
 function alt_partition_mount(op_ubi)
   local ubi_dev
   util.exec('for i in rom overlay firmware; do [ ! -d "$i" ] && mkdir -p "/alt/${i}"; done')
-  util.exec("/usr/sbin/ubidetach -m " .. tostring(op_ubi))
-  ubi_dev = tostring(util.exec("/usr/sbin/ubiattach -m " .. tostring(op_ubi)))
+  util.exec("ubidetach -m " .. tostring(op_ubi))
+  ubi_dev = tostring(util.exec("ubiattach -m " .. tostring(op_ubi)))
   _, _, ubi_dev = ubi_dev:find("UBI device number (%d+)")
-  util.exec("/usr/sbin/ubiblock --create /dev/ubi" .. ubi_dev .. "_0")
+  util.exec("ubiblock --create /dev/ubi" .. ubi_dev .. "_0")
   util.exec("mount -t squashfs -o ro /dev/ubiblock" .. ubi_dev .. "_0 /alt/rom")
   util.exec("mount -t ubifs /dev/ubi1_" .. ubi_dev .. " /alt/overlay")
   util.exec("mount -t overlay overlay -o noatime,lowerdir=/alt/rom,upperdir=/alt/overlay/upper,workdir=/alt/overlay/work /alt/firmware")
@@ -58,8 +58,8 @@ function alt_partition_unmount(op_ubi)
   util.exec("umount /alt/firmware")
   util.exec("umount /alt/overlay")
   util.exec("umount /alt/rom")
-  util.exec("/usr/sbin/ubiblock --remove /dev/ubi1_0")
-  util.exec("/usr/sbin/ubidetach -m " .. tostring(op_ubi))
+  util.exec("ubiblock --remove /dev/ubi1_0")
+  util.exec("ubidetach -m " .. tostring(op_ubi))
   util.exec('rm -rf /alt')
 end
 
@@ -134,7 +134,7 @@ for i=1, #devices do
       end
     else
       if fs.access("/usr/sbin/fw_printenv") and fs.access("/usr/sbin/fw_setenv") then
-        current_partition = tonumber(util.trim(util.exec("/usr/sbin/fw_printenv -n " .. bev1)))
+        current_partition = tonumber(util.trim(util.exec("fw_printenv -n " .. bev1)))
       end
     end
     other_partition = current_partition == bev1p2 and bev1p1 or bev1p2
@@ -191,13 +191,13 @@ function action_altreboot()
   elseif step == 2 then
     if bev1 or bev2 then -- Linksys devices
       if bev1 then
-        curEnvSetting = tonumber(util.trim(util.exec("/usr/sbin/fw_printenv -n " .. bev1)))
+        curEnvSetting = tonumber(util.trim(util.exec("fw_printenv -n " .. bev1)))
         if not curEnvSetting then
           errorMessage = errorMessage .. i18n.translate("Unable to obtain firmware environment variable") .. ": " .. bev1 .. ". "
           util.perror(i18n.translate("Unable to obtain firmware environment variable") .. ": " .. bev1 .. ".")
         else
           newEnvSetting = curEnvSetting == bev1p1 and bev1p2 or bev1p1
-          errorCode = sys.call("/usr/sbin/fw_setenv " .. bev1 .. " " .. newEnvSetting)
+          errorCode = sys.call("fw_setenv " .. bev1 .. " " .. newEnvSetting)
             if errorCode ~= 0 then
               errorMessage = errorMessage or "" .. i18n.translate("Unable to set firmware environment variable") .. ": " .. bev1 .. " " .. i18n.translate("to") .. " " .. newEnvSetting .. ". "
               util.perror(i18n.translate("Unable to set firmware environment variable") .. ": " .. bev1 .. " " .. i18n.translate("to") .. " " .. newEnvSetting .. ".")
@@ -205,13 +205,13 @@ function action_altreboot()
         end
       end
       if bev2 then
-        curEnvSetting = util.trim(util.exec("/usr/sbin/fw_printenv -n " .. bev2))
+        curEnvSetting = util.trim(util.exec("fw_printenv -n " .. bev2))
         if not curEnvSetting then
           errorMessage = errorMessage or "" .. i18n.translate("Unable to obtain firmware environment variable") .. ": " .. bev2 .. ". "
           util.perror(i18n.translate("Unable to obtain firmware environment variable") .. ": " .. bev2 .. ".")
         else
           newEnvSetting = curEnvSetting == bev2p1 and bev2p2 or bev2p1
-          errorCode = sys.call("/usr/sbin/fw_setenv " .. bev2 .. " '" .. newEnvSetting .. "'")
+          errorCode = sys.call("fw_setenv " .. bev2 .. " '" .. newEnvSetting .. "'")
           if errorCode ~= 0 then
             errorMessage = errorMessage or "" .. i18n.translate("Unable to set firmware environment variable") .. ": " .. bev2 .. " " .. i18n.translate("to") .. " " .. newEnvSetting .. ". "
             util.perror(i18n.translate("Unable to set firmware environment variable") .. ": " .. bev2 .. " " .. i18n.translate("to") .. " " .. newEnvSetting .. ".")
