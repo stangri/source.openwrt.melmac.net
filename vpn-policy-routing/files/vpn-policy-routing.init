@@ -841,11 +841,12 @@ start_service() {
 			fi
 			output "$serviceName started on ${serviceStatusSummary}\\n"
 			if [ -z "$errorStatusSummary" ]; then
-				tmpfs 'set' "Success: ${serviceStatusSummary}"
+				tmpfs 'set' "${serviceStatusSummary}"
 			else
 				output "With ERRORS:\\n"
 				output "${errorStatusSummary}"
-				tmpfs 'set' "Started on ${serviceStatusSummary} with error(s)"
+				tmpfs 'set' "${errorStatusSummary}"
+#				tmpfs 'set' "Started on ${serviceStatusSummary} with error(s)"
 			fi
 			if [ -n "$warningStatusSummary" ]; then
 				output "With WARNINGS:\\n"

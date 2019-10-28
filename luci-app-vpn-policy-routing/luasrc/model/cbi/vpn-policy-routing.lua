@@ -18,6 +18,28 @@ local dispatcher = require "luci.dispatcher"
 local enabledFlag = uci:get(packageName, "config", "enabled")
 local enc
 
+local tmpfsVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'")))
+if not tmpfsVersion or tmpfsVersion == "" then
+  tmpfsStatusCode = -1
+  tmpfsVersion = ""
+  tmpfsStatus = packageName .. " " .. translate("is not installed or not found")
+else  
+  tmpfsVersion = " [" .. packageName .. " " .. tmpfsVersion .. "]"
+end
+local tmpfsStatus, tmpfsStatusLabel = "Stopped", translate("Stopped")
+if sys.call("iptables -t mangle -L | grep -q VPR_PREROUTING") == 0 then
+	tmpfsStatus, tmpfsStatusLabel = "Running", translate("Running")
+end
+local tmpfs
+if fs.access("/var/run/" .. packageName .. ".json") then
+	tmpfs = jsonc.parse(util.trim(sys.exec("cat /var/run/" .. packageName .. ".json")))
+end
+local tmpfsGateways
+if tmpfs and tmpfs['data'] and tmpfs['data']['status'] and tmpfs['data']['status'] ~= "" then
+		tmpfsGateways = tmpfs['data']['status']
+		tmpfsGateways = tmpfsGateways:gsub('\\033[^ ]*', '&nbsp;✓')
+end
+
 local t = uci:get("vpn-policy-routing", "config", "supported_interface")
 if not t then
 	supportedIfaces = ""
@@ -83,41 +105,16 @@ function is_supported_interface(arg)
 	end
 end
 
-local tmpfs
-if fs.access("/var/run/" .. packageName .. ".json") then
-	tmpfs = jsonc.parse(util.trim(sys.exec("cat /var/run/" .. packageName .. ".json")))
-end
-
-local tmpfsVersion, tmpfsStatus = "", "Stopped"
-if tmpfs and tmpfs['data'] then
-	if tmpfs['data']['status'] and tmpfs['data']['status'] ~= "" then
-		tmpfsStatus = tmpfs['data']['status']
-		tmpfsStatus = tmpfsStatus:gsub('\\033[^ ]*', '&nbsp;✓')
-	end
-	if tmpfs['data']['version'] and tmpfs['data']['version'] ~= "" then
-		tmpfsVersion = " [" .. packageName .. " " .. tmpfs['data']['version'] .. "]"
-	end
-end
-
 m = Map("vpn-policy-routing", translate("VPN and WAN Policy-Based Routing"))
 
-h = m:section(NamedSection, "config", packageName, translate("Service Status") .. tmpfsVersion)
-
-if tmpfsStatus:match("ing") then
-	ss = h:option(DummyValue, "_dummy", translate("Service Status"))
-	ss.template = packageName .. "/status"
-	ss.value = tmpfsStatus .. '...'
-else
-	ss = h:option(DummyValue, "_dummy", translate("Service Status"))
-	if tmpfsStatus:match("Stopped") then
-		ss.template = packageName .. "/status"
-	else
-		ss.template = packageName .. "/status-textarea"
-	end
-	ss.value = tmpfsStatus
-	buttons = h:option(DummyValue, "_dummy")
-	buttons.template = packageName .. "/buttons"
+h = m:section(NamedSection, "config", packageName, translate("Service Status") .. tmpfsVersion .. ": " .. tmpfsStatusLabel)
+if tmpfsStatus:match("Running")  and tmpfsGateways and tmpfsGateways ~= "" then
+	sg = h:option(DummyValue, "_dummy", translate("Service Gateways"))
+	sg.template = packageName .. "/status-textarea"
+	sg.value = tmpfsGateways
 end
+buttons = h:option(DummyValue, "_dummy")
+buttons.template = packageName .. "/buttons"
 
 -- General Options
 config = m:section(NamedSection, "config", "vpn-policy-routing", translate("Configuration"))
