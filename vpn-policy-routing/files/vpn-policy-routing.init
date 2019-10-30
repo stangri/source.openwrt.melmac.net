@@ -707,7 +707,7 @@ tmpfs() {
 				stats) 
 					[ -n "$stats" ] && stats="$stats $value" || stats="$value";;
 				gateway) 
-					[ -n "$gateway" ] && gateway="${gateway}${value}\\n" || gateway="$value";;
+					[ -n "$gateway" ] && gateway="${gateway} ${value}" || gateway="$value";;
 			esac
 			;;
 		del)
