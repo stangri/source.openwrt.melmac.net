@@ -20,7 +20,6 @@ local enc
 
 local tmpfsVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'")))
 if not tmpfsVersion or tmpfsVersion == "" then
-  tmpfsStatusCode = -1
   tmpfsVersion = ""
   tmpfsStatus = packageName .. " " .. translate("is not installed or not found")
 else  

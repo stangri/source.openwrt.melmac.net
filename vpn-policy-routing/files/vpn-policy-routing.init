@@ -27,7 +27,7 @@ export EXTRA_HELP="	support	Generates output required to troubleshoot routing is
 readonly packageName='vpn-policy-routing'
 readonly serviceName="$packageName $PKG_VERSION"
 readonly PID="/var/run/${packageName}.pid"
-readonly JsonFile="/var/run/${packageName}.json"
+readonly jsonFile="/var/run/${packageName}.json"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
 readonly userFile="/etc/${packageName}.user"
 create_lock() { [ -e "$PID" ] && return 1; touch "$PID"; }
@@ -503,15 +503,15 @@ process_policy(){
 	output 2 "Routing '$comment' via $iface "
 
 	if [ -z "$comment" ]; then
-		errorStatusSummary="${errorStatusSummary}${_ERROR_}: policy name is empty!\\n"
+		errorStatusSummary="${errorStatusSummary}${_ERROR_}: policy name is empty\\n"
 		output_fail; return 1;
  	fi
 	if [ -z "${laddr}${lport}${raddr}${rport}" ]; then
-		errorStatusSummary="${errorStatusSummary}${_ERROR_}: policy '$comment' missing all IPs/ports!\\n"
+		errorStatusSummary="${errorStatusSummary}${_ERROR_}: policy '$comment' missing all IPs/ports\\n"
 		output_fail; return 1;
 	fi
 	if ! is_supported_interface "$iface"; then
-		errorStatusSummary="${errorStatusSummary}${_ERROR_}: policy '$comment' has an unknown interface: ${iface}!\\n"
+		errorStatusSummary="${errorStatusSummary}${_ERROR_}: policy '$comment' has an unknown interface: ${iface}\\n"
 		output_fail; return 1;
 	fi
 
@@ -519,11 +519,11 @@ process_policy(){
 	rport="${rport//  / }"; rport="${rport// /,}"; rport="${rport//,\!/ !}";
 	r_process_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 	if [ -n "$processPolicyWarning" ]; then
-		warningStatusSummary="${warningStatusSummary}${processPolicyWarning}"
+		warningStatusSummary="${warningStatusSummary}${processPolicyWarning}\\n"
 	fi
 	if [ -n "$processPolicyError" ]; then
 		output_fail
-		errorStatusSummary="${errorStatusSummary}${processPolicyError}"
+		errorStatusSummary="${errorStatusSummary}${processPolicyError}\\n"
 	else
 		output_ok
 	fi
@@ -659,7 +659,7 @@ process_interface(){
 			output 2 "Creating table '$displayText' "
 			is_default_dev "$dev" && displayText="${displayText}${__OK__}"
 			if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then
-				serviceStatusSummary="${serviceStatusSummary}${displayText} "
+				serviceStatusSummary="${serviceStatusSummary}${displayText}\\n"
 				output_ok
 			else
 				errorStatusSummary="${errorStatusSummary}${_ERROR_}: Failed to set up '$displayText'\\n"
@@ -671,25 +671,91 @@ process_interface(){
 	return $s
 }
 
-tmpfs(){
-	local action="$1" value="$2" status
-	if [ -s "$JsonFile" ]; then
-		status="$(jsonfilter -i $JsonFile -l1 -e "@['data']['status']")"
+tmpfs() {
+	local action="$1" param="$2" value="$3"
+	local status message error stats gateway
+	if [ -s "$jsonFile" ]; then
+		status="$(jsonfilter -i "$jsonFile" -l1 -e "@['data']['status']")"
+		message="$(jsonfilter -i "$jsonFile" -l1 -e "@['data']['message']")"
+		error="$(jsonfilter -i "$jsonFile" -l1 -e "@['data']['error']")"
+		stats="$(jsonfilter -i "$jsonFile" -l1 -e "@['data']['stats']")"
+		gateway="$(jsonfilter -i "$jsonFile" -l1 -e "@['data']['gateway']")"
 	fi
 	case "$action" in
 		get)
-			echo "$status"; return;;
+			case "$param" in
+				status)
+					printf "%b" "$status"; return;;
+				message) 
+					printf "%b" "$message"; return;;
+				error) 
+					printf "%b" "$error"; return;;
+				stats) 
+					printf "%b" "$stats"; return;;
+				gateway) 
+					printf "%b" "$gateway"; return;;
+			esac
+			;;
 		add)
-			status="${status}${value}";;
-		del | set)
-			status="${value}";;
+			case "$param" in
+				status)
+					[ -n "$status" ] && status="$status $value" || status="$value";;
+				message) 
+					[ -n "$message" ] && message="$message $value" || message="$value";;
+				error)
+					[ -n "$error" ] && error="$error $value" || error="$value";;
+				stats) 
+					[ -n "$stats" ] && stats="$stats $value" || stats="$value";;
+				gateway) 
+					[ -n "$gateway" ] && gateway="${gateway}${value}\\n" || gateway="$value";;
+			esac
+			;;
+		del)
+			case "$param" in
+				all)
+					unset status;
+					unset message;
+					unset error;
+					unset stats;
+					unset gateway;
+					;;
+				status)
+					unset status;;
+				message) 
+					unset message;;
+				error) 
+					unset error;;
+				stats) 
+					unset stats;;
+				gateway) 
+					unset gateway;;
+			esac
+			;;
+		set)
+			case "$param" in
+				status)
+					status="$value";;
+				message) 
+					message="$value";;
+				error) 
+					error="$value";;
+				stats) 
+					stats="$value";;
+				gateway) 
+					gateway="$value";;
+			esac
+			;;
 	esac
   json_init
-  json_add_object "data"
+  json_add_object 'data'
   json_add_string version "$PKG_VERSION"
   json_add_string status "$status"
+  json_add_string message "$message"
+  json_add_string error "$error"
+  json_add_string stats "$stats"
+  json_add_string gateway "$gateway"
   json_close_object
-  json_dump > "$JsonFile"
+  json_dump > "$jsonFile"
 	sync
 }
 
@@ -792,6 +858,9 @@ start_service() {
 		procd_set_param stdout 1
 		procd_set_param stderr 1
 		procd_close_instance
+
+		tmpfs 'del' 'all'
+
 		if [ -s "$dnsmasqFile" ]; then
 			dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
 			rm -f "$dnsmasqFile"
@@ -803,7 +872,7 @@ start_service() {
 
 		if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then 
  			output "$_ERROR_: $serviceName failed to load kernel modules!\\n"
-			tmpfs 'set' "Fail: $serviceName failed to load kernel modules!"
+			tmpfs 'add' 'error' "Fail: $serviceName failed to load kernel modules\\n"
 			return 1
 		fi
 
@@ -833,24 +902,25 @@ start_service() {
 
 		if [ -z "$serviceStatusSummary" ]; then
 			output "$_ERROR_: $serviceName failed to set up any interface!\\n"
-			tmpfs 'set' "Fail: $serviceName failed to set up any interface!"
+			tmpfs 'set' 'error' "$_ERROR_: $serviceName failed to set up any interface\\n"
 			return 1
 		else
 			if [ "$strictMode" -ne 0 ] && [ "${serviceStatusSummary//0.0.0.0}" != "${serviceStatusSummary}" ]; then
 				serviceStatusSummary="(strict mode): ${serviceStatusSummary}"
+				tmpfs 'set' 'mode' 'strict'
 			fi
-			output "$serviceName started on ${serviceStatusSummary}\\n"
+			output "$serviceName started with gateways:\\n${serviceStatusSummary}\\n"
 			if [ -z "$errorStatusSummary" ]; then
-				tmpfs 'set' "${serviceStatusSummary}"
+				tmpfs 'set' 'gateway' "${serviceStatusSummary}"
 			else
 				output "With ERRORS:\\n"
 				output "${errorStatusSummary}"
-				tmpfs 'set' "${errorStatusSummary}"
-#				tmpfs 'set' "Started on ${serviceStatusSummary} with error(s)"
+				tmpfs 'set' 'error' "${errorStatusSummary}"
 			fi
 			if [ -n "$warningStatusSummary" ]; then
 				output "With WARNINGS:\\n"
 				output "${warningStatusSummary}"
+				tmpfs 'set' 'warning' "${warningStatusSummary}"
 			fi
 		fi
 		remove_lock
