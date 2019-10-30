@@ -48,69 +48,37 @@ function uci_add_list(conf, sect, opt, value)
   uci:set(conf, sect, opt, lval)
 end
 
-function servers_restore()
-  local k, v
-	if uci:get("dhcp", "@dnsmasq[0]", "doh_backup_server") then
-		uci:delete("dhcp", "@dnsmasq[0]", "server")
-		for k, v in pairs(uci:get("dhcp", "@dnsmasq[0]", "doh_backup_server")) do
-			uci_del_list("dhcp", "@dnsmasq[0]", "server", v)
-			uci_add_list("dhcp", "@dnsmasq[0]", "server", v)
-		end
-	end
-	uci:commit("dhcp")
-end
-
-function servers_backup()
-  if not uci:get("dhcp", "@dnsmasq[0]", "doh_backup_server") then
-    uci:set("dhcp", "@dnsmasq[0]", "doh_backup_server", uci:get("dhcp", "@dnsmasq[0]", "server"))
-  end
-end
-
-function servers_apply_doh()
-	local n = 0
-	uci:foreach("https_dns_proxy", "https_dns_proxy", function(s)
-		local la_val, lp_val
-		la_val = s[".listen_addr"] or "127.0.0.1"
-		lp_val = s[".listen_port"] or n + 5053
-		uci_del_list("dhcp", "@dnsmasq[0]", "server", tostring(la_val) .. "#" .. tostring(lp_val))
-		uci_add_list("dhcp", "@dnsmasq[0]", "server", tostring(la_val) .. "#" .. tostring(lp_val))
-    n = n + 1
-		uci:save("dhcp")
-	end)
-	uci:commit("dhcp")
-end
-
 function get_provider_name(value)
   if value:match("dns\.adguard") then
-    return "AdGuard (Standard)"
+    return translate("AdGuard (Standard)")
   elseif value:match("family\.adguard") then
-    return "AdGuard (Family Protection)"
+    return translate("AdGuard (Family Protection)")
   elseif value:match("cleanbrowsing\.org/doh/security") then
-    return "CleanBrowsing (Security Filter)"
+    return translate("CleanBrowsing (Security Filter)")
   elseif value:match("cleanbrowsing\.org/doh/family") then
-    return "CleanBrowsing (Family Filter)"
+    return translate("CleanBrowsing (Family Filter)")
   elseif value:match("cleanbrowsing\.org/doh/adult") then
-    return "CleanBrowsing (Adult Filter)"
+    return translate("CleanBrowsing (Adult Filter)")
   elseif value:match("cloudflare") then
-    return "Cloudflare"
+    return translate("Cloudflare")
   elseif value:match("gesellschaft\.ch") then
-    return "Digitale Gesellschaft (ch)"
+    return translate("Digitale Gesellschaft (ch)")
   elseif value:match("dns\.sb") then
-    return "DNS.SB"
+    return translate("DNS.SB")
   elseif value:match("google") then
-    return "Google"
+    return translate("Google")
   elseif value:match("odvr\.nic\.cz") then
-    return "ODVR (nic.cz)"
+    return translate("ODVR (nic.cz)")
   elseif value:match("dns\.quad9") then
-    return "Quad 9 (Recommended)"
+    return translate("Quad 9 (Recommended)")
   elseif value:match("dns9\.quad9") then
-    return "Quad 9 (Secured)"
+    return translate("Quad 9 (Secured)")
   elseif value:match("dns10\.quad9") then
-    return "Quad 9 (Unsecured)"
+    return translate("Quad 9 (Unsecured)")
   elseif value:match("dns11\.quad9") then
-    return "Quad 9 (Secured with ECS Support)"
+    return translate("Quad 9 (Secured with ECS Support)")
   else
-    return "Uknown Provider"
+    return translate("Uknown Provider")
   end
 end
 
@@ -263,13 +231,6 @@ prov.write = function(self, section, value)
     uci:set("https_dns_proxy", section, "url_prefix", "https://dns11.quad9.net:5053/dns-query?")
   end
   uci:save("https_dns_proxy")
-  if n == 0 then
-    servers_backup()
-    uci:delete("dhcp", "@dnsmasq[0]", "server")
-  end
-  uci_del_list("dhcp", "@dnsmasq[0]", "server", tostring(la_val) .. "#" .. tostring(lp_val))
-  uci_add_list("dhcp", "@dnsmasq[0]", "server", tostring(la_val) .. "#" .. tostring(lp_val))
-  uci:save("dhcp")
 end
 
 la = s3:option(Value, "listen_addr", translate("Listen address"))
