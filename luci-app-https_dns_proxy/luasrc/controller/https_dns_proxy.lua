@@ -1,7 +1,7 @@
 module("luci.controller.https_dns_proxy", package.seeall)
 function index()
 	if nixio.fs.access("/etc/config/https_dns_proxy") then
-		entry({"admin", "services", "https_dns_proxy"}, cbi("https_dns_proxy"), _("HTTPS DNS Proxy"))
+		entry({"admin", "services", "https_dns_proxy"}, cbi("https_dns_proxy"), _("DNS over HTTPS Proxy"))
 		entry({"admin", "services", "https_dns_proxy", "action"}, call("https_dns_proxy_action"), nil).leaf = true
 	end
 end

@@ -55,6 +55,9 @@ start_service() {
 	dhcp_backup 'create'
 	config_load 'https_dns_proxy'
 	config_foreach start_instance 'https_dns_proxy'
+	if [ -z "$(uci -q get dhcp.@dnsmasq[0].server)" ]; then
+		dhcp_backup 'restore'
+	fi
 	if [ -n "$(uci -q changes dhcp)" ]; then
 		uci -q commit dhcp
 		/etc/init.d/dnsmasq restart >/dev/null 2>&1
