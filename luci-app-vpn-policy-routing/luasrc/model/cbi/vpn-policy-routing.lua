@@ -26,12 +26,14 @@ if ubusStatus and ubusStatus[packageName] and
 	 ubusStatus[packageName]["instances"]["main"]["data"]["status"] and 
 	 ubusStatus[packageName]["instances"]["main"]["data"]["status"][1] then
 	pkgGateways = ubusStatus[packageName]["instances"]["main"]["data"]["status"][1]["gateway"]
-	pkgGateways = pkgGateways and pkgGateways:gsub('##', '\n')
+	pkgGateways = pkgGateways and pkgGateways:gsub('\\n', '\n')
 	pkgGateways = pkgGateways and pkgGateways:gsub('\\033%[0;32m%[\\xe2\\x9c\\x93%]\\033%[0m', '✓')
 	pkgErrors = ubusStatus[packageName]["instances"]["main"]["data"]["status"][1]["error"]
-	pkgErrors = pkgErrors and pkgErrors:gsub('##', '\n')
+	pkgErrors = pkgErrors and pkgErrors:gsub('\\n', '\n')
+	pkgErrors = pkgErrors and pkgErrors:gsub('\\033%[0;31mERROR\\033%[0m: ', '')
 	pkgWarnings = ubusStatus[packageName]["instances"]["main"]["data"]["status"][1]["warning"]
-	pkgWarnings = pkgWarnings and pkgWarnings:gsub('##', '\n')
+	pkgWarnings = pkgWarnings and pkgWarnings:gsub('\\n', '\n')
+	pkgWarnings = pkgWarnings and pkgWarnings:gsub('\\033%[0;33mWARNING\\033%[0m: ', '')
 	pkgMode = ubusStatus[packageName]["instances"]["main"]["data"]["status"][1]["mode"]
 end
 
@@ -127,12 +129,12 @@ if pkgStatus:match("Running") and pkgGateways and pkgGateways ~= "" then
 	gateways.value = pkgGateways
 end
 if pkgErrors and pkgErrors ~= "" then
-	errors = h:option(DummyValue, "_dummy", translate("Service Gateways"))
+	errors = h:option(DummyValue, "_dummy", translate("Service Errors"))
 	errors.template = packageName .. "/status-textarea"
 	errors.value = pkgErrors
 end
 if pkgWarnings and pkgWarnings ~= "" then
-	warnings = h:option(DummyValue, "_dummy", translate("Service Gateways"))
+	warnings = h:option(DummyValue, "_dummy", translate("Service Warnings"))
 	warnings.template = packageName .. "/status-textarea"
 	warnings.value = pkgWarnings
 end

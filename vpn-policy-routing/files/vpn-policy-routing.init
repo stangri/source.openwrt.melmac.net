@@ -310,7 +310,7 @@ ipr()
 insert_tor_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$7" chain="${8:-PREROUTING}"
 	local mark=$(eval echo "\$mark_${iface//-/_}")
-	[ -z "$mark" ] && processPolicyError="${processPolicyError}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
+	[ -z "$mark" ] && processPolicyError="${processPolicyError}${_ERROR_}: Unknown fw_mark for ${iface}##"
 	param="-t mangle $insertOption VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
 	[ -n "$laddr" ] && param="$param -s $laddr"
 	[ -n "$lport" ] && param="$param -p tcp -m multiport --sport ${lport//-/:}"
@@ -330,7 +330,7 @@ insert_policy() {
 	fi
 
 	if [ -z "$mark" ]; then
-		processPolicyError="${processPolicyError}${_ERROR_}: unknown fw_mark for ${iface}!\\n"
+		processPolicyError="${processPolicyError}${_ERROR_}: Unknown fw_mark for ${iface}##"
 		return 0
 	fi
 
@@ -350,7 +350,7 @@ insert_policy() {
 		if [ "$i" = 'all' ]; then
 			param="-t mangle -I VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask}"
 		elif ! is_supported_protocol "$i"; then
-			processPolicyError="${processPolicyError}${_ERROR_}: unknown protocol '$i' in policy '$comment'\\n"
+			processPolicyError="${processPolicyError}${_ERROR_}: Unknown protocol '$i' in policy '$comment'##"
 			return 0
 		else
 			param="-t mangle -I VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask} -p $i"
@@ -368,7 +368,7 @@ insert_policy() {
 				param="$param -m mac $valueNeg --mac-source $value"
 			elif [ "${appendLocalPolicy//-d}" != "$appendLocalPolicy" ] && [ -n "$raddr" ]; then
 				param="$param $valueNeg -s $value"
-				processPolicyError="${processPolicyError}${_ERROR_}: cannot append '$comment' policy with '$appendLocalPolicy' as destination is already set to '$raddr'\\n"
+				processPolicyError="${processPolicyError}${_ERROR_}: Cannot append '$comment' policy with '$appendLocalPolicy' as destination is already set to '$raddr'##"
 			else
 				param="$param $valueNeg -s $value $appendLocalPolicy"
 			fi
@@ -391,7 +391,7 @@ insert_policy() {
 			fi
 			if [ "${appendRemotePolicy//-s}" != "$appendRemotePolicy" ] && [ -n "$laddr" ]; then
 				param="$param $valueNeg -d $value"
-				processPolicyError="${processPolicyError}${_ERROR_}: cannot append '$comment' policy with '$appendRemotePolicy' as source is already set to '$laddr'\\n"
+				processPolicyError="${processPolicyError}${_ERROR_}: Cannot append '$comment' policy with '$appendRemotePolicy' as source is already set to '$laddr'\\n"
 			else
 				param="$param $valueNeg -d $value $appendRemotePolicy"
 			fi
@@ -437,12 +437,12 @@ r_process_policy(){
 	elif [ -n "$laddr" ] && [ -z "${lport}${raddr}${rport}" ] && [ "$chain" = 'PREROUTING' ]; then
 		if is_mac_address "$laddr"; then
 			if [ -n "$proto" ] && [ "$proto" != 'all' ] && [ "$localIpset" -ne 0 ]; then
-				processPolicyWarning="${processPolicyWarning}${_WARNING_}: please unset 'proto' or set 'proto' to 'all' for policy '$comment', mac-address '$laddr'.\\n"
+				processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment', mac-address '$laddr'\\n"
 			fi
 			ips 'add' "${iface}_mac" "$laddr" "${comment}: $laddr" || ipsFailFlag=1
 		else
 			if [ -n "$proto" ] && [ "$proto" != "all" ] && [ "$localIpset" -ne 0 ]; then
-				processPolicyWarning="${processPolicyWarning}${_WARNING_}: please unset 'proto' or set 'proto' to 'all' for policy '$comment', address '$laddr'.\\n"
+				processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment', address '$laddr'\\n"
 			fi
 			if ! ips 'add' "${iface}_ip" "$laddr" "${comment}: $laddr"; then
 				ipr "$comment" "$iface" "$i" || ipsFailFlag=1
@@ -450,7 +450,7 @@ r_process_policy(){
 		fi
 	elif [ -n "$raddr" ] && [ -z "${laddr}${lport}${rport}" ] && [ "$chain" = 'PREROUTING' ] && [ -n "$remoteIpset" ]; then
 		if [ -n "$proto" ] && [ "$proto" != 'all' ]; then
-			processPolicyWarning="${processPolicyWarning}${_WARNING_}: please unset 'proto' or set 'proto' to 'all' for policy '$comment', domain '$raddr'.\\n"
+			processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment', domain '$raddr'\\n"
 		fi
 		case "$remoteIpset" in
 		ipset)
@@ -502,15 +502,19 @@ process_policy(){
 	output 2 "Routing '$comment' via $iface "
 
 	if [ -z "$comment" ]; then
-		errorSummary="${errorSummary}${_ERROR_}: policy name is empty##"
+		errorSummary="${errorSummary}${_ERROR_}: Policy name is empty\\n"
 		output_fail; return 1;
  	fi
 	if [ -z "${laddr}${lport}${raddr}${rport}" ]; then
-		errorSummary="${errorSummary}${_ERROR_}: policy '$comment' missing all IPs/ports##"
+		errorSummary="${errorSummary}${_ERROR_}: Policy '$comment' missing all IPs/ports\\n"
+		output_fail; return 1;
+	fi
+	if [ -z "$iface" ]; then
+		errorSummary="${errorSummary}${_ERROR_}: Policy '$comment' has no assigned interface\\n"
 		output_fail; return 1;
 	fi
 	if ! is_supported_interface "$iface"; then
-		errorSummary="${errorSummary}${_ERROR_}: policy '$comment' has an unknown interface: '${iface}'##"
+		errorSummary="${errorSummary}${_ERROR_}: Policy '$comment' has unknown interface: '${iface}'\\n"
 		output_fail; return 1;
 	fi
 
@@ -522,7 +526,7 @@ process_policy(){
 	fi
 	if [ -n "$processPolicyError" ]; then
 		output_fail
-		errorSummary="${errorSummary}${processPolicyError}##"
+		errorSummary="${errorSummary}${processPolicyError}\\n"
 	else
 		output_ok
 	fi
@@ -658,10 +662,10 @@ process_interface(){
 			output 2 "Creating table '$displayText' "
 			is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
 			if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then
-				gatewaySummary="${gatewaySummary}${displayText}##"
+				gatewaySummary="${gatewaySummary}${displayText}\\n"
 				output_ok
 			else
-				errorSummary="${errorSummary}${_ERROR_}: Failed to set up '$displayText'##"
+				errorSummary="${errorSummary}${_ERROR_}: Failed to set up '$displayText'\\n"
 				output_fail
 			fi
 			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
@@ -737,18 +741,18 @@ process_user_file(){
 	config_get      path    "$1" 'path'
 	[ "$enabled" -gt 0 ] || return 0
 	if [ ! -s "$path" ]; then
-		errorSummary="${errorSummary}${_ERROR_}: Custom user file '$path' not found or empty##"
+		errorSummary="${errorSummary}${_ERROR_}: Custom user file '$path' not found or empty\\n"
 		output_fail
 		return 1
 	fi
 	if ! $shellBin -n "$path"; then
-		errorSummary="${errorSummary}${_ERROR_}: Syntax error in custom user file '$path'##"
+		errorSummary="${errorSummary}${_ERROR_}: Syntax error in custom user file '$path'\\n"
 		output_fail
 		return 1
 	fi
 # shellcheck disable=SC1090
 	if ! . "$path"; then
-		errorSummary="${errorSummary}${_ERROR_}: Error running custom user file '$path'##"
+		errorSummary="${errorSummary}${_ERROR_}: Error running custom user file '$path'\\n"
 		output_fail
 		return 1
 	else
@@ -774,7 +778,7 @@ start_service() {
 		done
 
 		if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then
-	 		errorSummary="${errorSummary}${_ERROR_}: failed to load kernel modules##"
+	 		errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
 		fi
 
 		for i in PREROUTING FORWARD INPUT OUTPUT; do
@@ -802,11 +806,11 @@ start_service() {
 		[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
 
 		if [ -z "$gatewaySummary" ]; then
-	 		errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway##"
+	 		errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway\\n"
 		else
-			output "$serviceName started with gateways:\\n${gatewaySummary//##/\\n}"
-			[ -n "$errorSummary" ] && output "With ERRORS:\\n${errorSummary//##/\\n}"
-			[ -n "$warningSummary" ] && output "With WARNINGS:\\n${warningSummary//##/\\n}"
+			output "$serviceName started with gateways:\\n${gatewaySummary}"
+			[ -n "$errorSummary" ] && output "${errorSummary}"
+			[ -n "$warningSummary" ] && output "${warningSummary}"
 		fi
 		procd_open_instance "main"
 		procd_set_param command /bin/true
