@@ -18,25 +18,36 @@ local dispatcher = require "luci.dispatcher"
 local enabledFlag = uci:get(packageName, "config", "enabled")
 local enc
 
-local tmpfsVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'")))
-if not tmpfsVersion or tmpfsVersion == "" then
-  tmpfsVersion = ""
-  tmpfsStatus = packageName .. " " .. translate("is not installed or not found")
+local ubusStatus = util.ubus("service", "list", { name = packageName })
+if ubusStatus and ubusStatus[packageName] and 
+   ubusStatus[packageName]["instances"] and 
+   ubusStatus[packageName]["instances"]["main"] and 
+	 ubusStatus[packageName]["instances"]["main"]["data"] and
+	 ubusStatus[packageName]["instances"]["main"]["data"]["status"] and 
+	 ubusStatus[packageName]["instances"]["main"]["data"]["status"][1] then
+	pkgGateways = ubusStatus[packageName]["instances"]["main"]["data"]["status"][1]["gateway"]
+	pkgGateways = pkgGateways and pkgGateways:gsub('##', '\n')
+	pkgGateways = pkgGateways and pkgGateways:gsub('\\033%[0;32m%[\\xe2\\x9c\\x93%]\\033%[0m', '✓')
+	pkgErrors = ubusStatus[packageName]["instances"]["main"]["data"]["status"][1]["error"]
+	pkgErrors = pkgErrors and pkgErrors:gsub('##', '\n')
+	pkgWarnings = ubusStatus[packageName]["instances"]["main"]["data"]["status"][1]["warning"]
+	pkgWarnings = pkgWarnings and pkgWarnings:gsub('##', '\n')
+	pkgMode = ubusStatus[packageName]["instances"]["main"]["data"]["status"][1]["mode"]
+end
+
+local pkgVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'")))
+if not pkgVersion or pkgVersion == "" then
+  pkgVersion = ""
+  pkgStatus, pkgStatusLabel = "NotFound", packageName .. " " .. translate("is not installed or not found")
 else  
-  tmpfsVersion = " [" .. packageName .. " " .. tmpfsVersion .. "]"
+  pkgVersion = " [" .. packageName .. " " .. pkgVersion .. "]"
 end
-local tmpfsStatus, tmpfsStatusLabel = "Stopped", translate("Stopped")
+local pkgStatus, pkgStatusLabel = "Stopped", translate("Stopped")
 if sys.call("iptables -t mangle -L | grep -q VPR_PREROUTING") == 0 then
-	tmpfsStatus, tmpfsStatusLabel = "Running", translate("Running")
-end
-local tmpfs
-if fs.access("/var/run/" .. packageName .. ".json") then
-	tmpfs = jsonc.parse(util.trim(sys.exec("cat /var/run/" .. packageName .. ".json")))
-end
-local tmpfsGateways
-if tmpfs and tmpfs['data'] and tmpfs['data']['status'] and tmpfs['data']['status'] ~= "" then
-		tmpfsGateways = tmpfs['data']['status']
-		tmpfsGateways = tmpfsGateways:gsub('\\033[^ ]*', '&nbsp;✓')
+	pkgStatus, pkgStatusLabel = "Running", translate("Running")
+	if pkgMode and pkgMode == "strict" then
+		pkgStatusLabel = pkgStatusLabel .. " " .. translate("(strict mode)")
+	end
 end
 
 local t = uci:get("vpn-policy-routing", "config", "supported_interface")
@@ -106,11 +117,24 @@ end
 
 m = Map("vpn-policy-routing", translate("VPN and WAN Policy-Based Routing"))
 
-h = m:section(NamedSection, "config", packageName, translate("Service Status") .. tmpfsVersion .. ": " .. tmpfsStatusLabel)
-if tmpfsStatus:match("Running")  and tmpfsGateways and tmpfsGateways ~= "" then
-	sg = h:option(DummyValue, "_dummy", translate("Service Gateways"))
-	sg.template = packageName .. "/status-textarea"
-	sg.value = tmpfsGateways
+h = m:section(NamedSection, "config", packageName, translate("Service Status") .. pkgVersion)
+status = h:option(DummyValue, "_dummy", translate("Service Status"))
+status.template = "vpn-policy-routing/status"
+status.value = pkgStatusLabel
+if pkgStatus:match("Running") and pkgGateways and pkgGateways ~= "" then
+	gateways = h:option(DummyValue, "_dummy", translate("Service Gateways"))
+	gateways.template = packageName .. "/status-textarea"
+	gateways.value = pkgGateways
+end
+if pkgErrors and pkgErrors ~= "" then
+	errors = h:option(DummyValue, "_dummy", translate("Service Gateways"))
+	errors.template = packageName .. "/status-textarea"
+	errors.value = pkgErrors
+end
+if pkgWarnings and pkgWarnings ~= "" then
+	warnings = h:option(DummyValue, "_dummy", translate("Service Gateways"))
+	warnings.template = packageName .. "/status-textarea"
+	warnings.value = pkgWarnings
 end
 buttons = h:option(DummyValue, "_dummy")
 buttons.template = packageName .. "/buttons"

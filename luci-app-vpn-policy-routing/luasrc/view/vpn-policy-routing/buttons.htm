@@ -8,17 +8,11 @@
 	if nixio.fs.access("/var/run/" .. packageName .. ".json") then
 		tmpfs = luci.jsonc.parse(luci.util.trim(luci.sys.exec("cat /var/run/" .. packageName .. ".json")))
 	end
-	local tmpfsVersion, tmpfsStatus = "", "Stopped"
-	if tmpfs and tmpfs['data'] then
-		if tmpfs['data']['status'] and tmpfs['data']['status'] ~= "" then
-			tmpfsStatus = tmpfs['data']['status']
-			tmpfsStatus = tmpfsStatus:gsub('\\033[^ ]*', '✓')
-		end
-		if tmpfs['data']['version'] and tmpfs['data']['version'] ~= "" then
-			tmpfsVersion = " [" .. packageName .. " " .. tmpfs['data']['version'] .. "]"
-		end
+	local pkgStatus, pkgStatusLabel = "Stopped", translate("Stopped")
+	if luci.sys.call("iptables -t mangle -L | grep -q VPR_PREROUTING") == 0 then
+		pkgStatus, pkgStatusLabel = "Running", translate("Running")
 	end
-	if tmpfsStatus == "Stopped" then
+	if pkgStatus == "Stopped" then
 		btn_start_style = "cbi-button cbi-button-apply important"
 		btn_action_style = "cbi-button cbi-button-apply important"
 		btn_stop_style = "cbi-button cbi-button-reset -disabled"

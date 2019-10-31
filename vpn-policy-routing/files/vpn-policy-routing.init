@@ -2,7 +2,7 @@
 # Copyright 2017-2019 Stan Grishin (stangri@melmac.net)
 # shellcheck disable=SC2039
 # shellcheck disable=SC1091
-PKG_VERSION=
+PKG_VERSION='dev-test'
 
 export START=94
 export USE_PROCD=1
@@ -27,7 +27,6 @@ export EXTRA_HELP="	support	Generates output required to troubleshoot routing is
 readonly packageName='vpn-policy-routing'
 readonly serviceName="$packageName $PKG_VERSION"
 readonly PID="/var/run/${packageName}.pid"
-readonly jsonFile="/var/run/${packageName}.json"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
 readonly userFile="/etc/${packageName}.user"
 create_lock() { [ -e "$PID" ] && return 1; touch "$PID"; }
@@ -503,15 +502,15 @@ process_policy(){
 	output 2 "Routing '$comment' via $iface "
 
 	if [ -z "$comment" ]; then
-		errorStatusSummary="${errorStatusSummary}${_ERROR_}: policy name is empty\\n"
+		errorSummary="${errorSummary}${_ERROR_}: policy name is empty##"
 		output_fail; return 1;
  	fi
 	if [ -z "${laddr}${lport}${raddr}${rport}" ]; then
-		errorStatusSummary="${errorStatusSummary}${_ERROR_}: policy '$comment' missing all IPs/ports\\n"
+		errorSummary="${errorSummary}${_ERROR_}: policy '$comment' missing all IPs/ports##"
 		output_fail; return 1;
 	fi
 	if ! is_supported_interface "$iface"; then
-		errorStatusSummary="${errorStatusSummary}${_ERROR_}: policy '$comment' has an unknown interface: ${iface}\\n"
+		errorSummary="${errorSummary}${_ERROR_}: policy '$comment' has an unknown interface: '${iface}'##"
 		output_fail; return 1;
 	fi
 
@@ -519,11 +518,11 @@ process_policy(){
 	rport="${rport//  / }"; rport="${rport// /,}"; rport="${rport//,\!/ !}";
 	r_process_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 	if [ -n "$processPolicyWarning" ]; then
-		warningStatusSummary="${warningStatusSummary}${processPolicyWarning}\\n"
+		warningSummary="${warningSummary}${processPolicyWarning}\\n"
 	fi
 	if [ -n "$processPolicyError" ]; then
 		output_fail
-		errorStatusSummary="${errorStatusSummary}${processPolicyError}\\n"
+		errorSummary="${errorSummary}${processPolicyError}##"
 	else
 		output_ok
 	fi
@@ -657,106 +656,18 @@ process_interface(){
 			fi
 			[ "$ipv6Enabled" -ne 0 ] && displayText="${displayText}/${gw6:-::/0}"
 			output 2 "Creating table '$displayText' "
-			is_default_dev "$dev" && displayText="${displayText}${__OK__}"
+			is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
 			if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then
-				serviceStatusSummary="${serviceStatusSummary}${displayText}\\n"
+				gatewaySummary="${gatewaySummary}${displayText}##"
 				output_ok
 			else
-				errorStatusSummary="${errorStatusSummary}${_ERROR_}: Failed to set up '$displayText'\\n"
+				errorSummary="${errorSummary}${_ERROR_}: Failed to set up '$displayText'##"
 				output_fail
 			fi
 			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
 			;;
 	esac
 	return $s
-}
-
-tmpfs() {
-	local action="$1" param="$2" value="$3"
-	local status message error stats gateway
-	if [ -s "$jsonFile" ]; then
-		status="$(jsonfilter -i "$jsonFile" -l1 -e "@['data']['status']")"
-		message="$(jsonfilter -i "$jsonFile" -l1 -e "@['data']['message']")"
-		error="$(jsonfilter -i "$jsonFile" -l1 -e "@['data']['error']")"
-		stats="$(jsonfilter -i "$jsonFile" -l1 -e "@['data']['stats']")"
-		gateway="$(jsonfilter -i "$jsonFile" -l1 -e "@['data']['gateway']")"
-	fi
-	case "$action" in
-		get)
-			case "$param" in
-				status)
-					printf "%b" "$status"; return;;
-				message) 
-					printf "%b" "$message"; return;;
-				error) 
-					printf "%b" "$error"; return;;
-				stats) 
-					printf "%b" "$stats"; return;;
-				gateway) 
-					printf "%b" "$gateway"; return;;
-			esac
-			;;
-		add)
-			case "$param" in
-				status)
-					[ -n "$status" ] && status="$status $value" || status="$value";;
-				message) 
-					[ -n "$message" ] && message="$message $value" || message="$value";;
-				error)
-					[ -n "$error" ] && error="$error $value" || error="$value";;
-				stats) 
-					[ -n "$stats" ] && stats="$stats $value" || stats="$value";;
-				gateway) 
-					[ -n "$gateway" ] && gateway="${gateway} ${value}" || gateway="$value";;
-			esac
-			;;
-		del)
-			case "$param" in
-				all)
-					unset status;
-					unset message;
-					unset error;
-					unset stats;
-					unset gateway;
-					;;
-				status)
-					unset status;;
-				message) 
-					unset message;;
-				error) 
-					unset error;;
-				stats) 
-					unset stats;;
-				gateway) 
-					unset gateway;;
-			esac
-			;;
-		set)
-			case "$param" in
-				status)
-					status="$value";;
-				message) 
-					message="$value";;
-				error) 
-					error="$value";;
-				stats) 
-					stats="$value";;
-				gateway) 
-					gateway="$value";;
-			esac
-			;;
-	esac
-  json_init
-  json_add_object 'data'
-  json_add_string version "$PKG_VERSION"
-  json_add_string status "$status"
-  json_add_string message "$message"
-  json_add_string error "$error"
-  json_add_string stats "$stats"
-  json_add_string gateway "$gateway"
-  json_close_object
-  json_dump > "$jsonFile"
-	sync
 }
 
 convert_config(){
@@ -826,18 +737,18 @@ process_user_file(){
 	config_get      path    "$1" 'path'
 	[ "$enabled" -gt 0 ] || return 0
 	if [ ! -s "$path" ]; then
-		errorStatusSummary="${errorStatusSummary}${_ERROR_}: Custom user file '$path' not found or empty\\n"
+		errorSummary="${errorSummary}${_ERROR_}: Custom user file '$path' not found or empty##"
 		output_fail
 		return 1
 	fi
 	if ! $shellBin -n "$path"; then
-		errorStatusSummary="${errorStatusSummary}${_ERROR_}: Syntax error in custom user file '$path'\\n"
+		errorSummary="${errorSummary}${_ERROR_}: Syntax error in custom user file '$path'##"
 		output_fail
 		return 1
 	fi
 # shellcheck disable=SC1090
 	if ! . "$path"; then
-		errorStatusSummary="${errorStatusSummary}${_ERROR_}: Error running custom user file '$path'\\n"
+		errorSummary="${errorSummary}${_ERROR_}: Error running custom user file '$path'##"
 		output_fail
 		return 1
 	else
@@ -848,19 +759,11 @@ process_user_file(){
 }
 
 start_service() {
-	local serviceStatusSummary errorStatusSummary warningStatusSummary dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0
+	local gatewaySummary errorSummary warningSummary dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0
 	convert_config
 	is_enabled 'on_start' || return 1
 	is_wan_up || return 0
 	if create_lock; then
-		procd_open_instance "main"
-		procd_set_param command /bin/true
-		procd_set_param stdout 1
-		procd_set_param stderr 1
-		procd_close_instance
-
-		tmpfs 'del' 'all'
-
 		if [ -s "$dnsmasqFile" ]; then
 			dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
 			rm -f "$dnsmasqFile"
@@ -870,10 +773,8 @@ start_service() {
 			modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
 		done
 
-		if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then 
- 			output "$_ERROR_: $serviceName failed to load kernel modules!\\n"
-			tmpfs 'add' 'error' "Fail: $serviceName failed to load kernel modules\\n"
-			return 1
+		if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then
+	 		errorSummary="${errorSummary}${_ERROR_}: failed to load kernel modules##"
 		fi
 
 		for i in PREROUTING FORWARD INPUT OUTPUT; do
@@ -886,12 +787,12 @@ start_service() {
 		output 1 '\n'
 		if is_config_enabled 'policy'; then
 			output 1 'Processing Policies '
-			config_load $packageName; config_foreach process_policy 'policy';
+			config_load "$packageName"; config_foreach process_policy 'policy';
 			output 1 '\n'
 		fi
 		if is_config_enabled 'include'; then
 			output 1 'Processing User File(s) '
-			config_load $packageName; config_foreach process_user_file 'include';
+			config_load "$packageName"; config_foreach process_user_file 'include';
 			output 1 '\n'
 		fi
 
@@ -900,29 +801,30 @@ start_service() {
 		fi
 		[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
 
-		if [ -z "$serviceStatusSummary" ]; then
-			output "$_ERROR_: $serviceName failed to set up any interface!\\n"
-			tmpfs 'set' 'error' "$_ERROR_: $serviceName failed to set up any interface\\n"
-			return 1
+		if [ -z "$gatewaySummary" ]; then
+	 		errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway##"
 		else
-			if [ "$strictMode" -ne 0 ] && [ "${serviceStatusSummary//0.0.0.0}" != "${serviceStatusSummary}" ]; then
-				serviceStatusSummary="(strict mode): ${serviceStatusSummary}"
-				tmpfs 'set' 'mode' 'strict'
-			fi
-			output "$serviceName started with gateways:\\n${serviceStatusSummary}\\n"
-			if [ -z "$errorStatusSummary" ]; then
-				tmpfs 'set' 'gateway' "${serviceStatusSummary}"
-			else
-				output "With ERRORS:\\n"
-				output "${errorStatusSummary}"
-				tmpfs 'set' 'error' "${errorStatusSummary}"
-			fi
-			if [ -n "$warningStatusSummary" ]; then
-				output "With WARNINGS:\\n"
-				output "${warningStatusSummary}"
-				tmpfs 'set' 'warning' "${warningStatusSummary}"
-			fi
+			output "$serviceName started with gateways:\\n${gatewaySummary//##/\\n}"
+			[ -n "$errorSummary" ] && output "With ERRORS:\\n${errorSummary//##/\\n}"
+			[ -n "$warningSummary" ] && output "With WARNINGS:\\n${warningSummary//##/\\n}"
 		fi
+		procd_open_instance "main"
+		procd_set_param command /bin/true
+		procd_set_param stdout 1
+		procd_set_param stderr 1
+		procd_open_data
+		json_add_array 'status'
+		json_add_object ''
+		[ -n "$gatewaySummary" ] && json_add_string gateway "$gatewaySummary"
+		[ -n "$errorSummary" ] && json_add_string error "$errorSummary"
+		[ -n "$warningSummary" ] && json_add_string warning "$warningSummary"
+		if [ "$strictMode" -ne 0 ] && [ "${gatewaySummary//0.0.0.0}" != "${gatewaySummary}" ]; then
+			json_add_string mode "strict"
+		fi
+		json_close_object
+		json_close_array
+		procd_close_data
+		procd_close_instance
 		remove_lock
 	else
 		output "$serviceName: another instance of ${packageName} is currently running "
@@ -936,7 +838,7 @@ restart_service() { reload; }
 
 stop_service() {
 	local i
-	[ "$(tmpfs 'get')"  = "Stopped" ] && return 0
+	iptables -t mangle -L | grep -q VPR_PREROUTING || return 0
 	if create_lock; then
 		load_package_config
 		for i in PREROUTING FORWARD INPUT OUTPUT; do
@@ -952,7 +854,6 @@ stop_service() {
 		if [ "$serviceEnabled" -ne 0 ]; then
 			output "$serviceName stopped "; output_okn;
 		fi
-		tmpfs 'set' "Stopped"
 		remove_lock
 	else
 		output "$serviceName: another instance of ${packageName} is currently running "; output_failn;
