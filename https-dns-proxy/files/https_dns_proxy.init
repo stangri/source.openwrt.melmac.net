@@ -60,7 +60,7 @@ start_service() {
 	fi
 	if [ -n "$(uci -q changes dhcp)" ]; then
 		uci -q commit dhcp
-		/etc/init.d/dnsmasq restart >/dev/null 2>&1
+		[ -x /etc/init.d/dnsmasq ] && /etc/init.d/dnsmasq restart >/dev/null 2>&1
 	fi
 }
 
@@ -68,7 +68,7 @@ stop_service() {
 	dhcp_backup 'restore'
 	if [ -n "$(uci -q changes dhcp)" ]; then
 		uci -q commit dhcp
-		/etc/init.d/dnsmasq restart >/dev/null 2>&1
+		[ -x /etc/init.d/dnsmasq ] && /etc/init.d/dnsmasq restart >/dev/null 2>&1
 	fi
 }
 
