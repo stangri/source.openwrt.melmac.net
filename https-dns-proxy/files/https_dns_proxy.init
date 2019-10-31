@@ -24,7 +24,7 @@ start_instance() {
 	local cfg="$1" param listen_addr listen_port
 
 	append_parm "$cfg" 'listen_addr' '-a' '127.0.0.1'
-	append_parm "$cfg" 'listen_port' '-p' "$((p+5053))"
+	append_parm "$cfg" 'listen_port' '-p' "$p"
 	append_parm "$cfg" 'bootstrap_dns' '-b'
 	append_parm "$cfg" 'url_prefix' '-r'
 	append_parm "$cfg" 'user' '-u' 'nobody'
@@ -39,7 +39,7 @@ start_instance() {
 	procd_close_instance
 
 	config_get listen_addr "$cfg" 'listen_addr' '127.0.0.1'
-	config_get listen_port "$cfg" 'listen_port' "$((p+5053))"
+	config_get listen_port "$cfg" 'listen_port' "$p"
 	config_load 'dhcp'
 # shellcheck disable=SC2154
 	config_foreach dnsmasq_add_doh_server 'dnsmasq' "${listen_addr}#${listen_port}"
@@ -51,7 +51,7 @@ service_triggers() {
 }
 
 start_service() {
-	local p=0
+	local p=5053
 	dhcp_backup 'create'
 	config_load 'https_dns_proxy'
 	config_foreach start_instance 'https_dns_proxy'
