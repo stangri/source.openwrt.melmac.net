@@ -41,7 +41,7 @@ Two example custom user-files are provided: ```/etc/vpn-policy-routing.aws.user`
 ### Use DNSMASQ ipset
 
 - Service can be set to utilize ```dnsmasq```'s ```ipset``` support, which requires the ```dnsmasq-full``` package to be installed (see [How to install dnsmasq-full](#how-to-install-dnsmasq-full)). This significantly improves the start up time because ```dnsmasq``` resolves the domain names and adds them to appropriate ```ipset``` in background. Another benefit of using ```dnsmasq```'s ```ipset``` is that it also automatically adds third-level domains to the ```ipset```: if ```domain.com``` is added to the policy, this policy will affect all ```*.domain.com``` subdomains. This also works for top-level domains as well, a policy targeting the ```at``` for example, will affect all the ```*.at``` domains.
-- Please review the [Footnotes/Known Issues](#footnotesknown-issues) section, specifically [5](#footnote5) and any other information in that section relevant to domain-based routing/DNS.
+- Please review the [Footnotes/Known Issues](#footnotesknown-issues) section, specifically [<sup>5</sup>](#footnote5) and any other information in that section relevant to domain-based routing/DNS.
 
 ### Customization
 
