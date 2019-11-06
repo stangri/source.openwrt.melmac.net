@@ -41,6 +41,7 @@ Two example custom user-files are provided: ```/etc/vpn-policy-routing.aws.user`
 ### Use DNSMASQ ipset
 
 - Service can be set to utilize ```dnsmasq```'s ```ipset``` support, which requires the ```dnsmasq-full``` package to be installed (see [How to install dnsmasq-full](#how-to-install-dnsmasq-full)). This significantly improves the start up time because ```dnsmasq``` resolves the domain names and adds them to appropriate ```ipset``` in background. Another benefit of using ```dnsmasq```'s ```ipset``` is that it also automatically adds third-level domains to the ```ipset```: if ```domain.com``` is added to the policy, this policy will affect all ```*.domain.com``` subdomains. This also works for top-level domains as well, a policy targeting the ```at``` for example, will affect all the ```*.at``` domains.
+- Please review the [Footnotes/Known Issues](#footnotesknown-issues) section, specifically [5](#footnote5) and any other information in that section relevant to domain-based routing/DNS.
 
 ### Customization
 
@@ -671,9 +672,11 @@ config include
 
 2. <a name="footnote2"> </a> If your ```OpenVPN``` interface has the device name different from tun\* or tap\*, is not up and is not explicitly listed in ```supported_interface``` option, it may not be available in the policies ```Interface``` drop-down within WebUI.
 
-3. <a name="footnote3"> </a> If your default routing is set to the VPN tunnel, then the true WAN interface cannot be discovered using OpenWrt built-in functions, so service will assume your network interface ending with or starting with '''wan''' is the true WAN interface.
+3. <a name="footnote3"> </a> If your default routing is set to the VPN tunnel, then the true WAN interface cannot be discovered using OpenWrt built-in functions, so service will assume your network interface ending with or starting with ```wan``` is the true WAN interface.
 
 4. <a name="footnote4"> </a> The service does **NOT** support the "killswitch" router mode (where if you stop the VPN tunnel, you have no internet connection). For proper operation, leave all the default OpenWrt ```network``` and ```firewall``` settings for ```lan``` and ```wan``` intact.
+
+5. <a name="footnote5"> </a> When using the ```dnsmasq.ipset``` option, please make sure to flush the DNS cache of the local devices, otherwise domain policies may not work until you do. If you're not sure how to flush the DNS cache (or if the device/OS doesn't offer an option to flush its DNS cache), reboot your local devices when starting to use the service and/or when connecting data-capable device to your WiFi.
 
 ### Multiple OpenVPN Clients
 
