@@ -78,7 +78,7 @@ Custom User File Includes
 
 ## How It Works
 
-On start, this service creates routing tables for each supported interface (WAN/WAN6 and VPN tunnels) which are used to route specially marked packets. For the ```mangle``` table's ```PREROUTING```, ```FORWARD```, ```INPUT``` and ```OUTPUT``` chains, the service creates correspindong ```VPR_*``` chains to which policies are assigned. Evaluation and marking of packets happens in these ```VPR_*``` chains. If enabled, the service also creates the remote/local ipsets per each supported interface and the corresponding ```iptables``` rule for marking packets matching the ```ipset```. The service then processes the user-created policies.
+On start, this service creates routing tables for each supported interface (WAN/WAN6 and VPN tunnels) which are used to route specially marked packets. For the ```mangle``` table's ```PREROUTING```, ```FORWARD```, ```INPUT``` and ```OUTPUT``` chains, the service creates corresponding ```VPR_*``` chains to which policies are assigned. Evaluation and marking of packets happens in these ```VPR_*``` chains. If enabled, the service also creates the remote/local ipsets per each supported interface and the corresponding ```iptables``` rule for marking packets matching the ```ipset```. The service then processes the user-created policies.
 
 ### Processing Policies
 
