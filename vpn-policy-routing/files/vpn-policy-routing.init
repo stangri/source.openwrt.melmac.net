@@ -62,20 +62,20 @@ export serviceEnabled verbosity strictMode wanTableID wanMark fwMask
 export ipv6Enabled localIpset remoteIpset ipruleEnabled icmpIface
 export ignoredIfaces="" supportedIfaces=""
 export appendLocalPolicy="" appendRemotePolicy=""
-export wanIface4 wanIface6 ifaceMark ifaceTableID ifacesListAll ifacesListSupported wanGW4 wanGW6
+export wanIface4 wanIface6 ifaceMark ifaceTableID ifAll ifSupported wanGW4 wanGW6
 export bootTimeout insertOption
 
-list_iface() { ifacesListAll="${ifacesListAll}${1} "; }
-list_supported_iface() { is_supported_interface "$1" && ifacesListSupported="${ifacesListSupported}${1} "; }
+list_iface() { ifAll="${ifAll}${1} "; }
+list_supported_iface() { is_supported_interface "$1" && ifSupported="${ifSupported}${1} "; }
 vpr_find_true() {
 	local iface i param="$2"
 	[ "$param" = 'wan6' ] || param='wan'
 	"network_find_${param}" iface
 	is_tunnel "$iface" && unset iface
 	if [ -z "$iface" ]; then
-		unset ifacesListAll; config_load 'network';
+		unset ifAll; config_load 'network';
 		config_foreach list_iface 'interface'
-		for i in $ifacesListAll; do
+		for i in $ifAll; do
 			if "is_${param}" "$i"; then break; else unset i; fi
 		done
 	fi
@@ -125,7 +125,7 @@ dnsmasq_kill() { killall -q -HUP dnsmasq; }
 dnsmasq_restart() { output 1 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
 is_default_dev() { [ "$1" = "$(ip -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
 is_supported_iface_dev() {
-	for n in $ifacesListSupported; do 
+	for n in $ifSupported; do 
 		if [ "$1" = "$(uci -q get "network.${n}.ifname" || echo "$n")" ] || [ "$1" = "$(uci -q get "network.${n}.proto")-${n}" ] ; then return 0; fi
 	done
 	return 1
@@ -225,7 +225,7 @@ is_wan_up() {
 		output "$serviceName waiting for wan gateway...\\n"; sleep 1; network_flush_cache; sleepCount=$((sleepCount+1));
 	done
 	mkdir -p "${PID%/*}"; mkdir -p "${dnsmasqFile%/*}";
-	unset ifacesListSupported
+	unset ifSupported
 	config_load 'network'
 	config_foreach list_supported_iface 'interface'
 	if [ -n "$wanGW" ]; then
@@ -880,10 +880,10 @@ service_triggers() {
 		procd_add_reload_trigger 'openvpn'
 		procd_add_reload_trigger 'vpn-policy-routing'
 		procd_open_trigger
-			for n in $ifacesListSupported; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
-#			output "$serviceName monitoring interfaces: $ifacesListSupported\\n"; # output_okn;
-#			for n in $ifacesListAll; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
-#			output "$serviceName monitoring ALL interfaces: $ifacesListAll"; output_okn;
+			for n in $ifSupported; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
+#			output "$serviceName monitoring interfaces: $ifSupported\\n"; # output_okn;
+#			for n in $ifAll; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
+#			output "$serviceName monitoring ALL interfaces: $ifAll"; output_okn;
 		procd_close_trigger
 }
 
