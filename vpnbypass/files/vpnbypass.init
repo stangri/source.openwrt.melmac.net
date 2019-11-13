@@ -62,21 +62,21 @@ is_supported_interface() { if is_wan "$1" || is_ovpn "$1"; then return 0; else r
 
 # shellcheck disable=SC2086
 ipt() {
-  local d; 
-  d="${*//-A/-D}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
-  d="${*//-I/-D}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
-  d="${*//-N/-F}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
-  d="${*//-N/-X}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
+	local d; 
+	d="${*//-A/-D}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
+	d="${*//-I/-D}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
+	d="${*//-N/-F}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
+	d="${*//-N/-X}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
 	d="$*"; iptables $d >/dev/null 2>&1 || output "\\n$__ERROR__: iptables $d\\n"
 }
 
 start_service() {
-  local ll lports rports routes ranges
-  is_enabled || return 1
-  config_get lports   'config' 'localport'
-  config_get rports   'config' 'remoteport'
-  config_get routes   'config' 'remotesubnet'
-  config_get ranges   'config' 'localsubnet'
+	local ll lports rports routes ranges
+	is_enabled || return 1
+	config_get lports   'config' 'localport'
+	config_get rports   'config' 'remoteport'
+	config_get routes   'config' 'remotesubnet'
+	config_get ranges   'config' 'localsubnet'
 
 	procd_open_instance "main"
 	procd_set_param command /bin/true
@@ -102,7 +102,7 @@ start_service() {
 }
 
 stop_service() {
-  load_package_config
+	load_package_config
 	ip rule del fwmark "$FW_MARK" table "$TID" >/dev/null 2>&1; 
 	ipset -q flush "$IPSET"; ipset -q destroy "$IPSET";
 	ip route flush table "$TID"; ip route flush cache;

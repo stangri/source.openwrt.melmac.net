@@ -497,17 +497,17 @@ tmpfs() {
 			esac
 			;;
 	esac
-  json_init
-  json_add_object 'data'
-  json_add_string version "$PKG_VERSION"
-  json_add_string status "$status"
-  json_add_string message "$message"
-  json_add_string error "$error"
-  json_add_string stats "$stats"
-  json_add_string reload "$readReload"
-  json_add_string restart "$readRestart"
-  json_close_object
-  json_dump > "$jsonFile"
+	json_init
+	json_add_object 'data'
+	json_add_string version "$PKG_VERSION"
+	json_add_string status "$status"
+	json_add_string message "$message"
+	json_add_string error "$error"
+	json_add_string stats "$stats"
+	json_add_string reload "$readReload"
+	json_add_string restart "$readRestart"
+	json_close_object
+	json_dump > "$jsonFile"
 	sync
 }
 
@@ -560,7 +560,7 @@ fw3Ops() {
 			case "$param" in
 				dns_redirect) uci -q del firewall.simple_adblock_dns_redirect;;
 				ipset)        uci -q del firewall.simple_adblock_ipset
-				              uci -q del firewall.simple_adblock_ipset_rule;;
+											uci -q del firewall.simple_adblock_ipset_rule;;
 				*)
 					uci -q del firewall.simple_adblock_dns_redirect
 					uci -q del firewall.simple_adblock_ipset
@@ -760,8 +760,8 @@ $(cat $A_TMP)"
 	fi
 
 	if [ "$targetDNS" = 'dnsmasq.conf' ] || \
-	   [ "$targetDNS" = 'dnsmasq.ipset' ] || \
-	   [ "$targetDNS" = 'dnsmasq.servers' ] || \
+		 [ "$targetDNS" = 'dnsmasq.ipset' ] || \
+		 [ "$targetDNS" = 'dnsmasq.servers' ] || \
 		 [ "$targetDNS" = 'unbound.adb_list' ]; then
 		# TLD optimization written by Dirk Brenken (dev@brenken.org)
 		output 2 'Optimizing combined list '

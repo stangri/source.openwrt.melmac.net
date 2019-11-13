@@ -25,9 +25,9 @@ endef
 
 AMSRC=v$(PKG_VERSION)
 define Download/antminer-monitor
-  URL:=https://github.com/anselal/$(PKG_NAME)/archive/
-  FILE:=$(AMSRC).tar.gz
-  HASH:=24491144471ba3df590cd1cb7be6a3f646f5ec3adf150cf214f9ed448414762d
+	URL:=https://github.com/anselal/$(PKG_NAME)/archive/
+	FILE:=$(AMSRC).tar.gz
+	HASH:=24491144471ba3df590cd1cb7be6a3f646f5ec3adf150cf214f9ed448414762d
 endef
 $(eval $(call Download,antminer-monitor))
 

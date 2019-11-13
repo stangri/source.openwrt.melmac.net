@@ -245,7 +245,7 @@ ipt_cleanup() {
 
 # shellcheck disable=SC2086
 ipt() {
-  local d failFlagIpv4=1 failFlagIpv6=1
+	local d failFlagIpv4=1 failFlagIpv6=1
 	for d in "${*//-A/-D}" "${*//-I/-D}" "${*//-N/-F}" "${*//-N/-X}"; do 
 		[ "$d" != "$*" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
 	done

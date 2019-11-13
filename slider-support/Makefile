@@ -21,21 +21,21 @@ endef
 
 define Package/slider-support-ar300m
 $(call Package/slider-support/default)
-  VARIANT:=ar300m
+	VARIANT:=ar300m
 	USEBUTTON:=BTN_1
 	TITLE+= for GL-Inet AR300M
 endef
 
 define Package/slider-support-ar750
 $(call Package/slider-support/default)
-  VARIANT:=ar750
+	VARIANT:=ar750
 	USEBUTTON:=BTN_0
 	TITLE+= for GL-Inet AR750
 endef
 
 define Package/slider-support-mt300n
 $(call Package/slider-support/default)
-  VARIANT:=mt300n
+	VARIANT:=mt300n
 	USEBUTTON:=BTN_0
 	TITLE+= for GL-Inet MT300N/v2
 endef
