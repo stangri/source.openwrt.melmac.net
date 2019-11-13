@@ -10,9 +10,9 @@ text = luci.util.trim(content) -%>
 		<div class="cbi-section-descr"><%:Click "Run Easy Flash" to start flashing %><strong><%=text .. '.' %></strong></div>
 		<div class="cbi-section-node">
 			<form class="inline" method="post" action="<%=url('admin/system/flashops/sysupgrade')%>">
-                <input type="hidden" name="step" value="2" />
-                <input type="hidden" name="keep" value="" />
-                <input type="hidden" name="token" value="<%=token%>" />
+								<input type="hidden" name="step" value="2" />
+								<input type="hidden" name="keep" value="" />
+								<input type="hidden" name="token" value="<%=token%>" />
 					<label class="cbi-value-title" for="image"><%:Start Flashing%>:</label>
 					<div class="cbi-value-field">
 						<input class="cbi-button cbi-button-apply important" type="submit" name="backup" value="<%:Run Easy Flash%>" />

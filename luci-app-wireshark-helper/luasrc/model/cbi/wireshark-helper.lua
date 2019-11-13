@@ -48,7 +48,7 @@ if monIP and wsIP then
 end
 
 helperText = ( hintText and hintText .. "</br>" or "" ) .. translate("See the") .. " "
-  .. [[<a href="]] .. readmeURL .. [[#strict-enforcement" target="_blank">]]
+	.. [[<a href="]] .. readmeURL .. [[#strict-enforcement" target="_blank">]]
 	.. translate("README") .. [[</a>]] .. " " .. translate("for details") .. "."
 
 s1 = m:section(NamedSection, "config", "wireshark-helper", translate("Configuration"), helperText)

@@ -7,7 +7,7 @@ PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 LUCI_TITLE:=Easy Flash Web UI
-LUCI_DEPENDS:=+luci-mod-admin-full
+LUCI_DEPENDS:=+luci-compat +luci-mod-admin-full
 LUCI_PKGARCH:=all
 PKG_RELEASE:=5
 

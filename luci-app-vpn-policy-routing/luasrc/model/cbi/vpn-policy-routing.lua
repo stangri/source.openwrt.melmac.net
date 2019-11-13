@@ -20,8 +20,8 @@ local enc
 
 local ubusStatus = util.ubus("service", "list", { name = packageName })
 if ubusStatus and ubusStatus[packageName] and 
-   ubusStatus[packageName]["instances"] and 
-   ubusStatus[packageName]["instances"]["main"] and 
+	 ubusStatus[packageName]["instances"] and 
+	 ubusStatus[packageName]["instances"]["main"] and 
 	 ubusStatus[packageName]["instances"]["main"]["data"] and
 	 ubusStatus[packageName]["instances"]["main"]["data"]["status"] and 
 	 ubusStatus[packageName]["instances"]["main"]["data"]["status"][1] then
@@ -39,10 +39,10 @@ end
 
 local pkgVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'")))
 if not pkgVersion or pkgVersion == "" then
-  pkgVersion = ""
-  pkgStatus, pkgStatusLabel = "NotFound", packageName .. " " .. translate("is not installed or not found")
+	pkgVersion = ""
+	pkgStatus, pkgStatusLabel = "NotFound", packageName .. " " .. translate("is not installed or not found")
 else  
-  pkgVersion = " [" .. packageName .. " " .. pkgVersion .. "]"
+	pkgVersion = " [" .. packageName .. " " .. pkgVersion .. "]"
 end
 local pkgStatus, pkgStatusLabel = "Stopped", translate("Stopped")
 if sys.call("iptables -t mangle -L | grep -q VPR_PREROUTING") == 0 then
@@ -74,12 +74,12 @@ local lanIPAddr = uci:get("network", "lan", "ipaddr")
 local lanNetmask = uci:get("network", "lan", "netmask")
 -- if multiple ip addresses on lan interface, will be return as table of CIDR notations i.e. {"10.0.0.1/24","10.0.0.2/24"}
 if (type(lanIPAddr) == "table") then                                                                                   
-        first = true                                                                                             
-        for i,line in ipairs(lanIPAddr) do                                                                  
-                lanIPAddr = lanIPAddr[i]                                                                    
-                break                                           
-        end                                                     
-        lanIPAddr = string.match(lanIPAddr,"[0-9.]+")                                                            
+				first = true                                                                                             
+				for i,line in ipairs(lanIPAddr) do                                                                  
+								lanIPAddr = lanIPAddr[i]                                                                    
+								break                                           
+				end                                                     
+				lanIPAddr = string.match(lanIPAddr,"[0-9.]+")                                                            
 end          
 if lanIPAddr and lanNetmask then
 	laPlaceholder = ip.new(lanIPAddr .. "/" .. lanNetmask )
@@ -156,16 +156,16 @@ verb:value("2", translate("Verbose output"))
 verb.default = 2
 
 se = config:taboption("basic", ListValue, "strict_enforcement", translate("Strict enforcement"),translate("See the") .. " "
-  .. [[<a href="]] .. readmeURL .. [[#strict-enforcement" target="_blank">]]
-  .. translate("README") .. [[</a>]] .. " " .. translate("for details."))
+	.. [[<a href="]] .. readmeURL .. [[#strict-enforcement" target="_blank">]]
+	.. translate("README") .. [[</a>]] .. " " .. translate("for details."))
 se:value("0", translate("Do not enforce policies when their gateway is down"))
 se:value("1", translate("Strictly enforce policies when their gateway is down"))
 se.default = 1
 
 dest_ipset = config:taboption("basic", ListValue, "dest_ipset", translate("The ipset option for remote policies"),
 	translate("Please check the") .. " "
-  .. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]]
-  .. translate("README") .. [[</a>]] .. " " .. translate("before changing this option."))
+	.. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]]
+	.. translate("README") .. [[</a>]] .. " " .. translate("before changing this option."))
 dest_ipset:value("", translate("Disabled"))
 dest_ipset:value("ipset", translate("Use ipset command"))
 dest_ipset:value("dnsmasq.ipset", translate("Use DNSMASQ ipset"))
@@ -174,8 +174,8 @@ dest_ipset.rmempty = true
 
 src_ipset = config:taboption("basic", ListValue, "src_ipset", translate("The ipset option for local policies"),
 	translate("Please check the") .. " "
-  .. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]]
-  .. translate("README") .. [[</a>]] .. " " .. translate("before changing this option."))
+	.. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]]
+	.. translate("README") .. [[</a>]] .. " " .. translate("before changing this option."))
 src_ipset:value("0", translate("Disabled"))
 src_ipset:value("1", translate("Use ipset command"))
 
@@ -351,8 +351,8 @@ uci:foreach("network", "interface", function(s)
 end)
 
 dscp = m:section(NamedSection, "config", "vpn-policy-routing", translate("DSCP Tagging"), translate("Set DSCP tags (in range between 1 and 63) for specific interfaces. See the") .. " "
-  .. [[<a href="]] .. readmeURL .. [[#dscp-tag-based-policies" target="_blank">]]
-  .. translate("README") .. [[</a>]] .. " " .. translate("for details."))
+	.. [[<a href="]] .. readmeURL .. [[#dscp-tag-based-policies" target="_blank">]]
+	.. translate("README") .. [[</a>]] .. " " .. translate("for details."))
 uci:foreach("network", "interface", function(s)
 	local name=s['.name']
 	if is_supported_interface(s) then 
@@ -364,8 +364,8 @@ end)
 
 -- Includes
 inc = m:section(TypedSection, "include", translate("Custom User File Includes"), translate("Run the following user files after setting up but before restarting DNSMASQ. See the") .. " "
-  .. [[<a href="]] .. readmeURL .. [[#custom-user-files" target="_blank">]]
-  .. translate("README") .. [[</a>]] .. " " .. translate("for details."))
+	.. [[<a href="]] .. readmeURL .. [[#custom-user-files" target="_blank">]]
+	.. translate("README") .. [[</a>]] .. " " .. translate("for details."))
 inc.template = "cbi/tblsection"
 inc.sortable  = true
 inc.anonymous = true
