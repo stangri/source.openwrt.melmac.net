@@ -26,7 +26,7 @@ If your device is not in the list above, however it is a [dual-firmware device](
 
 ## Screenshot (luci-app-advanced-reboot)
 
-![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/luci-app-advanced-reboot/screenshot01.png "screenshot")
+![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/luci-app-advanced-reboot/screenshot02.png "screenshot")
 
 ## How to install
 
