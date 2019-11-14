@@ -8,7 +8,7 @@ PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 LUCI_TITLE:=Wireshark-helper Web UI
 LUCI_DESCRIPTION:=Provides Web UI for Wireshark-helper.
-LUCI_DEPENDS:=+luci-compat +luci-mod-admin-full +wireshark-helper
+LUCI_DEPENDS:=+luci-mod-admin-full +wireshark-helper
 LUCI_PKGARCH:=all
 PKG_RELEASE:=4
 

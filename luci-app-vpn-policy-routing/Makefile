@@ -8,7 +8,7 @@ PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 LUCI_TITLE:=VPN Policy-Based Routing Service Web UI
 LUCI_DESCRIPTION:=Provides Web UI for vpn-policy-routing service.
-LUCI_DEPENDS:=+luci-compat +luci-mod-admin-full +vpn-policy-routing
+LUCI_DEPENDS:=+luci-mod-admin-full +vpn-policy-routing
 LUCI_PKGARCH:=all
 PKG_RELEASE:=65
 
