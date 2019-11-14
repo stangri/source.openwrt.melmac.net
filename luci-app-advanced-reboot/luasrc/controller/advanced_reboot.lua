@@ -28,7 +28,7 @@ function is_alt_mountable(p1_mtd, p2_mtd)
 	end
 end
 
-function get_partition_os_info()
+function get_partition_os_info(op_ubi)
 	local cp_info, ap_info
 	if fs.access("/etc/os-release") then
 		cp_info = util.trim(util.exec('. /etc/os-release && echo "$PRETTY_NAME"'))
@@ -48,6 +48,10 @@ function alt_partition_mount(op_ubi)
 	util.exec("ubidetach -m " .. tostring(op_ubi))
 	ubi_dev = tostring(util.exec("ubiattach -m " .. tostring(op_ubi)))
 	_, _, ubi_dev = ubi_dev:find("UBI device number (%d+)")
+	if not ubi_dev then 
+		util.exec("ubidetach -m " .. tostring(op_ubi))
+		return 
+	end
 	util.exec("ubiblock --create /dev/ubi" .. ubi_dev .. "_0")
 	util.exec("mount -t squashfs -o ro /dev/ubiblock" .. ubi_dev .. "_0 /alt/rom")
 	util.exec("mount -t ubifs /dev/ubi1_" .. ubi_dev .. " /alt/overlay")
