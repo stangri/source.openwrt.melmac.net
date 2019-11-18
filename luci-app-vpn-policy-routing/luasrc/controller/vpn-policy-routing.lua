@@ -1,10 +1,8 @@
 module("luci.controller.vpn-policy-routing", package.seeall)
 function index()
 	if nixio.fs.access("/etc/config/vpn-policy-routing") then
-		local node, pkgVersion = "services", tonumber(luci.util.trim(luci.sys.exec("opkg list-installed luci-app-openvpn | awk '{print $3}' | awk -F'[-.]' '{print $2}'")))
-		if pkgVersion and pkgVersion >= 19 then node = "vpn" end
-		entry({"admin", node, "vpn-policy-routing"}, cbi("vpn-policy-routing"), _("VPN Policy Routing"))
-		entry({"admin", node, "vpn-policy-routing", "action"}, call("vpn_policy_routing_action"), nil).leaf = true
+		entry({"admin", "vpn", "vpn-policy-routing"}, cbi("vpn-policy-routing"), _("VPN Policy Routing"))
+		entry({"admin", "vpn", "vpn-policy-routing", "action"}, call("vpn_policy_routing_action"), nil).leaf = true
 	end
 end
 
