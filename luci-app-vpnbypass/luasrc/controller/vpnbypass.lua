@@ -1,10 +1,8 @@
 module("luci.controller.vpnbypass", package.seeall)
 function index()
 	if nixio.fs.access("/etc/config/vpnbypass") then
-		local node, pkgVersion = "services", tonumber(luci.util.trim(luci.sys.exec("opkg list-installed luci-app-openvpn | awk '{print $3}' | awk -F'[-.]' '{print $2}'")))
-		if pkgVersion and pkgVersion >= 19 then node = "vpn" end
-		entry({"admin", node, "vpnbypass"}, cbi("vpnbypass"), _("VPN Bypass"))
-		entry({"admin", node, "vpnbypass", "action"}, call("vpnbypass_action"), nil).leaf = true
+		entry({"admin", "vpn", "vpnbypass"}, cbi("vpnbypass"), _("VPN Bypass"))
+		entry({"admin", "vpn", "vpnbypass", "action"}, call("vpnbypass_action"), nil).leaf = true
 	end
 end
 
