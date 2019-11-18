@@ -1,4 +1,7 @@
-<%- if luci.dispatcher.lookup("admin/vpn") then node = "vpn" else node = "services" end -%>
+<%-
+	local node, pkgVersion = "services", tonumber(luci.util.trim(luci.sys.exec("opkg list-installed luci-app-openvpn | awk '{print $3}' | awk -F'[-.]' '{print $2}'")))
+	if pkgVersion and pkgVersion >= 19 then node = "vpn" end
+-%>
 
 <script type="text/javascript">
 //<![CDATA[
