@@ -37,6 +37,9 @@ function get_partition_os_info(op_ubi)
 	local cp_info, ap_info
 	if fs.access("/etc/os-release") then
 		cp_info = util.trim(util.exec('. /etc/os-release && echo "$PRETTY_NAME"'))
+		if cp_info:find("SNAPSHOT") then
+			cp_info = util.trim(util.exec('. /etc/os-release && echo "$OPENWRT_RELEASE"'))
+		end 
 	end
 	logger(i18n.translate("attempting to mount alternative partition") .. " (mtd" .. tostring(op_ubi) .. ")")
 	alt_partition_unmount(op_ubi)
