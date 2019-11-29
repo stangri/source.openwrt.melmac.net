@@ -235,7 +235,7 @@ load_package_config() {
 	if [ -x /usr/bin/curl ]; then
 		dl_command="curl --insecure --retry $curlRetry --connect-timeout $dlTimeout --silent"
 		dl_flag="-o"
-	elif wget -V | grep -q "+ssl"; then
+	elif wget -V 2>/dev/null | grep -q "+ssl"; then
 		dl_command="wget --no-check-certificate --timeout $dlTimeout -q"
 		dl_flag="-O"
 	else
