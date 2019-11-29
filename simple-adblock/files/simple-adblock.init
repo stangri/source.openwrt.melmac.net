@@ -236,7 +236,7 @@ load_package_config() {
 		dl_command="curl --insecure --retry $curlRetry --connect-timeout $dlTimeout --silent"
 		dl_flag="-o"
 	else
-		dl_command="wget --no-check-certificate --timeout $dlTimeout -q"
+		dl_command="uclient-fetch --no-check-certificate --timeout $dlTimeout -q"
 		dl_flag="-O"
 	fi
 	led="${led:+/sys/class/leds/$led}"
