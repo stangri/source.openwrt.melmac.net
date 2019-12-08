@@ -137,7 +137,7 @@ load_package_config() {
 	config_get_bool serviceEnabled      'config' 'enabled' 0
 	config_get_bool strictMode          'config' 'strict_enforcement' 1
 	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' 0
-	config_get_bool localIpset          'config' 'src_ipset'
+	config_get_bool localIpset          'config' 'src_ipset' 0
 	config_get_bool ipruleEnabled       'config' 'iprule_enabled' 0
 	config_get remoteIpset              'config' 'dest_ipset'
 	config_get appendLocalPolicy        'config' 'append_src_rules'
