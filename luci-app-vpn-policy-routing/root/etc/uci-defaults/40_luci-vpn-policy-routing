@@ -6,5 +6,5 @@ uci -q batch <<-EOF >/dev/null
 	commit ucitrack
 EOF
 
-rm -f /tmp/luci-indexcache
+rm -rf /var/luci-modulecache/; rm -f /var/luci-indexcache;
 exit 0
