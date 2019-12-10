@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpnbypass
 PKG_VERSION:=1.3.1
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -15,7 +15,6 @@ define Package/vpnbypass
 	SECTION:=net
 	CATEGORY:=Network
 	DEPENDS:=+ipset +iptables
-	CONFLICTS:=vpn-policy-routing
 	TITLE:=VPN Bypass Service
 	PKGARCH:=all
 endef
