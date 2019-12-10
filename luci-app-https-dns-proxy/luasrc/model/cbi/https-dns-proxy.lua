@@ -96,7 +96,7 @@ s3.sortable  = false
 s3.anonymous = true
 s3.addremove = true
 
-prov = s3:option(ListValue, "resolver_url", translate("Provider"))
+prov = s3:option(ListValue, "resolver_url", translate("Resolver"))
 for filename in fs.dir(providers_dir) do
 	local p_func = loadfile(providers_dir .. filename)
 	setfenv(p_func, { _ = i18n.translate })
