@@ -116,11 +116,11 @@ prov.write = function(self, section, value)
 		value = value:gsub('[%p%c%s]', '')
 		p.url_match = p.resolver_url:gsub('[%p%c%s]', '')
 		if value:match(p.url_match) then
-			uci:set("https-dns-proxy", section, "bootstrap_dns", p.bootstrap_dns)
-			uci:set("https-dns-proxy", section, "resolver_url", p.resolver_url)
+			uci:set(packageName, section, "bootstrap_dns", p.bootstrap_dns)
+			uci:set(packageName, section, "resolver_url", p.resolver_url)
 		end
 	end
-	uci:save("https-dns-proxy")
+	uci:save(packageName)
 end
 
 la = s3:option(Value, "listen_addr", translate("Listen address"))
@@ -129,7 +129,7 @@ la.placeholder = "127.0.0.1"
 la.rmempty     = true
 
 local n = 0
-uci:foreach("https-dns-proxy", "https-dns-proxy", function(s)
+uci:foreach(packageName, packageName, function(s)
 		if s[".name"] == section then
 				return false
 		end
