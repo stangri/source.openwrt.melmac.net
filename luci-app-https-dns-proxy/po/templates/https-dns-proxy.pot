@@ -1,0 +1,42 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+#: luci-app-https-dns-proxy//luasrc/model/cbi/https-dns-proxy.lua:41
+msgid "Group name"
+msgstr ""
+
+#: luci-app-https-dns-proxy//luasrc/controller/https-dns-proxy.lua:6
+msgid "HTTPS DNS Proxy"
+msgstr ""
+
+#: luci-app-https-dns-proxy//luasrc/model/cbi/https-dns-proxy.lua:3
+msgid "HTTPS DNS Proxy Settings"
+msgstr ""
+
+#: luci-app-https-dns-proxy//luasrc/model/cbi/https-dns-proxy.lua:6
+msgid "Instances"
+msgstr ""
+
+#: luci-app-https-dns-proxy//luasrc/model/cbi/https-dns-proxy.lua:28
+msgid "Listen address"
+msgstr ""
+
+#: luci-app-https-dns-proxy//luasrc/model/cbi/https-dns-proxy.lua:32
+msgid "Listen port"
+msgstr ""
+
+#: luci-app-https-dns-proxy//luasrc/model/cbi/https-dns-proxy.lua:12
+msgid "Provider"
+msgstr ""
+
+#: luci-app-https-dns-proxy//luasrc/model/cbi/https-dns-proxy.lua:49
+msgid "Proxy server"
+msgstr ""
+
+#: luci-app-https-dns-proxy//luasrc/model/cbi/https-dns-proxy.lua:45
+msgid "Subnet address"
+msgstr ""
+
+#: luci-app-https-dns-proxy//luasrc/model/cbi/https-dns-proxy.lua:37
+msgid "User name"
+msgstr ""
