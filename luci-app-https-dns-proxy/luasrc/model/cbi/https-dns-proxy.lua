@@ -140,12 +140,10 @@ lp = s3:option(Value, "listen_port", translate("Listen port"))
 lp.datatype = "port"
 lp.value    = n + 5053
 
-sa = s3:option(Value, "subnet_addr", translate("Subnet address"))
-sa.datatype = "host"
+sa = s3:option(Value, "edns_address", translate("EDNS address"))
 sa.rmempty  = true
 
 ps = s3:option(Value, "proxy_server", translate("Proxy server"))
-ps.datatype = "host"
 ps.rmempty  = true
 
 return m
