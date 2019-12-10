@@ -14,9 +14,9 @@ include $(INCLUDE_DIR)/package.mk
 define Package/vpn-policy-routing
 	SECTION:=net
 	CATEGORY:=Network
+	TITLE:=VPN Policy-Based Routing Service
 	DEPENDS:=+ipset +iptables +resolveip +kmod-ipt-ipset +iptables-mod-ipopt +!BUSYBOX_CONFIG_IP:ip-full
 	CONFLICTS:=vpnbypass
-	TITLE:=VPN Policy-Based Routing Service
 	PKGARCH:=all
 endef
 

@@ -14,8 +14,8 @@ include $(INCLUDE_DIR)/package.mk
 define Package/vpnbypass
 	SECTION:=net
 	CATEGORY:=Network
-	DEPENDS:=+ipset +iptables
 	TITLE:=VPN Bypass Service
+	DEPENDS:=+ipset +iptables
 	PKGARCH:=all
 endef
 
