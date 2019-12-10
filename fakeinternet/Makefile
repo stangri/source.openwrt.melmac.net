@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fakeinternet
 PKG_VERSION:=0.1.4
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -55,17 +55,6 @@ define Package/fakeinternet/postinst
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/fakeinternet enable
-
-		while [ ! -z "$(uci -q get ucitrack.@fakeinternet[-1] 2>/dev/null)" ] ; do
-			uci -q delete ucitrack.@fakeinternet[-1]
-			uci commit ucitrack
-		done
-
-		uci -q batch <<-EOF >/dev/null
-			add ucitrack fakeinternet
-			set ucitrack.@fakeinternet[-1].init='fakeinternet'
-			commit ucitrack
-	EOF
 	fi
 	exit 0
 endef
@@ -77,10 +66,6 @@ define Package/fakeinternet/prerm
 		echo "Stopping service and removing rc.d symlink for fakeinternet"
 		/etc/init.d/fakeinternet stop || true
 		/etc/init.d/fakeinternet disable || true
-		while [ ! -z "$(uci -q get ucitrack.@fakeinternet[-1] 2>/dev/null)" ] ; do
-			uci -q delete ucitrack.@fakeinternet[-1]
-			uci commit ucitrack
-		done
 	fi
 	exit 0
 endef

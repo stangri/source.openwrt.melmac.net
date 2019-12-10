@@ -1,10 +1,3 @@
 #!/bin/sh
-uci -q batch <<-EOF >/dev/null
-	delete ucitrack.@fakeinternet[-1]
-	add ucitrack fakeinternet
-	set ucitrack.@fakeinternet[-1].init=fakeinternet
-	commit ucitrack
-EOF
-
-rm -f /tmp/luci-indexcache
+rm -rf /var/luci-modulecache/; rm -f /var/luci-indexcache;
 exit 0

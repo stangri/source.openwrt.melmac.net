@@ -1127,6 +1127,10 @@ stop_service() {
 	fi
 }
 
+service_triggers() {
+	procd_add_reload_trigger 'simple-adblock'
+}
+
 check() {
 	load_package_config
 	local string="$1" 

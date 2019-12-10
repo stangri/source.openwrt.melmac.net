@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wireshark-helper
 PKG_VERSION:=0.0.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -51,17 +51,6 @@ define Package/wireshark-helper/postinst
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/wireshark-helper enable
-
-		while [ ! -z "$(uci -q get ucitrack.@wireshark-helper[-1] 2>/dev/null)" ] ; do
-			uci -q delete ucitrack.@wireshark-helper[-1]
-			uci commit ucitrack
-		done
-
-		uci -q batch <<-EOF >/dev/null
-			add ucitrack wireshark-helper
-			set ucitrack.@wireshark-helper[-1].init='wireshark-helper'
-			commit ucitrack
-	EOF
 	fi
 	exit 0
 endef
@@ -73,10 +62,6 @@ define Package/wireshark-helper/prerm
 		echo "Stopping service and removing rc.d symlink for wireshark-helper"
 		/etc/init.d/wireshark-helper stop || true
 		/etc/init.d/wireshark-helper disable || true
-		while [ ! -z "$(uci -q get ucitrack.@wireshark-helper[-1] 2>/dev/null)" ] ; do
-			uci -q delete ucitrack.@wireshark-helper[-1]
-			uci commit ucitrack
-		done
 	fi
 	exit 0
 endef

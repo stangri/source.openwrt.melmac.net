@@ -245,7 +245,7 @@ service_started() {
 	procd_set_config_changed firewall
 }
 
-stop_service () {
+stop_service() {
 	load_package_config
 	dns_forward 'stop'
 	if is_chaos_calmer; then
@@ -254,4 +254,8 @@ stop_service () {
 		procd_set_config_changed firewall
 	fi
 	logger -t "$serviceName" "Service stopped."
+}
+
+service_triggers() {
+	procd_add_reload_trigger 'fakeinternet'
 }

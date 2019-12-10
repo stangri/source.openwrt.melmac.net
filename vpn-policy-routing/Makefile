@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpn-policy-routing
 PKG_VERSION:=0.2.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -61,20 +61,9 @@ define Package/vpn-policy-routing/postinst
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/vpn-policy-routing enable
-
 		if ! /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05' ; then
 			rm -rf /etc/hotplug.d/iface/70-vpn-policy-routing
 		fi
-
-		while uci -q del ucitrack.@vpn-policy-routing[-1]; do :; done
-		uci -q del_list ucitrack.@firewall[0].affects='vpn-policy-routing' || true
-
-		uci -q batch <<-EOF >/dev/null
-			add ucitrack vpn-policy-routing
-			set ucitrack.@vpn-policy-routing[0].init='vpn-policy-routing'
-			add_list ucitrack.@firewall[0].affects='vpn-policy-routing'
-			commit ucitrack
-	EOF
 	fi
 	exit 0
 endef
@@ -83,8 +72,6 @@ define Package/vpn-policy-routing/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
-		while uci -q delete ucitrack.@vpn-policy-routing[-1]; do :; done
-		uci -q del_list ucitrack.@firewall[0].affects='vpn-policy-routing' || true
 		echo "Stopping service and removing rc.d symlink for vpn-policy-routing"
 		/etc/init.d/vpn-policy-routing stop || true
 		/etc/init.d/vpn-policy-routing disable || true

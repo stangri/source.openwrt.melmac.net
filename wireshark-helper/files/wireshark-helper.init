@@ -56,3 +56,7 @@ stop_service () {
 	redirect remove
 	logger -t "$serviceName" "Service stopped."
 }
+
+service_triggers() {
+	procd_add_reload_trigger 'wireshark-helper'
+}

@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wlanblinker
 PKG_VERSION:=0.0.1
-PKG_RELEASE:=8
+PKG_RELEASE:=10
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -55,16 +55,7 @@ define Package/wlanblinker/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
-		while [ ! -z "$(uci -q get ucitrack.@wlanblinker[-1] 2>/dev/null)" ] ; do
-			uci -q delete ucitrack.@wlanblinker[-1]
-		done
-
-		uci -q batch <<-EOF >/dev/null
-			add ucitrack wlanblinker
-			set ucitrack.@wlanblinker[-1].init='wlanblinker'
-			add_list ucitrack.@firewall[-1].affects='wlanblinker'
-			commit ucitrack
-	EOF
+		/etc/init.d/wlanblinker enable
 	fi
 	exit 0
 endef
@@ -76,11 +67,6 @@ define Package/wlanblinker/prerm
 		echo "Stopping service and removing rc.d symlink for wlanblinker"
 		/etc/init.d/wlanblinker stop || true
 		/etc/init.d/wlanblinker disable
-
-		while [ ! -z "$(uci -q get ucitrack.@wlanblinker[-1] 2>/dev/null)" ] ; do
-			uci -q delete ucitrack.@wlanblinker[-1]
-		done
-
 	fi
 	exit 0
 endef

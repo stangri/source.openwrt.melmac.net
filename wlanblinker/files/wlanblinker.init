@@ -59,3 +59,7 @@ stop_service() {
 	logger -t "$packageName" "$serviceName: stopped"
 	[ -e "$LED" ] && echo "0" > "$LED"
 }
+
+service_triggers() {
+	procd_add_reload_trigger 'wlanblinker'
+}
