@@ -1,0 +1,1 @@
+for i in luci-app-*; do ../i18n-scan.pl "${i}/" > "${i}/po/templates/${i//luci-app-}.pot"; done; git add .; 
