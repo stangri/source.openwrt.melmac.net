@@ -1,96 +1,110 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:29
-msgid "Action"
-msgstr ""
-
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:82
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:10
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:185
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:10
 msgid "Advanced Reboot"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:36
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:60
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:36
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:60
 msgid "Alternative"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/alternative_reboot.htm:24
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/power_off.htm:20
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/alternative_reboot.htm:24
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/power_off.htm:20
 msgid "Cancel"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/alternative_reboot.htm:10
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/power_off.htm:10
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/applyreboot.htm:42
+msgid "Changes applied."
+msgstr ""
+
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/alternative_reboot.htm:10
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/power_off.htm:10
 msgid "Confirm"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:36
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:60
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:36
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:60
 msgid "Current"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:18
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:18
 msgid "ERROR:"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:28
-msgid "Firmware/OS (Kernel)"
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:28
+msgid "Firmware"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:112
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/applyreboot.htm:45
+msgid "Loading"
+msgstr ""
+
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:213
 msgid "No access to fw_printenv or fw_printenv!"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:26
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:26
 msgid "Partition"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:23
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:23
 msgid "Partitions"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:94
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:94
 msgid "Perform power off..."
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/power_off.htm:10
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/power_off.htm:10
 msgid "Power Off Device"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/alternative_reboot.htm:25
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/power_off.htm:21
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/alternative_reboot.htm:25
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/power_off.htm:21
 msgid "Proceed"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/alternative_reboot.htm:10
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:29
+msgid "Reboot"
+msgstr ""
+
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/alternative_reboot.htm:10
 msgid "Reboot Device to an Alternative Partition"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:50
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:74
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:50
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:74
 msgid "Reboot to alternative partition..."
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:45
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:69
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:45
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:69
 msgid "Reboot to current partition"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:91
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:163
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:193
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:264
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/applyreboot.htm:9
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/applyreboot.htm:39
 msgid "Rebooting..."
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:197
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:297
 msgid "Shutting down..."
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:27
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:27
 msgid "Status"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:92
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/applyreboot.htm:39
+msgid "System"
+msgstr ""
+
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:194
 msgid ""
 "The system is rebooting now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a "
 "few minutes before you try to reconnect. It might be necessary to renew the "
@@ -98,7 +112,7 @@ msgid ""
 "settings."
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:164
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:265
 msgid ""
 "The system is rebooting to an alternative partition now.<br /> DO NOT POWER "
 "OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It "
@@ -106,40 +120,40 @@ msgid ""
 "again, depending on your settings."
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:198
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:298
 msgid ""
 "The system is shutting down now.<br /> DO NOT POWER OFF THE DEVICE!<br /> It "
 "might be necessary to renew the address of your computer to reach the device "
 "again, depending on your settings."
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:67
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:68
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:147
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:148
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:154
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:155
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:248
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:249
 msgid "Unable to find Dual Boot Flag Partition."
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:119
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:120
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:133
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:134
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:220
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:221
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:234
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:235
 msgid "Unable to obtain firmware environment variable"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:155
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:156
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:256
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:257
 msgid "Unable to set Dual Boot Flag Partition entry for partition"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:125
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:126
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:139
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:140
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:226
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:227
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:240
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:241
 msgid "Unable to set firmware environment variable"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/alternative_reboot.htm:12
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/alternative_reboot.htm:12
 msgid ""
 "WARNING: An alternative partition might have its own settings and completely "
 "different firmware.<br /><br /> As your network configuration and WiFi SSID/"
@@ -151,32 +165,44 @@ msgid ""
 "to reboot device to an alternative partition."
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/power_off.htm:12
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/power_off.htm:12
 msgid ""
 "WARNING: Power off might result in a reboot on a device which doesn't "
 "support power off.<br /><br /> Click \"Proceed\" below to power off your "
 "device."
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:83
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/applyreboot.htm:46
+msgid "Waiting for changes to be applied..."
+msgstr ""
+
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:83
 msgid "Warning: Device (%s) is unknown or isn't a dual-partition device!"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:14
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:14
 msgid "Warning: There are unsaved changes that will get lost on reboot!"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:97
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:97
 msgid "Warning: This system does not support powering off!"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/view/advanced_reboot/advanced_reboot.htm:85
+#: luci-app-advanced-reboot/luasrc/view/advanced_reboot/advanced_reboot.htm:85
 msgid "Warning: Unable to obtain device information!"
 msgstr ""
 
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:125
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:126
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:139
-#: luci-app-advanced-reboot//luasrc/controller/advanced_reboot.lua:140
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:44
+msgid "attempting to mount alternative partition"
+msgstr ""
+
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:53
+msgid "attempting to unmount alternative partition"
+msgstr ""
+
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:226
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:227
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:240
+#: luci-app-advanced-reboot/luasrc/controller/advanced_reboot.lua:241
 msgid "to"
 msgstr ""
