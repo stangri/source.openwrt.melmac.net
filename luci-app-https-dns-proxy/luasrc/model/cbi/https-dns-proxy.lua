@@ -19,7 +19,7 @@ function get_provider_name(value)
 			return p.label
 		end
 	end
-	return translate("Uknown Provider")
+	return translate("Unknown Provider")
 end
 
 local tmpfsStatus, tmpfsStatusCode

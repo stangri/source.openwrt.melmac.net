@@ -139,7 +139,7 @@ msgid "Stopped"
 msgstr ""
 
 #: luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:22
-msgid "Uknown Provider"
+msgid "Unknown Provider"
 msgstr ""
 
 #: luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:83
