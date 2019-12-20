@@ -129,6 +129,10 @@ dnsmasq_restore_server_backup() {
 }
 
 dhcp_backup() {
+	local enabled
+	config_load 'https-dns-proxy'
+	config_get_bool enabled 'config' 'update_dnsmasq_config' 1
+	[ "$enabled" -eq "1" ] || return 0
 	config_load 'dhcp'
 	case "$1" in
 		create)
