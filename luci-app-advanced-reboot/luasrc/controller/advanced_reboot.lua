@@ -34,7 +34,7 @@ function is_alt_mountable(p1_mtd, p2_mtd)
 end
 
 function get_partition_os_info(op_ubi)
-	local cp_info, ap_info
+	local cp_info, op_info
 	if fs.access("/etc/os-release") then
 		cp_info = util.trim(util.exec('. /etc/os-release && echo "$PRETTY_NAME"'))
 		if cp_info:find("SNAPSHOT") then
@@ -45,14 +45,14 @@ function get_partition_os_info(op_ubi)
 	alt_partition_unmount(op_ubi)
 	alt_partition_mount(op_ubi)
 	if fs.access("/alt/rom/etc/os-release") then
-		ap_info = util.trim(util.exec('. /alt/rom/etc/os-release && echo "$PRETTY_NAME"'))
-		if ap_info:find("SNAPSHOT") then
-			ap_info = util.trim(util.exec('. /alt/rom/etc/os-release && echo "$OPENWRT_RELEASE"'))
+		op_info = util.trim(util.exec('. /alt/rom/etc/os-release && echo "$PRETTY_NAME"'))
+		if op_info:find("SNAPSHOT") then
+			op_info = util.trim(util.exec('. /alt/rom/etc/os-release && echo "$OPENWRT_RELEASE"'))
 		end 
 	end
 	logger(i18n.translate("attempting to unmount alternative partition") .. " (mtd" .. tostring(op_ubi) .. ")")
 	alt_partition_unmount(op_ubi)
-	return cp_info, ap_info
+	return cp_info, op_info
 end
 
 function alt_partition_mount(op_ubi)
@@ -87,7 +87,12 @@ function alt_partition_unmount(op_ubi)
 	end
 end
 
-devices = {
+local i, d, p1_mtd, p2_mtd, offset, bev1, bev1p1, bev1p2, bev2, bev2p1, n
+local p1_label, p1_version, p2_label, p2_version, p1_os, p2_os
+local errorMessage, current_partition, other_partition
+local op_ubi, cp_info, op_info
+local zyxelFlagPartition
+local devices = {
 	-- deviceName, boardName, part1MTD, part2MTD, offset, envVar1, envVar1Value1, envVar1Value2, envVar2, envVar2Value1, envVar2Value2
 	{"Linksys EA3500", "linksys-audi", "mtd3", "mtd5", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
 	{"Linksys E4200v2/EA4500", "linksys-viper", "mtd3", "mtd5", 32, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
@@ -103,11 +108,7 @@ devices = {
 	{"Linksys WRT32X", "linksys-venom", "mtd5", "mtd7", nil, "boot_part", 1, 2, "bootcmd", "run nandboot", "run altnandboot"},
 	{"ZyXEL NBG6817", "nbg6817", "mmcblk0p4", "mmcblk0p7", 32, nil, 255, 1}
 }
-
--- local errorMessage, d
--- local device_name, p1_mtd, p2_mtd, offset, bev1, bev1p1, bev1p2, bev2, bev2p1, bev2p2
-romBoardName = util.trim(util.exec("cat /tmp/sysinfo/board_name"))
-
+local romBoardName = util.trim(util.exec("cat /tmp/sysinfo/board_name"))
 for i=1, #devices do
 	d = devices[i][2]:gsub('%p','')
 	if romBoardName and romBoardName:gsub('%p',''):match(d) then
@@ -147,7 +148,7 @@ for i=1, #devices do
 		if not p2_os then p2_os = "Unknown" end
 		if p1_os and p1_version then p1_os = p1_os .. " (Linux " .. p1_version .. ")" end
 		if p2_os and p2_version then p2_os = p2_os .. " (Linux " .. p2_version .. ")" end
-
+		
 		if device_name == "ZyXEL NBG6817" then
 			if not zyxelFlagPartition then zyxelFlagPartition = util.trim(util.exec(". /lib/functions.sh; find_mtd_part 0:DUAL_FLAG")) end
 			if not zyxelFlagPartition then
@@ -169,12 +170,12 @@ for i=1, #devices do
 			else
 				op_ubi = tonumber(p1_mtd:sub(4)) + 1
 			end
-			local cp_info, ap_info = get_partition_os_info(op_ubi)
+			local cp_info, op_info = get_partition_os_info(op_ubi)
 			if current_partition == bev1p1 then
 				p1_os = cp_info or p1_os
-				p2_os = ap_info or p2_os
+				p2_os = op_info or p2_os
 			else
-				p1_os = ap_info or p1_os
+				p1_os = op_info or p1_os
 				p2_os = cp_info or p2_os
 			end
 		end
@@ -182,10 +183,23 @@ for i=1, #devices do
 end
 
 function index()
-	entry({"admin", "system", "advanced_reboot"}, template("advanced_reboot/advanced_reboot"), _("Advanced Reboot"), 90)
+--	entry({"admin", "system", "advanced_reboot"}, template("advanced_reboot/advanced_reboot"), _("Advanced Reboot"), 90)
+	entry({"admin", "system", "advanced_reboot"}, post("action_template"), _("Advanced Reboot"), 90)
 	entry({"admin", "system", "advanced_reboot", "reboot"}, post("action_reboot"))
 	entry({"admin", "system", "advanced_reboot", "alternative_reboot"}, post("action_altreboot"))
 	entry({"admin", "system", "advanced_reboot", "power_off"}, post("action_poweroff"))
+end
+
+function action_template()
+	ltemplate.render("advanced_reboot/advanced_reboot",{
+				romBoardName=romBoardName,
+				device_name=device_name,
+				bev1p1=bev1p1,
+				p1_os=p1_os,
+				bev1p2=bev1p2,
+				p2_os=p2_os,
+				current_partition=current_partition,
+				errorMessage = errorMessage})
 end
 
 function action_reboot()
