@@ -87,7 +87,7 @@ function alt_partition_unmount(op_ubi)
 	end
 end
 
-function obtain_device_info
+function obtain_device_info()
 	local i, d, p1_mtd, p2_mtd, offset, bev1, bev1p1, bev1p2, bev2, bev2p1, n
 	local p1_label, p1_version, p2_label, p2_version, p1_os, p2_os
 	local errorMessage, current_partition, other_partition
@@ -182,18 +182,18 @@ function obtain_device_info
 			end
 		end
 	end
-	return romBoardName, device_name, bev1, bev1p1, p1_os, bev1p2, p2_os, bev2, bev2p1, bev2p2 current_partition
+	return romBoardName, device_name, bev1, bev1p1, p1_os, bev1p2, p2_os, bev2, bev2p1, bev2p2, current_partition
 end
 
 function index()
-	entry({"admin", "system", "advanced_reboot"}, post("action_template"), _("Advanced Reboot"), 90)
+	entry({"admin", "system", "advanced_reboot"}, call("action_template"), _("Advanced Reboot"), 90)
 	entry({"admin", "system", "advanced_reboot", "reboot"}, post("action_reboot"))
 	entry({"admin", "system", "advanced_reboot", "alternative_reboot"}, post("action_altreboot"))
 	entry({"admin", "system", "advanced_reboot", "power_off"}, post("action_poweroff"))
 end
 
 function action_template()
-	local romBoardName, device_name, bev1, bev1p1, p1_os, bev1p2, p2_os, bev2, bev2p1, bev2p2 current_partition = obtain_device_info()
+	local romBoardName, device_name, bev1, bev1p1, p1_os, bev1p2, p2_os, bev2, bev2p1, bev2p2, current_partition = obtain_device_info()
 	ltemplate.render("advanced_reboot/advanced_reboot",{
 				romBoardName=romBoardName,
 				device_name=device_name,
@@ -215,7 +215,7 @@ function action_reboot()
 end
 
 function action_altreboot()
-	local romBoardName, device_name, bev1, bev1p1, p1_os, bev1p2, p2_os, bev2, bev2p1, bev2p2 current_partition = obtain_device_info()
+	local romBoardName, device_name, bev1, bev1p1, p1_os, bev1p2, p2_os, bev2, bev2p1, bev2p2, current_partition = obtain_device_info()
 	local zyxelFlagPartition, zyxelBootFlag, zyxelNewBootFlag, errorCode, curEnvSetting, newEnvSetting
 	errorMessage = nil
 	errorCode = 0
