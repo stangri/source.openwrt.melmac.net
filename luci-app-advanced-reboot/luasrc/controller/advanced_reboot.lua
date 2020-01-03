@@ -126,11 +126,11 @@ function obtain_device_info()
 			if p2_label and p2_label:find("LEDE") then p2_os = "LEDE" end
 			if p2_label and p2_label:find("OpenWrt") then p2_os = "OpenWrt" end
 			if p2_label and p2_label:find("Linksys") then p2_os = "Linksys" end
-			if romBoardName == "nbg6817" then
+			if boardName == "nbg6817" then
 				if not p1_os then p1_os = "ZyXEL" end
 				if not p2_os then p2_os = "ZyXEL" end
 			end
-			if romBoardName == "linksys-venom" then
+			if boardName == "linksys-venom" then
 				if not p1_os then p1_os = "Unknown/Compressed" end
 				if not p2_os then p2_os = "Unknown/Compressed" end
 			end
@@ -138,8 +138,7 @@ function obtain_device_info()
 			if not p2_os then p2_os = "Unknown" end
 			if p1_os and p1_version then p1_os = p1_os .. " (Linux " .. p1_version .. ")" end
 			if p2_os and p2_version then p2_os = p2_os .. " (Linux " .. p2_version .. ")" end
-			
-			if romBoardName == "nbg6817" then
+			if boardName == "nbg6817" then
 				if not zyxelFlagPartition then zyxelFlagPartition = util.trim(util.exec(". /lib/functions.sh; find_mtd_part 0:DUAL_FLAG")) end
 				if not zyxelFlagPartition then
 					errorMessage = errorMessage or "" .. i18n.translate("Unable to find Dual Boot Flag Partition." .. " ")

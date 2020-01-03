@@ -13,7 +13,7 @@ LUCI_DESCRIPTION:=Provides Web UI (found under System/Advanced Reboot) to reboot
 
 LUCI_DEPENDS:=+luci-compat +luci-mod-admin-full
 LUCI_PKGARCH:=all
-PKG_RELEASE:=48
+PKG_RELEASE:=49
 
 include ../../luci.mk
 
