@@ -74,6 +74,7 @@ Starting with ```https-dns-proxy``` version ```2019-12-03-3``` and higher, when 
 ```
 
 The https-dns-proxy instance settings are:
+
 |Parameter|Type|Default|Description|
 | --- | --- | --- | --- |
 |bootstrap_dns|IP Address||The non-encrypted DNS servers to be used to resolve the DoH server name on start.|
