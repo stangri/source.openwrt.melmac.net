@@ -31,7 +31,9 @@ opkg update; opkg install https-dns-proxy luci-app-https-dns-proxy;
 
 ## Default Settings
 
-Default configuration has service enabled and starts the service with Google and Cloudflare DoH servers. In most configurations, you will keep the default ```DNSMASQ``` service installed to handle requests from devices in your local network and point ```DNSMASQ``` to use ```https-dns-proxy``` for name resolution. By default, the service will intelligently override existing ```DNSMASQ``` servers settings on start to use the DoH servers and restores original ```DNSMASQ``` servers on stop. See the [Configuration Settings](#configuration-settings) section below how to disable/adjust this behavior.
+Default configuration has service enabled and starts the service with Google and Cloudflare DoH servers. In most configurations, you will keep the default ```DNSMASQ``` service installed to handle requests from devices in your local network and point ```DNSMASQ``` to use ```https-dns-proxy``` for name resolution. 
+
+By default, the service will intelligently override existing ```DNSMASQ``` servers settings on start to use the DoH servers and restores original ```DNSMASQ``` servers on stop. See the [Configuration Settings](#configuration-settings) section below for more information and how to disable this behavior.
 
 ## Configuration Settings
 
@@ -58,9 +60,9 @@ config https-dns-proxy
   option group 'nogroup'```
 ```
 
-The ```update_dnsmasq_config``` option can be empty (to not change ```DNSMASQ``` server settings on start/stop), can be set to ```'*'``` to affect all ```DNSMASQ``` instance server settings or have a space-separated list of ```DNSMASQ``` instances to affect (like ```'0 4 5'```). If this option is omitted, the default setting is ```'*'```.
+The ```update_dnsmasq_config``` option can be empty (```''``` to not change ```DNSMASQ``` server settings on start/stop), can be set to ```'*'``` to affect all ```DNSMASQ``` instance server settings or have a space-separated list of ```DNSMASQ``` instances to affect (like ```'0 4 5'```). If this option is omitted, the default setting is ```'*'```.
 
-Starting with ```https-dns-proxy``` version ```2019-12-03-3``` and higher, when the service is set to update the DNSMASQ servers setting on start/stop, it does not override entries which contain either ```#``` or ```/```, so the entries like below will be kept in use:
+Starting with ```https-dns-proxy``` version ```2019-12-03-3``` and higher, when the service is set to update the DNSMASQ servers setting on start/stop, it does not override entries which contain either ```#``` or ```/```, so the entries like listed below will be kept in use:
 
 ```test
   list server '/onion/127.0.0.1#65453'
