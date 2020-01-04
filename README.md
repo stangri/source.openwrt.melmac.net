@@ -48,12 +48,16 @@ The packages source code is available in [my  packages source](https://github.co
 
 ### antminer-monitor
 
-This service can be used to monitor local BITMAIN Antminers. This is just the wrapper for [Antminer Monitor python app](https://github.com/anselal/antminer-monitor). **WARNING**: Requires a router with a lot of flash, 128Mb recommended. Please see the [README](https://github.com/stangri/openwrt_packages/blob/master/antminer-monitor/files/) for further information.
+This service can be used to monitor local BITMAIN Antminers. This is just the wrapper for [Antminer Monitor python app](https://github.com/anselal/antminer-monitor). **WARNING**: Requires a router with a lot of flash, 128Mb recommended. Please see the [README](https://github.com/stangri/openwrt_packages/blob/master/antminer-monitor/files/README.md) for further information.
 
 ### fakeinternet & luci-app-fakeinternet
 
 This service can be used to fake internet connectivity for local devices.
-Can be used on routers with no internet access to suppress warnings on local devices on no internet connectivity. Please see the [README](https://github.com/stangri/openwrt_packages/blob/master/fakeinternet/files/) and [OpenWrt Forum Thread](https://forum.openwrt.org/t/fakeinternet-service-package-wip/924) for further information.
+Can be used on routers with no internet access to suppress warnings on local devices on no internet connectivity. Please see the [README](https://github.com/stangri/openwrt_packages/blob/master/fakeinternet/files/README.md) and [OpenWrt Forum Thread](https://forum.openwrt.org/t/fakeinternet-service-package-wip/924) for further information.
+
+### https-dns-proxy & luci-app-https-dns-proxy
+
+This is a lean RFC8484-compatible (no JSON API support) DNS-over-HTTPS (DoH) proxy service which supports DoH servers ran by AdGuard, CleanBrowsing, Cloudflare, Google, ODVR (nic.cz) and Quad9. Please see the [README](https://github.com/stangri/openwrt_packages/blob/master/https-dns-proxy/files/README.md) for further information.
 
 ### luci-app-advanced-reboot
 
