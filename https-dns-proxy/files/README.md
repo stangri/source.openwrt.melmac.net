@@ -11,27 +11,11 @@ A lean RFC8484-compatible (no JSON API support) DNS-over-HTTPS (DoH) proxy servi
 
 ## Screenshots (luci-app-https-dns-proxy)
 
-Service Status
-
 ![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/https-dns-proxy/screenshot01.png "https-dns-proxy screenshot")
-
-Configuration - Basic Configuration
-
-![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/https-dns-proxy/screenshot08-config-basic.png "Configuration - Basic Configuration")
-
-Configuration - Advanced Configuration
-
-![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/https-dns-proxy/screenshot08-config-advanced.png "Configuration - Advanced Configuration")
-
-Whitelist and Blocklist Management
-
-![screenshot](https://raw.githubusercontent.com/stangri/openwrt_packages/master/screenshots/https-dns-proxy/screenshot08-lists.png "Whitelist and Blocklist Management")
 
 ## Requirements
 
-This proxy requires the following packages to be installed on your router: ```dnsmasq``` or ```dnsmasq-full``` or ```unbound``` and either ```ca-certificates```, ```wget``` and ```libopenssl``` (for OpenWrt 15.05.1) or ```uclient-fetch``` and ```libustream-mbedtls``` (for LEDE Project and OpenWrt 18.06.xx or newer). Additionally installation of ```coreutils-sort``` is highly recommended as it speeds up blocklist processing.
-
-To satisfy the requirements for connect to your router via ssh and run the following commands:
+This proxy requires the following packages to be installed on your router: ```libc```, ```libcares```, ```libcurl```, ```libev```, ```ca-bundle```. They will be automatically installed when you're installing ```https-dns-proxy```.
 
 ## Unmet Dependencies
 
@@ -47,44 +31,61 @@ opkg update; opkg install https-dns-proxy luci-app-https-dns-proxy;
 
 ## Default Settings
 
-Default configuration has service disabled (use Web UI to enable/start service or run ```uci set https-dns-proxy.config.enabled=1; uci commit https-dns-proxy;```) and selected ad/malware lists suitable for routers with 64Mb RAM.
-
-If your router has less then 64Mb RAM, edit the configuration file, located at ```/etc/config/https-dns-proxy```. The configuration file has lists in ascending order starting with smallest ones and each list has a preceding comment indicating its size, comment out or delete the lists you don't want or your router can't handle.
-
-## How To Customize
-
-## How To Use
-
-Once the service is enabled in the [config file](#default-settings), run ```/etc/init.d/https-dns-proxy start``` to start the service. Either ```/etc/init.d/https-dns-proxy restart``` or ```/etc/init.d/https-dns-proxy reload``` will only restart the service and/or re-download the lists if there were relevant changes in the config file since the last successful start. Had the previous start resulted in any error, either ```/etc/init.d/https-dns-proxy start```, ```/etc/init.d/https-dns-proxy restart``` or ```/etc/init.d/https-dns-proxy reload``` will attempt to re-download the lists.
-
-If you want to force https-dns-proxy to re-download the lists, run ```/etc/init.d/https-dns-proxy dl```.
-
-If you want to check if the specific domain (or part of the domain name) is being blocked, run ```/etc/init.d/https-dns-proxy check test-domain.com```.
+Default configuration has service enabled and starts the service with Google and Cloudflare DoH servers. In most configurations, you will keep the default ```DNSMASQ``` service installed to handle requests from devices in your local network and point ```DNSMASQ``` to use ```https-dns-proxy``` for name resolution. By default, the service will intelligently override existing ```DNSMASQ``` servers settings on start to use the DoH servers and restores original ```DNSMASQ``` servers on stop. See the [Configuration Settings](#configuration-settings) section below how to disable/adjust this behavior.
 
 ## Configuration Settings
 
-In the Web UI the ```https-dns-proxy``` settings are split into ```basic``` and ```advanced``` settings. The full list of configuration parameters of ```https-dns-proxy.config``` section is:
+Configuration consts of the "main" config section where you can configure which ```DNSMASQ``` settings the service will automatically affect and the typed (unnamed) https-dns-proxy instance settings. The original config file is included below:
 
-|Web UI Section|Parameter|Type|Default|Description|
-| --- | --- | --- | --- | --- |
-|Basic|enabled|boolean|0|Enable/disable the ```https-dns-proxy``` service.|
-|Basic|verbosity|integer|2|Can be set to 0, 1 or 2 to control the console and system log output verbosity of the ```https-dns-proxy``` service.|
-|Basic|force_dns|boolean|1|Force router's DNS to local devices which may have different/hardcoded DNS server settings. If enabled, creates a firewall rule to intercept DNS requests from local devices to external DNS servers and redirect them to router.|
-|Basic|led|string|none|Use one of the router LEDs to indicate the AdBlocking status.|
-|Advanced|dns|string|dnsmasq.servers|DNS resolution option. See [table below](#dns-resolution-option) for addtional information.|
-|Advanced|ipv6_enabled|boolean|0|Add IPv6 entries to block-list if ```dnsmasq.addnhosts``` is used. This option is only visible in Web UI if the ```dnsmasq.addnhosts``` is selected as the DNS resolution option.|
-|Advanced|boot_delay|integer|120|Delay service activation for that many seconds on boot up. You can shorten it to 10-30 seconds on modern fast routers. Routers with built-in modems may require longer boot delay.|
-|Advanced|download_timeout|integer|10|Time-out downloads if no reply received within that many last seconds.|
-|Advanced|curl_retry|integer|3|If ```curl``` is installed and detected, attempt that many retries for failed downloads.|
-|Advanced|parallel_downloads|boolean|1|If enabled, all downloads are completed concurrently, if disabled -- sequentioally. Concurrent downloads dramatically speed up service loading.|
-|Advanced|debug|boolean|0|If enabled, output service full debug to ```/tmp/https-dns-proxy.log```. Please note that the debug file may clog up the router's RAM on some devices. Use with caution.|
-|Advanced|allow_non_ascii|boolean|0|Enable support for non-ASCII characters in the final AdBlocking file. Only enable if your target service supports non-ASCII characters. If you enable this on the system where DNS resolver doesn't support non-ASCII characters, it will crash. Use with caution.|
-|Advanced|compressed_cache|boolean|0|Create compressed cache of the AdBlocking file in router's persistent memory. Only recommended to be used on routers with large ROM and/or routers with metered/flaky internet connection.|
-||whitelist_domain|list/string||List of white-listed domains.|
-||whitelist_domains_url|list/string||List of URL(s) to text files containing white-listed domains. **Must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix. Useful if you want to keep/publish a single white-list for multiple routers.|
-||blacklist_domains_url|list/string||List of URL(s) to text files containing black-listed domains. **Must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix.|
-||blacklist_hosts_url|list/string||List of URL(s) to [hosts files](https://en.wikipedia.org/wiki/Hosts_(file)) containing black-listed domains. **Must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix.|
+```text
+config main 'config'
+  option update_dnsmasq_config '*'
+
+config https-dns-proxy
+  option bootstrap_dns '8.8.8.8,8.8.4.4'
+  option resolver_url 'https://dns.google/dns-query'
+  option listen_addr '127.0.0.1'
+  option listen_port '5053'
+  option user 'nobody'
+  option group 'nogroup'
+
+config https-dns-proxy
+  option bootstrap_dns '1.1.1.1,1.0.0.1'
+  option resolver_url 'https://cloudflare-dns.com/dns-query'
+  option listen_addr '127.0.0.1'
+  option listen_port '5054'
+  option user 'nobody'
+  option group 'nogroup'```
+```
+
+The ```update_dnsmasq_config``` option can be empty (to not change ```DNSMASQ``` server settings on start/stop), can be set to ```'*'``` to affect all ```DNSMASQ``` instance server settings or have a space-separated list of ```DNSMASQ``` instances to affect (like ```'0 4 5'```). If this option is omitted, the default setting is ```'*'```.
+
+Starting with ```https-dns-proxy``` version ```2019-12-03-3``` and higher, when the service is set to update the DNSMASQ servers setting on start/stop, it does not override entries which contain either ```#``` or ```/```, so the entries like below will be kept in use:
+
+```test
+  list server '/onion/127.0.0.1#65453'
+  list server '/openwrt.org/8.8.8.8'
+  list server '/pool.ntp.org/8.8.8.8'
+  list server '127.0.0.1#15353'
+  list server '127.0.0.1#55353'
+  list server '127.0.0.1#65353'
+```
+
+The https-dns-proxy instance settings are:
+|Parameter|Type|Default|Description|
+| --- | --- | --- | --- |
+|bootstrap_dns|IP Address||The non-encrypted DNS servers to be used to resolve the DoH server name on start.|
+|edns_subnet|Subnet||EDNS Subnet address can be supplied to supported DoH servers to provide local resolution results.|
+|listen_addr|IP Address|127.0.0.1|The local IP address to listen to requests.|
+|listen_port|port|5053 and up|If this setting is omitted, the service will start the first https-dns-proxy instance on port 5053, second on 5054 and so on.|
+|logfile|Full filepath||Full filepath to the file to log the instance events to.|
+|resolver_url|URL||The https URL to the RFC8484-compatible resolver.|
+|proxy_server|URL||Local proxy server to use when accessing resolvers.|
+|user|String|nobody|Local user to run instance under.|
+|group|String|nogroup|Local group to run instance under.|
+|use_http1|Boolean|0|If set to 1, use HTTP/1 on installations with broken/outdated ```curl``` package. Included for posterity reasons, you will most likely not ever need it on OpenWrt.|
+|verbosity|Integer||Use setting between 1 to 4 to control the logging verbosity level.|String
 
 ## Thanks
 
-I'd like to thank everyone who helped create, test and troubleshoot this service. Special thanks to [@hnyman](https://github.com/hnyman) and [@feckert](https://github.com/feckert) for general package/luci guidance.
+This OpenWrt package wouldn't have been possible without [@aarond10](https://github.com/aarond10)'s [https-dns-proxy](https://github.com/aarond10/https_dns_proxy) and his active participation in the OpenWrt package itself. Special thanks to [@jow-](https://github.com/jow-) for general package/luci guidance.
