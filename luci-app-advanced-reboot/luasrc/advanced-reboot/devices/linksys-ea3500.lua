@@ -1,5 +1,6 @@
 return {
-	deviceName = "Linksys EA3500",
+	vendorName = "Linksys",
+	deviceName = "EA3500",
 	boardName = "linksys-audi",
 	partition1MTD = "mtd3",
 	partition2MTD = "mtd5",

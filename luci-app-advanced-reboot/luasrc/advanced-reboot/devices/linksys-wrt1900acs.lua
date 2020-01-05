@@ -1,5 +1,6 @@
 return {
-	deviceName = "Linksys WRT1900ACS",
+	vendorName = "Linksys",
+	deviceName = "WRT1900ACS",
 	boardName = "linksys-shelby",
 	partition1MTD = "mtd4",
 	partition2MTD = "mtd6",

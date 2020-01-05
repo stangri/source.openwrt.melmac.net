@@ -1,5 +1,6 @@
 return {
-	deviceName = "Linksys WRT32X",
+	vendorName = "Linksys",
+	deviceName = "WRT32X",
 	boardName = "linksys-venom",
 	partition1MTD = "mtd5",
 	partition2MTD = "mtd7",
