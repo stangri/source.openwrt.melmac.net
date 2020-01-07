@@ -90,43 +90,34 @@ function alt_partition_unmount(op_ubi)
 end
 
 function obtain_device_info()
-	local boardName, p1_mtd, p2_mtd, offset, bev1, bev1p1, bev1p2, bev2, bev2p1, n
-	local p1_label, p1_version, p2_label, p2_version, p1_os, p2_os
+	local p, boardName, n, p1_label, p1_version, p2_label, p2_version, p1_os, p2_os
 	local errorMessage, current_partition, other_partition
-	local op_ubi, cp_info, op_info
-	local zyxelFlagPartition
+	local op_ubi, cp_info, op_info, zyxelFlagPartition
 	local romBoardName = util.trim(util.exec("cat /tmp/sysinfo/board_name"))
 	for filename in fs.dir(devices_dir) do
 		local p_func = loadfile(devices_dir .. filename)
 		setfenv(p_func, { _ = i18n.translate })
-		local p = p_func()
+		p = p_func()
 		boardName = p.boardName:gsub('%p','')
 		if romBoardName and romBoardName:gsub('%p',''):match(boardName) then
-			device_name = p.vendorName .. " " .. p.deviceName
-			p1_mtd = p.partition1MTD or nil
-			p2_mtd = p.partition2MTD or nil
-			offset = p.labelOffset or nil
-			bev1 = p.bootEnv1 or nil
-			bev1p1 = tonumber(p.bootEnv1Partition1Value) or nil
-			bev1p2 = tonumber(p.bootEnv1Partition2Value) or nil
-			bev2 = p.bootEnv2 or nil
-			bev2p1 = p.bootEnv2Partition1Value or nil
-			bev2p2 = p.bootEnv2Partition1Value or nil
-			if offset then
-				if p1_mtd then
-					p1_label = util.trim(util.exec("dd if=/dev/" .. p1_mtd .. " bs=1 skip=" .. offset .. " count=128" .. "  2>/dev/null"))
+			p.bootEnv2 = p.bootEnv2 or nil
+			if p.labelOffset then
+				if p.partition1MTD then
+					p1_label = util.trim(util.exec("dd if=/dev/" .. p.partition1MTD .. " bs=1 skip=" .. p.labelOffset .. " count=128" .. "  2>/dev/null"))
 					n, p1_version = p1_label:match('(Linux)-([%d|.]+)')
 				end
-				if p2_mtd then
-					p2_label = util.trim(util.exec("dd if=/dev/" .. p2_mtd .. " bs=1 skip=" .. offset .. " count=128" .. "  2>/dev/null"))
+				if p.partition2MTD then
+					p2_label = util.trim(util.exec("dd if=/dev/" .. p.partition2MTD .. " bs=1 skip=" .. p.labelOffset .. " count=128" .. "  2>/dev/null"))
 					n, p2_version = p2_label:match('(Linux)-([%d|.]+)')
 				end
 				if p1_label and p1_label:find("LEDE") then p1_os = "LEDE" end
 				if p1_label and p1_label:find("OpenWrt") then p1_os = "OpenWrt" end
-				if p1_label and p1_label:find(p.vendorName) then p1_os = p.vendorName end
+				if p1_label and p.vendorName and p1_label:find(p.vendorName) then p1_os = p.vendorName end
+				if p1_label and p.deviceRomLabel and p1_label:find(p.deviceRomLabel) then p1_os = p.vendorName end
 				if p2_label and p2_label:find("LEDE") then p2_os = "LEDE" end
 				if p2_label and p2_label:find("OpenWrt") then p2_os = "OpenWrt" end
-				if p2_label and p2_label:find(p.vendorName) then p2_os = p.vendorName end
+				if p2_label and p.vendorName and p2_label:find(p.vendorName) then p2_os = p.vendorName end
+				if p2_label and p.deviceRomLabel and p2_label:find(p.deviceRomLabel) then p2_os = p.vendorName end
 				if not p1_os then p1_os = "Unknown" end
 				if not p2_os then p2_os = "Unknown" end
 				if p1_os and p1_version then p1_os = p1_os .. " (Linux " .. p1_version .. ")" end
@@ -136,9 +127,9 @@ function obtain_device_info()
 				if not p2_os then p2_os = "Unknown/Compressed" end
 			end
 
-			if bev1 then
+			if p.bootEnv1 then
 				if fs.access("/usr/sbin/fw_printenv") and fs.access("/usr/sbin/fw_setenv") then
-					current_partition = tonumber(util.trim(util.exec("fw_printenv -n " .. bev1)))
+					current_partition = tonumber(util.trim(util.exec("fw_printenv -n " .. p.bootEnv1)))
 				end
 			else
 				if not zyxelFlagPartition then zyxelFlagPartition = util.trim(util.exec(". /lib/functions.sh; find_mtd_part 0:DUAL_FLAG")) end
@@ -149,16 +140,16 @@ function obtain_device_info()
 					current_partition = tonumber(util.exec("dd if=" .. zyxelFlagPartition .. " bs=1 count=1 2>/dev/null | hexdump -n 1 -e '1/1 \"%d\"'"))
 				end
 			end
-			other_partition = current_partition == bev1p2 and bev1p1 or bev1p2
+			other_partition = current_partition == p.bootEnv1Partition2Value and p.bootEnv1Partition1Value or p.bootEnv1Partition2Value
 			
-			if is_alt_mountable(p1_mtd, p2_mtd) then
-				if current_partition == bev1p1 then
-					op_ubi = tonumber(p2_mtd:sub(4)) + 1
+			if is_alt_mountable(p.partition1MTD, p.partition2MTD) then
+				if current_partition == p.bootEnv1Partition1Value then
+					op_ubi = tonumber(p.partition2MTD:sub(4)) + 1
 				else
-					op_ubi = tonumber(p1_mtd:sub(4)) + 1
+					op_ubi = tonumber(p.partition1MTD:sub(4)) + 1
 				end
 				local cp_info, op_info = get_partition_os_info(op_ubi)
-				if current_partition == bev1p1 then
+				if current_partition == p.bootEnv1Partition1Value then
 					p1_os = cp_info or p1_os
 					p2_os = op_info or p2_os
 				else
@@ -166,9 +157,10 @@ function obtain_device_info()
 					p2_os = cp_info or p2_os
 				end
 			end
+			return romBoardName, p.vendorName .. " " .. p.deviceName, p.bootEnv1, p.bootEnv1Partition1Value, p1_os, p.bootEnv1Partition2Value, p2_os, p.bootEnv2, p.bootEnv2Partition1Value, p.bootEnv2Partition1Value, current_partition
 		end
 	end
-	return romBoardName, device_name, bev1, bev1p1, p1_os, bev1p2, p2_os, bev2, bev2p1, bev2p2, current_partition
+	return romBoardName, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil
 end
 
 function index()
