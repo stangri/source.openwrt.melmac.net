@@ -91,7 +91,7 @@ end
 
 function obtain_device_info()
 	local p, boardName, n, p1_label, p1_version, p2_label, p2_version, p1_os, p2_os
-	local errorMessage, current_partition, other_partition
+	local errorMessage, current_partition
 	local op_ubi, cp_info, op_info, zyxelFlagPartition
 	local romBoardName = util.trim(util.exec("cat /tmp/sysinfo/board_name"))
 	for filename in fs.dir(devices_dir) do
@@ -132,14 +132,13 @@ function obtain_device_info()
 				end
 			else
 				if not zyxelFlagPartition then zyxelFlagPartition = util.trim(util.exec(". /lib/functions.sh; find_mtd_part 0:DUAL_FLAG")) end
-				if not zyxelFlagPartition then
-					errorMessage = errorMessage or "" .. i18n.translate("Unable to find Dual Boot Flag Partition." .. " ")
-					util.perror(i18n.translate("Unable to find Dual Boot Flag Partition."))
-				else
+				if zyxelFlagPartition then
 					current_partition = tonumber(util.exec("dd if=" .. zyxelFlagPartition .. " bs=1 count=1 2>/dev/null | hexdump -n 1 -e '1/1 \"%d\"'"))
+				else
+					errorMessage = errorMessage or i18n.translate("Unable to find Dual Boot Flag Partition.")
+					util.perror(i18n.translate("Unable to find Dual Boot Flag Partition."))
 				end
 			end
-			other_partition = current_partition == p.bootEnv1Partition2Value and p.bootEnv1Partition1Value or p.bootEnv1Partition2Value
 			
 			if is_alt_mountable(p.partition1MTD, p.partition2MTD) then
 				if current_partition == p.bootEnv1Partition1Value then
