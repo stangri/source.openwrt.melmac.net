@@ -112,18 +112,16 @@ function obtain_device_info()
 				if p1_label and p1_label:find("LEDE") then p1_os = "LEDE" end
 				if p1_label and p1_label:find("OpenWrt") then p1_os = "OpenWrt" end
 				if p1_label and p.vendorName and p1_label:find(p.vendorName) then p1_os = p.vendorName end
-				if p1_label and p.deviceRomLabel and p1_label:find(p.deviceRomLabel) then p1_os = p.vendorName end
 				if p2_label and p2_label:find("LEDE") then p2_os = "LEDE" end
 				if p2_label and p2_label:find("OpenWrt") then p2_os = "OpenWrt" end
 				if p2_label and p.vendorName and p2_label:find(p.vendorName) then p2_os = p.vendorName end
-				if p2_label and p.deviceRomLabel and p2_label:find(p.deviceRomLabel) then p2_os = p.vendorName end
-				if not p1_os then p1_os = "Unknown" end
-				if not p2_os then p2_os = "Unknown" end
+				if not p1_os then p1_os = p.vendorName .. "/" .. i18n.translate("Unknown") end
+				if not p2_os then p2_os = p.vendorName .. "/" .. i18n.translate("Unknown") end
 				if p1_os and p1_version then p1_os = p1_os .. " (Linux " .. p1_version .. ")" end
 				if p2_os and p2_version then p2_os = p2_os .. " (Linux " .. p2_version .. ")" end
 			else
-				if not p1_os then p1_os = "Unknown/Compressed" end
-				if not p2_os then p2_os = "Unknown/Compressed" end
+				p1_os = p.vendorName .. "/" .. i18n.translate("Unknown") .. " (" .. i18n.translate("Compressed") .. ")"
+				p2_os = p.vendorName .. "/" .. i18n.translate("Unknown") .. " (" .. i18n.translate("Compressed") .. ")"
 			end
 
 			if p.bootEnv1 then

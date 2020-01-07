@@ -10,6 +10,5 @@ return {
 	bootEnv1Partition2Value = 1,
 	bootEnv2 = nil,
 	bootEnv2Partition1Value = nil,
-	bootEnv2Partition2Value = nil,
-	deviceRomLabel = "Linux%-3.4.103"
+	bootEnv2Partition2Value = nil
 }
