@@ -100,7 +100,6 @@ function obtain_device_info()
 		p = p_func()
 		boardName = p.boardName:gsub('%p','')
 		if romBoardName and romBoardName:gsub('%p',''):match(boardName) then
-			p.bootEnv2 = p.bootEnv2 or nil
 			if p.labelOffset then
 				if p.partition1MTD then
 					p1_label = util.trim(util.exec("dd if=/dev/" .. p.partition1MTD .. " bs=1 skip=" .. p.labelOffset .. " count=128" .. "  2>/dev/null"))
