@@ -1,2 +1,4 @@
 #!/bin/bash
-for i in luci-app-*; do ../i18n-scan.pl "${i}/" > "${i}/po/templates/${i//luci-app-}.pot"; done; git add .; 
+for i in luci-app-*; do ../i18n-scan.pl "${i}/" > "${i}/po/templates/${i//luci-app-}.pot"; done; 
+for i in luci-app-*/po/templates/*.pot; do sed -i '/#: luci-/#: applications/luci-/' "$i"; done
+git add .; 
