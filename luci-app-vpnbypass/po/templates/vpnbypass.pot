@@ -1,103 +1,103 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
-#: luci-app-vpnbypass/luasrc/view/vpnbypass/buttons.htm:50
+#: applications/luci-app-vpnbypass/luasrc/view/vpnbypass/buttons.htm:50
 msgid "Disable"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:62
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:62
 msgid "Domains to Bypass"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:63
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:63
 msgid "Domains to be accessed directly (outside of the VPN tunnel), see"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/view/vpnbypass/buttons.htm:48
+#: applications/luci-app-vpnbypass/luasrc/view/vpnbypass/buttons.htm:48
 msgid "Enable"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/view/vpnbypass/js.htm:51
+#: applications/luci-app-vpnbypass/luasrc/view/vpnbypass/js.htm:51
 msgid "Loading"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:45
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:45
 msgid "Local IP Addresses to Bypass"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:45
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:45
 msgid ""
 "Local IP addresses or subnets with direct internet access (outside of the "
 "VPN tunnel)"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:31
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:31
 msgid "Local Ports to Bypass"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:31
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:31
 msgid "Local ports to trigger VPN Bypass"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:65
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:65
 msgid "README"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/view/vpnbypass/buttons.htm:40
+#: applications/luci-app-vpnbypass/luasrc/view/vpnbypass/buttons.htm:40
 msgid "Reload"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:52
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:52
 msgid "Remote IP Addresses to Bypass"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:52
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:52
 msgid ""
 "Remote IP addresses or subnets which will be accessed directly (outside of "
 "the VPN tunnel)"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:38
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:38
 msgid "Remote Ports to Bypass"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:38
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:38
 msgid "Remote ports to trigger VPN Bypass"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:22
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:23
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:22
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:23
 msgid "Service Status"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/view/vpnbypass/buttons.htm:38
+#: applications/luci-app-vpnbypass/luasrc/view/vpnbypass/buttons.htm:38
 msgid "Start"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/view/vpnbypass/buttons.htm:42
+#: applications/luci-app-vpnbypass/luasrc/view/vpnbypass/buttons.htm:42
 msgid "Stop"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/controller/vpnbypass.lua:4
+#: applications/luci-app-vpnbypass/luasrc/controller/vpnbypass.lua:4
 msgid "VPN"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/controller/vpnbypass.lua:5
+#: applications/luci-app-vpnbypass/luasrc/controller/vpnbypass.lua:5
 msgid "VPN Bypass"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:29
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:29
 msgid "VPN Bypass Rules"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:20
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:20
 msgid "VPN Bypass Settings"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:65
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:65
 msgid "for syntax"
 msgstr ""
 
-#: luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:11
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:11
 msgid "is not installed or not found"
 msgstr ""

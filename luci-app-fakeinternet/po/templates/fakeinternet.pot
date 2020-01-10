@@ -1,76 +1,76 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:57
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:57
 msgid "Action"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:44
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:44
 msgid "Addresses"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:44
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:44
 msgid "Addresses to fake."
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:47
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:47
 msgid ""
 "Advanced policies. Use # as the domain name for all domains. Put blocked "
 "domains at the top."
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:36
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:36
 msgid "Configuration"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:40
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:40
 msgid "Do not redirect ICMP traffic to router"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:53
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:53
 msgid "Domain Name"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:15
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:15
 msgid "Enable/Start"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/controller/fakeinternet.lua:6
+#: applications/luci-app-fakeinternet/luasrc/controller/fakeinternet.lua:6
 msgid "Fakeinternet"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:6
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:6
 msgid "Fakeinternet Settings"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:39
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:39
 msgid "ICMP Redirect"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:47
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:47
 msgid "Policies"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:39
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:39
 msgid "Redirect ICMP (ping) traffic to router."
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:41
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:41
 msgid "Redirect ICMP traffic to router"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:7
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:7
 msgid "Service Status"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:14
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:14
 msgid "Service is disabled/stopped"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:18
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:18
 msgid "Service is enabled/started"
 msgstr ""
 
-#: luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:19
+#: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:19
 msgid "Stop/Disable"
 msgstr ""

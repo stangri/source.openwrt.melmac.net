@@ -1,35 +1,35 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
-#: luci-app-template/luasrc/view/template/template.htm:18
+#: applications/luci-app-template/luasrc/view/template/template.htm:18
 msgid "ERROR:"
 msgstr ""
 
-#: luci-app-template/luasrc/view/cbi/map-template.htm:35
+#: applications/luci-app-template/luasrc/view/cbi/map-template.htm:35
 msgid "One or more invalid/required values on tab"
 msgstr ""
 
-#: luci-app-template/luasrc/model/cbi/template.lua:17
+#: applications/luci-app-template/luasrc/model/cbi/template.lua:17
 msgid "Setting"
 msgstr ""
 
-#: luci-app-template/luasrc/model/cbi/template.lua:17
+#: applications/luci-app-template/luasrc/model/cbi/template.lua:17
 msgid "Setting of Template"
 msgstr ""
 
-#: luci-app-template/luasrc/model/cbi/template.lua:7
+#: applications/luci-app-template/luasrc/model/cbi/template.lua:7
 msgid "Start Template service"
 msgstr ""
 
-#: luci-app-template/luasrc/controller/template.lua:6
-#: luci-app-template/luasrc/view/template/template.htm:10
+#: applications/luci-app-template/luasrc/controller/template.lua:6
+#: applications/luci-app-template/luasrc/view/template/template.htm:10
 msgid "Template"
 msgstr ""
 
-#: luci-app-template/luasrc/model/cbi/template.lua:3
+#: applications/luci-app-template/luasrc/model/cbi/template.lua:3
 msgid "Template Settings"
 msgstr ""
 
-#: luci-app-template/luasrc/view/template/template.htm:14
+#: applications/luci-app-template/luasrc/view/template/template.htm:14
 msgid "Warning: There are unsaved changes that will get lost on reboot!"
 msgstr ""

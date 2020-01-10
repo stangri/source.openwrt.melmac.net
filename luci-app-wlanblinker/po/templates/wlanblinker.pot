@@ -1,87 +1,87 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:34
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:34
 msgid "Configuration"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:52
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:52
 msgid "Current Mode"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:13
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:13
 msgid "Enable/Start"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:73
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:73
 msgid "LED indication"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:67
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:67
 msgid "LED off time (in sec)"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:64
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:64
 msgid "LED on time (in sec)"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:70
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:70
 msgid "LED sleep time (in sec)"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:42
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:42
 msgid "LED to indicate status"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:60
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:60
 msgid "Modes"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:42
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:42
 msgid "Pick the LED not already used in"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:5
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:5
 msgid "Service Status"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:12
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:12
 msgid "Service is disabled/stopped"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:16
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:16
 msgid "Service is enabled/started"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:17
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:17
 msgid "Stop/Disable"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:44
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:44
 msgid "System LED Configuration"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:60
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:60
 msgid "User-defined modes of operation"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/controller/wlanblinker.lua:6
+#: applications/luci-app-wlanblinker/luasrc/controller/wlanblinker.lua:6
 msgid "WLAN Blinker"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:4
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:4
 msgid "WLAN Blinker Settings"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:75
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:75
 msgid "channel"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:76
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:76
 msgid "link quality"
 msgstr ""
 
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:46
-#: luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:74
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:46
+#: applications/luci-app-wlanblinker/luasrc/model/cbi/wlanblinker.lua:74
 msgid "none"
 msgstr ""

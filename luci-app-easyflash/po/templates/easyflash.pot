@@ -1,23 +1,23 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
-#: luci-app-easyflash/luasrc/view/easyflash.htm:10
+#: applications/luci-app-easyflash/luasrc/view/easyflash.htm:10
 msgid "Click \"Run Easy Flash\" to start flashing"
 msgstr ""
 
-#: luci-app-easyflash/luasrc/controller/easyflash.lua:3
-#: luci-app-easyflash/luasrc/view/easyflash.htm:9
+#: applications/luci-app-easyflash/luasrc/controller/easyflash.lua:3
+#: applications/luci-app-easyflash/luasrc/view/easyflash.htm:9
 msgid "Easy Flash"
 msgstr ""
 
-#: luci-app-easyflash/luasrc/view/easyflash.htm:3
+#: applications/luci-app-easyflash/luasrc/view/easyflash.htm:3
 msgid "Firmware upgrade files were not found!"
 msgstr ""
 
-#: luci-app-easyflash/luasrc/view/easyflash.htm:18
+#: applications/luci-app-easyflash/luasrc/view/easyflash.htm:18
 msgid "Run Easy Flash"
 msgstr ""
 
-#: luci-app-easyflash/luasrc/view/easyflash.htm:16
+#: applications/luci-app-easyflash/luasrc/view/easyflash.htm:16
 msgid "Start Flashing"
 msgstr ""
