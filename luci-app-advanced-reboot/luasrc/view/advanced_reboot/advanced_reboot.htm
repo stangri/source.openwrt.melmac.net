@@ -28,7 +28,7 @@
 			<div class="th cbi-section-table-cell"><%:Firmware%></div>
 			<div class="th cbi-section-table-cell"><%:Reboot%></div>
 		</div>
-		<div class="tr cbi-section-table-row cbi-rowstyle-<%- if bev1p1 == current_partition then -%><%:1%><%- else -%><%:2%><%- end -%>">
+		<div class="tr cbi-section-table-row cbi-rowstyle-<%- if bev1p1 == current_partition then -%><%=1%><%- else -%><%=2%><%- end -%>">
 			<div class="td">
 				<%=string.format("%X", bev1p1)%>
 			</div>
@@ -52,7 +52,7 @@
 				<%- end -%>
 			</div>
 		</div>
-		<div class="tr cbi-section-table-row cbi-rowstyle-<%- if bev1p2 == current_partition then -%><%:1%><%- else -%><%:2%><%- end -%>">
+		<div class="tr cbi-section-table-row cbi-rowstyle-<%- if bev1p2 == current_partition then -%><%=1%><%- else -%><%=2%><%- end -%>">
 			<div class="td">
 				<%=string.format("%X", bev1p2)%>
 			</div>
