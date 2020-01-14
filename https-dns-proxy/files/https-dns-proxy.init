@@ -113,12 +113,13 @@ service_triggers() {
 
 dnsmasq_add_doh_server() {
 	local cfg="$1" value="$2"
+	uci -q del_list dhcp."$cfg".server="$value"
 	uci -q add_list dhcp."$cfg".server="$value"
 }
 
 dnsmasq_create_server_backup() {
 	local cfg="$1" i
-	uci -q del "dhcp.$cfg.doh_backup_server"
+	uci -q get "dhcp.$cfg.doh_backup_server" >/dev/null && return 0
 	for i in $(uci -q get "dhcp.$cfg.server"); do
 		uci -q add_list dhcp."$cfg".doh_backup_server="$i"
 		if [ "$i" = "${i//#}" ] && [ "$i" = "${i//\/}" ]; then
