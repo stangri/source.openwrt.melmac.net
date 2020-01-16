@@ -118,7 +118,8 @@ dnsmasq_add_doh_server() {
 }
 
 dnsmasq_create_server_backup() {
-	local cfg="$1" i
+	local cfg="$1"
+	local i
 	uci -q get "dhcp.$cfg.doh_backup_server" >/dev/null && return 0
 	for i in $(uci -q get "dhcp.$cfg.server"); do
 		uci -q add_list dhcp."$cfg".doh_backup_server="$i"
@@ -129,7 +130,8 @@ dnsmasq_create_server_backup() {
 }
 
 dnsmasq_restore_server_backup() {
-	local cfg="$1" i
+	local cfg="$1"
+	local i
 	if uci -q get "dhcp.$cfg.doh_backup_server" >/dev/null; then
 		uci -q del "dhcp.$cfg.server"
 		for i in $(uci -q get "dhcp.$cfg.doh_backup_server"); do
