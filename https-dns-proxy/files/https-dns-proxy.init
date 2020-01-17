@@ -155,13 +155,7 @@ dhcp_backup() {
 			fi
 			;;
 		restore)
-			if [ "$dnsmasqConfig" = "*" ]; then
-				config_foreach dnsmasq_restore_server_backup 'dnsmasq'
-			elif [ -n "$dnsmasqConfig" ]; then
-				for i in $dnsmasqConfig; do
-					dnsmasq_restore_server_backup "@dnsmasq[${i}]"
-				done
-			fi
+			config_foreach dnsmasq_restore_server_backup 'dnsmasq'
 			;;
 	esac
 }
