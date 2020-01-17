@@ -5,7 +5,7 @@
 export START=80
 export USE_PROCD=1
 
-export dnsmasqConfig
+unset dnsmasqConfig
 
 PROG=/usr/sbin/https-dns-proxy
 
