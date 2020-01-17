@@ -31,7 +31,7 @@ opkg update; opkg install https-dns-proxy luci-app-https-dns-proxy;
 
 ## Default Settings
 
-Default configuration has service enabled and starts the service with Google and Cloudflare DoH servers. In most configurations, you will keep the default ```DNSMASQ``` service installed to handle requests from devices in your local network and point ```DNSMASQ``` to use ```https-dns-proxy``` for name resolution. 
+Default configuration has service enabled and starts the service with Google and Cloudflare DoH servers. In most configurations, you will keep the default ```DNSMASQ``` service installed to handle requests from devices in your local network and point ```DNSMASQ``` to use ```https-dns-proxy``` for name resolution.
 
 By default, the service will intelligently override existing ```DNSMASQ``` servers settings on start to use the DoH servers and restores original ```DNSMASQ``` servers on stop. See the [Configuration Settings](#configuration-settings) section below for more information and how to disable this behavior.
 
