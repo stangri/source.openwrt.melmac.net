@@ -60,7 +60,7 @@ config https-dns-proxy
   option group 'nogroup'```
 ```
 
-The ```update_dnsmasq_config``` option can be empty (set to ```''``` to not change ```DNSMASQ``` server settings on start/stop), can be set to ```'*'``` to affect all ```DNSMASQ``` instance server settings or have a space-separated list of ```DNSMASQ``` instances to affect (like ```'0 4 5'```). If this option is omitted, the default setting is ```'*'```.
+The ```update_dnsmasq_config``` option can be set to dash (set to ```'-'``` to not change ```DNSMASQ``` server settings on start/stop), can be set to ```'*'``` to affect all ```DNSMASQ``` instance server settings or have a space-separated list of ```DNSMASQ``` instances to affect (like ```'0 4 5'```). If this option is omitted, the default setting is ```'*'```.
 
 Starting with ```https-dns-proxy``` version ```2019-12-03-3``` and higher, when the service is set to update the DNSMASQ servers setting on start/stop, it does not override entries which contain either ```#``` or ```/```, so the entries like listed below will be kept in use:
 
