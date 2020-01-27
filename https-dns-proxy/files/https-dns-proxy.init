@@ -120,18 +120,36 @@ dnsmasq_add_doh_server() {
 dnsmasq_create_server_backup() {
 	local cfg="$1"
 	local i
-	uci -q get "dhcp.$cfg.doh_backup_server" >/dev/null && return 0
-	for i in $(uci -q get "dhcp.$cfg.server"); do
-		uci -q add_list dhcp."$cfg".doh_backup_server="$i"
-		if [ "$i" = "${i//127.0.0.1}" ] && [ "$i" = "$(echo "$i" | tr -d /)" ]; then
-			uci -q del_list dhcp."$cfg".server="$i"
+	if ! uci -q get "dhcp.$cfg.doh_backup_noresolv" >/dev/null; then
+		if [ -z "$(uci -q get "dhcp.$cfg.noresolv")" ]; then
+			uci -q set dhcp."$cfg".noresolv='1'
+			uci -q set dhcp."$cfg".doh_backup_noresolv='-1'
+		elif [ "$(uci -q get "dhcp.$cfg.noresolv")" != "1" ]; then
+			uci -q set dhcp."$cfg".noresolv='1'
+			uci -q set dhcp."$cfg".doh_backup_noresolv='0'
 		fi
-	done
+	fi
+	if ! uci -q get "dhcp.$cfg.doh_backup_server" >/dev/null; then
+		for i in $(uci -q get "dhcp.$cfg.server"); do
+			uci -q add_list dhcp."$cfg".doh_backup_server="$i"
+			if [ "$i" = "${i//127.0.0.1}" ] && [ "$i" = "$(echo "$i" | tr -d /)" ]; then
+				uci -q del_list dhcp."$cfg".server="$i"
+			fi
+		done
+	fi
 }
 
 dnsmasq_restore_server_backup() {
 	local cfg="$1"
 	local i
+	if uci -q get "dhcp.$cfg.doh_backup_noresolv" >/dev/null; then
+		if [ "$(uci -q get "dhcp.$cfg.doh_backup_noresolv")" == "0" ]; then
+			uci -q set dhcp."$cfg".noresolv='0'
+		else 
+			uci -q del "dhcp.$cfg.noresolv"
+		fi
+		uci -q del "dhcp.$cfg.doh_backup_noresolv"
+	fi
 	if uci -q get "dhcp.$cfg.doh_backup_server" >/dev/null; then
 		uci -q del "dhcp.$cfg.server"
 		for i in $(uci -q get "dhcp.$cfg.doh_backup_server"); do
