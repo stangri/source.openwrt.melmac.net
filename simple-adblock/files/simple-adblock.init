@@ -303,35 +303,35 @@ dnsmasqOps() {
 	local cfg="$1" param="$2"
 	case "$param" in
 		dnsmasq.addnhosts)
-			if [ "$(uci -q get dhcp.@dnsmasq["$cfg"].serversfile)" = "$serversFile" ]; then
-				uci -q del dhcp.@dnsmasq["$cfg"].serversfile
+			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$serversFile" ]; then
+				uci -q del dhcp."$cfg".serversfile
 			fi
-			if ! uci -q get dhcp.@dnsmasq["$cfg"].addnhosts | grep -q "$addnhostsFile"; then
-				uci add_list dhcp.@dnsmasq["$cfg"].addnhosts="$addnhostsFile"
+			if ! uci -q get dhcp."$cfg".addnhosts | grep -q "$addnhostsFile"; then
+				uci add_list dhcp."$cfg".addnhosts="$addnhostsFile"
 			fi
 			;;
 		dnsmasq.conf)
-			uci -q del_list dhcp.@dnsmasq["$cfg"].addnhosts="$addnhostsFile"
-			if [ "$(uci -q get dhcp.@dnsmasq["$cfg"].serversfile)" = "$serversFile" ]; then
-				uci -q del dhcp.@dnsmasq["$cfg"].serversfile
+			uci -q del_list dhcp."$cfg".addnhosts="$addnhostsFile"
+			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$serversFile" ]; then
+				uci -q del dhcp."$cfg".serversfile
 			fi
 			;;
 		dnsmasq.ipset)
-			uci -q del_list dhcp.@dnsmasq["$cfg"].addnhosts="$addnhostsFile"
-			if [ "$(uci -q get dhcp.@dnsmasq["$cfg"].serversfile)" = "$serversFile" ]; then
-				uci -q del dhcp.@dnsmasq["$cfg"].serversfile
+			uci -q del_list dhcp."$cfg".addnhosts="$addnhostsFile"
+			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$serversFile" ]; then
+				uci -q del dhcp."$cfg".serversfile
 			fi
 			;;
 		dnsmasq.servers)
-			uci -q del_list dhcp.@dnsmasq["$cfg"].addnhosts="$addnhostsFile"
-			if [ "$(uci -q get dhcp.@dnsmasq["$cfg"].serversfile)" != "$serversFile" ]; then
-				uci set dhcp.@dnsmasq["$cfg"].serversfile="$serversFile"
+			uci -q del_list dhcp."$cfg".addnhosts="$addnhostsFile"
+			if [ "$(uci -q get dhcp."$cfg".serversfile)" != "$serversFile" ]; then
+				uci set dhcp."$cfg".serversfile="$serversFile"
 			fi
 			;;
 		unbound.adb_list)
-			uci -q del_list dhcp.@dnsmasq["$cfg"].addnhosts="$addnhostsFile"
-			if [ "$(uci -q get dhcp.@dnsmasq["$cfg"].serversfile)" = "$serversFile" ]; then
-				uci -q del dhcp.@dnsmasq["$cfg"].serversfile
+			uci -q del_list dhcp."$cfg".addnhosts="$addnhostsFile"
+			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$serversFile" ]; then
+				uci -q del dhcp."$cfg".serversfile
 			fi
 			;;
 	esac
@@ -353,7 +353,7 @@ dnsOps() {
 				config_foreach dnsmasqOps 'dnsmasq' "$targetDNS"
 			elif [ -n "$dnsInstance" ]; then
 				for i in $dnsInstance; do
-					dnsmasqOps "@dnsmasq[${i}]" "$targetDNS"
+					dnsmasqOps "@dnsmasq[$i]" "$targetDNS"
 				done
 			fi
 
