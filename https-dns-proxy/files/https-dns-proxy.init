@@ -143,7 +143,7 @@ dnsmasq_restore_server_backup() {
 	local cfg="$1"
 	local i
 	if uci -q get "dhcp.$cfg.doh_backup_noresolv" >/dev/null; then
-		if [ "$(uci -q get "dhcp.$cfg.doh_backup_noresolv")" == "0" ]; then
+		if [ "$(uci -q get "dhcp.$cfg.doh_backup_noresolv")" = "0" ]; then
 			uci -q set dhcp."$cfg".noresolv='0'
 		else 
 			uci -q del "dhcp.$cfg.noresolv"

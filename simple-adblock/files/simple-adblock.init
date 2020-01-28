@@ -299,8 +299,46 @@ is_enabled() {
 	output "$_ERROR_: $serviceName failed to discover WAN gateway.\\n"; return 1;
 }
 
+dnsmasqOps() {
+	local cfg="$1" param="$2"
+	case "$param" in
+		dnsmasq.addnhosts)
+			if [ "$(uci -q get dhcp.@dnsmasq["$cfg"].serversfile)" = "$serversFile" ]; then
+				uci -q del dhcp.@dnsmasq["$cfg"].serversfile
+			fi
+			if ! uci -q get dhcp.@dnsmasq["$cfg"].addnhosts | grep -q "$addnhostsFile"; then
+				uci add_list dhcp.@dnsmasq["$cfg"].addnhosts="$addnhostsFile"
+			fi
+			;;
+		dnsmasq.conf)
+			uci -q del_list dhcp.@dnsmasq["$cfg"].addnhosts="$addnhostsFile"
+			if [ "$(uci -q get dhcp.@dnsmasq["$cfg"].serversfile)" = "$serversFile" ]; then
+				uci -q del dhcp.@dnsmasq["$cfg"].serversfile
+			fi
+			;;
+		dnsmasq.ipset)
+			uci -q del_list dhcp.@dnsmasq["$cfg"].addnhosts="$addnhostsFile"
+			if [ "$(uci -q get dhcp.@dnsmasq["$cfg"].serversfile)" = "$serversFile" ]; then
+				uci -q del dhcp.@dnsmasq["$cfg"].serversfile
+			fi
+			;;
+		dnsmasq.servers)
+			uci -q del_list dhcp.@dnsmasq["$cfg"].addnhosts="$addnhostsFile"
+			if [ "$(uci -q get dhcp.@dnsmasq["$cfg"].serversfile)" != "$serversFile" ]; then
+				uci set dhcp.@dnsmasq["$cfg"].serversfile="$serversFile"
+			fi
+			;;
+		unbound.adb_list)
+			uci -q del_list dhcp.@dnsmasq["$cfg"].addnhosts="$addnhostsFile"
+			if [ "$(uci -q get dhcp.@dnsmasq["$cfg"].serversfile)" = "$serversFile" ]; then
+				uci -q del dhcp.@dnsmasq["$cfg"].serversfile
+			fi
+			;;
+	esac
+}
+
 dnsOps() {
-	local param output_text
+	local param output_text i
 	case $1 in
 		on_start)
 			if [ ! -s "$outputFile" ]; then
@@ -309,50 +347,31 @@ dnsOps() {
 				output "$_ERROR_: $(getErrorText 'errorOutputFileCreate')!\\n"
 				return 1
 			fi
+
+			config_load 'dhcp'
+			if [ "$dnsInstance" = "*" ]; then
+				config_foreach dnsmasqOps 'dnsmasq' "$targetDNS"
+			elif [ -n "$dnsInstance" ]; then
+				for i in $dnsInstance; do
+					dnsmasqOps "@dnsmasq[${i}]" "$targetDNS"
+				done
+			fi
+
 			case "$targetDNS" in
-				dnsmasq.addnhosts)
-					if [ "$(uci -q get dhcp.@dnsmasq["$dnsInstance"].serversfile)" = "$serversFile" ]; then
-						uci -q del dhcp.@dnsmasq["$dnsInstance"].serversfile
-					fi
-					if ! uci -q get dhcp.@dnsmasq["$dnsInstance"].addnhosts | grep -q "$addnhostsFile"; then
-						uci add_list dhcp.@dnsmasq["$dnsInstance"].addnhosts="$addnhostsFile"
-					fi
+				dnsmasq.addnhosts|dnsmasq.servers)
 					param=dnsmasq_hup
 					output_text='Reloading DNSMASQ'
 					;;
-				dnsmasq.conf)
-					uci -q del_list dhcp.@dnsmasq["$dnsInstance"].addnhosts="$addnhostsFile"
-					if [ "$(uci -q get dhcp.@dnsmasq["$dnsInstance"].serversfile)" = "$serversFile" ]; then
-						uci -q del dhcp.@dnsmasq["$dnsInstance"].serversfile
-					fi
+				dnsmasq.conf|dnsmasq.ipset)
 					param=dnsmasq_restart
 					output_text='Restarting DNSMASQ'
-					;;
-				dnsmasq.ipset)
-					uci -q del_list dhcp.@dnsmasq["$dnsInstance"].addnhosts="$addnhostsFile"
-					if [ "$(uci -q get dhcp.@dnsmasq["$dnsInstance"].serversfile)" = "$serversFile" ]; then
-						uci -q del dhcp.@dnsmasq["$dnsInstance"].serversfile
-					fi
-					param=dnsmasq_restart
-					output_text='Restarting DNSMASQ'
-					;;
-				dnsmasq.servers)
-					uci -q del_list dhcp.@dnsmasq["$dnsInstance"].addnhosts="$addnhostsFile"
-					if [ "$(uci -q get dhcp.@dnsmasq["$dnsInstance"].serversfile)" != "$serversFile" ]; then
-						uci set dhcp.@dnsmasq["$dnsInstance"].serversfile="$serversFile"
-					fi
-					param=dnsmasq_hup
-					output_text='Reloading DNSMASQ'
 					;;
 				unbound.adb_list)
-					uci -q del_list dhcp.@dnsmasq["$dnsInstance"].addnhosts="$addnhostsFile"
-					if [ "$(uci -q get dhcp.@dnsmasq["$dnsInstance"].serversfile)" = "$serversFile" ]; then
-						uci -q del dhcp.@dnsmasq["$dnsInstance"].serversfile
-					fi
 					param=unbound_restart
 					output_text='Restarting Unbound'
 					;;
 			esac
+
 			if [ -n "$(uci changes dhcp)" ]; then
 				uci commit dhcp
 				if [ "$param" = 'unbound_restart' ]; then
