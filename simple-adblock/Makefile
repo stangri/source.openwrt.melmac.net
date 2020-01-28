@@ -64,10 +64,6 @@ define Package/simple-adblock/prerm
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		echo "Stopping service and removing rc.d symlink for simple-adblock"
-		uci -q del_list dhcp.@dnsmasq[0].addnhosts="/var/run/simple-adblock.addnhosts" || true
-		if [ "$$(uci -q get dhcp.@dnsmasq[0].serversfile)" == "/var/run/simple-adblock.servers" ]; then
-			uci -q del dhcp.@dnsmasq[0].serversfile || true
-		fi
 		/etc/init.d/simple-adblock stop || true
 		/etc/init.d/simple-adblock killcache || true
 		/etc/init.d/simple-adblock disable || true
