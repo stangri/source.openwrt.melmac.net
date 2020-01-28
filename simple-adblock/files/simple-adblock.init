@@ -310,13 +310,7 @@ dnsmasqOps() {
 				uci add_list dhcp."$cfg".addnhosts="$addnhostsFile"
 			fi
 			;;
-		dnsmasq.conf)
-			uci -q del_list dhcp."$cfg".addnhosts="$addnhostsFile"
-			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$serversFile" ]; then
-				uci -q del dhcp."$cfg".serversfile
-			fi
-			;;
-		dnsmasq.ipset)
+		dnsmasq.conf|dnsmasq.ipset|unbound.adb_list|cleanup)
 			uci -q del_list dhcp."$cfg".addnhosts="$addnhostsFile"
 			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$serversFile" ]; then
 				uci -q del dhcp."$cfg".serversfile
@@ -326,12 +320,6 @@ dnsmasqOps() {
 			uci -q del_list dhcp."$cfg".addnhosts="$addnhostsFile"
 			if [ "$(uci -q get dhcp."$cfg".serversfile)" != "$serversFile" ]; then
 				uci set dhcp."$cfg".serversfile="$serversFile"
-			fi
-			;;
-		unbound.adb_list)
-			uci -q del_list dhcp."$cfg".addnhosts="$addnhostsFile"
-			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$serversFile" ]; then
-				uci -q del dhcp."$cfg".serversfile
 			fi
 			;;
 	esac
@@ -1093,6 +1081,9 @@ killcache() {
 	rm -f "$ipsetCache" "$ipsetGzip"
 	rm -f "$serversCache" "$serversGzip"
 	rm -f "$unboundCache" "$unboundGzip"
+	config_load 'dhcp'
+	config_foreach dnsmasqOps 'dnsmasq' 'cleanup'
+	uci -q commit 'dhcp'
 	return 0
 }
 
