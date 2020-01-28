@@ -168,7 +168,7 @@ dhcp_backup() {
 				config_foreach dnsmasq_create_server_backup 'dnsmasq'
 			elif [ -n "$dnsmasqConfig" ]; then
 				for i in $dnsmasqConfig; do
-					dnsmasq_create_server_backup "@dnsmasq[${i}]"
+					dnsmasq_create_server_backup "@dnsmasq[$i]"
 				done
 			fi
 			;;
