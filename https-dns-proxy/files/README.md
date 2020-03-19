@@ -57,16 +57,12 @@ config https-dns-proxy
   option listen_addr '127.0.0.1'
   option listen_port '5054'
   option user 'nobody'
-  option group 'nogroup'```
+  option group 'nogroup'
 ```
 
 The ```update_dnsmasq_config``` option can be set to dash (set to ```'-'``` to not change ```DNSMASQ``` server settings on start/stop), can be set to ```'*'``` to affect all ```DNSMASQ``` instance server settings or have a space-separated list of ```DNSMASQ``` instances to affect (like ```'0 4 5'```). If this option is omitted, the default setting is ```'*'```.
 
-For the affected ```DNSMASQ``` instances, the init script will create a full backup of current ```DNSMASQ``` settings on start, and will set the ```server``` option to the local https-dns-proxy instances, while removing other servers.
-
-Starting with ```https-dns-proxy``` version ```2019-12-03-3``` and higher, when the service is set to update the DNSMASQ servers setting on start/stop, it does not override entries which contain either ```127.0.0.1``` or ```/```, so the entries like listed below will be kept in use:
-
-Starting with ```https-dns-proxy``` version ```2019-12-03-4``` and higher, when the service is set to update the DNSMASQ servers setting on start/stop, it will also apply option ```noresolv='1'``` to affected ```DNSMASQ``` instances.
+Starting with ```https-dns-proxy``` version ```2019-12-03-3``` and higher, when the service is set to update the DNSMASQ servers setting on start/stop, it does not override entries which contain either ```#``` or ```/```, so the entries like listed below will be kept in use:
 
 ```test
   list server '/onion/127.0.0.1#65453'
@@ -91,7 +87,8 @@ The https-dns-proxy instance settings are:
 |user|String|nobody|Local user to run instance under.|
 |group|String|nogroup|Local group to run instance under.|
 |use_http1|Boolean|0|If set to 1, use HTTP/1 on installations with broken/outdated ```curl``` package. Included for posterity reasons, you will most likely not ever need it on OpenWrt.|
-|verbosity|Integer||Use setting between 1 to 4 to control the logging verbosity level.|String
+|verbosity|Integer|0|logging verbosity level. fatal = 0, error = 1, warning = 2, info = 3, debug = 4|
+|use_ipv6_resolvers_only|Boolean|0|If set to 1, Forces IPv6 DNS resolvers instead of IPv4|
 
 ## Thanks
 
