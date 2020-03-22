@@ -8,11 +8,11 @@ export START=94
 export USE_PROCD=1
 export LC_ALL=C
 
-export EXTRA_COMMANDS='check dl killcache sizes status'
+export EXTRA_COMMANDS='check dl killcache sizes show'
 export EXTRA_HELP='	check	Checks if specified domain is found in current blacklist
 	dl	Force-downloads all enabled block-list
-	sizes	Shows the file-sizes of enabled block-lists (by downloading them one by one)
-	status	Shows the service last-run status'
+	sizes	Displays the file-sizes of enabled block-lists
+	show	Shows the service last-run status'
 
 readonly packageName='simple-adblock'
 readonly serviceName="$packageName $PKG_VERSION"
@@ -1074,7 +1074,7 @@ reload_service() { restart_service; }
 restart() { restart_service; }
 reload() { restart_service; }
 dl() { rc_procd start_service 'download'; }
-status() { showstatus; }
+show() { showstatus; }
 killcache() {
 	rm -f "$addnhostsCache" "$addnhostsGzip"
 	rm -f "$dnsmasqCache" "$dnsmasqGzip"
