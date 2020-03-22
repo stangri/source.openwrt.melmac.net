@@ -124,7 +124,7 @@ dnsmasq_add_doh_server() {
 dnsmasq_create_server_backup() {
 	local cfg="$1"
 	local i
-	! uci -q get "dhcp.${cfg}" >/dev/null && return 0
+	uci -q get "dhcp.${cfg}" >/dev/null || return 0
 	if ! uci -q get "dhcp.${cfg}.doh_backup_noresolv" >/dev/null; then
 		if [ -z "$(uci -q get "dhcp.${cfg}.noresolv")" ]; then
 			uci -q set "dhcp.${cfg}.noresolv=1"
@@ -147,7 +147,7 @@ dnsmasq_create_server_backup() {
 dnsmasq_restore_server_backup() {
 	local cfg="$1"
 	local i
-	! uci -q get "dhcp.${cfg}" >/dev/null && return 0
+	uci -q get "dhcp.${cfg}" >/dev/null || return 0
 	if uci -q get "dhcp.${cfg}.doh_backup_noresolv" >/dev/null; then
 		if [ "$(uci -q get "dhcp.${cfg}.doh_backup_noresolv")" = "0" ]; then
 			uci -q set "dhcp.${cfg}.noresolv=0"
