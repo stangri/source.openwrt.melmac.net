@@ -888,6 +888,7 @@ service_triggers() {
 }
 
 input() { local data; while read -r data; do echo "$data" | tee -a /var/${packageName}-support; done; }
+status_service() { support "$@"; }
 support() {
 	local dist vers out id s param status set_d set_p tableCount i=0 dev dev6
 	is_enabled

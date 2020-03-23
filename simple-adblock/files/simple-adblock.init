@@ -1074,7 +1074,6 @@ reload_service() { restart_service; }
 restart() { restart_service; }
 reload() { restart_service; }
 dl() { rc_procd start_service 'download'; }
-show() { showstatus; }
 killcache() {
 	rm -f "$addnhostsCache" "$addnhostsGzip"
 	rm -f "$dnsmasqCache" "$dnsmasqGzip"
@@ -1087,6 +1086,8 @@ killcache() {
 	return 0
 }
 
+show() { showstatus; }
+status_service() { showstatus; }
 showstatus() {
 	local status="$(tmpfs get status)"
 	local message="$(tmpfs get message)"
