@@ -337,10 +337,6 @@ insert_policy() {
 	fi
 
 	if [ -z "$proto" ]; then
-#		if [ -z "${lport}${raddr}${rport}" ] && [ -n "$laddr" ]; then
-#			proto='all'
-#		elif [ -z "${laddr}${lport}${rport}" ] && [ -n "$raddr" ]; then
-#			proto='all'
 		if [ -n "$lport" ] || [ -n "$rport" ]; then 
 			proto='tcp udp'
 		else
