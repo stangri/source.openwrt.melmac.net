@@ -573,7 +573,7 @@ table_create(){
 			fi
 		done
 		ip -4 route flush cache || ipv4_error=1
-		ip -4 rule add fwmark "$mark" table "$tid" || ipv4_error=1
+		ip -4 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv4_error=1
 	fi
 
 	if [ "$ipv6Enabled" -ne 0 ]; then
@@ -586,7 +586,7 @@ table_create(){
 				done
 			fi
 			ip -6 route flush cache || ipv6_error=1
-			ip -6 rule add fwmark "$mark" table "$tid" || ipv6_error=1
+			ip -6 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv6_error=1
 		fi
 	fi
 
