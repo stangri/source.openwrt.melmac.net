@@ -482,7 +482,7 @@ config vpn-policy-routing 'config'
 config policy
   option name 'Wireguard Server'
   option interface 'wan'
-  option proto 'tcp'
+  option proto 'udp'
   option src_port '61820'
   option chain 'OUTPUT'
 ```
@@ -843,4 +843,4 @@ WARNING: while paste.ee uploads are unlisted/not indexed at the web-site, they a
 
 ## Thanks
 
-I'd like to thank everyone who helped create, test and troubleshoot this service. Without contributions from [@hnyman](https://github.com/hnyman), [@dibdot](https://github.com/dibdot), [@danrl](https://github.com/danrl), [@tohojo](https://github.com/tohojo), [@cybrnook](https://github.com/cybrnook), [@nidstigator](https://github.com/nidstigator), [@AndreBL](https://github.com/AndreBL) and [@dz0ny](https://github.com/dz0ny) and rigorous testing/bugreporting by [@dziny](https://github.com/dziny), [@bluenote73](https://github.com/bluenote73), [@buckaroo](https://github.com/pgera), [@Alexander-r](https://github.com/Alexander-r), [n8v8R](https://github.com/n8v8R), [psherman](https://forum.openwrt.org/u/psherman) and [dl12345](https://forum.openwrt.org/u/dl12345) it wouldn't have been possible. Wireguard/IPv6 support is courtesy of [Mullvad](https://www.mullvad.net), [IVPN](https://www.ivpn.net/) and [WireVPN](https://www.wirevpn.net).
+I'd like to thank everyone who helped create, test and troubleshoot this service. Without contributions from [@hnyman](https://github.com/hnyman), [@dibdot](https://github.com/dibdot), [@danrl](https://github.com/danrl), [@tohojo](https://github.com/tohojo), [@cybrnook](https://github.com/cybrnook), [@nidstigator](https://github.com/nidstigator), [@AndreBL](https://github.com/AndreBL) and [@dz0ny](https://github.com/dz0ny) and rigorous testing/bugreporting by [@dziny](https://github.com/dziny), [@bluenote73](https://github.com/bluenote73), [@buckaroo](https://github.com/pgera), [@Alexander-r](https://github.com/Alexander-r), [n8v8R](https://github.com/n8v8R), [psherman](https://forum.openwrt.org/u/psherman), [dl12345](https://github.com/dl12345) and  [trendy](https://forum.openwrt.org/u/trendy) it wouldn't have been possible. Wireguard/IPv6 support is courtesy of [Mullvad](https://www.mullvad.net), [IVPN](https://www.ivpn.net/) and [WireVPN](https://www.wirevpn.net).
