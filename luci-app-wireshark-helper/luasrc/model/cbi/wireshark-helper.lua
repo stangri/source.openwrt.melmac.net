@@ -13,14 +13,6 @@ local fs  = require "nixio.fs"
 local monIP = uci:get(packageName, "config", "monitor_ip")
 local wsIP = uci:get(packageName, "config", "wireshark_ip")
 
-function is_lan(name)
-	return name:sub(1,3) == "lan"
-end
-
-function is_vlan(name)
-	return name:sub(1,4) == "vlan"
-end
-
 local packageVersion, statusText = nil, nil 
 packageVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'")))
 if not packageVersion or packageVersion == "" then
@@ -52,21 +44,33 @@ h = m:section(NamedSection, "config", packageName, translate("Service Status") .
 ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 ss.template = packageName .. "/status"
 ss.value = statusText
-buttons = h:option(DummyValue, "_dummy")
-buttons.template = packageName .. "/buttons"
+if packageVersion ~= "" then
+	buttons = h:option(DummyValue, "_dummy")
+	buttons.template = packageName .. "/buttons"
+end
 
+
+local hintText, helperText = "", ""
 if monIP and wsIP then
 	if monIP ~= "" and wsIP ~= "" then
 		hintText = "<div>" .. translate("Run a Wireshark app on the") .. " " .. wsIP .. " " .. translate("device and set Wireshark filter to") .. ": " .. "(ip.src == " .. monIP .. ") || (ip.dst == " .. monIP .. ")" .. "</div>"
 	end
 end
 
-helperText = ( hintText or "" ) .. "<div>" .. translate("See the") .. " "
+helperText = hintText .. "<div>" .. translate("See the") .. " "
 	.. [[<a href="]] .. readmeURL .. [[#strict-enforcement" target="_blank">]]
 	.. translate("README") .. [[</a>]] .. " " .. translate("for details") .. "." .. "</div>"
 
 s1 = m:section(NamedSection, "config", "wireshark-helper", translate("Configuration"), helperText)
 
+-- function is_lan(name)
+-- 	return name:sub(1,3) == "lan"
+-- end
+-- 
+-- function is_vlan(name)
+-- 	return name:sub(1,4) == "vlan"
+-- end
+-- 
 -- iface = s1:option(ListValue, "interface", translate("Interface to Listen on"))
 -- iface.datatype = "network"
 -- iface.rmempty = true

@@ -139,8 +139,10 @@ if serviceWarnings and serviceWarnings ~= "" then
 	warnings.template = packageName .. "/status-textarea"
 	warnings.value = serviceWarnings
 end
-buttons = h:option(DummyValue, "_dummy")
-buttons.template = packageName .. "/buttons"
+if packageVersion ~= "" then
+	buttons = h:option(DummyValue, "_dummy")
+	buttons.template = packageName .. "/buttons"
+end
 
 -- General Options
 config = m:section(NamedSection, "config", "vpn-policy-routing", translate("Configuration"))

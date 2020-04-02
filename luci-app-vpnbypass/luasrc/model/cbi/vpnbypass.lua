@@ -36,8 +36,10 @@ h = m:section(NamedSection, "config", packageName, translate("Service Status") .
 ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 ss.template = packageName .. "/status"
 ss.value = statusText
-buttons = h:option(DummyValue, "_dummy")
-buttons.template = packageName .. "/buttons"
+if packageVersion ~= "" then
+	buttons = h:option(DummyValue, "_dummy")
+	buttons.template = packageName .. "/buttons"
+end
 
 s = m:section(NamedSection, "config", "vpnbypass", translate("VPN Bypass Rules"))
 -- Local Ports

@@ -172,8 +172,10 @@ else
 			end
 		end
 	end
-	buttons = h:option(DummyValue, "_dummy")
-	buttons.template = "simple-adblock/buttons"
+	if tmpfsVersion ~= "" then
+		buttons = h:option(DummyValue, "_dummy")
+		buttons.template = packageName .. "/buttons"
+	end
 end
 
 s = m:section(NamedSection, "config", "simple-adblock", translate("Configuration"))
