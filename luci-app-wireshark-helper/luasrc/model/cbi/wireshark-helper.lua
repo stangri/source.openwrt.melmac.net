@@ -64,11 +64,11 @@ helperText = hintText .. "<div>" .. translate("See the") .. " "
 s1 = m:section(NamedSection, "config", "wireshark-helper", translate("Configuration"), helperText)
 
 function is_lan(name)
-	return name:sub(1,3) == "lan"
+	return name:sub(1,3):lower() == "lan"
 end
 
 function is_vlan(name)
-	return name:sub(1,4) == "vlan"
+	return name:sub(1,4):lower() == "vlan"
 end
 
 iface = s1:option(ListValue, "interface", translate("Interface to Listen on"))
