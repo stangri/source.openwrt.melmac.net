@@ -63,26 +63,26 @@ helperText = hintText .. "<div>" .. translate("See the") .. " "
 
 s1 = m:section(NamedSection, "config", "wireshark-helper", translate("Configuration"), helperText)
 
--- function is_lan(name)
--- 	return name:sub(1,3) == "lan"
--- end
--- 
--- function is_vlan(name)
--- 	return name:sub(1,4) == "vlan"
--- end
--- 
--- iface = s1:option(ListValue, "interface", translate("Interface to Listen on"))
--- iface.datatype = "network"
--- iface.rmempty = true
--- uci:foreach("network", "interface", function(s)
--- 	local name=s['.name']
--- 	if is_lan(name) then
--- 		iface:value("", string.upper(name))
--- 		if not iface.default then iface.default = name end
--- 	elseif is_vlan(name) then
--- 		iface:value(name, string.upper(name))
--- 	end
--- end)
+function is_lan(name)
+	return name:sub(1,3) == "lan"
+end
+
+function is_vlan(name)
+	return name:sub(1,4) == "vlan"
+end
+
+iface = s1:option(ListValue, "interface", translate("Interface to Listen on"))
+iface.datatype = "network"
+iface.rmempty = true
+uci:foreach("network", "interface", function(s)
+	local name=s['.name']
+	if is_lan(name) then
+		iface:value("", string.upper(name))
+		if not iface.default then iface.default = name end
+	elseif is_vlan(name) then
+		iface:value(name, string.upper(name))
+	end
+end)
 
 ws = s1:option(Value, "wireshark_ip", translate("Wireshark IP"))
 ws.datatype = "or(ip4addr,'ignore')"
