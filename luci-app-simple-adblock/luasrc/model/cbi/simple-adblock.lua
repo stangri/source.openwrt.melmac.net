@@ -49,13 +49,11 @@ elseif targetDNS == "unbound.adb_list" then
 	outputGzip="/etc/" .. packageName .. ".unbound.gz"
 end
 
-local tmpfs
+local tmpfs, tmpfsMessage, tmpfsError, tmpfsStats
+local tmpfsVersion, tmpfsStatus = "", "Stopped"
 if fs.access("/var/run/" .. packageName .. ".json") then
 	tmpfs = jsonc.parse(util.trim(sys.exec("cat /var/run/" .. packageName .. ".json")))
 end
-
-local tmpfsVersion, tmpfsStatus = "", "Stopped"
-local tmpfsMessage, tmpfsError, tmpfsStats
 if tmpfs and tmpfs['data'] then
 	if tmpfs['data']['status'] and tmpfs['data']['status'] ~= "" then
 		tmpfsStatus = tmpfs['data']['status']
