@@ -81,7 +81,7 @@ if (type(lanIPAddr) == "table") then
 								break
 				end
 				lanIPAddr = lanIPAddr:match("[0-9.]+")
-end          
+end
 if lanIPAddr and lanNetmask then
 	laPlaceholder = ip.new(lanIPAddr .. "/" .. lanNetmask )
 end
