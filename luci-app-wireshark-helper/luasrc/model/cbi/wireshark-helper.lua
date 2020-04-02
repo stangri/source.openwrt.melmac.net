@@ -5,17 +5,23 @@
 local readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/wireshark-helper/files/README.md"
 
 local packageName = "wireshark-helper"
-
 local uci = require "luci.model.uci".cursor()
 local sys = require "luci.sys"
 local util = require "luci.util"
 local wa  = require "luci.tools.webadmin"
 local fs  = require "nixio.fs"
-local enabledFlag = uci:get(packageName, "config", "enabled")
 local monIP = uci:get(packageName, "config", "monitor_ip")
 local wsIP = uci:get(packageName, "config", "wireshark_ip")
 
-local packageVersion, serviceRunning, serviceEnabled, statusText;
+function is_lan(name)
+	return name:sub(1,3) == "lan"
+end
+
+function is_vlan(name)
+	return name:sub(1,4) == "vlan"
+end
+
+local packageVersion, statusText = nil, nil 
 packageVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'")))
 if not packageVersion or packageVersion == "" then
 	packageVersion = ""
@@ -24,16 +30,12 @@ else
 	packageVersion = " [" .. packageName .. " " .. packageVersion .. "]"
 end
 
-if enabledFlag == "1" then
+local serviceRunning, serviceEnabled = false, false
+if uci:get(packageName, "config", "enabled") == "1" then
 	serviceEnabled = true
-else
-	serviceEnabled = false
 end
-
 if sys.call("iptables -t mangle -L | grep -q " .. packageName) == 0 then
 	serviceRunning = true
-else
-	serviceRunning = false
 end
 
 if serviceRunning then
@@ -43,14 +45,6 @@ else
 	if not serviceEnabled then
 		statusText = statusText .. " (" .. translate("disabled") .. ")"
 	end
-end
-
-function is_lan(name)
-	return name:sub(1,3) == "lan"
-end
-
-function is_vlan(name)
-	return name:sub(1,4) == "vlan"
 end
 
 m = Map("wireshark-helper", translate("Wireshark Helper Settings"))
