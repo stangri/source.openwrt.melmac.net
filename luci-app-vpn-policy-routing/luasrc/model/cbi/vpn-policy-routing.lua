@@ -80,7 +80,7 @@ if (type(lanIPAddr) == "table") then
 								lanIPAddr = lanIPAddr[i]
 								break
 				end
-				lanIPAddr = string.match(lanIPAddr,"[0-9.]+")
+				lanIPAddr = lanIPAddr:match("[0-9.]+")
 end          
 if lanIPAddr and lanNetmask then
 	laPlaceholder = ip.new(lanIPAddr .. "/" .. lanNetmask )
@@ -216,7 +216,7 @@ icmp:value("", translate("No Change"))
 icmp:value("wan", translate("WAN"))
 uci:foreach("network", "interface", function(s)
 	local name=s['.name']
-	if is_supported_interface(s) then icmp:value(name, string.upper(name)) end
+	if is_supported_interface(s) then icmp:value(name, name:upper()) end
 end)
 icmp.rmempty = true
 
@@ -346,10 +346,10 @@ gw.rmempty = false
 uci:foreach("network", "interface", function(s)
 	local name=s['.name']
 	if is_wan(name) then
-		gw:value(name, string.upper(name))
+		gw:value(name, name:upper())
 		if not gw.default then gw.default = name end
 	elseif is_supported_interface(s) then 
-		gw:value(name, string.upper(name)) 
+		gw:value(name, name:upper()) 
 	end
 end)
 
@@ -359,7 +359,7 @@ dscp = m:section(NamedSection, "config", "vpn-policy-routing", translate("DSCP T
 uci:foreach("network", "interface", function(s)
 	local name=s['.name']
 	if is_supported_interface(s) then 
-		local x = dscp:option(Value, name .. "_dscp", string.upper(name) .. " " .. translate("DSCP Tag"))
+		local x = dscp:option(Value, name .. "_dscp", name:upper() .. " " .. translate("DSCP Tag"))
 		x.rmempty = true
 		x.datatype = "range(1,63)"
 	end
