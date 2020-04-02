@@ -30,7 +30,7 @@
 		</div>
 		<div class="tr cbi-section-table-row cbi-rowstyle-<%- if bev1p1 == current_partition then -%><%=1%><%- else -%><%=2%><%- end -%>">
 			<div class="td">
-				<%=string.format("%X", bev1p1)%>
+				<%=bev1p1:format("%X")%>
 			</div>
 			<div class="td">
 				<%- if bev1p1 == current_partition then -%><%:Current%><%- else -%><%:Alternative%><%- end -%>
@@ -54,7 +54,7 @@
 		</div>
 		<div class="tr cbi-section-table-row cbi-rowstyle-<%- if bev1p2 == current_partition then -%><%=1%><%- else -%><%=2%><%- end -%>">
 			<div class="td">
-				<%=string.format("%X", bev1p2)%>
+				<%=bev1p2:format("%X")%>
 			</div>
 			<div class="td">
 				<%- if bev1p2 == current_partition then -%><%:Current%><%- else -%><%:Alternative%><%- end -%>

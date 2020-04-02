@@ -41,12 +41,12 @@ for i=1, #devices do
       partition_two_label = luci.util.trim(luci.sys.exec("dd if=/dev/" .. partition_two_mtd .. " bs=1 skip=" .. partition_skip .. " count=25" .. "  2>/dev/null"))
       partition_two_version = luci.util.trim(luci.sys.exec("dd if=/dev/" .. partition_two_mtd .. " bs=1 skip=" .. partition_skip .. " count=25" .. "  2>/dev/null | sed 's/.*Linux-//'"))
     end
-    if string.find(partition_one_label, "LEDE") then partition_one_os = "LEDE" end
-    if string.find(partition_one_label, "OpenWrt") then partition_one_os = "OpenWrt" end
-    if string.find(partition_one_label, "Linksys") then partition_one_os = "Linksys" end
-    if string.find(partition_two_label, "LEDE") then partition_two_os = "LEDE" end
-    if string.find(partition_two_label, "OpenWrt") then partition_two_os = "OpenWrt" end
-    if string.find(partition_two_label, "Linksys") then partition_two_os = "Linksys" end
+    if partition_one_label:find("LEDE") then partition_one_os = "LEDE" end
+    if partition_one_label:find("OpenWrt") then partition_one_os = "OpenWrt" end
+    if partition_one_label:find("Linksys") then partition_one_os = "Linksys" end
+    if partition_two_label:find("LEDE") then partition_two_os = "LEDE" end
+    if partition_two_label:find("OpenWrt") then partition_two_os = "OpenWrt" end
+    if partition_two_label:find("Linksys") then partition_two_os = "Linksys" end
     if not partition_one_os then partition_one_os = "Unknown" end
     if not partition_two_os then partition_two_os = "Unknown" end
     if partition_one_version and partition_one_version then partition_one_os = partition_one_os .. " (Linux " .. partition_one_version .. ")" end
