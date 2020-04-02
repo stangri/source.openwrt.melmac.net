@@ -77,10 +77,10 @@ iface.rmempty = true
 uci:foreach("network", "interface", function(s)
 	local name=s['.name']
 	if is_lan(name) then
-		iface:value("", string.upper(name))
+		iface:value("", name:upper())
 		if not iface.default then iface.default = name end
 	elseif is_vlan(name) then
-		iface:value(name, string.upper(name))
+		iface:value(name, name:upper())
 	end
 end)
 
