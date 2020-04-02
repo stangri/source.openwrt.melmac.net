@@ -12,7 +12,7 @@ function vpnbypass_action(name)
 	if name == "start" then
 		luci.sys.init.start(packageName)
 	elseif name == "action" then
-		luci.util.exec("/etc/init.d/" .. packageName .. " reload >/dev/null 2>&1")
+		luci.util.exec("/etc/init.d/" .. packageName .. " restart >/dev/null 2>&1")
 		luci.util.exec("/etc/init.d/dnsmasq restart >/dev/null 2>&1")
 	elseif name == "stop" then
 		luci.sys.init.stop(packageName)

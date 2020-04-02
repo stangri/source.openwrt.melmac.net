@@ -133,6 +133,10 @@ msgstr ""
 msgid "Fail"
 msgstr ""
 
+#: applications/luci-app-simple-adblock/luasrc/view/simple-adblock/buttons.htm:55
+msgid "Force Re-Download"
+msgstr ""
+
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:85
 msgid "Force Reloading"
 msgstr ""
@@ -217,10 +221,6 @@ msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:216
 msgid "README"
-msgstr ""
-
-#: applications/luci-app-simple-adblock/luasrc/view/simple-adblock/buttons.htm:55
-msgid "Restart"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:84
