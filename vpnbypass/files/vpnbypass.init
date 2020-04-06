@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 # Copyright 2017-2020 Stan Grishin (stangri@melmac.net)
-# shellcheck disable=SC2039,SC1091
+# shellcheck disable=SC2039,SC1091,SC2086
 PKG_VERSION='dev-test'
 
 export START=94
@@ -65,7 +65,6 @@ is_ovpn() { local dev; dev=$(uci -q get network."$1".ifname); if [ "${dev:0:3}" 
 is_wan() { if [ -n "$wan_if4" ] && [ "$1" = "$wan_if4" ]; then return 0; else return 1; fi; }
 is_supported_interface() { if is_wan "$1" || is_ovpn "$1"; then return 0; else return 1; fi; }
 
-# shellcheck disable=SC2086
 ipt() {
 	local d; 
 	d="${*//-A/-D}"; [ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
