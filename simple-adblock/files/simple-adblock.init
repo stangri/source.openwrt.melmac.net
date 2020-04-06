@@ -124,7 +124,7 @@ unbound_restart() { /etc/init.d/unbound restart >/dev/null 2>&1; }
 output() {
 # Can take a single parameter (text) to be output at any verbosity
 # Or target verbosity level and text to be output at specifc verbosity
-	local msg memmsg
+	local msg memmsg logmsg
 	if [ $# -ne 1 ]; then
 		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; else return 0; fi
 	fi
@@ -132,7 +132,8 @@ output() {
 	msg="${1//$serviceName /service }";
 	if [ "$(printf "%b" "$msg" | wc -l)" -gt 0 ]; then
 		[ -s "$sharedMemoryOutput" ] && memmsg="$(cat "$sharedMemoryOutput")"
-		logger -t "${packageName:-service} [$$]" "$(printf "%b" "${memmsg}${msg}")"
+		logmsg="$(printf "%b" "${memmsg}${msg}" | sed 's/\x1b\[[0-9;]*m//g')"
+		logger -t "${packageName:-service} [$$]" "$(printf "%b" "$logmsg")"
 		rm -f "$sharedMemoryOutput"
 	else
 		printf "%b" "$msg" >> "$sharedMemoryOutput"
