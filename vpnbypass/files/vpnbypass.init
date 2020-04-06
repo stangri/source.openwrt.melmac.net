@@ -1,5 +1,7 @@
 #!/bin/sh /etc/rc.common
-PKG_VERSION=
+# Copyright 2017-2020 Stan Grishin (stangri@melmac.net)
+# shellcheck disable=SC2039,SC1091
+PKG_VERSION='dev-test'
 
 export START=94
 export USE_PROCD=1
