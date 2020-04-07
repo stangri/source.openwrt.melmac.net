@@ -449,7 +449,9 @@ tmpfs() {
 				triggers)
 					curReload="$parallelDL $debug $dlTimeout $whitelist_domains $blacklist_domains $whitelist_domains_urls $blacklist_domains_urls $blacklist_hosts_urls $targetDNS"
 					curRestart="$compressedCache $forceDNS $led"
-					if [ "$curReload" != "$readReload" ]; then
+					if [ ! -s "$jsonFile" ]; then
+						ret='on_boot'
+					elif [ "$curReload" != "$readReload" ]; then
 						ret='download'
 					elif [ "$curRestart" != "$readRestart" ]; then
 						ret='restart'
@@ -899,7 +901,7 @@ boot() {
 	if create_lock; then
 		sleep "$bootDelay"
 		remove_lock
-		rc_procd start_service && rc_procd service_triggers
+		rc_procd start_service 'on_boot' && rc_procd service_triggers
 	fi
 }
 
@@ -917,12 +919,18 @@ start_service() {
 	stats="$(tmpfs get stats)"
 	action="$(tmpfs get triggers)"
 
-	if [ "$action" = 'download' ] || [ "$1" = 'download' ] || [ -n "$error" ]; then
+	if [ "$action" = 'on_boot' ] || [ "$1" = 'on_boot' ]; then
+		if cacheOps 'testGzip' || cacheOps 'test'; then
+			action='restore'
+		fi
+	elif [ "$action" = 'download' ] || [ "$1" = 'download' ] || [ -n "$error" ]; then
 		action='download'
-	elif [ ! -s "$outputFile" ] && ! cacheOps 'test' && ! cacheOps 'testGzip'; then
-		action='download'
-	elif [ ! -s "$outputFile" ] && cacheOps 'testGzip' || cacheOps 'test'; then
-		action='restore'
+	elif [ ! -s "$outputFile" ]; then 
+		if cacheOps 'testGzip' || cacheOps 'test'; then
+			action='restore'
+		else
+			action='download'
+		fi
 	elif [ "$action" = 'restart' ] || [ "$1" = 'restart' ]; then
 		action='restart'
 	elif [ -s "$outputFile" ] && [ "$status" = "statusSuccess" ] && [ -z "$error" ]; then

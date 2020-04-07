@@ -88,7 +88,8 @@ vpr_find_true() {
 }
 vpr_get_gateway() {
 	local iface="$2" dev="$3" gw
-	network_get_gateway gw "$iface"
+	network_get_subnet gw "$iface"
+	[ -z "$gw" ] && network_get_gateway gw "$iface"
 	if [ -z "$gw" ] || [ "$gw" = '0.0.0.0' ]; then
 		gw="$(ip -4 a list dev "$dev" 2>/dev/null | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
 	fi
