@@ -58,7 +58,6 @@ if not tmpfsVersion or tmpfsVersion == "" then
 	tmpfsVersion = ""
 	tmpfsStatus = packageName .. " " .. translate("is not installed or not found")
 else  
-	tmpfsVersion = " [" .. packageName .. " " .. tmpfsVersion .. "]"
 	if not ubusStatus or not ubusStatus[packageName] then
 		tmpfsStatusCode = 0
 		tmpfsStatus = translate("Stopped")
@@ -93,7 +92,7 @@ end
 
 m = Map("https-dns-proxy", translate("DNS Over HTTPS Proxy Settings"))
 
-h = m:section(TypedSection, "_dummy", translate("Service Status") .. tmpfsVersion)
+h = m:section(TypedSection, "_dummy", translatef("Service Status [%s %s]", packageName, tmpfsVersion))
 h.template = "cbi/nullsection"
 ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 if tmpfsStatusCode == -1 then
