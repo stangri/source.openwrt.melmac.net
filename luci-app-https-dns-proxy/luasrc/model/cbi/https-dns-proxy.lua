@@ -51,7 +51,7 @@ end
 
 local tmpfsStatus, tmpfsStatusCode
 local ubusStatus = util.ubus("service", "list", { name = packageName })
-local tmpfsVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'")))
+local tmpfsVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'"))) or ""
 
 if not tmpfsVersion or tmpfsVersion == "" then
 	tmpfsStatusCode = -1
