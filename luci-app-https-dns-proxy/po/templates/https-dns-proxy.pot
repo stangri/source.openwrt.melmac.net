@@ -25,10 +25,6 @@ msgstr ""
 msgid "Cloudflare"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:116
-msgid "DHCP and DNS"
-msgstr ""
-
 #: applications/luci-app-https-dns-proxy/luasrc/controller/https-dns-proxy.lua:4
 msgid "DNS Over HTTPS Proxy"
 msgstr ""
@@ -49,11 +45,7 @@ msgstr ""
 msgid "Disable"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:86
-msgid "DoH"
-msgstr ""
-
-#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:166
+#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:165
 msgid "EDNS client subnet"
 msgstr ""
 
@@ -81,11 +73,11 @@ msgstr ""
 msgid "LibreDNS (No Ads)"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:149
+#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:148
 msgid "Listen address"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:162
+#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:161
 msgid "Listen port"
 msgstr ""
 
@@ -97,7 +89,7 @@ msgstr ""
 msgid "ODVR (nic.cz)"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:169
+#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:168
 msgid "Proxy server"
 msgstr ""
 
@@ -121,12 +113,12 @@ msgstr ""
 msgid "Reload"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:122
+#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:121
 msgid "Resolver"
 msgstr ""
 
 #: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:86
-msgid "Running"
+msgid "Running: %s DoH at %s:%s"
 msgstr ""
 
 #: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:96
@@ -150,18 +142,14 @@ msgstr ""
 msgid "Unknown Provider"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:114
+#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:115
 msgid ""
 "When you add/remove any instances below, they will be used to override the "
-"'DNS forwardings' section of"
+"'DNS forwardings' section of <a href=\"%s\">DHCP and DNS</a>."
 msgstr ""
 
 #: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:34
 msgid "and"
-msgstr ""
-
-#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:86
-msgid "at"
 msgstr ""
 
 #: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:66

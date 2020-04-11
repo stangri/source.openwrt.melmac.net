@@ -83,7 +83,7 @@ else
 				end
 				la = la or "127.0.0.1"
 				lp = lp or n + 5053
-				tmpfsStatus = tmpfsStatus .. translate("Running") .. ": " .. get_provider_name(url) .. " " .. translate("DoH") .. " " .. translate("at") .. " " .. la .. ":" .. lp .. "\n"
+				tmpfsStatus = tmpfsStatus .. translatef("Running: %s DoH at %s:%s", get_provider_name(url), la, lp) .. "\n"
 			else
 				break
 			end
@@ -111,9 +111,8 @@ else
 end
 
 create_helper_text()
-s3 = m:section(TypedSection, "https-dns-proxy", translate("Instances"), translate("When you add/remove any instances below, they will be used to override the 'DNS forwardings' section of ")
-		.. [[ <a href="]] .. dispatcher.build_url("admin/network/dhcp") .. [[">]]
-		.. translate("DHCP and DNS") .. [[</a>]] .. "." .. helperText)
+s3 = m:section(TypedSection, "https-dns-proxy", translate("Instances"), 
+	translatef("When you add/remove any instances below, they will be used to override the 'DNS forwardings' section of <a href=\"%s\">DHCP and DNS</a>.", dispatcher.build_url("admin/network/dhcp")) .. helperText)
 s3.template = "cbi/tblsection"
 s3.sortable  = false
 s3.anonymous = true
