@@ -35,7 +35,7 @@ end
 local serviceRunning, statusText = false, nil
 local packageVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'"))) or ""
 if packageVersion == "" then
-	statusText = translate("%s is not installed or not found", packageName)
+	statusText = translatef("%s is not installed or not found", packageName)
 end 
 if sys.call("iptables -t mangle -L | grep -q VPR_PREROUTING") == 0 then
 	serviceRunning = true
