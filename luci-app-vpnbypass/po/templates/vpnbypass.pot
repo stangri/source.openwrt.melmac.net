@@ -1,6 +1,10 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
+#: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:26
+msgid "%s (disabled)"
+msgstr ""
+
 #: applications/luci-app-vpnbypass/luasrc/model/cbi/vpnbypass.lua:10
 msgid "%s is not installed or not found"
 msgstr ""

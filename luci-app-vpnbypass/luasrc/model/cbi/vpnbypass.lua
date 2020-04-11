@@ -23,7 +23,7 @@ if serviceRunning then
 else
 	statusText = translate("Stopped")
 	if not serviceEnabled then
-		statusText = translatfe("%s (disabled)", statusText)
+		statusText = translatef("%s (disabled)", statusText)
 	end
 end
 
