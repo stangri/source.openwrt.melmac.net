@@ -37,8 +37,6 @@ local packageVersion = tostring(util.trim(sys.exec("opkg list-installed " .. pac
 if not packageVersion or packageVersion == "" then
 	packageVersion = ""
 	statusText = packageName .. " " .. translate("is not installed or not found")
-else  
-	packageVersion = " [" .. packageName .. " " .. packageVersion .. "]"
 end 
 if sys.call("iptables -t mangle -L | grep -q VPR_PREROUTING") == 0 then
 	serviceRunning = true
@@ -81,7 +79,7 @@ if (type(lanIPAddr) == "table") then
 								break
 				end
 				lanIPAddr = lanIPAddr:match("[0-9.]+")
-end
+end          
 if lanIPAddr and lanNetmask then
 	laPlaceholder = ip.new(lanIPAddr .. "/" .. lanNetmask )
 end
@@ -120,7 +118,7 @@ end
 
 m = Map("vpn-policy-routing", translate("VPN and WAN Policy-Based Routing"))
 
-h = m:section(NamedSection, "config", packageName, translate("Service Status") .. packageVersion)
+h = m:section(NamedSection, "config", packageName, translatef("Service Status [%s %s]", packageName, packageVersion))
 status = h:option(DummyValue, "_dummy", translate("Service Status"))
 status.template = "vpn-policy-routing/status"
 status.value = statusText
@@ -158,17 +156,13 @@ verb:value("1", translate("Condensed output"))
 verb:value("2", translate("Verbose output"))
 verb.default = 2
 
-se = config:taboption("basic", ListValue, "strict_enforcement", translate("Strict enforcement"),translate("See the") .. " "
-	.. [[<a href="]] .. readmeURL .. [[#strict-enforcement" target="_blank">]]
-	.. translate("README") .. [[</a>]] .. " " .. translate("for details."))
+se = config:taboption("basic", ListValue, "strict_enforcement", translate("Strict enforcement"),translatef("See the <a href=\"%s\" target=\"_blank\">README</a> for details.", readmeURL .. "#strict-enforcement"))
 se:value("0", translate("Do not enforce policies when their gateway is down"))
 se:value("1", translate("Strictly enforce policies when their gateway is down"))
 se.default = 1
 
 dest_ipset = config:taboption("basic", ListValue, "dest_ipset", translate("The ipset option for remote policies"),
-	translate("Please check the") .. " "
-	.. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]]
-	.. translate("README") .. [[</a>]] .. " " .. translate("before changing this option."))
+	translatef("Please check the <a href=\"%s\" target=\"_blank\">README</a> before changing this option.", readmeURL .. "#service-configuration-settings"))
 dest_ipset:value("", translate("Disabled"))
 dest_ipset:value("ipset", translate("Use ipset command"))
 dest_ipset:value("dnsmasq.ipset", translate("Use DNSMASQ ipset"))
@@ -176,9 +170,7 @@ dest_ipset.default = ""
 dest_ipset.rmempty = true
 
 src_ipset = config:taboption("basic", ListValue, "src_ipset", translate("The ipset option for local policies"),
-	translate("Please check the") .. " "
-	.. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]]
-	.. translate("README") .. [[</a>]] .. " " .. translate("before changing this option."))
+	translatef("Please check the <a href=\"%s\" target=\"_blank\">README</a> before changing this option.", readmeURL .. "#service-configuration-settings"))
 src_ipset:value("0", translate("Disabled"))
 src_ipset:value("1", translate("Use ipset command"))
 
@@ -188,9 +180,7 @@ ipv6:value("1", translate("Enabled"))
 
 -- Advanced Options
 config:tab("advanced", translate("Advanced Configuration"),
-	"<br/>&nbsp;&nbsp;&nbsp;&nbsp;<b>" .. translate("WARNING:") .. "</b>" .. " " .. translate("Please make sure to check the") .. " "
-	.. [[<a href="]] .. readmeURL .. [[#additional-settings" target="_blank">]] .. translate("README") .. [[</a>]] .. " "
-	.. translate("before changing anything in this section! Change any of the settings below with extreme caution!") .. "<br/><br/>")
+	translatef("%sWARNING:%s Please make sure to check the <a href=\"%s\" target=\"_blank\">README</a> before changing anything in this section! Change any of the settings below with extreme caution!%s" , "<br/>&nbsp;&nbsp;&nbsp;&nbsp;<b>", "</b>", readmeURL .. "#service-configuration-settings", "<br/><br/>"))
 
 supportedIface = config:taboption("advanced", DynamicList, "supported_interface", translate("Supported Interfaces"), translate("Allows to specify the list of interface names (in lower case) to be explicitly supported by the service. Can be useful if your OpenVPN tunnels have dev option other than tun* or tap*."))
 supportedIface.optional = false
@@ -353,9 +343,8 @@ uci:foreach("network", "interface", function(s)
 	end
 end)
 
-dscp = m:section(NamedSection, "config", "vpn-policy-routing", translate("DSCP Tagging"), translate("Set DSCP tags (in range between 1 and 63) for specific interfaces. See the") .. " "
-	.. [[<a href="]] .. readmeURL .. [[#dscp-tag-based-policies" target="_blank">]]
-	.. translate("README") .. [[</a>]] .. " " .. translate("for details."))
+dscp = m:section(NamedSection, "config", "vpn-policy-routing", translate("DSCP Tagging"), 
+	translatef("Set DSCP tags (in range between 1 and 63) for specific interfaces. See the <a href=\"%s\" target=\"_blank\">README</a> for details.", readmeURL .. "#dscp-tag-based-policies"))
 uci:foreach("network", "interface", function(s)
 	local name=s['.name']
 	if is_supported_interface(s) then 
@@ -366,9 +355,8 @@ uci:foreach("network", "interface", function(s)
 end)
 
 -- Includes
-inc = m:section(TypedSection, "include", translate("Custom User File Includes"), translate("Run the following user files after setting up but before restarting DNSMASQ. See the") .. " "
-	.. [[<a href="]] .. readmeURL .. [[#custom-user-files" target="_blank">]]
-	.. translate("README") .. [[</a>]] .. " " .. translate("for details."))
+inc = m:section(TypedSection, "include", translate("Custom User File Includes"), 
+	translatef("Run the following user files after setting up but before restarting DNSMASQ. See the <a href=\"%s\" target=\"_blank\">README</a> for details.", readmeURL .. "#custom-user-files"))
 inc.template = "cbi/tblsection"
 inc.sortable  = true
 inc.anonymous = true
