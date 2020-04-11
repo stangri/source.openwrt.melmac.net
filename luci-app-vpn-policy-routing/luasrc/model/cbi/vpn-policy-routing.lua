@@ -149,13 +149,14 @@ config.override_depends = true
 -- Basic Options
 config:tab("basic", translate("Basic Configuration"))
 
-verb = config:taboption("basic", ListValue, "verbosity", translate("Output verbosity"),translate("Controls both system log and console output verbosity."))
+verb = config:taboption("basic", ListValue, "verbosity", translate("Output verbosity"), translate("Controls both system log and console output verbosity."))
 verb:value("0", translate("Suppress/No output"))
 verb:value("1", translate("Condensed output"))
 verb:value("2", translate("Verbose output"))
 verb.default = 2
 
-se = config:taboption("basic", ListValue, "strict_enforcement", translate("Strict enforcement"),translatef("See the <a href=\"%s\" target=\"_blank\">README</a> for details.", readmeURL .. "#strict-enforcement"))
+se = config:taboption("basic", ListValue, "strict_enforcement", translate("Strict enforcement"),
+	translatef("See the <a href=\"%s\" target=\"_blank\">README</a> for details.", readmeURL .. "#strict-enforcement"))
 se:value("0", translate("Do not enforce policies when their gateway is down"))
 se:value("1", translate("Strictly enforce policies when their gateway is down"))
 se.default = 1
