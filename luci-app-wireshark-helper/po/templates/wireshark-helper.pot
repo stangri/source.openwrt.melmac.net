@@ -9,7 +9,7 @@ msgstr ""
 msgid "%s is not installed or not found"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:58
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:56
 msgid "Configuration"
 msgstr ""
 
@@ -21,11 +21,11 @@ msgstr ""
 msgid "Enable"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:85
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:83
 msgid "IP to Monitor"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:68
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:66
 msgid "Interface to Listen on"
 msgstr ""
 
@@ -37,7 +37,7 @@ msgstr ""
 msgid "Restart"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:52
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:51
 msgid ""
 "Run a Wireshark app on the %s device and set Wireshark filter to: (ip.src == "
 "%s) || (ip.dst == %s)"
@@ -47,7 +47,7 @@ msgstr ""
 msgid "Running"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:56
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:54
 msgid "See the <a href=\"%s\" target=\"_blank\">README</a> for details."
 msgstr ""
 
@@ -79,6 +79,6 @@ msgstr ""
 msgid "Wireshark Helper Settings"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:81
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:79
 msgid "Wireshark IP"
 msgstr ""
