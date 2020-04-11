@@ -33,21 +33,20 @@ if ubusStatus and ubusStatus[packageName] and
 end
 
 local serviceRunning, statusText = false, nil
-local packageVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'")))
-if not packageVersion or packageVersion == "" then
-	packageVersion = ""
+local packageVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'"))) or ""
+if packageVersion == "" then
 	statusText = packageName .. " " .. translate("is not installed or not found")
 end 
 if sys.call("iptables -t mangle -L | grep -q VPR_PREROUTING") == 0 then
 	serviceRunning = true
 	statusText = translate("Running")
 	if serviceMode and serviceMode == "strict" then
-		statusText = statusText .. " (" .. translate("strict mode") .. ")"
+		statusText = translatef("%s (strict mode)", statusText)
 	end
 else
 	statusText = translate("Stopped")
 	if uci:get(packageName, "config", "enabled") ~= "1" then
-		statusText = statusText .. " (" .. translate("disabled") .. ")"
+		statusText = translatef("%s (disabled)", statusText)
 	end
 end
 
@@ -71,7 +70,7 @@ end
 
 local lanIPAddr = uci:get("network", "lan", "ipaddr")
 local lanNetmask = uci:get("network", "lan", "netmask")
--- if multiple ip addresses on lan interface, will be return as table of CIDR notations i.e. {"10.0.0.1/24","10.0.0.2/24"}
+-- if multiple ip addresses on lan interface, will be returned as table of CIDR notations i.e. {"10.0.0.1/24","10.0.0.2/24"}
 if (type(lanIPAddr) == "table") then
 				first = true
 				for i,line in ipairs(lanIPAddr) do
