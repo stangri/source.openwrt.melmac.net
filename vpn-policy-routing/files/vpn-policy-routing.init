@@ -88,8 +88,7 @@ vpr_find_true() {
 }
 vpr_get_gateway() {
 	local iface="$2" dev="$3" gw
-	network_get_subnet gw "$iface"
-	[ -z "$gw" ] && network_get_gateway gw "$iface"
+	network_get_gateway gw "$iface"
 	if [ -z "$gw" ] || [ "$gw" = '0.0.0.0' ]; then
 		gw="$(ip -4 a list dev "$dev" 2>/dev/null | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
 	fi
@@ -317,7 +316,7 @@ insert_tor_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$7" chain="${8:-PREROUTING}"
 	local mark=$(eval echo "\$mark_${iface//-/_}")
 	[ -z "$mark" ] && processPolicyError="${processPolicyError}${_ERROR_}: Unknown fw_mark for ${iface}##"
-	param="-t mangle $insertOption VPR_${chain} 1 -j MARK --set-xmark ${mark}/${fwMask}"
+	param="-t mangle $insertOption VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask}"
 	[ -n "$laddr" ] && param="$param -s $laddr"
 	[ -n "$lport" ] && param="$param -p tcp -m multiport --sport ${lport//-/:}"
 	[ -n "$raddr" ] && param="$param -d $raddr"
@@ -601,19 +600,21 @@ table_create(){
 		fi
 		if [ -n "$remoteIpset" ]; then
 			if ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}"; then
-				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}" dst $appendRemotePolicy -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+				for i in PREROUTING FORWARD INPUT OUTPUT; do
+					ipt -t mangle -I VPR_${i} -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+				done
 			else
 			s=1
 			fi
 		fi
 		if [ "$localIpset" -ne 0 ]; then
 			if ips 'create' "${iface}_ip" 'hash:net comment' && ips 'flush' "${iface}_ip"; then
-				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_ip" src $appendLocalPolicy -j MARK --set-mark "${mark}/${fwMask}" || s=1
+				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
 			else
 			s=1
 			fi
 			if ips 'create' "${iface}_mac" 'hash:mac comment' && ips 'flush' "${iface}_mac"; then
-				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_mac" src $appendLocalPolicy -j MARK --set-mark "${mark}/${fwMask}" || s=1
+				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_mac" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
 			else
 			s=1
 			fi
