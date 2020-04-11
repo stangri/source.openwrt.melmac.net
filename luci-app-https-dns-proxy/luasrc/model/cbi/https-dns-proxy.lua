@@ -53,15 +53,14 @@ local packageStatus, packageStatusCode
 local ubusStatus = util.ubus("service", "list", { name = packageName })
 local packageVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'"))) or ""
 
-if not packageVersion or packageVersion == "" then
+if packageVersion == "" then
 	packageStatusCode = -1
-	packageVersion = ""
-	packageStatus = packageName .. " " .. translate("is not installed or not found")
+	packageStatus = translatef("%s is not installed or not found", packageName)
 else  
 	if not ubusStatus or not ubusStatus[packageName] then
 		packageStatusCode = 0
 		packageStatus = translate("Stopped")
-		if not luci.sys.init.enabled(packageName) then
+		if not sys.init.enabled(packageName) then
 			packageStatus = packageStatus .. " (" .. translate("disabled") .. ")"
 		end
 	else
