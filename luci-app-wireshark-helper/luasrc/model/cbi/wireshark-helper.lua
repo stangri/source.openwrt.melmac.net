@@ -14,12 +14,9 @@ local monIP = uci:get(packageName, "config", "monitor_ip")
 local wsIP = uci:get(packageName, "config", "wireshark_ip")
 
 local packageVersion, statusText = nil, nil 
-packageVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'")))
-if not packageVersion or packageVersion == "" then
-	packageVersion = ""
-	statusText = packageName .. " " .. translate("is not installed or not found")
-else  
-	packageVersion = " [" .. packageName .. " " .. packageVersion .. "]"
+packageVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'"))) or ""
+if packageVersion == "" then
+	statusText = translatef("%s is not installed or not found", packageName)
 end
 
 local serviceRunning, serviceEnabled = false, false
@@ -35,12 +32,12 @@ if serviceRunning then
 else
 	statusText = translate("Stopped")
 	if not serviceEnabled then
-		statusText = statusText .. " (" .. translate("disabled") .. ")"
+		statusText = translatef("%s (disabled)", statusText)
 	end
 end
 
 m = Map("wireshark-helper", translate("Wireshark Helper Settings"))
-h = m:section(NamedSection, "config", packageName, translate("Service Status") .. packageVersion)
+h = m:section(NamedSection, "config", packageName, translatef("Service Status [%s %s]", packageName, packageVersion))
 ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 ss.template = packageName .. "/status"
 ss.value = statusText
@@ -49,17 +46,12 @@ if packageVersion ~= "" then
 	buttons.template = packageName .. "/buttons"
 end
 
-
 local hintText, helperText = "", ""
-if monIP and wsIP then
-	if monIP ~= "" and wsIP ~= "" then
-		hintText = "<div>" .. translate("Run a Wireshark app on the") .. " " .. wsIP .. " " .. translate("device and set Wireshark filter to") .. ": " .. "(ip.src == " .. monIP .. ") || (ip.dst == " .. monIP .. ")" .. "</div>"
-	end
+if serviceRunning and monIP and wsIP and monIP ~= "" and wsIP ~= "" then
+	hintText = "<div>" .. translatef("Run a Wireshark app on the %s device and set Wireshark filter to: (ip.src == %s) || (ip.dst == %s)", wsIP, monIP, monIP) .. "</div>"
 end
 
-helperText = hintText .. "<div>" .. translate("See the") .. " "
-	.. [[<a href="]] .. readmeURL .. [[#strict-enforcement" target="_blank">]]
-	.. translate("README") .. [[</a>]] .. " " .. translate("for details") .. "." .. "</div>"
+helperText = hintText .. "<div>" .. translatef("See the <a href=\"%s\" target=\"_blank\">README</a> for details.", readmeURL .. "#strict-enforcement") .. "</div>"
 
 s1 = m:section(NamedSection, "config", "wireshark-helper", translate("Configuration"), helperText)
 
