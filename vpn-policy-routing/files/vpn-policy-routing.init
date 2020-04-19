@@ -334,6 +334,9 @@ insert_policy() {
 		is_ipv6 "$raddr" && return 0
 	fi
 
+	if is_ipv4 "$laddr" && is_ipv6 "$raddr"; then return 0; fi
+	if is_ipv6 "$laddr" && is_ipv4 "$raddr"; then return 0; fi
+
 	if [ -z "$mark" ]; then
 		processPolicyError="${processPolicyError}${_ERROR_}: Unknown fw_mark for ${iface}##"
 		return 0
@@ -870,22 +873,23 @@ stop_service() {
 
 # shellcheck disable=SC2119
 service_triggers() {
-		local n
-		is_enabled || return 1
+	local n
+	is_enabled || return 1
 
-		procd_open_validate
-			validate_config
-			validate_policy
-			validate_include
-		procd_close_validate
+	procd_open_validate
+		validate_config
+		validate_policy
+		validate_include
+	procd_close_validate
 
-		procd_add_reload_trigger 'firewall' 'openvpn' 'vpn-policy-routing'
-		procd_open_trigger
-			for n in $ifSupported; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
-#			output "$serviceName monitoring interfaces: $ifSupported\\n"; # output_okn;
-#			for n in $ifAll; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
-#			output "$serviceName monitoring ALL interfaces: $ifAll"; output_okn;
-		procd_close_trigger
+	procd_add_reload_trigger 'firewall' 'openvpn' 'vpn-policy-routing'
+	procd_open_trigger
+		for n in $ifSupported; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
+	procd_close_trigger
+
+	if [ "$verbosity" -eq 2 ]; then
+		output "$serviceName monitoring interfaces: $ifSupported.\\n"
+	fi
 }
 
 input() { local data; while read -r data; do echo "$data" | tee -a /var/${packageName}-support; done; }
