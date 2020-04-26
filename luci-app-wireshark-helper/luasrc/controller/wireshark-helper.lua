@@ -1,7 +1,7 @@
 module("luci.controller.wireshark-helper", package.seeall)
 function index()
 	if nixio.fs.access("/etc/config/wireshark-helper") then
-		entry({"admin", "services", "wireshark-helper"}, cbi("wireshark-helper"), _("Wireshark Helper"))
+		entry({"admin", "services", "wireshark-helper"}, cbi("wireshark-helper"), _("Wireshark Helper")).acl_depends = { "luci-app-wireshark-helper" }
 		entry({"admin", "services", "wireshark-helper", "action"}, call("wireshark_helper_action"), nil).leaf = true
 	end
 end

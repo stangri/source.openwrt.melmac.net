@@ -1,7 +1,6 @@
 module("luci.controller.wlanblinker", package.seeall)
 function index()
-	if not nixio.fs.access("/etc/config/wlanblinker") then
-		return
+	if nixio.fs.access("/etc/config/wlanblinker") then
+		entry({"admin", "services", "wlanblinker"}, cbi("wlanblinker"), _("WLAN Blinker")).acl_depends = { "luci-app-wlanblinker" }
 	end
-	entry({"admin", "services", "wlanblinker"}, cbi("wlanblinker"), _("WLAN Blinker"))
 end

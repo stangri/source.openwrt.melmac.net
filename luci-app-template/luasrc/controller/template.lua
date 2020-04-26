@@ -1,7 +1,6 @@
 module("luci.controller.template", package.seeall)
 function index()
-	if not nixio.fs.access("/etc/config/template") then
-		return
+	if nixio.fs.access("/etc/config/template") then
+		entry({"admin", "services", "template"}, cbi("template"), _("Template")).acl_depends = { "luci-app-template" }
 	end
-	entry({"admin", "services", "template"}, cbi("template"), _("Template"))
 end

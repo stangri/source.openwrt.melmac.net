@@ -1,7 +1,6 @@
 module("luci.controller.fakeinternet", package.seeall)
 function index()
-	if not nixio.fs.access("/etc/config/fakeinternet") then
-		return
+	if nixio.fs.access("/etc/config/fakeinternet") then
+		entry({"admin", "services", "fakeinternet"}, cbi("fakeinternet"), _("Fakeinternet")).acl_depends = { "luci-app-fakeinternet" }
 	end
-	entry({"admin", "services", "fakeinternet"}, cbi("fakeinternet"), _("Fakeinternet"))
 end

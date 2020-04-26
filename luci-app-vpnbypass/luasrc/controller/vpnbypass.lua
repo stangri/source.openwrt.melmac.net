@@ -2,7 +2,7 @@ module("luci.controller.vpnbypass", package.seeall)
 function index()
 	if nixio.fs.access("/etc/config/vpnbypass") then
 		entry({"admin", "vpn"}, firstchild(), _("VPN"), 60).dependent=false
-		entry({"admin", "vpn", "vpnbypass"}, cbi("vpnbypass"), _("VPN Bypass"))
+		entry({"admin", "vpn", "vpnbypass"}, cbi("vpnbypass"), _("VPN Bypass")).acl_depends = { "luci-app-vpnbypass" }
 		entry({"admin", "vpn", "vpnbypass", "action"}, call("vpnbypass_action"), nil).leaf = true
 	end
 end
