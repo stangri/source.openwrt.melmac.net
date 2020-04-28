@@ -35,7 +35,7 @@ msgstr ""
 msgid "Enable/Start"
 msgstr ""
 
-#: applications/luci-app-fakeinternet/luasrc/controller/fakeinternet.lua:6
+#: applications/luci-app-fakeinternet/luasrc/controller/fakeinternet.lua:4
 msgid "Fakeinternet"
 msgstr ""
 
