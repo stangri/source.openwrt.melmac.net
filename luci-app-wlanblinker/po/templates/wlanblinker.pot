@@ -65,7 +65,7 @@ msgstr ""
 msgid "User-defined modes of operation"
 msgstr ""
 
-#: applications/luci-app-wlanblinker/luasrc/controller/wlanblinker.lua:6
+#: applications/luci-app-wlanblinker/luasrc/controller/wlanblinker.lua:4
 msgid "WLAN Blinker"
 msgstr ""
 
