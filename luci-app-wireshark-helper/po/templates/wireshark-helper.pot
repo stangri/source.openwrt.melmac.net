@@ -48,7 +48,7 @@ msgid "Running"
 msgstr ""
 
 #: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:54
-msgid "See the <a href=\"%s\" target=\"_blank\">README</a> for details."
+msgid "See the %sREADME%s for details."
 msgstr ""
 
 #: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:41

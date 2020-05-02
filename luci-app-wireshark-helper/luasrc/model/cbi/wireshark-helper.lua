@@ -51,7 +51,7 @@ if serviceRunning and monIP and wsIP and monIP ~= "" and wsIP ~= "" then
 	hintText = "<div>" .. translatef("Run a Wireshark app on the %s device and set Wireshark filter to: (ip.src == %s) || (ip.dst == %s)", wsIP, monIP, monIP) .. "</div>"
 end
 
-helperText = hintText .. "<div>" .. translatef("See the <a href=\"%s\" target=\"_blank\">README</a> for details.", readmeURL .. "#strict-enforcement") .. "</div>"
+helperText = hintText .. "<div>" .. translatef("See the %sREADME%s for details.", "<a href=\"" .. readmeURL .. "\" target=\"_blank\">", "</a>") .. "</div>"
 
 s1 = m:section(NamedSection, "config", "wireshark-helper", translate("Configuration"), helperText)
 
