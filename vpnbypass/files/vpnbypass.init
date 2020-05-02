@@ -89,8 +89,8 @@ start_service() {
 	procd_close_instance
 
 	ipt -t mangle -D PREROUTING -m mark --mark 0x00/${FW_MASK} -g VPNBYPASS >/dev/null 2>&1
-	ipt -t mangle -N VPNBYPASS; ipt -t mangle -A PREROUTING -m mark --mark 0x00/${FW_MASK} -g VPNBYPASS;
-	ipt -t mangle -A VPNBYPASS -m set --match-set $IPSET dst -j MARK --set-mark ${FW_MARK}/${FW_MASK}
+	{ ipt -t mangle -N VPNBYPASS; ipt -t mangle -A PREROUTING -m mark --mark 0x00/${FW_MASK} -g VPNBYPASS; } >/dev/null 2>&1
+	ipt -t mangle -A VPNBYPASS -m set --match-set $IPSET dst -j MARK --set-mark ${FW_MARK}/${FW_MASK} >/dev/null 2>&1
 	ip rule del fwmark "$FW_MARK" table "$TID" >/dev/null 2>&1; 
 	ipset -q flush "$IPSET"; ipset -q destroy "$IPSET";
 	ip route flush table "$TID"; ip route flush cache;
@@ -110,8 +110,8 @@ stop_service() {
 	ip rule del fwmark "$FW_MARK" table "$TID" >/dev/null 2>&1; 
 	ipset -q flush "$IPSET"; ipset -q destroy "$IPSET";
 	ip route flush table "$TID"; ip route flush cache;
-	ipt -t mangle -D PREROUTING -m mark --mark 0x00/${FW_MASK} -g VPNBYPASS
-	ipt -t mangle -F VPNBYPASS; ipt -t mangle -X VPNBYPASS;
+	ipt -t mangle -D PREROUTING -m mark --mark 0x00/${FW_MASK} -g VPNBYPASS >/dev/null 2>&1
+	{ ipt -t mangle -F VPNBYPASS; ipt -t mangle -X VPNBYPASS; } >/dev/null 2>&1
 	output "$serviceName stopped\\n"
 }
 
