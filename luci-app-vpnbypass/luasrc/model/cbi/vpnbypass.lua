@@ -72,7 +72,7 @@ d = Map("dhcp")
 s4 = d:section(TypedSection, "dnsmasq")
 s4.anonymous = true
 di = s4:option(DynamicList, "ipset", translate("Domains to Bypass"),
-		translatef("Domains to be accessed directly (outside of the VPN tunnel), see <a href=\"%s\" target=\"_blank\">README</a> for syntax", readmeURL .. "#bypass-domains-formatsyntax"))
+		translatef("Domains to be accessed directly (outside of the VPN tunnel), see %sREADME%s for syntax", "<a href=\"" .. readmeURL   .. "#bypass-domains-formatsyntax" .. "\" target=\"_blank\">", "</a>"))
 function d.on_after_commit(map)
 	util.exec("/etc/init.d/dnsmasq restart >/dev/null 2>&1")
 end
