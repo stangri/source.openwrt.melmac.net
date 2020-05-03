@@ -81,7 +81,7 @@ This service provides lightweight and very fast dnsmasq-based ad blocking. Pleas
 
 ### slider-support
 
-This package enables switching between ```Router```, ```Access Point``` and ```Wireless Repeater``` modes of operation for supported routers equipped with slider switch. It also sets the correct ```current mode``` setting for the [```WLAN Blinker``` service](https://github.com/stangri/openwrt_packages/blob/master/wlanblinker/files/README.md)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/wlanblinker/files/README.md). Please see the README on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/slider-support/files/README.md)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/slider-support/files/README.md) for further information.
+This package enables switching between ```Router```, ```Access Point``` and ```Wireless Repeater``` modes of operation for supported routers equipped with slider switch. It also sets the correct ```current mode``` setting for the ```WLAN Blinker``` service (README on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/wlanblinker/files/README.md)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/wlanblinker/files/README.md)). Please see the README on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/slider-support/files/README.md)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/slider-support/files/README.md) for further information.
 
 ### vpn-policy-routing & luci-app-vpn-policy-routing
 
