@@ -3,9 +3,6 @@
 # shellcheck disable=SC2039,SC1091,SC2018,SC2019
 PKG_VERSION='dev-test'
 
-
-# https://forum.openwrt.org/t/policy-routing-based-on-firewall-marks-blocked-by-reverse-path-filter/35805
-
 export START=94
 export USE_PROCD=1
 
