@@ -3,6 +3,9 @@
 # shellcheck disable=SC2039,SC1091,SC2018,SC2019
 PKG_VERSION='dev-test'
 
+
+# https://forum.openwrt.org/t/policy-routing-based-on-firewall-marks-blocked-by-reverse-path-filter/35805
+
 export START=94
 export USE_PROCD=1
 
@@ -13,8 +16,7 @@ readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly __PASS__='\033[0;33m[-]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
-# readonly readmeURL="https://github.com/openwrt/packages/tree/master/net/vpn-policy-routing/files/README.md"
-readonly readmeURL="https://github.com/stangri/openwrt_packages/blob/master/vpn-policy-routing/files/README.md"
+readonly readmeURL="https://github.com/openwrt/packages/tree/master/net/vpn-policy-routing/files/README.md"
 
 export EXTRA_COMMANDS='support'
 export EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
@@ -245,6 +247,9 @@ ipt_cleanup() {
 	local i
 	for i in PREROUTING FORWARD INPUT OUTPUT; do
 		while iptables -t mangle -D $i -m mark --mark 0x0/0xff0000 -j VPR_${i} >/dev/null 2>&1; do : ; done
+	done
+	for i in PREROUTING FORWARD INPUT OUTPUT; do
+		while iptables -t mangle -D $i -j VPR_${i} >/dev/null 2>&1; do : ; done
 	done
 }
 
@@ -572,12 +577,12 @@ table_create(){
 		else
 			ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 		fi
-		ip -4 route ls table main | grep -v 'br-lan' | while read -r i; do
-			idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
-			if ! is_supported_iface_dev "$idev"; then
-				ip -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
-			fi
-		done
+#		ip -4 route ls table main | grep -v 'br-lan' | while read -r i; do
+#			idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
+#			if ! is_supported_iface_dev "$idev"; then
+#				ip -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
+#			fi
+#		done
 		ip -4 route flush cache || ipv4_error=1
 		ip -4 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv4_error=1
 	fi
@@ -789,7 +794,7 @@ start_service() {
 
 		for i in PREROUTING FORWARD INPUT OUTPUT; do
 			ipt -t mangle -N "VPR_${i}"
-			ipt -t mangle "$insertOption" "$i" -m mark --mark "0x00/${fwMask}" -j "VPR_${i}"
+			ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
 		done
 
 		output 1 'Processing Interfaces '
@@ -852,7 +857,7 @@ stop_service() {
 	if create_lock; then
 		load_package_config
 		for i in PREROUTING FORWARD INPUT OUTPUT; do
-			ipt -t mangle -D "${i}" -m mark --mark "0x00/${fwMask}" -j "VPR_${i}"
+			ipt -t mangle -D "${i}" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
 			ipt -t mangle -F "VPR_${i}"; ipt -t mangle -X "VPR_${i}";
 		done
 		config_load 'network'; config_foreach process_interface 'interface' 'destroy'

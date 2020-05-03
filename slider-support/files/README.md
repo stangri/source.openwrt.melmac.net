@@ -1,6 +1,6 @@
 # Slider Support for select routers
 
-This service enables switching between ```Router```, ```Access Point``` and ```Wireless Repeater``` modes of operation for supported routers equipped with the slider switch. It also sets the correct ```current mode``` setting for the [```WLAN Blinker``` service](https://github.com/stangri/openwrt_packages/blob/master/wlanblinker/files/README.md).
+This service enables switching between ```Router```, ```Access Point``` and ```Wireless Repeater``` modes of operation for supported routers equipped with the slider switch. It also sets the correct ```current mode``` setting for the ```WLAN Blinker``` service available on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/wlanblinker/files/README.md)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/wlanblinker/files/README.md).
 
 ## Supported Routers
 
@@ -24,8 +24,8 @@ Please make sure that the [requirements](#requirements) are satisfied and instal
 - GL-Inet AR750: ```opkg update; opkg install slider-support-ar750;```.
 - GL-Inet MT300N: ```opkg update; opkg install slider-support-mt300n;```.
 
-If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router) first.
+If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/README.md#on-your-router) first.
 
 ### Requirements
 
-While not required, the [```travelmate```](https://github.com/openwrt/packages/blob/master/net/travelmate/files/README.md) package is highly recommended. You will also need to create the WWAN interface (```trm_wwan``` is the recommended name as it is the default WWAN interface name used by ```travelmate``` and this service). This service also requires the following package to be installed on your router: ```relayd```. It should be automatically installed as a dependency during the service install.
+While not required, the ```travelmate``` package available on [GitHub](https://github.com/openwrt/packages/blob/master/net/travelmate/files/README.md)/[jsDelivr](https://cdn.jsdelivr.net/gh/openwrt/packages@master/net/travelmate/files/README.md) is highly recommended. You will also need to create the WWAN interface (```trm_wwan``` is the recommended name as it is the default WWAN interface name used by ```travelmate``` and this service). This service also requires the following package to be installed on your router: ```relayd```. It should be automatically installed as a dependency during the service install.

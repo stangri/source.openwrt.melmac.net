@@ -17,7 +17,7 @@ Currently supported devices include:
 - Linksys EA4500
 - Linksys EA8500
 
-If you're interested in having your device supported, please check [LEDE Projet Forum Support Thread](https://forum.lede-project.org/t/web-ui-to-reboot-to-another-partition-dual-partition-routers/3423).
+If you're interested in having your device supported, please check [OpenWrt Forum Support Thread](https://forum.openwrt.org/t/web-ui-to-reboot-to-another-partition-dual-partition-routers/3423).
 
 ## How to install
 
@@ -28,7 +28,7 @@ opkg update
 opkg --force-overwrite install luci-mod-alt-reboot
 ```
 
-If the ```luci-mod-alt-reboot``` package is not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to [add a custom repo to your router](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router) first.
+If the ```luci-mod-alt-reboot``` package is not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/README.md#on-your-router) first.
 
 ## How to uninstall
 
