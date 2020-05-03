@@ -780,8 +780,12 @@ config vpn-policy-routing 'config'
 
 ### A Word About Default Routing
 
-Service does not alter the default routing. Depending on your VPN tunnel settings (and settings of the VPN server you are connecting to), the default routing might be set to go via WAN or via VPN tunnel. This service affects only routing of the traffic matching the policies. If you want to override default routing, set the following:
-  
+Service does not alter the default routing. Depending on your VPN tunnel settings (and settings of the VPN server you are connecting to), the default routing might be set to go via WAN or via VPN tunnel. This service affects only routing of the traffic matching the policies. If you want to override default routing, follow the instructions below.
+
+#### OpenVPN tunnel configured via uci (/etc/config/openvpn)
+
+Set the following to the appropriate section of your ```/etc/config/openvpn```:
+
 - For OpenVPN 2.4 and newer client config:
 
     ```text
@@ -800,7 +804,31 @@ Service does not alter the default routing. Depending on your VPN tunnel setting
     option route_allowed_ips '0'
     ```
 
-- Routing Wireguard traffic requires setting `rp_filter = 2`. Please refer to [issue #41](https://github.com/stangri/openwrt_packages/issues/41) for more details.
+#### OpenVPN tunnel configured with .ovpn file
+
+Set the following to the appropriate section of your ```.ovpn``` file:
+
+- For OpenVPN 2.4 and newer client ```.ovpn``` file:
+
+    ```text
+    pull_filter 'ignore "redirect-gateway"'
+    ```
+
+- For OpenVPN 2.3 and older client ```.ovpn``` file:
+
+    ```text
+    route_nopull '1'
+    ```
+
+#### Wireguard tunnel
+
+- For your Wireguard (client) config:
+
+    ```text
+    option route_allowed_ips '0'
+    ```
+
+- Routing Wireguard traffic may require setting `net.ipv4.conf.wg0.rp_filter = 2` in `/etc/sysctl.conf`. Please refer to [issue #41](https://github.com/stangri/openwrt_packages/issues/41) for more details.
 
 ### A Word About HTTP/3 (QUICK)
 
