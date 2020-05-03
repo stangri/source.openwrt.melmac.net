@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=simple-adblock
 PKG_VERSION:=1.8.3
-PKG_RELEASE:=3
+PKG_RELEASE:=5
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 PKG_LICENSE:=GPL-3.0-or-later
 
@@ -21,7 +21,7 @@ endef
 
 define Package/simple-adblock/description
 This service provides DNSMASQ or Unbound based ad blocking.
-Please see the project's README at github for further information.
+Please see the project's README on GitHub for further information.
 
 endef
 
