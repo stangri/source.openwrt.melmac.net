@@ -24,6 +24,14 @@ This service allows you to define rules (policies) for routing traffic via WAN o
 - You can mix the IP addresses/subnets and device (or domain) names in one field separating them by space (like this: ```66.220.2.74 he.net tunnelbroker.net```).
 - See [Policy Options](#policy-options) section for more information.
 
+### Domain-Based Policies
+
+- Policies based on (remote) domain names can be processed in different ways, please review the [Policy Options](#policy-options) section and [Footnotes/Known Issues](#footnotesknown-issues) section, specifically [<sup>#5</sup>](#footnote5) and any other information in that section relevant to domain-based routing/DNS.
+
+### Physical Device Policies
+
+- Policies based on a local physical device (like a specially created wlan), please review the [Policy Options](#policy-options) section and [Footnotes/Known Issues](#footnotesknown-issues) section, specifically [<sup>#6</sup>](#footnote6) and any other information in that section relevant to handling physical device.
+
 ### DSCP Tag-Based Policies
 
 You can also set policies for traffic with specific DSCP tag. On Windows 10, for example, you can mark traffic from specific apps with DSCP tags (instructions for tagging specific app traffic in Windows 10 can be found [here](http://serverfault.com/questions/769843/cannot-set-dscp-on-windows-10-pro-via-group-policy)).
@@ -175,7 +183,7 @@ The ```src_addr```, ```src_port```, ```dest_addr``` and ```dest_port``` options 
 |**name**||Policy name, it **must** be set.|
 |enabled|1|Enable/disable policy. To display the ```Enable``` checkbox column for policies in the WebUI, make sure to select ```Enabled``` for ```Show Enable Column``` in the ```Web UI``` tab.|
 |**interface**||Policy interface, it **must** be set.|
-|src_addr||List of space-separated local/source IP addresses, CIDRs, hostnames or mac addresses (colon-separated). You can also specify a local interface (like a specially created wlan) prepended by an ```@``` symbol.|
+|src_addr||List of space-separated local/source IP addresses, CIDRs, hostnames or mac addresses (colon-separated). You can also specify a local physical device (like a specially created wlan) prepended by an ```@``` symbol.|
 |src_port||List of space-separated local/source ports or port-ranges.|
 |dest_addr||List of space-separated remote/target IP addresses, CIDRs or hostnames/domain names.|
 |dest_port||List of space-separated remote/target ports or port-ranges.|
@@ -737,6 +745,8 @@ config openvpn 'vpnc'
 4. <a name="footnote4"> </a> The service does **NOT** support the "killswitch" router mode (where if you stop the VPN tunnel, you have no internet connection). For proper operation, leave all the default OpenWrt ```network``` and ```firewall``` settings for ```lan``` and ```wan``` intact.
 
 5. <a name="footnote5"> </a> When using the ```dnsmasq.ipset``` option, please make sure to flush the DNS cache of the local devices, otherwise domain policies may not work until you do. If you're not sure how to flush the DNS cache (or if the device/OS doesn't offer an option to flush its DNS cache), reboot your local devices when starting to use the service and/or when connecting data-capable device to your WiFi.
+
+6. <a name="footnote6"> </a> When using the policies targeting physical devices, make sure you have the following packages installed: ```kmod-br-netfilter```, ```kmod-ipt-physdev``` and ```iptables-mod-physdev```.
 
 ### Multiple OpenVPN Clients
 

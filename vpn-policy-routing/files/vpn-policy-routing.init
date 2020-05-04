@@ -369,7 +369,7 @@ insert_policy() {
 				unset valueNeg; value="$laddr";
 			fi
 			if is_phys_dev "$value"; then
-				param="$param $valueNeg -i ${value:1}"
+				param="$param $valueNeg -m physdev --physdev-in ${value:1}"
 			elif is_mac_address "$value"; then
 				param="$param -m mac $valueNeg --mac-source $value"
 			elif [ "${appendLocalPolicy//-d}" != "$appendLocalPolicy" ] && [ -n "$raddr" ]; then
