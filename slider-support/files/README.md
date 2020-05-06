@@ -26,6 +26,8 @@ Please make sure that the [requirements](#requirements) are satisfied and instal
 
 If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/README.md#on-your-router) first.
 
+These packages have been designed to be backwards compatible with OpenWrt 19.07, OpenWrt 18.06, LEDE Project 17.01 and OpenWrt 15.05. However, on systems older than OpenWrt 18.06.6 and/or a system which has deviated too far (or haven't been updated to keep in-sync) with official OpenWrt release you may get a message about missing ```luci-compat``` dependency, which (and only which) you can safely ignore and force-install the luci app using ```opkg install --force-depends``` command instead of ```opkg install```.
+
 ### Requirements
 
 While not required, the ```travelmate``` package available on [GitHub](https://github.com/openwrt/packages/blob/master/net/travelmate/files/README.md)/[jsDelivr](https://cdn.jsdelivr.net/gh/openwrt/packages@master/net/travelmate/files/README.md) is highly recommended. You will also need to create the WWAN interface (```trm_wwan``` is the recommended name as it is the default WWAN interface name used by ```travelmate``` and this service). This service also requires the following package to be installed on your router: ```relayd```. It should be automatically installed as a dependency during the service install.

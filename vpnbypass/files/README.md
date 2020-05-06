@@ -59,6 +59,8 @@ opkg install vpnbypass luci-app-vpnbypass
 
 If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/README.md#on-your-router) first.
 
+These packages have been designed to be backwards compatible with OpenWrt 19.07, OpenWrt 18.06, LEDE Project 17.01 and OpenWrt 15.05. However, on systems older than OpenWrt 18.06.6 and/or a system which has deviated too far (or haven't been updated to keep in-sync) with official OpenWrt release you may get a message about missing ```luci-compat``` dependency, which (and only which) you can safely ignore and force-install the luci app using ```opkg install --force-depends``` command instead of ```opkg install```.
+
 ## Default Settings
 
 The default configuration ships with the service disabled, use the Web UI to enable/start the service or run ```uci set vpnbypass.config.enabled=1; uci commit vpnbypass;```. It routes Plex Media Server traffic (port 32400) and LogmeIn Hamachi traffic (25.0.0.0/8) outside of the VPN tunnel. Internet traffic from local IPs `192.168.1.81-192.168.1.87` is also routed outside the VPN tunnel. You can safely delete these example rules if they do not apply to you.

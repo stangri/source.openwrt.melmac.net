@@ -115,6 +115,8 @@ opkg install vpn-policy-routing luci-app-vpn-policy-routing
 
 If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/README.md#on-your-router) first.
 
+These packages have been designed to be backwards compatible with OpenWrt 19.07, OpenWrt 18.06, LEDE Project 17.01 and OpenWrt 15.05. However, on systems older than OpenWrt 18.06.6 and/or a system which has deviated too far (or haven't been updated to keep in-sync) with official OpenWrt release you may get a message about missing ```luci-compat``` dependency, which (and only which) you can safely ignore and force-install the luci app using ```opkg install --force-depends``` command instead of ```opkg install```.
+
 ### Requirements
 
 This service requires the following packages to be installed on your router: ```ipset```, ```resolveip```, ```ip-full``` (or a ```busybox``` built with ```ip``` support), ```kmod-ipt-ipset``` and ```iptables```.
@@ -746,7 +748,7 @@ config openvpn 'vpnc'
 
 5. <a name="footnote5"> </a> When using the ```dnsmasq.ipset``` option, please make sure to flush the DNS cache of the local devices, otherwise domain policies may not work until you do. If you're not sure how to flush the DNS cache (or if the device/OS doesn't offer an option to flush its DNS cache), reboot your local devices when starting to use the service and/or when connecting data-capable device to your WiFi.
 
-6. <a name="footnote6"> </a> When using the policies targeting physical devices, make sure you have the following packages installed: ```kmod-br-netfilter```, ```kmod-ipt-physdev``` and ```iptables-mod-physdev```.
+6. <a name="footnote6"> </a> When using the policies targeting physical devices, make sure you have the following packages installed: ```kmod-br-netfilter```, ```kmod-ipt-physdev``` and ```iptables-mod-physdev```. Also, if your physical device is a part of the bridge, you may have to set ```net.bridge.bridge-nf-call-iptables``` to `1` in your ```/etc/sysctl.conf```.
 
 ### Multiple OpenVPN Clients
 
