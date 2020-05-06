@@ -67,7 +67,7 @@ export ipv6Enabled localIpset remoteIpset ipruleEnabled icmpIface
 export ignoredIfaces="" supportedIfaces=""
 export appendLocalPolicy="" appendRemotePolicy=""
 export wanIface4 wanIface6 ifaceMark ifaceTableID ifAll ifSupported wanGW4 wanGW6
-export bootTimeout insertOption
+export bootTimeout insertOption usedChainsList="PREROUTING"
 
 list_iface() { ifAll="${ifAll}${1} "; }
 list_supported_iface() { is_supported_interface "$1" && ifSupported="${ifSupported}${1} "; }
@@ -135,6 +135,7 @@ is_supported_iface_dev() {
 	return 1
 }
 is_supported_protocol () { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
+append_used_chains() { config_get chain "$1" 'chain' 'PREROUTING'; [ "${usedChainsList//$chain}" == "$usedChainsList" ] && usedChainsList="$usedChainsList $chain"; }
 
 load_package_config() {
 	config_load "$packageName"
@@ -155,10 +156,12 @@ load_package_config() {
 	config_get supportedIfaces          'config' 'supported_interface'
 	config_get bootTimeout              'config' 'boot_timeout' '30'
 	config_get insertOption             'config' 'iptables_rule_option' 'append'
+	config_foreach append_used_chains 'policy'
 
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
 	fi
+
 
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
@@ -605,7 +608,7 @@ table_create(){
 		fi
 		if [ -n "$remoteIpset" ]; then
 			if ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}"; then
-				for i in PREROUTING FORWARD INPUT OUTPUT; do
+				for i in $usedChainsList; do
 					ipt -t mangle -I VPR_${i} -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
 				done
 			else
@@ -789,7 +792,7 @@ start_service() {
 			errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
 		fi
 
-		for i in PREROUTING FORWARD INPUT OUTPUT; do
+		for i in $usedChainsList; do
 			ipt -t mangle -N "VPR_${i}"
 			ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
 		done
