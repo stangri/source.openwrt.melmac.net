@@ -25,7 +25,7 @@ function create_helper_text()
 				else
 					helperText = helperText .. ", "
 				end
-				helperText = helperText .. [[<a href="]] .. url .. [[">]] .. domain .. [[</a>]]
+				helperText = helperText .. [[<a href="]] .. url .. [[" target="_blank">]] .. domain .. [[</a>]]
 			end
 		end
 	end
