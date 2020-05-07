@@ -750,6 +750,10 @@ config openvpn 'vpnc'
 
 6. <a name="footnote6"> </a> When using the policies targeting physical devices, make sure you have the following packages installed: ```kmod-br-netfilter```, ```kmod-ipt-physdev``` and ```iptables-mod-physdev```. Also, if your physical device is a part of the bridge, you may have to set ```net.bridge.bridge-nf-call-iptables``` to `1` in your ```/etc/sysctl.conf```.
 
+### First Troubleshooting Step
+
+If your router is set to use [default routing via VPN tunnel](#a-word-about-default-routing) and the WAN-targeting policies do not work, you need to stop your VPN tunnel first and ensure that you still have internet connection. If your router is set up to use the default routing via VPN tunnel and when you stop the VPN tunnel you have no internet connection, this package can't help you. You first need to make sure that you do have internet connection when the VPN tunnel is stopped.
+
 ### Multiple OpenVPN Clients
 
 If you use multiple OpenVPN clients on your router, the order in which their devices are named (tun0, tun1, etc) is not guaranteed by OpenWrt/LEDE Project. The following settings are recommended in this case.
