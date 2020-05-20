@@ -105,7 +105,7 @@ is_oc() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:11}"
 is_ovpn() { local dev; dev=$(uci -q get network."$1".ifname); [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
 is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "pptp" ]; }
 is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
-is_tor_enabled() { return 1; }
+is_tor_running() { [ -s "/etc/tor/torrc" ] && [ "$(jsonfilter -s "$(ubus call service list "{ 'name': 'tor' }")" -l1 -e "@['tor']['instances']['instance1']['running']")" = "true" ]; }
 is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
 is_tunnel() { is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_tor "$1" || is_wg "$1"; }
 is_wan() { [ "$1" = "$wanIface4" ] || { [ "${1##wan}" != "$1" ] && [ "${1##wan6}" = "$1" ]; } || [ "${1%%wan}" != "$1" ]; }
@@ -156,7 +156,7 @@ load_package_config() {
 	config_get supportedIfaces          'config' 'supported_interface'
 	config_get bootTimeout              'config' 'boot_timeout' '30'
 	config_get insertOption             'config' 'iptables_rule_option' 'append'
-	config_foreach append_used_chains 'policy'
+	config_foreach append_used_chains   'policy'
 
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
@@ -612,7 +612,7 @@ table_create(){
 					ipt -t mangle -I VPR_${i} -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
 				done
 			else
-			s=1
+				s=1
 			fi
 		fi
 		if [ "$localIpset" -ne 0 ]; then
@@ -686,17 +686,35 @@ process_interface(){
 }
 
 process_tor_interface(){
-	s=0 iface="$1" action="$2" displayText
+	local s=0 iface="$1" action="$2" displayText 
+	dnsPort="$(grep -m1 DNSPort /etc/tor/torrc | awk -F: '{print $2}')"
+	transPort="$(grep -m1 TransPort /etc/tor/torrc | awk -F: '{print $2}')"
+	dnsPort="${dnsPort:-9053}"; transPort="${transPort:-9040}"; 
 	case "$action" in
 		destroy)
+			for i in PREROUTING FORWARD INPUT OUTPUT; do
+				ipt -t nat -D "${i}" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
+				ipt -t nat -F "VPR_${i}"; ipt -t nat -X "VPR_${i}";
+			done
 			;;
 		create)
 			output 2 "Creating TOR redirects "
-			ipt -t mangle -I VPR_PREROUTING -p tcp -m tcp --dport 80 -m set --match-set "${iface}" -m comment --comment "TorHTTP-TCP" -j REDIRECT --to-ports 9040 || s=1
-			ipt -t mangle -I VPR_PREROUTING -p udp -m udp --dport 80 -m set --match-set "${iface}" -m comment --comment "TorHTTP-UDP" -j REDIRECT --to-ports 9040 || s=1
-			ipt -t mangle -I VPR_PREROUTING -p tcp -m tcp --dport 443 -m set --match-set "${iface}" -m comment --comment "TorHTTPS-TCP" -j REDIRECT --to-ports 9040 || s=1
-			ipt -t mangle -I VPR_PREROUTING -p udp -m udp --dport 443 -m set --match-set "${iface}" -m comment --comment "TorHTTPS-UDP" -j REDIRECT --to-ports 9040 || s=1
-			displayText="${iface}/80,443->9040"
+			for i in $usedChainsList; do
+				ipt -t nat -N "VPR_${i}"
+				ipt -t nat "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
+			done
+			if ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}"; then
+				for i in $usedChainsList; do
+					ipt -t nat -I "VPR_${i}" -p udp -m udp --dport 53 -m set --match-set "${iface}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
+					ipt -t nat -I "VPR_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${iface}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-TCP" || s=1
+					ipt -t nat -I "VPR_${i}" -p udp -m udp --dport 80 -m set --match-set "${iface}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-UDP" || s=1
+					ipt -t nat -I "VPR_${i}" -p tcp -m tcp --dport 443 -m set --match-set "${iface}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTPS-TCP" || s=1
+					ipt -t nat -I "VPR_${i}" -p udp -m udp --dport 443 -m set --match-set "${iface}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTPS-UDP" || s=1
+				done
+			else
+				s=1
+			fi
+			displayText="${iface}/53->${dnsPort}/80,443->${transPort}"
 			if [ "$s" -eq "0" ]; then
 				gatewaySummary="${gatewaySummary}${displayText}\\n"
 				output_ok
@@ -823,7 +841,7 @@ start_service() {
 
 		output 1 'Processing Interfaces '
 		config_load 'network'; config_foreach process_interface 'interface' 'create';
-		is_tor_enabled && process_tor_interface 'tor' 'create';
+		process_tor_interface 'tor' 'destroy'; is_tor_running && process_tor_interface 'tor' 'create';
 		output 1 '\n'
 		if is_config_enabled 'policy'; then
 			output 1 'Processing Policies '
@@ -885,7 +903,7 @@ stop_service() {
 			ipt -t mangle -D "${i}" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
 			ipt -t mangle -F "VPR_${i}"; ipt -t mangle -X "VPR_${i}";
 		done
-		config_load 'network'; config_foreach process_interface 'interface' 'destroy'
+		config_load 'network'; config_foreach process_interface 'interface' 'destroy';
 		process_tor_interface 'tor' 'destroy'
 		unset ifaceTableID; unset ifaceMark;
 		if [ -s "$dnsmasqFile" ]; then
@@ -919,14 +937,14 @@ service_triggers() {
 	procd_close_trigger
 
 	if [ "$verbosity" -eq 2 ]; then
-		output "$serviceName monitoring interfaces: $ifSupported.\\n"
+		output "$serviceName monitoring interfaces: $ifSupported\\n"
 	fi
 }
 
-input() { local data; while read -r data; do echo "$data" | tee -a /var/${packageName}-support; done; }
 status_service() { support "$@"; }
 support() {
-	local dist vers out id s param status set_d set_p tableCount i=0 dev dev6
+	local dist vers out id s param status set_d set_p tableCount i=0 dev dev6 j
+	readonly _SEPARATOR_='============================================================'
 	is_enabled
 
 	json_load "$(ubus call system board)"; json_select release; json_get_var dist distribution; json_get_var vers version
@@ -946,65 +964,72 @@ support() {
 	[ -n "$wanIface6" ] && status="$status WAN (IPv6): $wanIface6/dev6/${wanGW6:-::/0}."
 	{
 		echo "$status"
-		echo "============================================================"
-			dnsmasq --version 2>/dev/null | sed '/^$/,$d'
-		[ -n "$1" ] && {
-			echo "============================================================"
-				echo "Resolving domains"
-				while [ -n "$1" ]; do echo "$1: $(resolveip "$1" | tr '\n' ' ')"; shift; done; }
-		echo "============================================================"
-			echo "Routes/IP Rules"
-			tableCount=$(ip rule list | grep -c 'fwmark') || tableCount=0
-			if [ -n "$set_d" ]; then route; else route | grep '^default'; fi
-			if [ -n "$set_d" ]; then ip rule list; fi # || ip rule list | grep 'fwmark'
-			i=0; while [ $i -lt $tableCount ]; do echo "IPv4 Table $((wanTableID + i)): $(ip route show table $((wanTableID + i)))"; echo "IPv4 Table $((wanTableID + i)) Rules:"; ip rule list | grep $((wanTableID + i)); i=$((i + 1)); done
-			[ "$ipv6Enabled" -ne 0 ] && {
-				i=0; while [ $i -lt $tableCount ]; do
-					ip -6 route show table $((wanTableID + i)) | while read -r param; do echo "IPv6 Table $((wanTableID + i)): $param"; done
-					i=$((i + 1))
-				done; }
-		echo "============================================================"
-			if [ -z "$set_d" ]; then echo "IP Tables PREROUTING"; else echo "IP Tables"; fi
-			if [ -z "$set_d" ]; then iptables -v -t mangle -S VPR_PREROUTING; else iptables -L -t mangle; fi
-		[ "$ipv6Enabled" -ne 0 ] && {
-		echo "============================================================"
-			if [ -z "$set_d" ]; then echo "IP6 Tables PREROUTING"; else echo "IP6 Tables"; fi
-			if [ -z "$set_d" ]; then ip6tables -v -t mangle -S VPR_PREROUTING; else ip6tables -L -t mangle; fi
-		}
-		[ -z "$set_d" ] && { echo "============================================================"
-			echo "IP Tables FORWARD"
-			iptables -v -t mangle -S VPR_FORWARD
-		[ "$ipv6Enabled" -ne 0 ] && {
-		echo "============================================================"
-			echo "IPv6 Tables FORWARD"
-			ip6tables -v -t mangle -S VPR_FORWARD
-		};}
-		[ -z "$set_d" ] && { echo "============================================================"
-			echo "IP Tables INPUT"
-			iptables -v -t mangle -S VPR_INPUT
-		[ "$ipv6Enabled" -ne 0 ] && {
-		echo "============================================================"
-			echo "IPv6 Tables INPUT"
-			ip6tables -v -t mangle -S VPR_INPUT
-		};}
-		[ -z "$set_d" ] && { echo "============================================================"
-			echo "IP Tables OUTPUT"
-			iptables -v -t mangle -S VPR_OUTPUT
-		[ "$ipv6Enabled" -ne 0 ] && {
-		echo "============================================================"
-			echo "IPv6 Tables OUTPUT"
-			ip6tables -v -t mangle -S VPR_OUTPUT
-		};}
-		echo "============================================================"
-			echo "Current ipsets"
-			ipset save
-		if [ -s "$dnsmasqFile" ]; then
-			echo "============================================================"
-				echo "DNSMASQ ipsets"
-				cat "$dnsmasqFile"
+		echo "$_SEPARATOR_"
+		dnsmasq --version 2>/dev/null | sed '/^$/,$d'
+		if [ -n "$1" ]; then
+			echo "$_SEPARATOR_"
+			echo "Resolving domains"
+			for i in $1; do
+				echo "$i: $(resolveip "$i" | tr '\n' ' ')"
+			done
 		fi
-		echo "============================================================"
-	} | input
+
+		echo "$_SEPARATOR_"
+		echo "Routes/IP Rules"
+		tableCount=$(ip rule list | grep -c 'fwmark') || tableCount=0
+		if [ -n "$set_d" ]; then route; else route | grep '^default'; fi
+		if [ -n "$set_d" ]; then ip rule list; fi
+		i=0; while [ $i -lt $tableCount ]; do 
+			echo ""
+			echo "IPv4 Table $((wanTableID + i)): $(ip route show table $((wanTableID + i)))"
+			echo "IPv4 Table $((wanTableID + i)) Rules:"
+			ip rule list | grep $((wanTableID + i))
+			i=$((i + 1))
+		done
+
+		if [ "$ipv6Enabled" -ne 0 ]; then
+			i=0; while [ $i -lt $tableCount ]; do
+				ip -6 route show table $((wanTableID + i)) | while read -r param; do 
+					echo "IPv6 Table $((wanTableID + i)): $param"
+				done
+				i=$((i + 1))
+			done
+		fi
+
+		for j in Mangle NAT; do
+			if [ -z "$set_d" ]; then
+				for i in $usedChainsList; do
+					echo "$_SEPARATOR_"
+					echo "$j IP Table: $i"
+					iptables -v -t "$(str_to_lower $j)" -S "VPR_${i}"
+					if [ "$ipv6Enabled" -ne 0 ]; then
+						echo "$_SEPARATOR_"
+						echo "$j IPv6 Table: $i"
+						ip6tables -v -t "$(str_to_lower $j)" -S "VPR_${i}"
+					fi
+				done
+			else
+				echo "$_SEPARATOR_"
+				echo "$j IP Table"
+				iptables -L -t "$(str_to_lower $j)"
+				if [ "$ipv6Enabled" -ne 0 ]; then
+					echo "$_SEPARATOR_"
+					echo "$j IPv6 Table"
+					ip6tables -L -t "$(str_to_lower $j)"
+				fi
+			fi
+		done
+
+		echo "$_SEPARATOR_"
+		echo "Current ipsets"
+		ipset save
+		if [ -s "$dnsmasqFile" ]; then
+			echo "$_SEPARATOR_"
+			echo "DNSMASQ ipsets"
+			cat "$dnsmasqFile"
+		fi
+		echo "$_SEPARATOR_"
+	} | tee -a /var/${packageName}-support
 	if [ -n "$set_p" ]; then
 		printf "%b" "Pasting to paste.ee... "
 		if is_installed 'curl' && is_installed 'libopenssl' && is_installed 'ca-bundle'; then
