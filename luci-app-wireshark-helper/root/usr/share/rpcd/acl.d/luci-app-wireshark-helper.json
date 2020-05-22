@@ -1,0 +1,17 @@
+{
+	"luci-app-wireshark-helper": {
+		"description": "Grant UCI access for luci-app-wireshark-helper",
+		"read": {
+			"uci": [
+				"network",
+				"wireshark-helper"
+			]
+		},
+		"write": {
+			"uci": [
+				"network",
+				"wireshark-helper"
+			]
+		}
+	}
+}

@@ -1,0 +1,15 @@
+{
+	"luci-app-fakeinternet": {
+		"description": "Grant UCI access for luci-app-fakeinternet",
+		"read": {
+			"uci": [
+				"fakeinternet"
+			]
+		},
+		"write": {
+			"uci": [
+				"fakeinternet"
+			]
+		}
+	}
+}

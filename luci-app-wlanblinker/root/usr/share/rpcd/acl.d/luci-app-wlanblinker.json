@@ -1,0 +1,15 @@
+{
+	"luci-app-wlanblinker": {
+		"description": "Grant UCI access for luci-app-wlanblinker",
+		"read": {
+			"uci": [
+				"wlanblinker"
+			]
+		},
+		"write": {
+			"uci": [
+				"wlanblinker"
+			]
+		}
+	}
+}

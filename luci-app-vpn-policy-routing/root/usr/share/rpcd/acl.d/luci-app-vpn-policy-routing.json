@@ -1,0 +1,16 @@
+{
+	"luci-app-vpn-policy-routing": {
+		"description": "Grant UCI access for luci-app-vpn-policy-routing",
+		"read": {
+			"uci": [
+				"network",
+				"vpn-policy-routing"
+			]
+		},
+		"write": {
+			"uci": [
+				"vpn-policy-routing"
+			]
+		}
+	}
+}

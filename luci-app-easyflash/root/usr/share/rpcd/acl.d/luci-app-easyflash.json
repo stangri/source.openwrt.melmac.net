@@ -1,0 +1,12 @@
+{
+	"luci-app-easyflash": {
+		"description": "Grant UCI access for luci-app-easyflash",
+		"read": {
+			"file": {
+				"/var/firmware.tag": [
+					"read"
+				]
+			}
+		}
+	}
+}
