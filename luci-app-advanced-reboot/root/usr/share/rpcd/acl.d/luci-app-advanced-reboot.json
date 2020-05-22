@@ -6,7 +6,7 @@
 				"exec"
 			],
 			"file": {
-				"/usr/lib/lua/luci/advanced-reboot/devices/*.lua": [
+				"/usr/lib/lua/luci/advanced-reboot/devices/*": [
 					"read"
 				],
 				"/sys/devices/virtual/ubi/ubi*/mtd_num": [
