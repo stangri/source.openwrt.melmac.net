@@ -102,11 +102,11 @@ function obtain_device_info()
 		if romBoardName and romBoardName:gsub('%p',''):match(boardName) then
 			if p.labelOffset then
 				if p.partition1MTD then
-					p1_label = util.trim(util.exec("dd if=/dev/" .. p.partition1MTD .. " bs=1 skip=" .. p.labelOffset .. " count=128" .. "  2>/dev/null"))
+					p1_label = util.trim(util.exec("dd if=/dev/" .. p.partition1MTD .. " bs=1 skip=" .. p.labelOffset .. " count=128" .. " 2>/dev/null"))
 					n, p1_version = p1_label:match('(Linux)-([%d|.]+)')
 				end
 				if p.partition2MTD then
-					p2_label = util.trim(util.exec("dd if=/dev/" .. p.partition2MTD .. " bs=1 skip=" .. p.labelOffset .. " count=128" .. "  2>/dev/null"))
+					p2_label = util.trim(util.exec("dd if=/dev/" .. p.partition2MTD .. " bs=1 skip=" .. p.labelOffset .. " count=128" .. " 2>/dev/null"))
 					n, p2_version = p2_label:match('(Linux)-([%d|.]+)')
 				end
 				if p1_label and p1_label:find("LEDE") then p1_os = "LEDE" end
