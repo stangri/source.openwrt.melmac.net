@@ -156,7 +156,7 @@ else
 			for err in tmpfsError:gmatch("[%p%w]+") do
 				if err:match("=") then
 					e,url = err:match("(.+)=(.+)")
-					es.value = translatef("%s Error: %s %s", es.value, errorTable[e], url) .. ".\n"
+					es.value = translatef("%s Error: %s %s", es.value, errorTable[e], url or "") .. ".\n"
 				else
 					es.value = translatef("%s Error: %s", es.value, errorTable[err]) .. ".\n"
 				end
