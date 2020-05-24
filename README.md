@@ -6,27 +6,31 @@ This repo contains packages I've created for OpenWrt/LEDE Project routers. While
 
 ### On your router
 
-To add this repo to your router run the following commands:
+The repository is currently hosted at [GitHub](https://github.com). If you have problems accessing [GitHub](https://github.com) or access to [GitHub](https://github.com) may be blocked at the location where your router is installed, skip to the [Add Repository (jsdelivr)](#add-repository-jsdelivr) section, otherwise run the following commands to add this repo to your router:
 
-#### OpenWrt 15.05.1 Instructions
+#### Add Repository (GitHub)
 
 ```sh
-opkg update; opkg install ca-certificates wget libopenssl;
+opkg update; if ubus -S call system board | grep -q '15.05'; then opkg install ca-certificates wget libopenssl; else opkg install uclient-fetch libustream-mbedtls ca-bundle ca-certificates; fi
+echo -e -n 'untrusted comment: OpenWrt usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /etc/opkg/keys/7ffc7517c4cc0c56
+! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://raw.githubusercontent.com/stangri/openwrt-repo/master' >> /etc/opkg/customfeeds.conf
+opkg update
+```
+
+#### Add Repository (jsdelivr)
+
+If you have problems accessing [GitHub](https://github.com) or access to [GitHub](https://github.com) may be blocked at the location where your router is installed, you can instruct your router to use [jsdelivr CDN](https://jsdelivr.com) for my repo, by running the following commands to add this repo to your router:
+
+```sh
+opkg update; if ubus -S call system board | grep -q '15.05'; then opkg install ca-certificates wget libopenssl; else opkg install uclient-fetch libustream-mbedtls ca-bundle ca-certificates; fi
 echo -e -n 'untrusted comment: OpenWrt usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /etc/opkg/keys/7ffc7517c4cc0c56
 ! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://cdn.jsdelivr.net/gh/stangri/openwrt-repo@master' >> /etc/opkg/customfeeds.conf
 opkg update
 ```
 
-#### LEDE Project 17.01.x and OpenWrt 18.06.x (or newer) Instructions
+Please note that there may be delay in [jsdelivr CDN](https://jsdelivr.com) cache updates comparing to [GitHub](https://github.com) which may cause `opkg` to pull older files and/or complain about wrong signature.
 
-```sh
-opkg update; opkg install uclient-fetch libustream-mbedtls ca-bundle ca-certificates;
-echo -e -n 'untrusted comment: OpenWrt usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /etc/opkg/keys/7ffc7517c4cc0c56
-! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://cdn.jsdelivr.net/gh/stangri/openwrt-repo@master' >> /etc/opkg/customfeeds.conf
-opkg update
-```
-
-### Image Builder
+### Image Builder (jsdelivr)
 
 Add the following line
 
