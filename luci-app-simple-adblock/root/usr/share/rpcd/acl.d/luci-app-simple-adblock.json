@@ -9,6 +9,9 @@
 				"/usr/lib/opkg/status": [
 					"read"
 				],
+				"/sys/class/leds/*": [
+					"read"
+				],
 				"/var/run/simple-adblock.*": [
 					"read"
 				],
