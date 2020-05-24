@@ -56,7 +56,7 @@ define Package/simple-adblock/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
-		sed -f /tmp/simple-adblock.conf.update -i /etc/config/simple-adblock
+		sed -f /tmp/simple-adblock.conf.update -i /etc/config/simple-adblock || true
 		/etc/init.d/simple-adblock enable
 	fi
 	exit 0
