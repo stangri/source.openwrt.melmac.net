@@ -209,9 +209,9 @@ else
 			es.value = ""
 			local err, e, url
 			for err in tmpfsError:gmatch("[%p%w]+") do
-				if err:match("=") then
-					e,url = err:match("(.+)=(.+)")
-					es.value = translatef("%s Error: %s %s", es.value, errorTable[e], url or "") .. ".\n"
+				if err:match("|") then
+					e,url = err:match("(.+)|(.+)")
+					es.value = translatef("%s Error: %s %s", es.value, errorTable[e], url) .. ".\n"
 				else
 					es.value = translatef("%s Error: %s", es.value, errorTable[err]) .. ".\n"
 				end

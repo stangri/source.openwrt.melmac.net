@@ -674,13 +674,13 @@ process_url() {
 	if ! $dl_command "$1" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 1 "$_FAIL_"
 		output 2 "[DL] $type $label $__FAIL__\\n"
-		echo "errorDownloadingList=${1}" >> "$sharedMemoryError"
+		echo "errorDownloadingList|${1}" >> "$sharedMemoryError"
 	else
 		sed -i "$filter" "$R_TMP"
 		if [ ! -s "$R_TMP" ]; then
 			output 1 "$_FAIL_"
 			output 2 "[DL] $type $label $__FAIL__\\n"
-			echo "errorParsingList=${1}" >> "$sharedMemoryError"
+			echo "errorParsingList|${1}" >> "$sharedMemoryError"
 		else
 			cat "${R_TMP}" >> "$D_TMP"
 			output 1 "$_OK_"
@@ -1115,8 +1115,8 @@ showstatus() {
 	fi
 	if [ -n "$error" ]; then
 		for c in $error; do
-			url="${c##*=}"
-			c="${c%=*}"
+			url="${c##*|}"
+			c="${c%|*}"
 			case "$c" in
 				errorDownloadingList|errorParsingList)
 					output "$_ERROR_: $(getErrorText "$c") $url!\\n";;
