@@ -60,7 +60,7 @@ define Package/vpn-policy-routing/postinst
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		/etc/init.d/vpn-policy-routing enable
-		if ! /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05' ; then
+		if ! ubus -S call system board | grep 'Turris' | grep -q '15.05' ; then
 			rm -rf /etc/hotplug.d/iface/70-vpn-policy-routing
 		fi
 	fi
