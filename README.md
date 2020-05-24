@@ -12,7 +12,7 @@ To add this repo to your router run the following commands:
 
 ```sh
 opkg update; opkg install ca-certificates wget libopenssl;
-echo -e -n 'untrusted comment: OpenWrt usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /tmp/stangri-repo.pub && opkg-key add /tmp/stangri-repo.pub
+echo -e -n 'untrusted comment: OpenWrt usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /etc/opkg/keys/7ffc7517c4cc0c56
 ! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://cdn.jsdelivr.net/gh/stangri/openwrt-repo@master' >> /etc/opkg/customfeeds.conf
 opkg update
 ```
@@ -21,7 +21,7 @@ opkg update
 
 ```sh
 opkg update; opkg install uclient-fetch libustream-mbedtls ca-bundle ca-certificates;
-echo -e -n 'untrusted comment: OpenWrt usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /tmp/stangri-repo.pub && opkg-key add /tmp/stangri-repo.pub
+echo -e -n 'untrusted comment: OpenWrt usign key of Stan Grishin\nRWR//HUXxMwMVnx7fESOKO7x8XoW4/dRidJPjt91hAAU2L59mYvHy0Fa\n' > /etc/opkg/keys/7ffc7517c4cc0c56
 ! grep -q 'stangri_repo' /etc/opkg/customfeeds.conf && echo 'src/gz stangri_repo https://cdn.jsdelivr.net/gh/stangri/openwrt-repo@master' >> /etc/opkg/customfeeds.conf
 opkg update
 ```
