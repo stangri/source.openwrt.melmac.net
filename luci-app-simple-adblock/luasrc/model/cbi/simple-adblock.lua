@@ -20,16 +20,12 @@ function getPackageVersion()
 	local flag = false
 	for line in io.lines(opkgFile) do
 		if flag then
-			if line:match('[%d%.$-]+') then
-				return packageName .. " " .. line:match('[%d%.$-]+')
-			else
-				return packageName
-			end
+			return line:match('[%d%.$-]+') or ""
 		elseif line:find("Package: " .. packageName:gsub("%-", "%%%-")) then
 			flag = true
 		end
 	end
-	return packageName
+	return ""
 end
 
 function getFileLines(file)
@@ -100,8 +96,14 @@ elseif targetDNS == "unbound.adb_list" then
 end
 
 local packageVersion = getPackageVersion()
-local tmpfs, tmpfsMessage, tmpfsError, tmpfsStats
-local tmpfsStatus = "statusStopped"
+local tmpfs, tmpfsMessage, tmpfsError, tmpfsStats, tmpfsStatus
+
+if packageVersion == "" then
+	tmpfsStatus = "statusNoInstall"
+else
+	tmpfsStatus = "statusStopped"
+end
+
 if fs.access("/var/run/" .. packageName .. ".json") then
 	local f = io.open("/var/run/" .. packageName .. ".json")
 	local s = f:read("*a")
@@ -160,7 +162,7 @@ m.on_after_apply = function(self)
 	sys.call("/etc/init.d/simple-adblock restart")
 end
 
-h = m:section(NamedSection, "config", "simple-adblock", translatef("Service Status [%s]", packageVersion))
+h = m:section(NamedSection, "config", "simple-adblock", translatef("Service Status [%s %s]", packageName, packageVersion))
 
 if tmpfsStatus == "statusStarting" or
 	 tmpfsStatus == "statusRestarting" or
