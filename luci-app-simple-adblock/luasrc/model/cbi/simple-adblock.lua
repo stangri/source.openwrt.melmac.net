@@ -155,6 +155,7 @@ errorTable["errorStopping"] = translatef("failed to stop %s", packageName)
 errorTable["errorDNSReload"] = translate("failed to reload/restart DNS resolver")
 errorTable["errorDownloadingList"] = translate("failed to download")
 errorTable["errorParsingList"] = translate("failed to parse")
+errorTable["errorNoSSLSupport"] = translate("no HTTPS/SSL support on device")
 
 m = Map("simple-adblock", translate("Simple AdBlock Settings"))
 m.apply_on_parse = true
