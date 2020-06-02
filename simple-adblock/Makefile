@@ -20,8 +20,9 @@ define Package/simple-adblock
 endef
 
 define Package/simple-adblock/description
-This service provides DNSMASQ or Unbound based ad blocking.
-Please see the project's README on GitHub for further information.
+Simple adblock script to block ad or abuse/malware domains with DNSMASQ or Unbound.
+Script supports local/remote list of domains and hosts-files for both black- and white-listing.
+Please see https://github.com/openwrt/packages/blob/master/net/simple-adblock/files/README.md for more information.
 
 endef
 
