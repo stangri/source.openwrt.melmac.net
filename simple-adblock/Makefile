@@ -16,6 +16,7 @@ define Package/simple-adblock
 	SECTION:=net
 	CATEGORY:=Network
 	TITLE:=Simple AdBlock Service
+	DEPENDS:=+jshn +jsonfilter
 	PKGARCH:=all
 endef
 
