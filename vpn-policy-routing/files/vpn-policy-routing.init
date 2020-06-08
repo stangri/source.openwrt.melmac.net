@@ -3,6 +3,9 @@
 # shellcheck disable=SC2039,SC1091,SC2018,SC2019
 PKG_VERSION='dev-test'
 
+# sysctl net.ipv4.conf.default.rp_filter=1
+# sysctl net.ipv4.conf.all.rp_filter=1
+
 export START=94
 export USE_PROCD=1
 
@@ -13,7 +16,6 @@ readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly __PASS__='\033[0;33m[-]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
-readonly readmeURL="https://github.com/openwrt/packages/tree/master/net/vpn-policy-routing/files/README.md"
 
 export EXTRA_COMMANDS='support'
 export EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
@@ -960,8 +962,8 @@ support() {
 	while [ "${1:0:1}" = "-" ]; do param="${1//-/}"; export "set_$param=1"; shift; done
 	[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
 	status="$serviceName running on $dist $vers."
-	[ -n "$wanIface4" ] && status="$status WAN (IPv4): $wanIface4/dev/${wanGW4:-0.0.0.0}."
-	[ -n "$wanIface6" ] && status="$status WAN (IPv6): $wanIface6/dev6/${wanGW6:-::/0}."
+	[ -n "$wanIface4" ] && status="$status WAN (IPv4): ${wanIface4}/${dev}/${wanGW4:-0.0.0.0}."
+	[ -n "$wanIface6" ] && status="$status WAN (IPv6): ${wanIface6}/${dev6}/${wanGW6:-::/0}."
 	{
 		echo "$status"
 		echo "$_SEPARATOR_"
