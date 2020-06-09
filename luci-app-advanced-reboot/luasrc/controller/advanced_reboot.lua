@@ -1,4 +1,4 @@
--- Copyright 2017-2018 Stan Grishin <stangri@melmac.net>
+-- Copyright 2017-2020 Stan Grishin <stangri@melmac.net>
 -- Licensed to the public under the Apache License 2.0.
 
 module("luci.controller.advanced_reboot", package.seeall)
@@ -98,7 +98,15 @@ function obtain_device_info()
 		local p_func = loadfile(devices_dir .. filename)
 		setfenv(p_func, { _ = i18n.translate })
 		p = p_func()
-		boardName = p.boardName:gsub('%p','')
+		if p.boardName then
+			boardName = p.boardName:gsub('%p','')
+		end
+		if p.boardNames then
+			for i, v in pairs(p.boardNames) do
+				boardName = v:gsub('%p','')
+				if romBoardName and romBoardName:gsub('%p',''):match(boardName) then break end
+			end
+		end
 		if romBoardName and romBoardName:gsub('%p',''):match(boardName) then
 			if p.labelOffset then
 				if p.partition1MTD then
