@@ -21,6 +21,10 @@ msgstr ""
 msgid "Enable"
 msgstr ""
 
+#: applications/luci-app-wireshark-helper/root/usr/share/rpcd/acl.d/luci-app-wireshark-helper.json:3
+msgid "Grant UCI access for luci-app-wireshark-helper"
+msgstr ""
+
 #: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:83
 msgid "IP to Monitor"
 msgstr ""

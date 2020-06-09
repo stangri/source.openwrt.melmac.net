@@ -43,6 +43,10 @@ msgstr ""
 msgid "Fakeinternet Settings"
 msgstr ""
 
+#: applications/luci-app-fakeinternet/root/usr/share/rpcd/acl.d/luci-app-fakeinternet.json:3
+msgid "Grant UCI access for luci-app-fakeinternet"
+msgstr ""
+
 #: applications/luci-app-fakeinternet/luasrc/model/cbi/fakeinternet.lua:39
 msgid "ICMP Redirect"
 msgstr ""
