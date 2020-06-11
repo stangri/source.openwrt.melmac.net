@@ -827,7 +827,7 @@ Set the following to the appropriate section of your ```.ovpn``` file:
 - For OpenVPN 2.4 and newer client ```.ovpn``` file:
 
     ```text
-    pull_filter 'ignore "redirect-gateway"'
+    pull-filter ignore "redirect-gateway"
     ```
 
 - For OpenVPN 2.3 and older client ```.ovpn``` file:
