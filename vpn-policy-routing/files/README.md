@@ -833,7 +833,7 @@ Set the following to the appropriate section of your ```.ovpn``` file:
 - For OpenVPN 2.3 and older client ```.ovpn``` file:
 
     ```text
-    route_nopull '1'
+    route-nopull "1"
     ```
 
 #### Wireguard tunnel
