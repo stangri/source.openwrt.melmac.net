@@ -12,7 +12,7 @@ LC_ALL=C
 # shellcheck disable=SC2034
 EXTRA_COMMANDS='check dl killcache sizes show'
 # shellcheck disable=SC2034
-EXTRA_HELP='	check	Checks if specified domain is found in current blocklist
+EXTRA_HELP='	check	Checks if specified domain is found in current block-list
 	dl	Force-downloads all enabled block-list
 	sizes	Displays the file-sizes of enabled block-lists
 	show	Shows the service last-run status'
@@ -79,14 +79,14 @@ getErrorText() {
 		errorSharedMemory) _ret="failed to access shared memory";;
 		errorSorting) _ret="failed to sort data file";;
 		errorOptimization) _ret="failed to optimize data file";;
-		errorAllowlistProcessing) _ret="failed to process allowlist";;
+		errorAllowListProcessing) _ret="failed to process allow-list";;
 		errorDataFileFormatting) _ret="failed to format data file";;
 		errorMovingDataFile) _ret="failed to move data file '${A_TMP}' to '${outputFile}'";;
 		errorCreatingCompressedCache) _ret="failed to create compressed cache";;
 		errorRemovingTempFiles) _ret="failed to remove temporary files";;
 		errorRestoreCompressedCache) _ret="failed to unpack compressed cache";;
 		errorRestoreCache) _ret="failed to move '$outputCache' to '$outputFile'";;
-		errorOhSnap) _ret="failed to create blocklist or restart DNS resolver";;
+		errorOhSnap) _ret="failed to create block-list or restart DNS resolver";;
 		errorStopping) _ret="failed to stop $serviceName";;
 		errorDNSReload) _ret="failed to reload/restart DNS resolver";;
 		errorDownloadingList) _ret="failed to download";;
@@ -843,13 +843,13 @@ $(cat $A_TMP)"
 		mv "$A_TMP" "$B_TMP"
 	fi
 
-	output 2 'Allowlisting domains '
-	tmpfs set message "$(getStatusText "statusProcessing"): allowlisting domains"
+	output 2 'Allowing domains '
+	tmpfs set message "$(getStatusText "statusProcessing"): allowing domains"
 	if sed -i "$w_filter" "$B_TMP"; then
 		output_ok
 	else
 		output_failn
-		tmpfs add error "errorAllowlistProcessing"
+		tmpfs add error "errorAllowListProcessing"
 	fi
 
 	output 2 'Formatting merged file '
@@ -1188,7 +1188,7 @@ check() {
 	local string="$1" 
 	local c="$(grep -c "$string" "$outputFile")"
 	if [ ! -s "$outputFile" ]; then
-		echo "No blocklist ('$outputFile') found."
+		echo "No block-list ('$outputFile') found."
 	elif [ -z "$string" ]; then
 		echo "Usage: /etc/init.d/${packageName} check string"
 	elif [ "$c" -gt 0 ]; then
@@ -1210,7 +1210,7 @@ check() {
 				grep "$string" "$outputFile" | sed 's|^local-zone: "||;s|" static$||;';;
 		esac
 	else
-		echo "The $string is not found in current blocklist ('$outputFile')."
+		echo "The $string is not found in current block-list ('$outputFile')."
 	fi
 }
 
@@ -1224,9 +1224,9 @@ sizes() {
 		if $dl_command "$i" $dl_flag /tmp/sast 2>/dev/null && [ -s /tmp/sast ]; then
 			echo "# File size: $(du -sh /tmp/sast | awk '{print $1}')"
 			if compare_versions "$(du -sk /tmp/sast)" "500"; then
-				echo "# blocklist too big for most routers"
+				echo "# block-list too big for most routers"
 			elif compare_versions "$(du -sk /tmp/sast)" "100"; then
-				echo "# blocklist may be too big for some routers"
+				echo "# block-list may be too big for some routers"
 			fi
 			rm -rf /tmp/sast
 			echo "  list blocked_domains_url '$i'"
@@ -1242,9 +1242,9 @@ sizes() {
 		if $dl_command "$i" $dl_flag /tmp/sast 2>/dev/null && [ -s /tmp/sast ]; then
 			echo "# File size: $(du -sh /tmp/sast | awk '{print $1}')"
 			if compare_versions "$(du -sk /tmp/sast)" "500"; then
-				echo "# blocklist too big for most routers"
+				echo "# block-list too big for most routers"
 			elif compare_versions "$(du -sk /tmp/sast)" "100"; then
-				echo "# blocklist may be too big for some routers"
+				echo "# block-list may be too big for some routers"
 			fi
 			rm -rf /tmp/sast
 			echo "  list blocked_hosts_url '$i'"

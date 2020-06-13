@@ -362,7 +362,7 @@ msgid "failed to create '%s' file"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:153
-msgid "failed to create blocklist or restart DNS resolver"
+msgid "failed to create block-list or restart DNS resolver"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:149
@@ -394,7 +394,7 @@ msgid "failed to parse"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:146
-msgid "failed to process allowlist"
+msgid "failed to process allow-list"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:155

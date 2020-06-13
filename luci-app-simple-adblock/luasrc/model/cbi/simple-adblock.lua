@@ -143,14 +143,14 @@ errorTable["errorFailDNSReload"] = translate("failed to restart/reload DNS resol
 errorTable["errorSharedMemory"] = translate("failed to access shared memory")
 errorTable["errorSorting"] = translate("failed to sort data file")
 errorTable["errorOptimization"] = translate("failed to optimize data file")
-errorTable["errorAllowlistProcessing"] = translate("failed to process allowlist")
+errorTable["errorAllowListProcessing"] = translate("failed to process allow-list")
 errorTable["errorDataFileFormatting"] = translate("failed to format data file")
 errorTable["errorMovingDataFile"] = translatef("failed to move temporary data file to '%s'", outputFile)
 errorTable["errorCreatingCompressedCache"] = translate("failed to create compressed cache")
 errorTable["errorRemovingTempFiles"] = translate("failed to remove temporary files")
 errorTable["errorRestoreCompressedCache"] = translate("failed to unpack compressed cache")
 errorTable["errorRestoreCache"] = translatef("failed to move '%s' to '%s'", outputCache, outputFile)
-errorTable["errorOhSnap"] = translate("failed to create blocklist or restart DNS resolver")
+errorTable["errorOhSnap"] = translate("failed to create block-list or restart DNS resolver")
 errorTable["errorStopping"] = translatef("failed to stop %s", packageName)
 errorTable["errorDNSReload"] = translate("failed to reload/restart DNS resolver")
 errorTable["errorDownloadingList"] = translate("failed to download")
@@ -341,7 +341,7 @@ d4 = s2:option(DynamicList, "blocked_domains_url", translate("Blocked Domain URL
 d4.addremove = false
 d4.optional = false
 
--- Blocklisted Hosts URLs
+-- Blocked Hosts URLs
 d5 = s2:option(DynamicList, "blocked_hosts_url", translate("Blocked Hosts URLs"), translate("URLs to lists of hosts to be blocked."))
 d5.addremove = false
 d5.optional = false
