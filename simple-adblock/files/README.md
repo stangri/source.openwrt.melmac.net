@@ -8,7 +8,7 @@ A simple DNSMASQ/Unbound-based AdBlocking service for OpenWrt/LEDE Project.
 - Supports hosts files and domains lists for blocking.
 - Everything is configurable from Web UI.
 - Allows you to easily add your own domains to allow-list or block-list.
-- Allows you to easily add URLs to your own blocked hosts or domains lists to allow/block-list (just put allowlisted domains one per line in the file you're linking).
+- Allows you to easily add URLs to your own blocked hosts or domains lists to allow/block-list (just put allowed domains one per line in the file you're linking).
 - Supports multiple modes of AdBlocking implementations with DNSMASQ and Unbound.
 - Doesn't stay in memory -- creates the list of blocked domains and then uses DNSMASQ/Unbound and firewall rules to serve NXDOMAIN or 127.0.0.1 reply or to reject access (depending on settings) for blocked domains.
 - As some of the default lists are using https, reliably works with either wget/libopenssl,  uclient-fetch/libustream-mbedtls or curl.
@@ -110,9 +110,9 @@ You can use Web UI (found in Services/Simple AdBlock) to add/remove/edit links t
 
 - [hosts files](https://en.wikipedia.org/wiki/Hosts_(file)) (127.0.0.1 or 0.0.0.0 followed by space and domain name per line) to be blocked.
 - domains lists (one domain name per line) to be blocked.
-- domains lists (one domain name per line) to be allowlisted. It is useful if you want to run ```simple-adblock``` on multiple routers and maintain one centralized allowlist which you can publish on a web-server.
+- domains lists (one domain name per line) to be allowed. It is useful if you want to run ```simple-adblock``` on multiple routers and maintain one centralized allow-list which you can publish on a web-server.
 
-Please note that these lists **must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix. Some of the top block lists (both hosts files and domains lists) suitable for routers with at least 8MB RAM are used in the default ```simple-adblock``` installation.
+Please note that these lists **must** include either ```http://``` or ```https://``` (or, if ```curl``` is installed the ```file://```) prefix. Some of the top block-lists (both hosts files and domains lists) suitable for routers with at least 8MB RAM are used in the default ```simple-adblock``` installation.
 
 You can also use Web UI to add individual domains to be blocked or allowed.
 
@@ -166,11 +166,11 @@ Currently supported options are:
 
 ## How Does It Work
 
-This service downloads (and processes in the background, removing comments and other useless data) lists of hosts and domains to be blocked, combines those lists into one big block list, removes duplicates and sorts it and then removes your allowlisted domains from the block list before converting to to DNSMASQ/Unbound-compatible file and restarting DNSMASQ/Unbound if needed. The result of the process is that DNSMASQ/Unbound return NXDOMAIN or 127.0.0.1 (depending on settings) for the blocked domains.
+This service downloads (and processes in the background, removing comments and other useless data) lists of hosts and domains to be blocked, combines those lists into one big block-list, removes duplicates and sorts it and then removes your allowed domains from the block-list before converting to to DNSMASQ/Unbound-compatible file and restarting DNSMASQ/Unbound if needed. The result of the process is that DNSMASQ/Unbound return NXDOMAIN or 127.0.0.1 (depending on settings) for the blocked domains.
 
-If you specify ```google.com``` as a domain to be allowlisted, you will have access to ```google.com```, ```www.google.com```, ```analytics.google.com```, but not fake domains like ```email-google.com``` or ```drive.google.com.verify.signin.normandeassociation.com``` for example. If you only want to allow ```www.google.com``` while blocking all other ```google.com``` subdomains, just specify ```www.google.com``` as domain to be allowlisted.
+If you specify ```google.com``` as a domain to be allowed, you will have access to ```google.com```, ```www.google.com```, ```analytics.google.com```, but not fake domains like ```email-google.com``` or ```drive.google.com.verify.signin.normandeassociation.com``` for example. If you only want to allow ```www.google.com``` while blocking all other ```google.com``` subdomains, just specify ```www.google.com``` as domain to be allowed.
 
-In general, whatever domain is specified to be allowlisted; it, along with with its subdomains will be allowlisted, but not any fake domains containing it.
+In general, whatever domain is specified to be allowed; it, along with with its subdomains will be allowed, but not any fake domains containing it.
 
 ## How It Does Not Work
 
