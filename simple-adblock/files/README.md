@@ -35,9 +35,9 @@ Configuration - Advanced Configuration
 
 ![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/simple-adblock/screenshot08-config-advanced.png "Configuration - Advanced Configuration")
 
-Allow-list and Block-list Management
+Allowed and Blocked Lists Management
 
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/simple-adblock/screenshot08-lists.png "Allow-list and Block-list Management")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/simple-adblock/screenshot09-lists.png "Allow-list and Block-list Management")
 
 ## Requirements
 
