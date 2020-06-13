@@ -143,7 +143,7 @@ errorTable["errorFailDNSReload"] = translate("failed to restart/reload DNS resol
 errorTable["errorSharedMemory"] = translate("failed to access shared memory")
 errorTable["errorSorting"] = translate("failed to sort data file")
 errorTable["errorOptimization"] = translate("failed to optimize data file")
-errorTable["errorWhitelistProcessing"] = translate("failed to process whitelist")
+errorTable["errorAllowlistProcessing"] = translate("failed to process allowlist")
 errorTable["errorDataFileFormatting"] = translate("failed to format data file")
 errorTable["errorMovingDataFile"] = translatef("failed to move temporary data file to '%s'", outputFile)
 errorTable["errorCreatingCompressedCache"] = translate("failed to create compressed cache")
@@ -320,29 +320,29 @@ o11:value("1", translate("Enable Debugging"))
 o11.default = "0"
 
 
-s2 = m:section(NamedSection, "config", "simple-adblock", translate("Whitelist and Blocklist Management"))
--- Whitelisted Domains
-d1 = s2:option(DynamicList, "whitelist_domain", translate("Whitelisted Domains"), translate("Individual domains to be whitelisted."))
+s2 = m:section(NamedSection, "config", "simple-adblock", translate("Allowlist and Blocklist Management"))
+-- Allowlisted Domains
+d1 = s2:option(DynamicList, "allowlist_domain", translate("Allowlisted Domains"), translate("Individual domains to be allowlisted."))
 d1.addremove = false
 d1.optional = false
 
--- Blacklisted Domains
-d3 = s2:option(DynamicList, "blacklist_domain", translate("Blacklisted Domains"), translate("Individual domains to be blacklisted."))
+-- Blocklisted Domains
+d3 = s2:option(DynamicList, "blocklist_domain", translate("Blocklisted Domains"), translate("Individual domains to be blocklisted."))
 d3.addremove = false
 d3.optional = false
 
--- Whitelisted Domains URLs
-d2 = s2:option(DynamicList, "whitelist_domains_url", translate("Whitelisted Domain URLs"), translate("URLs to lists of domains to be whitelisted."))
+-- Allowlisted Domains URLs
+d2 = s2:option(DynamicList, "allowlist_domains_url", translate("Allowlisted Domain URLs"), translate("URLs to lists of domains to be allowlisted."))
 d2.addremove = false
 d2.optional = false
 
--- Blacklisted Domains URLs
-d4 = s2:option(DynamicList, "blacklist_domains_url", translate("Blacklisted Domain URLs"), translate("URLs to lists of domains to be blacklisted."))
+-- Blocklisted Domains URLs
+d4 = s2:option(DynamicList, "blocklist_domains_url", translate("Blocklisted Domain URLs"), translate("URLs to lists of domains to be blocklisted."))
 d4.addremove = false
 d4.optional = false
 
--- Blacklisted Hosts URLs
-d5 = s2:option(DynamicList, "blacklist_hosts_url", translate("Blacklisted Hosts URLs"), translate("URLs to lists of hosts to be blacklisted."))
+-- Blocklisted Hosts URLs
+d5 = s2:option(DynamicList, "blocklist_hosts_url", translate("Blocklisted Hosts URLs"), translate("URLs to lists of hosts to be blocklisted."))
 d5.addremove = false
 d5.optional = false
 

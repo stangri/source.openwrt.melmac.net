@@ -1,3 +1,5 @@
+s|whitelist|allowlist|g
+s|blacklist|blocklist|g
 s|dbl.oisd.nl|hosts.oisd.nl|g
 s|raw.githubusercontent.com/StevenBlack/hosts/|cdn.jsdelivr.net/gh/StevenBlack/hosts@|g
 s|raw.githubusercontent.com/hoshsadiq/adblock-nocoin-list/|cdn.jsdelivr.net/gh/hoshsadiq/adblock-nocoin-list@|g
