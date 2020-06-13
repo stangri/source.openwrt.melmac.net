@@ -320,29 +320,29 @@ o11:value("1", translate("Enable Debugging"))
 o11.default = "0"
 
 
-s2 = m:section(NamedSection, "config", "simple-adblock", translate("Allowlist and Blocklist Management"))
--- Allowlisted Domains
-d1 = s2:option(DynamicList, "allowlist_domain", translate("Allowlisted Domains"), translate("Individual domains to be allowlisted."))
+s2 = m:section(NamedSection, "config", "simple-adblock", translate("Allowed and Blocked Lists Management"))
+-- Allowed Domains
+d1 = s2:option(DynamicList, "allowed_domain", translate("Allowed Domains"), translate("Individual domains to be allowed."))
 d1.addremove = false
 d1.optional = false
 
--- Blocklisted Domains
-d3 = s2:option(DynamicList, "blocklist_domain", translate("Blocklisted Domains"), translate("Individual domains to be blocklisted."))
-d3.addremove = false
-d3.optional = false
-
--- Allowlisted Domains URLs
-d2 = s2:option(DynamicList, "allowlist_domains_url", translate("Allowlisted Domain URLs"), translate("URLs to lists of domains to be allowlisted."))
+-- Allowed Domains URLs
+d2 = s2:option(DynamicList, "allowed_domains_url", translate("Allowed Domain URLs"), translate("URLs to lists of domains to be allowed."))
 d2.addremove = false
 d2.optional = false
 
--- Blocklisted Domains URLs
-d4 = s2:option(DynamicList, "blocklist_domains_url", translate("Blocklisted Domain URLs"), translate("URLs to lists of domains to be blocklisted."))
+-- Blocked Domains
+d3 = s2:option(DynamicList, "blocked_domain", translate("Blocked Domains"), translate("Individual domains to be blocked."))
+d3.addremove = false
+d3.optional = false
+
+-- Blocked Domains URLs
+d4 = s2:option(DynamicList, "blocked_domains_url", translate("Blocked Domain URLs"), translate("URLs to lists of domains to be blocked."))
 d4.addremove = false
 d4.optional = false
 
 -- Blocklisted Hosts URLs
-d5 = s2:option(DynamicList, "blocklist_hosts_url", translate("Blocklisted Hosts URLs"), translate("URLs to lists of hosts to be blocklisted."))
+d5 = s2:option(DynamicList, "blocked_hosts_url", translate("Blocked Hosts URLs"), translate("URLs to lists of hosts to be blocked."))
 d5.addremove = false
 d5.optional = false
 

@@ -146,11 +146,11 @@ verbosity=2
 led=''
 targetDNS=dnsmasq.servers
 dnsInstance=0
-allowlist_domains=''
-blocklist_domains=''
-allowlist_domains_urls=''
-blocklist_domains_urls=''
-blocklist_hosts_urls=''
+allowed_domains=''
+blocked_domains=''
+allowed_domains_urls=''
+blocked_domains_urls=''
+blocked_hosts_urls=''
 dl_command=''
 dl_flag=''
 outputFilter=''
@@ -176,11 +176,11 @@ load_package_config() {
 	config_get led        	              'config' 'led'
 	config_get targetDNS                  'config' 'dns' 'dnsmasq.servers'
 	config_get dnsInstance                'config' 'dns_instance' '0'
-	config_get allowlist_domains          'config' 'allowlist_domain'
-	config_get blocklist_domains          'config' 'blocklist_domain'
-	config_get allowlist_domains_urls     'config' 'allowlist_domains_url'
-	config_get blocklist_domains_urls     'config' 'blocklist_domains_url'
-	config_get blocklist_hosts_urls       'config' 'blocklist_hosts_url'
+	config_get allowed_domains            'config' 'allowed_domain'
+	config_get allowed_domains_urls       'config' 'allowed_domains_url'
+	config_get blocked_domains            'config' 'blocked_domain'
+	config_get blocked_domains_urls       'config' 'blocked_domains_url'
+	config_get blocked_hosts_urls         'config' 'blocked_hosts_url'
 
 	if [ "$targetDNS" != 'dnsmasq.addnhosts' ] && [ "$targetDNS" != 'dnsmasq.conf' ] && \
 		 [ "$targetDNS" != 'dnsmasq.servers' ] && [ "$targetDNS" != 'unbound.adb_list' ] && \
@@ -472,7 +472,7 @@ tmpfs() {
 				stats) 
 					printf "%b" "$stats"; return;;
 				triggers)
-					curReload="$parallelDL $debug $dlTimeout $allowlist_domains $blocklist_domains $allowlist_domains_urls $blocklist_domains_urls $blocklist_hosts_urls $targetDNS"
+					curReload="$parallelDL $debug $dlTimeout $allowed_domains $blocked_domains $allowed_domains_urls $blocked_domains_urls $blocked_hosts_urls $targetDNS"
 					curRestart="$compressedCache $forceDNS $led"
 					if [ ! -s "$jsonFile" ]; then
 						ret='on_boot'
@@ -528,7 +528,7 @@ tmpfs() {
 				stats) 
 					stats="$value";;
 				triggers) 
-					readReload="$parallelDL $debug $dlTimeout $allowlist_domains $blocklist_domains $allowlist_domains_urls $blocklist_domains_urls $blocklist_hosts_urls $targetDNS"
+					readReload="$parallelDL $debug $dlTimeout $allowed_domains $blocked_domains $allowed_domains_urls $blocked_domains_urls $blocked_hosts_urls $targetDNS"
 					readRestart="$compressedCache $forceDNS $led"
 					;;
 			esac
@@ -740,8 +740,8 @@ download_lists() {
 	touch $A_TMP; touch $B_TMP;
 	output 1 'Downloading lists '
 	rm -f "$sharedMemoryError"
-	if [ -n "$blocklist_hosts_urls" ]; then
-		for hf in ${blocklist_hosts_urls}; do
+	if [ -n "$blocked_hosts_urls" ]; then
+		for hf in ${blocked_hosts_urls}; do
 			if [ "$parallelDL" -gt 0 ]; then
 				process_url "$hf" 'hosts' 'blocked' &
 			else
@@ -749,8 +749,8 @@ download_lists() {
 			fi
 		done
 	fi
-	if [ -n "$blocklist_domains_urls" ]; then
-		for hf in ${blocklist_domains_urls}; do
+	if [ -n "$blocked_domains_urls" ]; then
+		for hf in ${blocked_domains_urls}; do
 			if [ "$parallelDL" -gt 0 ]; then
 				process_url "$hf" 'domains' 'blocked' &
 			else
@@ -758,8 +758,8 @@ download_lists() {
 			fi
 		done
 	fi
-	if [ -n "$allowlist_domains_urls" ]; then
-		for hf in ${allowlist_domains_urls}; do
+	if [ -n "$allowed_domains_urls" ]; then
+		for hf in ${allowed_domains_urls}; do
 			if [ "$parallelDL" -gt 0 ]; then
 				process_url "$hf" 'domains' 'allowed' &
 			else
@@ -776,10 +776,10 @@ download_lists() {
 		rm -f "$sharedMemoryError"
 	fi
 
-	[ -n "$blocklist_domains" ] && for hf in ${blocklist_domains}; do echo "$hf" | sed "$domainsFilter" >> $B_TMP; done
-	allowlist_domains="${allowlist_domains}
+	[ -n "$blocked_domains" ] && for hf in ${blocked_domains}; do echo "$hf" | sed "$domainsFilter" >> $B_TMP; done
+	allowed_domains="${allowed_domains}
 $(cat $A_TMP)"
-	[ -n "$allowlist_domains" ] && for hf in ${allowlist_domains}; do hf="$(echo "$hf" | sed 's/\./\\./g')"; w_filter="$w_filter/^${hf}$/d;/\\.${hf}$/d;"; done
+	[ -n "$allowed_domains" ] && for hf in ${allowed_domains}; do hf="$(echo "$hf" | sed 's/\./\\./g')"; w_filter="$w_filter/^${hf}$/d;/\\.${hf}$/d;"; done
 
 	[ ! -s "$B_TMP" ] && return 1
 
@@ -1219,7 +1219,7 @@ sizes() {
 	load_package_config
 	echo "# $(date)"
 
-	for i in $blocklist_domains_urls; do
+	for i in $blocked_domains_urls; do
 		[ "${i//melmac}" != "$i" ] && continue
 		if $dl_command "$i" $dl_flag /tmp/sast 2>/dev/null && [ -s /tmp/sast ]; then
 			echo "# File size: $(du -sh /tmp/sast | awk '{print $1}')"
@@ -1229,16 +1229,16 @@ sizes() {
 				echo "# blocklist may be too big for some routers"
 			fi
 			rm -rf /tmp/sast
-			echo "  list blocklist_domains_url '$i'"
+			echo "  list blocked_domains_url '$i'"
 			echo ""
 		else
 			echo "# site was down on last check"
-			echo "#  list blocklist_domains_url '$i'"
+			echo "#  list blocked_domains_url '$i'"
 			echo ""
 		fi
 	done
 
-	for i in $blocklist_hosts_urls; do
+	for i in $blocked_hosts_urls; do
 		if $dl_command "$i" $dl_flag /tmp/sast 2>/dev/null && [ -s /tmp/sast ]; then
 			echo "# File size: $(du -sh /tmp/sast | awk '{print $1}')"
 			if compare_versions "$(du -sk /tmp/sast)" "500"; then
@@ -1247,11 +1247,11 @@ sizes() {
 				echo "# blocklist may be too big for some routers"
 			fi
 			rm -rf /tmp/sast
-			echo "  list blocklist_hosts_url '$i'"
+			echo "  list blocked_hosts_url '$i'"
 			echo ""
 		else
 			echo "# site was down on last check"
-			echo "#  list blocklist_hosts_url '$i'"
+			echo "#  list blocked_hosts_url '$i'"
 			echo ""
 		fi
 	done
