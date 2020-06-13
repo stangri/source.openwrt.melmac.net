@@ -118,6 +118,7 @@ is_supported_interface() { string_match_word "$supportedIfaces" "$1" || { ! is_i
 is_mac_address() { expr "$1" : '[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]$' >/dev/null; }
 is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; }
 is_ipv6() { ! is_mac_address "$1" && [ "${1//:}" != "$1" ]; }
+is_family_mismatch() { ( is_ipv4 "${1//!}" && is_ipv6 "${2//!}" ) || ( is_ipv6 "${1//!}" && is_ipv4 "${2//!}" ); }
 is_ipv6_link_local() { [ "${1:0:4}" = "fe80" ]; }
 is_ipv6_unique_local() { [ "${1:0:2}" = "fc" ] || [ "${1:0:2}" = "fd" ]; }
 is_ipv6_global() { [ "${1:0:4}" = "2001" ]; }
@@ -289,15 +290,26 @@ ips() {
 
 	case "$command" in
 		add_dnsmasq)
-			echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlag=1
+			if [ "$ipv6Enabled" -ne 0 ]; then
+				echo "ipset=/${param}/${ipset},${ipset}6 # $comment" >> "$dnsmasqFile" || failFlag=1
+			else
+				echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlag=1
+			fi
 			;;
 		add)
+			if [ "$ipv6Enabled" -ne 0 ] && [ "$appendix" != "_mac" ]; then
+				ipset -q -! $command "${ipset}6${appendix}" $param comment "$comment" || failFlag=1
+			fi
 			ipset -q -! $command "${ipset}${appendix}" $param comment "$comment" || failFlag=1
 			;;
 		create)
+			if [ "$ipv6Enabled" -ne 0 ] && [ "$appendix" != "_mac" ]; then
+				ipset -q -! "$command" "${ipset}6${appendix}" $param family inet6 || failFlag=1
+			fi
 			ipset -q -! "$command" "${ipset}${appendix}" $param || failFlag=1
 			;;
 		destroy|flush)
+			ipset -q -! "$command" "${ipset}6${appendix}" 2>/dev/null || failFlag=1
 			ipset -q -! "$command" "${ipset}${appendix}" 2>/dev/null || failFlag=1
 			return 0
 			;;
@@ -341,9 +353,6 @@ insert_policy() {
 		is_ipv6 "$raddr" && return 0
 	fi
 
-	if is_ipv4 "$laddr" && is_ipv6 "$raddr"; then return 0; fi
-	if is_ipv6 "$laddr" && is_ipv4 "$raddr"; then return 0; fi
-
 	if [ -z "$mark" ]; then
 		processPolicyError="${processPolicyError}${_ERROR_}: Unknown fw_mark for ${iface}\\n"
 		return 0
@@ -356,6 +365,28 @@ insert_policy() {
 			proto='all'
 		fi
 	fi
+
+	if [ "${appendLocalPolicy//-d}" != "$appendLocalPolicy" ]; then
+		if [ -n "$raddr" ]; then
+			processPolicyWarning="${processPolicyWarning}${_WARNING_}: Cannot append '$comment' policy with '$appendLocalPolicy' as destination is already set to '$raddr'\\n"
+		else
+			raddr="${appendLocalPolicy//-d}"
+			raddr="${raddr// }"
+			unset appendLocalPolicy
+		fi
+	fi
+
+	if [ "${appendRemotePolicy//-s}" != "$appendRemotePolicy" ]; then
+		if [ -n "$laddr" ]; then
+			processPolicyWarning="${processPolicyWarning}${_WARNING_}: Cannot append '$comment' policy with '$appendRemotePolicy' as source is already set to '$laddr'\\n"
+		else
+			laddr="${appendRemotePolicy//-s}"
+			laddr="${laddr// }"
+			unset appendRemotePolicy
+		fi
+	fi
+
+	if is_family_mismatch "$laddr" "$raddr"; then return 0; fi
 
 	for i in $proto; do
 		if [ "$i" = 'all' ]; then
@@ -377,9 +408,6 @@ insert_policy() {
 				param="$param $valueNeg -m physdev --physdev-in ${value:1}"
 			elif is_mac_address "$value"; then
 				param="$param -m mac $valueNeg --mac-source $value"
-			elif [ "${appendLocalPolicy//-d}" != "$appendLocalPolicy" ] && [ -n "$raddr" ]; then
-				param="$param $valueNeg -s $value"
-				processPolicyError="${processPolicyError}${_ERROR_}: Cannot append '$comment' policy with '$appendLocalPolicy' as destination is already set to '$raddr'\\n"
 			else
 				param="$param $valueNeg -s $value $appendLocalPolicy"
 			fi
@@ -400,12 +428,7 @@ insert_policy() {
 			else
 				unset valueNeg; value="$raddr";
 			fi
-			if [ "${appendRemotePolicy//-s}" != "$appendRemotePolicy" ] && [ -n "$laddr" ]; then
-				param="$param $valueNeg -d $value"
-				processPolicyError="${processPolicyError}${_ERROR_}: Cannot append '$comment' policy with '$appendRemotePolicy' as source is already set to '$laddr'\\n"
-			else
-				param="$param $valueNeg -d $value $appendRemotePolicy"
-			fi
+			param="$param $valueNeg -d $value $appendRemotePolicy"
 		fi
 
 		if [ -n "$rport" ]; then
@@ -612,6 +635,7 @@ table_create(){
 			if ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}"; then
 				for i in $usedChainsList; do
 					ipt -t mangle -I VPR_${i} -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+					if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_${i} -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; fi
 				done
 			else
 				s=1
@@ -620,6 +644,7 @@ table_create(){
 		if [ "$localIpset" -ne 0 ]; then
 			if ips 'create' "${iface}_ip" 'hash:net comment' && ips 'flush' "${iface}_ip"; then
 				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
+				if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1; fi
 			else
 			s=1
 			fi
