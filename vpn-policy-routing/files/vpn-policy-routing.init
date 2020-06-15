@@ -348,9 +348,9 @@ insert_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}"
 	local mark=$(eval echo "\$mark_${iface//-/_}") param i valueNeg value
 	local appendLP="$appendLocalPolicy" appendRP="$appendRemotePolicy"
-	if [ "$ipv6Enabled" -eq 0 ]; then
-		is_ipv6 "$laddr" && return 0
-		is_ipv6 "$raddr" && return 0
+	if [ "$ipv6Enabled" -eq 0 ] && ( is_ipv6 "$laddr" || is_ipv6 "$raddr" ); then
+		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$comment' as IPv6 support is disabled\\n"
+		return 1
 	fi
 
 	if [ -z "$mark" ]; then
