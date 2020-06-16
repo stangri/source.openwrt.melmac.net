@@ -716,10 +716,7 @@ process_interface(){
 }
 
 process_tor_interface(){
-	local s=0 iface="$1" action="$2" displayText 
-	dnsPort="$(grep -m1 DNSPort /etc/tor/torrc | awk -F: '{print $2}')"
-	transPort="$(grep -m1 TransPort /etc/tor/torrc | awk -F: '{print $2}')"
-	dnsPort="${dnsPort:-9053}"; transPort="${transPort:-9040}"; 
+	local s=0 iface="$1" action="$2" displayText
 	case "$action" in
 		destroy)
 			for i in PREROUTING FORWARD INPUT OUTPUT; do
@@ -729,6 +726,9 @@ process_tor_interface(){
 			;;
 		create)
 			output 2 "Creating TOR redirects "
+			dnsPort="$(grep -m1 DNSPort /etc/tor/torrc | awk -F: '{print $2}')"
+			transPort="$(grep -m1 TransPort /etc/tor/torrc | awk -F: '{print $2}')"
+			dnsPort="${dnsPort:-9053}"; transPort="${transPort:-9040}"; 
 			for i in $usedChainsList; do
 				ipt -t nat -N "VPR_${i}"
 				ipt -t nat "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
