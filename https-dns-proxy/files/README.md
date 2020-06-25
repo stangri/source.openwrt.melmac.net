@@ -78,7 +78,6 @@ The https-dns-proxy instance settings are:
 |Parameter|Type|Default|Description|
 | --- | --- | --- | --- |
 |bootstrap_dns|IP Address||The non-encrypted DNS servers to be used to resolve the DoH server name on start.|
-|edns_subnet|Subnet||EDNS Subnet address can be supplied to supported DoH servers to provide local resolution results.|
 |listen_addr|IP Address|127.0.0.1|The local IP address to listen to requests.|
 |listen_port|port|5053 and up|If this setting is omitted, the service will start the first https-dns-proxy instance on port 5053, second on 5054 and so on.|
 |logfile|Full filepath||Full filepath to the file to log the instance events to.|
