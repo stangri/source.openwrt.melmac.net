@@ -52,7 +52,6 @@ define Package/vpnbypass/install
 	$(INSTALL_DATA) ./files/vpnbypass.hotplug $(1)/etc/hotplug.d/firewall/94-vpnbypass
 endef
 
-
 define Package/vpnbypass/postinst
 	#!/bin/sh
 	# check if we are on real system
