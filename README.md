@@ -1,5 +1,7 @@
 # stangri's OpenWrt/OpenWrt packages repo
 
+[![HitCount](http://hits.dwyl.com/stangri/openwrt.svg)](http://hits.dwyl.com/stangri/openwrt)
+
 This repo contains packages I've created for OpenWrt/LEDE Project routers. While some of these are packages are already available from official OpenWrt release/snapshots repositories/feeds, this repo usually contains newer versions.
 
 ## How to use

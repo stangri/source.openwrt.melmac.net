@@ -1,5 +1,7 @@
 # Slider Support for select routers
 
+[![HitCount](http://hits.dwyl.com/stangri/openwrt/slider-support.svg)](http://hits.dwyl.com/stangri/openwrt/slider-support)
+
 This service enables switching between ```Router```, ```Access Point``` and ```Wireless Repeater``` modes of operation for supported routers equipped with the slider switch. It also sets the correct ```current mode``` setting for the ```WLAN Blinker``` service available on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/wlanblinker/files/README.md)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/wlanblinker/files/README.md).
 
 ## Supported Routers

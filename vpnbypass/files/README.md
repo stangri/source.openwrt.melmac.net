@@ -1,5 +1,7 @@
 # VPN Bypass
 
+[![HitCount](http://hits.dwyl.com/stangri/openwrt/vpnbypass.svg)](http://hits.dwyl.com/stangri/openwrt/vpnbypass)
+
 A simple [procd](https://openwrt.org/docs/techref/procd)-based ```vpnbypass``` service for OpenWrt/LEDE Project. This is useful if your router accesses Internet through a VPN client/tunnel, but you want specific traffic (ports, IP ranges, domains or local IP ranges) to be routed outside of this tunnel.
 
 ## Features

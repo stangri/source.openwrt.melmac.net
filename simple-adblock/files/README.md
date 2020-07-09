@@ -1,5 +1,7 @@
 # Simple AdBlock
 
+[![HitCount](http://hits.dwyl.com/stangri/openwrt/simple-adblock.svg)](http://hits.dwyl.com/stangri/openwrt/simple-adblock)
+
 A simple DNSMASQ/Unbound-based AdBlocking service for OpenWrt/LEDE Project.
 
 ## Features

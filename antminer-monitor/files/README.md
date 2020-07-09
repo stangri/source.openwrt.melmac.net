@@ -1,5 +1,7 @@
 # antminer-monitor
 
+[![HitCount](http://hits.dwyl.com/stangri/openwrt/antminer-monitor.svg)](http://hits.dwyl.com/stangri/openwrt/antminer-monitor)
+
 Antminer Monitor service to monitor the status of the local BITMAIN Antminers. This is just the wrapper for [Antminer Monitor python app](https://github.com/anselal/antminer-monitor).
 
 ## Requirements

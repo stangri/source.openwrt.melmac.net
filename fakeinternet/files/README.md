@@ -1,5 +1,7 @@
 # fakeinternet
 
+[![HitCount](http://hits.dwyl.com/stangri/openwrt/fakeinternet.svg)](http://hits.dwyl.com/stangri/openwrt/fakeinternet)
+
 Fake Internet service for OpenWrt/LEDE Project routers.
 
 ## Requirements

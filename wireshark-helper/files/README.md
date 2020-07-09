@@ -1,5 +1,7 @@
 # Wireshark Helper
 
+[![HitCount](http://hits.dwyl.com/stangri/openwrt/wireshark-helper.svg)](http://hits.dwyl.com/stangri/openwrt/wireshark-helper)
+
 ## Description
 
 This service can be used to configure a router to sniff packets to/from a monitored device on the device running the Wireshark application.

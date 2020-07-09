@@ -1,5 +1,7 @@
 # VPN Policy-Based Routing
 
+[![HitCount](http://hits.dwyl.com/stangri/openwrt/vpn-policy-routing.svg)](http://hits.dwyl.com/stangri/openwrt/vpn-policy-routing)
+
 ## Description
 
 This service allows you to define rules (policies) for routing traffic via WAN or your L2TP, Openconnect, OpenVPN, PPTP or Wireguard tunnels. Policies can be set based on any combination of local/remote ports, local/remote IPv4 or IPv6 addresses/subnets or domains. This service supersedes the ```VPN Bypass``` available on [GitHub](https://github.com/openwrt/packages/blob/master/net/vpnbypass/files/README.md)/[jsDelivr](https://cdn.jsdelivr.net/gh/openwrt/packages@master/net/vpnbypass/files/README.md) service, by supporting IPv6 and by allowing you to set explicit rules not just for WAN interface (bypassing OpenVPN tunnel), but for L2TP, Openconnect, OpenVPN, PPTP and Wireguard tunnels as well.
