@@ -848,9 +848,13 @@ Set the following to the appropriate section of your ```.ovpn``` file:
 
 - Routing Wireguard traffic may require setting `net.ipv4.conf.wg0.rp_filter = 2` in `/etc/sysctl.conf`. Please refer to [issue #41](https://github.com/stangri/openwrt_packages/issues/41) for more details.
 
-### A Word About HTTP/3 (QUICK)
+### A Word About Cloudflare's 1.1.1.1 App
 
-If you want to target traffic using HTTP/3 protocol, you can use the ```AUTO``` as the protocol (the policy will be either protocol-agnostic or ```TCP/UDP```) or explicitly   use ```UDP``` as a protocol.
+Cloudflare has released an app for [iOS](https://itunes.apple.com/us/app/1-1-1-1-faster-internet/id1423538627) and [Android](https://play.google.com/store/apps/details?id=com.cloudflare.onedotonedotonedotone), which can also be configured to route traffic thru their own VPN tunnel (WARP+).
+
+If you use Cloudlfare's VPN tunnel (WARP+), none of the policies you set up with the VPN Policy Routing will take effect on your mobile device. Disable WARP+ for your home WiFi to keep VPN Policy Routing affecting your mobile device.
+
+If you just use the private DNS queries (WARP), [A Word About DNS-over-HTTPS](#a-word-about-DNS-over-HTTPS) applies. You can also disable WARP for your home WiFi to keep VPN Policy Routing affecting your mobile device.
 
 ### A Word About DNS-over-HTTPS
 
@@ -860,13 +864,13 @@ Some browsers, like [Mozilla Firefox](https://support.mozilla.org/en-US/kb/firef
 
   2. Continue using DNS-over-HTTPS in your browser (which, by the way, also limits your options for router-level AdBlocking as described in ```dnsmasq.ipset``` option description here of ```net/simple-adblock``` README on [GitHub](https://github.com/openwrt/packages/tree/master/net/simple-adblock/files#dns-resolution-option)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/simple-adblock/files/README.md#dns-resolution-option)), you than would either have to disable the  ```dest_ipset``` or switch it to ```ipset```. Please note, you will lose all the benefits of [```dnsmasq.ipset```](#use-dnsmasq-ipset) option.
 
-### A Word About Cloudflare's 1.1.1.1 App
+### A Word About HTTP/3 (QUICK)
 
-Cloudflare has released an app for [iOS](https://itunes.apple.com/us/app/1-1-1-1-faster-internet/id1423538627) and [Android](https://play.google.com/store/apps/details?id=com.cloudflare.onedotonedotonedotone), which can also be configured to route traffic thru their own VPN tunnel (WARP+).
+If you want to target traffic using HTTP/3 protocol, you can use the ```AUTO``` as the protocol (the policy will be either protocol-agnostic or ```TCP/UDP```) or explicitly   use ```UDP``` as a protocol.
 
-If you use Cloudlfare's VPN tunnel (WARP+), none of the policies you set up with the VPN Policy Routing will take effect on your mobile device. Disable WARP+ for your home WiFi to keep VPN Policy Routing affecting your mobile device.
+### A Word About IPv6 Routing
 
-If you just use the private DNS queries (WARP), [A Word About DNS-over-HTTPS](#a-word-about-DNS-over-HTTPS) applies. You can also disable WARP for your home WiFi to keep VPN Policy Routing affecting your mobile device.
+Due to the nature of IPv6, it's not supposed to be routed same way as IPv4 with this package, but a fellow user has graciously contributed a [gist detailing their experience to get IPv6 routing working](https://gist.github.com/NoMonkeyNoMission/3bd8413029b1f728c1f00bc1ac0e98b4).
 
 ## Discussion
 
@@ -889,4 +893,4 @@ WARNING: while paste.ee uploads are unlisted/not indexed at the web-site, they a
 
 ## Thanks
 
-I'd like to thank everyone who helped create, test and troubleshoot this service. Without contributions from [@hnyman](https://github.com/hnyman), [@dibdot](https://github.com/dibdot), [@danrl](https://github.com/danrl), [@tohojo](https://github.com/tohojo), [@cybrnook](https://github.com/cybrnook), [@nidstigator](https://github.com/nidstigator), [@AndreBL](https://github.com/AndreBL), [@dz0ny](https://github.com/dz0ny), rigorous testing/bugreporting by [@dziny](https://github.com/dziny), [@bluenote73](https://github.com/bluenote73), [@buckaroo](https://github.com/pgera), [@Alexander-r](https://github.com/Alexander-r), [n8v8R](https://github.com/n8v8R), [psherman](https://forum.openwrt.org/u/psherman), [@Vale-max](https://github.com/Vale-max), multiple contributions from [dl12345](https://github.com/dl12345) and [trendy](https://forum.openwrt.org/u/trendy) and feedback from other OpenWrt users it wouldn't have been possible. Wireguard/IPv6 support is courtesy of [Mullvad](https://www.mullvad.net) and [IVPN](https://www.ivpn.net/).
+I'd like to thank everyone who helped create, test and troubleshoot this service. Without contributions from [@hnyman](https://github.com/hnyman), [@dibdot](https://github.com/dibdot), [@danrl](https://github.com/danrl), [@tohojo](https://github.com/tohojo), [@cybrnook](https://github.com/cybrnook), [@nidstigator](https://github.com/nidstigator), [@AndreBL](https://github.com/AndreBL), [@dz0ny](https://github.com/dz0ny), rigorous testing/bugreporting by [@dziny](https://github.com/dziny), [@bluenote73](https://github.com/bluenote73), [@buckaroo](https://github.com/pgera), [@Alexander-r](https://github.com/Alexander-r), [n8v8R](https://github.com/n8v8R), [psherman](https://forum.openwrt.org/u/psherman), [@Vale-max](https://github.com/Vale-max), [@NoMonkeyNoMission](https://github.com/NoMonkeyNoMission), multiple contributions from [dl12345](https://github.com/dl12345) and [trendy](https://forum.openwrt.org/u/trendy) and feedback from other OpenWrt users it wouldn't have been possible. Wireguard/IPv6 support is courtesy of [Mullvad](https://www.mullvad.net) and [IVPN](https://www.ivpn.net/).
