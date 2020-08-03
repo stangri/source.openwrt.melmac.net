@@ -604,7 +604,7 @@ table_create(){
 			ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 		else
 #			ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
-			ip -4 route add default "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+			ip -4 route add default dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 		fi
 		ip -4 route ls table main | grep -v 'br-lan' | while read -r i; do
 			idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
