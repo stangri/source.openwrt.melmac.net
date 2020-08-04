@@ -583,6 +583,7 @@ table_destroy(){
 		ips 'flush' "${iface}_mac"; ips 'destroy' "${iface}_mac";
 		ip -4 route flush cache
 		ip -6 route flush cache
+		sed -i "/$iface/d" /etc/iproute2/rt_tables
 		return 0
 	else
 		return 1
@@ -600,11 +601,12 @@ table_create(){
 	table_destroy "$tid" "$iface" "$mark"
 
 	if [ -n "$gw4" ] || [ "$strictMode" -ne 0 ]; then
+		echo "$tid" "$iface" >> /etc/iproute2/rt_tables
 		if [ -z "$gw4" ]; then
 			ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 		else
-#			ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
-			ip -4 route add default dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+			ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+#			ip -4 route add default dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 		fi
 		ip -4 route ls table main | grep -v 'br-lan' | while read -r i; do
 			idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
