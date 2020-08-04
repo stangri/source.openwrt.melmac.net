@@ -1,5 +1,6 @@
 #!/bin/sh /etc/rc.common
-
+# Copyright 2017-2020 Stan Grishin (stangri@melmac.net)
+# shellcheck disable=SC2039,SC1091,SC2018,SC2019
 PKG_VERSION=
 
 export START=94
@@ -14,8 +15,8 @@ load_package_config() {
 	. /usr/share/libubox/jshn.sh
 	. /lib/functions/checkslider.sh
 	config_load "$packageName"
-	config_get_bool serviceEnabled 'config' 'enabled' 0
-	config_get_bool wifiRestart    'config' 'restart_wifi' 0
+	config_get_bool serviceEnabled 'config' 'enabled' '0'
+	config_get_bool wifiRestart    'config' 'restart_wifi' '0'
 	config_get bootDelay           'config' 'boot_delay' '10'
 	config_get wwanIface           'config' 'wwan_interface' 'trm_wwan'
 	config_get apIP                'config' 'ap_ip' 'random'
@@ -24,13 +25,13 @@ load_package_config() {
 }
 
 is_enabled() { load_package_config; [ "$serviceEnabled" -gt 0 ] && return 0 || return 1; }
-set_enabled() { uci -q set "${packageName}.config.enabled='$1'"; uci commit "${packageName}"; }
+set_enabled() { uci -q set "${packageName}.config.enabled=$1"; uci commit "${packageName}"; }
 is_ipv4() { if expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then return 0; else return 1; fi; }
 randomip(){ local a=300 b=300 n; while [ "$a" -gt 255 ] || [ "$b" -gt 255 ]; do n=$(grep -m10 -ao '[0-9]' /dev/urandom | tr -d '\n'); a="$(echo "${n:0:3}" | sed 's/^0*//;s/^0*$/0/')"; b="$(echo "${n:4:3}" | sed 's/^0*//;s/^0*$/0/')"; done; echo "192.168.$a.$b"; }
-fix_sta_ssid(){ config_get s "$1" 'ssid'; if [ -n "$s" ] && [ "$(uci -q get wireless."${1}".mode)" = "sta" ]; then uci set wireless."${1}".ssid="${s//-err}"; fi; }
+fix_sta_ssid(){ config_get s "$1" 'ssid'; if [ -n "$s" ] && [ "$(uci -q get "wireless.${1}.mode")" = "sta" ]; then uci set "wireless.${1}.ssid=${s//-err}"; fi; }
 
-zone_del_network() { [ "$(uci -q get firewall."${1}".name)" = "$2" ] && uci -q del_list firewall."${1}".network="$3"; }
-zone_add_network() { [ "$(uci -q get firewall."${1}".name)" = "$2" ] && uci -q add_list firewall."${1}".network="$3"; }
+zone_del_network() { [ "$(uci -q get "firewall.${1}.name")" = "$2" ] && uci -q del_list "firewall.${1}.network=$3"; }
+zone_add_network() { [ "$(uci -q get "firewall.${1}.name")" = "$2" ] && uci -q add_list "firewall.${1}.network=$3"; }
 modify_fwzone() {
 	local iface="$1" action="$2" wwanIface="$3"
 	if [ -z "$iface" ] || [ -z "$action" ] || [ -z "$wwanIface" ]; then return 1; fi
@@ -45,12 +46,12 @@ router_services() {
 		if [ -n "$s" ] && [ -e "/etc/init.d/${s}" ]; then
 			case $command in
 				start)
-					logger -t "$packageName" "$mode enabling/starting $s"
+					logger -t "$serviceName" "$mode enabling/starting $s"
 					/etc/init.d/"${s}" enable
 					/etc/init.d/"${s}" start
 					;;
 				stop)
-					logger -t "$packageName" "$mode stopping/disabling $s"
+					logger -t "$serviceName" "$mode stopping/disabling $s"
 					/etc/init.d/"${s}" stop
 					/etc/init.d/"${s}" disable
 					;;
@@ -62,7 +63,7 @@ router_services() {
 slider_action() {
 	if checkslider; then mode='router'; elif checkports; then mode='wr'; else mode='ap'; fi
 	oldIP="$(uci -q get network.lan.ipaddrold)"
-	logger -t "$packageName" "$mode mode selected"
+	logger -t "$serviceName" "$mode mode selected"
 	uci -q set wlanblinker.config.mode="$mode"
 	case $mode in
 		router)
@@ -89,7 +90,7 @@ slider_action() {
 			elif is_ipv4 "$apIP"; then
 				uci set network.lan.ipaddr="$apIP"
 			else
-				logger -t "$packageName" "$mode mode failed, wrong ap_ip: $apIP"
+				logger -t "$serviceName" "$mode mode failed, wrong ap_ip: $apIP"
 				return 1
 			fi
 			modify_fwzone 'wan' 'add' "$wwanIface"
@@ -114,7 +115,7 @@ slider_action() {
 			elif is_ipv4 "$wrIP"; then
 				uci set network.lan.ipaddr="$wrIP"
 			else
-				logger -t "$packageName" "$mode mode failed, wrong wr_ip: $wrIP"
+				logger -t "$serviceName" "$mode mode failed, wrong wr_ip: $wrIP"
 				return 1
 			fi
 			modify_fwzone 'lan' 'add' "$wwanIface"
