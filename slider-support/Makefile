@@ -22,7 +22,7 @@ endef
 define Package/slider-support-ar150
 $(call Package/slider-support/default)
 	VARIANT:=ar150
-	USEBUTTON:=BTN_1
+	USEBUTTON:=BTN_8
 	TITLE+= for GL-Inet AR150
 endef
 
