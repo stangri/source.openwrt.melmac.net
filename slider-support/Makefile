@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=slider-support
-PKG_VERSION:=0.0.2
-PKG_RELEASE:=10
+PKG_VERSION:=0.0.3
+PKG_RELEASE:=1
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -17,6 +17,13 @@ define Package/slider-support/default
 	DEPENDS:=+relayd
 	PKGARCH:=all
 	TITLE:=Slider support
+endef
+
+define Package/slider-support-ar150
+$(call Package/slider-support/default)
+	VARIANT:=ar150
+	USEBUTTON:=BTN_1
+	TITLE+= for GL-Inet AR150
 endef
 
 define Package/slider-support-ar300m
@@ -46,6 +53,7 @@ modes of operation for supported routers equipped with slider switch.
 Please see the README for further information.
 endef
 
+Package/slider-support-ar150/description = $(Package/slider-support/description)
 Package/slider-support-ar300m/description = $(Package/slider-support/description)
 Package/slider-support-ar750/description = $(Package/slider-support/description)
 Package/slider-support-mt300n/description = $(Package/slider-support/description)
@@ -54,6 +62,7 @@ define Package/slider-support/conffiles
 /etc/config/slider-support
 endef
 
+Package/slider-support-ar150/conffiles = $(Package/slider-support/conffiles)
 Package/slider-support-ar300m/conffiles = $(Package/slider-support/conffiles)
 Package/slider-support-ar750/conffiles = $(Package/slider-support/conffiles)
 Package/slider-support-mt300n/conffiles = $(Package/slider-support/conffiles)
@@ -84,6 +93,7 @@ define Package/slider-support/install
 	chmod 0755 $(1)/etc/rc.button/$(USEBUTTON)
 endef
 
+Package/slider-support-ar150/install = $(Package/slider-support/install)
 Package/slider-support-ar300m/install = $(Package/slider-support/install)
 Package/slider-support-ar750/install = $(Package/slider-support/install)
 Package/slider-support-mt300n/install = $(Package/slider-support/install)
@@ -97,6 +107,7 @@ define Package/slider-support/postinst
 	exit 0
 endef
 
+Package/slider-support-ar150/postinst = $(Package/slider-support/postinst)
 Package/slider-support-ar300m/postinst = $(Package/slider-support/postinst)
 Package/slider-support-ar750/postinst = $(Package/slider-support/postinst)
 Package/slider-support-mt300n/postinst = $(Package/slider-support/postinst)
@@ -110,10 +121,12 @@ define Package/slider-support/prerm
 	exit 0
 endef
 
+Package/slider-support-ar150/prerm = $(Package/slider-support/prerm)
 Package/slider-support-ar300m/prerm = $(Package/slider-support/prerm)
 Package/slider-support-ar750/prerm = $(Package/slider-support/prerm)
 Package/slider-support-mt300n/prerm = $(Package/slider-support/prerm)
 
+$(eval $(call BuildPackage,slider-support-ar150))
 $(eval $(call BuildPackage,slider-support-ar300m))
 $(eval $(call BuildPackage,slider-support-ar750))
 $(eval $(call BuildPackage,slider-support-mt300n))
