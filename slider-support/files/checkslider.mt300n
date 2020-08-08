@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2039
 checkslider() { grep -q 'BTN_0.*hi' /sys/kernel/debug/gpio; }
 checkports() {
 	local up i r=0;
