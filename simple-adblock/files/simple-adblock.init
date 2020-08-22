@@ -735,16 +735,16 @@ process_config_update() {
 	done
 	if ! $dl_command "$configUpdateURL" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 1 "$_FAIL_"
-		output 2 "[DL] Config Update $__FAIL__\\n"
+		output 2 "[DL] Config  Update $__FAIL__\\n"
 		tmpfs add error "errorDownloadingConfigUpdate"
 	else
 		if ! sed -f "$R_TMP" -i /etc/config/simple-adblock; then
 			output 1 "$_FAIL_"
-			output 2 "[DL] Config Update $__FAIL__\\n"
+			output 2 "[DL] Config  Update $__FAIL__\\n"
 			tmpfs add error "errorParsingConfigUpdate"
 		else
 			output 1 "$_OK_"
-			output 2 "[DL] Config Update $__OK__\\n"
+			output 2 "[DL] Config  Update $__OK__\\n"
 		fi
 	fi
 	rm -f "$R_TMP"
