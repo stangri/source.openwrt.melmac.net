@@ -386,7 +386,7 @@ msgid "failed to download"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:156
-msgid "failed to download config update file"
+msgid "failed to download Config Update file"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:147
@@ -410,7 +410,7 @@ msgid "failed to parse"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:158
-msgid "failed to parse config update file"
+msgid "failed to parse Config Update file"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:146

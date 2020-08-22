@@ -90,10 +90,10 @@ getErrorText() {
 		errorOhSnap) _ret="failed to create block-list or restart DNS resolver";;
 		errorStopping) _ret="failed to stop $serviceName";;
 		errorDNSReload) _ret="failed to reload/restart DNS resolver";;
-		errorDownloadingConfigUpdate) _ret="failed to download config update file";;
+		errorDownloadingConfigUpdate) _ret="failed to download Config Update file";;
 		errorDownloadingList) _ret="failed to download";;
 		errorParsingList) _ret="failed to parse";;
-		errorParsingConfigUpdate) _ret="failed to parse config update file";;
+		errorParsingConfigUpdate) _ret="failed to parse Config Update file";;
 	esac
 	printf "%b" "$_ret"
 }
@@ -735,16 +735,16 @@ process_config_update() {
 	done
 	if ! $dl_command "$configUpdateURL" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 1 "$_FAIL_"
-		output 2 "[DL] config update file $__FAIL__\\n"
+		output 2 "[DL] Config Update $__FAIL__\\n"
 		tmpfs add error "errorDownloadingConfigUpdate"
 	else
 		if ! sed -f "$R_TMP" -i /etc/config/simple-adblock; then
 			output 1 "$_FAIL_"
-			output 2 "[DL] config update file $__FAIL__\\n"
+			output 2 "[DL] Config Update $__FAIL__\\n"
 			tmpfs add error "errorParsingConfigUpdate"
 		else
 			output 1 "$_OK_"
-			output 2 "[DL] config update file $__OK__\\n"
+			output 2 "[DL] Config Update $__OK__\\n"
 		fi
 	fi
 	rm -f "$R_TMP"

@@ -153,9 +153,9 @@ errorTable["errorRestoreCache"] = translatef("failed to move '%s' to '%s'", outp
 errorTable["errorOhSnap"] = translate("failed to create block-list or restart DNS resolver")
 errorTable["errorStopping"] = translatef("failed to stop %s", packageName)
 errorTable["errorDNSReload"] = translate("failed to reload/restart DNS resolver")
-errorTable["errorDownloadingConfigUpdate"] = translate("failed to download config update file")
+errorTable["errorDownloadingConfigUpdate"] = translate("failed to download Config Update file")
 errorTable["errorDownloadingList"] = translate("failed to download")
-errorTable["errorParsingConfigUpdate"] = translate("failed to parse config update file")
+errorTable["errorParsingConfigUpdate"] = translate("failed to parse Config Update file")
 errorTable["errorParsingList"] = translate("failed to parse")
 errorTable["errorNoSSLSupport"] = translate("no HTTPS/SSL support on device")
 
