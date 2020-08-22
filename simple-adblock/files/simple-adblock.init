@@ -728,23 +728,24 @@ process_url() {
 }
 
 process_config_update() {
-	local R_TMP
+	local label R_TMP
+	label="${1##*//}"; label="${label%%/*}";
 	[ "$configUpdateEnabled" -eq 0 ] && return 0
 	while [ -z "$R_TMP" ] || [ -e "$R_TMP" ]; do
 		R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
 	done
-	if ! $dl_command "$configUpdateURL" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
+	if ! $dl_command "$1" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 1 "$_FAIL_"
-		output 2 "[DL] Config  Update $__FAIL__\\n"
+		output 2 "[DL] Config  Update:  $label $__FAIL__\\n"
 		tmpfs add error "errorDownloadingConfigUpdate"
 	else
 		if ! sed -f "$R_TMP" -i /etc/config/simple-adblock; then
 			output 1 "$_FAIL_"
-			output 2 "[DL] Config  Update $__FAIL__\\n"
+			output 2 "[DL] Config  Update:  $label $__FAIL__\\n"
 			tmpfs add error "errorParsingConfigUpdate"
 		else
 			output 1 "$_OK_"
-			output 2 "[DL] Config  Update $__OK__\\n"
+			output 2 "[DL] Config  Update:  $label $__OK__\\n"
 		fi
 	fi
 	rm -f "$R_TMP"
@@ -768,7 +769,7 @@ download_lists() {
 	fi
 	touch $A_TMP; touch $B_TMP;
 	output 1 'Downloading lists '
-	process_config_update
+	process_config_update "$configUpdateURL"
 	rm -f "$sharedMemoryError"
 	if [ -n "$blocked_hosts_urls" ]; then
 		for hf in ${blocked_hosts_urls}; do
