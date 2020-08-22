@@ -592,7 +592,7 @@ table_destroy(){
 
 # shellcheck disable=SC2086
 table_create(){
-	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" dscp s=0 i ipv4_error=0 ipv6_error=0
+	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" dscp s=0 i ipv4_error=0 ipv6_error=1
 
 	if [ -z "$tid" ] || [ -z "$mark" ] || [ -z "$iface" ]; then
 		return 1
@@ -619,6 +619,7 @@ table_create(){
 	fi
 
 	if [ "$ipv6Enabled" -ne 0 ]; then
+		ipv6_error=0
 		if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strictMode" -ne 0 ]; then
 			if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 				ip -6 route add unreachable default table "$tid" || ipv6_error=1
