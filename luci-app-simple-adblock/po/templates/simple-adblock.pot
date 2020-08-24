@@ -153,12 +153,6 @@ msgstr ""
 msgid "Enable Debugging"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:234
-msgid ""
-"Enable/disable Automatic Config Update before attempting download of block/"
-"allow-lists."
-msgstr ""
-
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:324
 msgid "Enables debug output to /tmp/simple-adblock.log."
 msgstr ""
@@ -242,6 +236,10 @@ msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:239
 msgid "Output Verbosity Setting"
+msgstr ""
+
+#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:234
+msgid "Perform config update before downloading the block/allow-lists."
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:267

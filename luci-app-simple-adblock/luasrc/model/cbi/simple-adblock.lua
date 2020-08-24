@@ -231,7 +231,7 @@ s = m:section(NamedSection, "config", "simple-adblock", translate("Configuration
 -- General options
 s:tab("basic", translate("Basic Configuration"))
 
-o1 = s:taboption("basic", ListValue, "config_update_enabled", translate("Automatic Config Update"), translate("Enable/disable Automatic Config Update before attempting download of block/allow-lists."))
+o1 = s:taboption("basic", ListValue, "config_update_enabled", translate("Automatic Config Update"), translate("Perform config update before downloading the block/allow-lists."))
 o1:value("0", translate("Disable"))
 o1:value("1", translate("Enable"))
 o1.default = 0
