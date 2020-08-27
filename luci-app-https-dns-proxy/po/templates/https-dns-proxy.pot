@@ -65,6 +65,10 @@ msgstr ""
 msgid "DNS.SB"
 msgstr ""
 
+#: applications/luci-app-https-dns-proxy/luasrc/https-dns-proxy/providers/pub.doh.lua:3
+msgid "DNSPod.cn Public DNS"
+msgstr ""
+
 #: applications/luci-app-https-dns-proxy/luasrc/https-dns-proxy/providers.disabled/ch.digitale-gesellschaft.dns.lua:3
 msgid "Digitale Gesellschaft"
 msgstr ""
