@@ -16,7 +16,7 @@ readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
 
-export EXTRA_COMMANDS='support enable disable version'
+export EXTRA_COMMANDS='support enable disable'
 export EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
 		Use '-p' option to automatically upload data under VPR paste.ee account
@@ -39,7 +39,6 @@ readonly sharedMemoryOutput="/dev/shm/$packageName-output"
 
 enable() { uci set "$packageName.config.enabled=1"; uci commit "$packageName"; }
 disable() { uci set "$packageName.config.enabled=0"; uci commit "$packageName"; }
-version() { echo "$PKG_VERSION"; }
 
 create_lock() { [ -e "$PID" ] && return 1; touch "$PID"; }
 remove_lock() { [ -e "$PID" ] && rm -f "$PID"; }
