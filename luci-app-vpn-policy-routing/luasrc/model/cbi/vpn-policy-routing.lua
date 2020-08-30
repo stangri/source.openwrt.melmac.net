@@ -13,6 +13,10 @@ local dispatcher = require "luci.dispatcher"
 local enabledFlag = uci:get(packageName, "config", "enabled")
 local enc
 
+function getPackageVersion()
+	return util.trim(util.exec("/etc/init.d/" .. packageName .. " version 2>/dev/null")) or ""
+end
+
 local ubusStatus = util.ubus("service", "list", { name = packageName })
 if ubusStatus and ubusStatus[packageName] and 
 	 ubusStatus[packageName]["instances"] and 
@@ -33,7 +37,7 @@ if ubusStatus and ubusStatus[packageName] and
 end
 
 local serviceRunning, statusText = false, nil
-local packageVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'"))) or ""
+local packageVersion = getPackageVersion()
 if packageVersion == "" then
 	statusText = translatef("%s is not installed or not found", packageName)
 end 

@@ -16,7 +16,7 @@ readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
 
-export EXTRA_COMMANDS='support'
+export EXTRA_COMMANDS='support version'
 export EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
 		Use '-p' option to automatically upload data under VPR paste.ee account
@@ -1130,3 +1130,5 @@ validate_include() {
 		'path:string' \
 		'enabled:bool:0'
 }
+
+version() { echo "$PKG_VERSION"; }

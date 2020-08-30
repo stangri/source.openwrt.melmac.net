@@ -1,7 +1,24 @@
 {
 	"luci-app-vpn-policy-routing": {
-		"description": "Grant UCI access for luci-app-vpn-policy-routing",
+		"description": "Grant UCI and file access for luci-app-vpn-policy-routing",
 		"read": {
+			"cgi-io": [
+				"exec"
+			],
+			"file": {
+				"/etc/init.d/vpn-policy-routing *": [
+					"exec"
+				],
+				"/usr/bin/grep *": [
+					"exec"
+				],
+				"/usr/sbin/grep *": [
+					"exec"
+				],
+				"/usr/sbin/iptables *": [
+					"exec"
+				]
+			},
 			"uci": [
 				"network",
 				"vpn-policy-routing"
