@@ -5,7 +5,17 @@ local util = require "luci.util"
 local packageName = "vpnbypass"
 
 function getPackageVersion()
-	return util.trim(util.exec("/etc/init.d/" .. packageName .. " version 2>/dev/null")) or ""
+	local opkgFile = "/usr/lib/opkg/status"
+	local line
+	local flag = false
+	for line in io.lines(opkgFile) do
+		if flag then
+			return line:match('[%d%.$-]+') or ""
+		elseif line:find("Package: " .. packageName:gsub("%-", "%%%-")) then
+			flag = true
+		end
+	end
+	return ""
 end
 
 local packageVersion = getPackageVersion()
