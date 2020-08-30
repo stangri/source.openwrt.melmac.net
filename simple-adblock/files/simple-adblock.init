@@ -729,8 +729,8 @@ process_url() {
 
 process_config_update() {
 	local label R_TMP
-	label="${1##*//}"; label="${label%%/*}";
 	[ "$configUpdateEnabled" -eq 0 ] && return 0
+	label="${1##*//}"; label="${label%%/*}";
 	while [ -z "$R_TMP" ] || [ -e "$R_TMP" ]; do
 		R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
 	done
