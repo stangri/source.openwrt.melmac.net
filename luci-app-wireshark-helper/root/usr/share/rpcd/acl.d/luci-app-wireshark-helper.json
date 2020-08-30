@@ -1,7 +1,24 @@
 {
 	"luci-app-wireshark-helper": {
-		"description": "Grant UCI access for luci-app-wireshark-helper",
+		"description": "Grant UCI and file access for luci-app-wireshark-helper",
 		"read": {
+			"cgi-io": [
+				"exec"
+			],
+			"file": {
+				"/etc/init.d/wireshark-helper *": [
+					"exec"
+				],
+				"/usr/bin/grep *": [
+					"exec"
+				],
+				"/usr/sbin/grep *": [
+					"exec"
+				],
+				"/usr/sbin/iptables *": [
+					"exec"
+				]
+			},
 			"uci": [
 				"network",
 				"wireshark-helper"
@@ -9,7 +26,6 @@
 		},
 		"write": {
 			"uci": [
-				"network",
 				"wireshark-helper"
 			]
 		}

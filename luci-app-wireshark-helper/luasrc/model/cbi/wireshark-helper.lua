@@ -13,8 +13,12 @@ local fs  = require "nixio.fs"
 local monIP = uci:get(packageName, "config", "monitor_ip")
 local wsIP = uci:get(packageName, "config", "wireshark_ip")
 
-local packageVersion, statusText = nil, nil 
-packageVersion = tostring(util.trim(sys.exec("opkg list-installed " .. packageName .. " | awk '{print $3}'"))) or ""
+function getPackageVersion()
+	return util.trim(util.exec("/etc/init.d/" .. packageName .. " version 2>/dev/null")) or ""
+end
+
+local packageVersion = getPackageVersion()
+local statusText = nil 
 if packageVersion == "" then
 	statusText = translatef("%s is not installed or not found", packageName)
 end
