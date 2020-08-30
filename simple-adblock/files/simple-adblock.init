@@ -10,7 +10,7 @@ USE_PROCD=1
 LC_ALL=C
 
 # shellcheck disable=SC2034
-EXTRA_COMMANDS='check dl killcache sizes show'
+EXTRA_COMMANDS='check dl killcache sizes show version'
 # shellcheck disable=SC2034
 EXTRA_HELP='	check	Checks if specified domain is found in current block-list
 	dl	Force-downloads all enabled block-list
@@ -1287,3 +1287,5 @@ sizes() {
 		fi
 	done
 }
+
+version() { echo "$PKG_VERSION"; }
