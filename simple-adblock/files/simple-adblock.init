@@ -17,10 +17,6 @@ EXTRA_HELP='	check	Checks if specified domain is found in current block-list
 	sizes	Displays the file-sizes of enabled block-lists
 	show	Shows the service last-run status'
 
-enable() { uci set "$packageName.config.enabled=1"; uci commit "$packageName"; }
-disable() { uci set "$packageName.config.enabled=0"; uci commit "$packageName"; }
-version() { echo "$PKG_VERSION"; }
-
 readonly packageName='simple-adblock'
 readonly serviceName="$packageName $PKG_VERSION"
 readonly addnhostsFile="/var/run/${packageName}.addnhosts"
@@ -58,6 +54,10 @@ readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
 readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly configUpdateURL='https://cdn.jsdelivr.net/gh/openwrt/packages/net/simple-adblock/files/simple-adblock.conf.update'
+
+enable() { uci set "$packageName.config.enabled=1"; uci commit "$packageName"; }
+disable() { uci set "$packageName.config.enabled=0"; uci commit "$packageName"; }
+version() { echo "$PKG_VERSION"; }
 
 getStatusText() {
 	local _ret
