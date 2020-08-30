@@ -15,11 +15,9 @@ function wireshark_helper_action(name)
 	elseif name == "stop" then
 		luci.sys.init.stop(packageName)
 	elseif name == "enable" then
-		luci.model.uci.cursor:set(packageName, "config", "enabled", "1")
-		luci.model.uci.cursor:commit(packageName)
+		luci.sys.init.enable(packageName)
 	elseif name == "disable" then
-		luci.model.uci.cursor:set(packageName, "config", "enabled", "0")
-		luci.model.uci.cursor:commit(packageName)
+		luci.sys.init.disable(packageName)
 	end
 	luci.http.prepare_content("text/plain")
 	luci.http.write("0")
