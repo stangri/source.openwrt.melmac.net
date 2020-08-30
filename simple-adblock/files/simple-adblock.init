@@ -10,7 +10,7 @@ USE_PROCD=1
 LC_ALL=C
 
 # shellcheck disable=SC2034
-EXTRA_COMMANDS='check dl killcache sizes show enable disable version'
+EXTRA_COMMANDS='check dl killcache sizes show enable disable'
 # shellcheck disable=SC2034
 EXTRA_HELP='	check	Checks if specified domain is found in current block-list
 	dl	Force-downloads all enabled block-list
@@ -57,7 +57,6 @@ readonly configUpdateURL='https://cdn.jsdelivr.net/gh/openwrt/packages/net/simpl
 
 enable() { uci set "$packageName.config.enabled=1"; uci commit "$packageName"; }
 disable() { uci set "$packageName.config.enabled=0"; uci commit "$packageName"; }
-version() { echo "$PKG_VERSION"; }
 
 getStatusText() {
 	local _ret
