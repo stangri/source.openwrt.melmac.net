@@ -1,15 +1,15 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:39
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:49
 msgid "%s (disabled)"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:23
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:33
 msgid "%s is not installed or not found"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:60
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:70
 msgid "Configuration"
 msgstr ""
 
@@ -25,11 +25,11 @@ msgstr ""
 msgid "Grant UCI and file access for luci-app-wireshark-helper"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:87
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:97
 msgid "IP to Monitor"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:70
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:80
 msgid "Interface to Listen on"
 msgstr ""
 
@@ -41,25 +41,25 @@ msgstr ""
 msgid "Restart"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:55
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:65
 msgid ""
 "Run a Wireshark app on the %s device and set Wireshark filter to: (ip.src == "
 "%s) || (ip.dst == %s)"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:35
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:45
 msgid "Running"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:58
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:68
 msgid "See the %sREADME%s for details."
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:45
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:55
 msgid "Service Status"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:44
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:54
 msgid "Service Status [%s %s]"
 msgstr ""
 
@@ -71,7 +71,7 @@ msgstr ""
 msgid "Stop"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:37
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:47
 msgid "Stopped"
 msgstr ""
 
@@ -79,10 +79,10 @@ msgstr ""
 msgid "Wireshark Helper"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:43
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:53
 msgid "Wireshark Helper Settings"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:83
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:93
 msgid "Wireshark IP"
 msgstr ""

@@ -6,6 +6,9 @@
 				"exec"
 			],
 			"file": {
+				"/usr/lib/opkg/status": [
+					"read"
+				],
 				"/etc/init.d/wireshark-helper *": [
 					"exec"
 				],
