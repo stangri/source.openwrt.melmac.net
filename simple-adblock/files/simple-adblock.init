@@ -10,7 +10,7 @@ USE_PROCD=1
 LC_ALL=C
 
 # shellcheck disable=SC2034
-EXTRA_COMMANDS='check dl killcache sizes show enable disable'
+EXTRA_COMMANDS='check dl killcache sizes show'
 # shellcheck disable=SC2034
 EXTRA_HELP='	check	Checks if specified domain is found in current block-list
 	dl	Force-downloads all enabled block-list
@@ -54,9 +54,6 @@ readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
 readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly configUpdateURL='https://cdn.jsdelivr.net/gh/openwrt/packages/net/simple-adblock/files/simple-adblock.conf.update'
-
-enable() { uci set "$packageName.config.enabled=1"; uci commit "$packageName"; }
-disable() { uci set "$packageName.config.enabled=0"; uci commit "$packageName"; }
 
 getStatusText() {
 	local _ret
