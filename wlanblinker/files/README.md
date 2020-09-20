@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 -->
 # WLAN Blinker
 
 This service can be used to indicate WLAN status by blinking the unused LED.

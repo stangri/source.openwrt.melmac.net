@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 -->
 # VPN Bypass
 
 [![HitCount](http://hits.dwyl.com/stangri/openwrt/vpnbypass.svg)](http://hits.dwyl.com/stangri/openwrt/vpnbypass)

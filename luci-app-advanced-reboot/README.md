@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 -->
 # Advanced Reboot Web UI (luci-app-advanced-reboot)
 
 [![HitCount](http://hits.dwyl.com/stangri/openwrt/luci-app-advanced-reboot.svg)](http://hits.dwyl.com/stangri/openwrt/luci-app-advanced-reboot)

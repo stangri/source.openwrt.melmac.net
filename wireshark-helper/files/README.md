@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 -->
 # Wireshark Helper
 
 [![HitCount](http://hits.dwyl.com/stangri/openwrt/wireshark-helper.svg)](http://hits.dwyl.com/stangri/openwrt/wireshark-helper)

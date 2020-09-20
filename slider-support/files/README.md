@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 -->
 # Slider Support for select routers
 
 [![HitCount](http://hits.dwyl.com/stangri/openwrt/slider-support.svg)](http://hits.dwyl.com/stangri/openwrt/slider-support)

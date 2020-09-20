@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 -->
 # Simple AdBlock
 
 [![HitCount](http://hits.dwyl.com/stangri/openwrt/simple-adblock.svg)](http://hits.dwyl.com/stangri/openwrt/simple-adblock)

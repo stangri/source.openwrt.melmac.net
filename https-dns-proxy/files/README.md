@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 -->
 # DNS Over HTTPS Proxy (https-dns-proxy)
 
 [![HitCount](http://hits.dwyl.com/stangri/openwrt/https-dns-proxy.svg)](http://hits.dwyl.com/stangri/openwrt/https-dns-proxy)

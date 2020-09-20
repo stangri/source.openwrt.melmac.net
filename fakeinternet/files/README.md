@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 -->
 # fakeinternet
 
 [![HitCount](http://hits.dwyl.com/stangri/openwrt/fakeinternet.svg)](http://hits.dwyl.com/stangri/openwrt/fakeinternet)
