@@ -1161,11 +1161,11 @@ killcache() {
 show() { showstatus; }
 status_service() { showstatus; }
 showstatus() {
-	local status="$(tmpfs get status)"
-	local message="$(tmpfs get message)"
-	local error="$(tmpfs get error)"
-	local stats="$(tmpfs get stats)"
-	local c url
+	local c url status message error stats
+	status="$(tmpfs get status)"
+	message="$(tmpfs get message)"
+	error="$(tmpfs get error)"
+	stats="$(tmpfs get stats)"
 	if [ "$status" = "statusSuccess" ]; then
 		output "$stats "; output_okn;
 	else
@@ -1216,8 +1216,8 @@ service_triggers() {
 
 check() {
 	load_package_config
-	local string="$1" 
-	local c="$(grep -c "$string" "$outputFile")"
+	local c string="$1" 
+	c="$(grep -c "$string" "$outputFile")"
 	if [ ! -s "$outputFile" ]; then
 		echo "No block-list ('$outputFile') found."
 	elif [ -z "$string" ]; then
