@@ -8,17 +8,23 @@ end
 
 function wireshark_helper_action(name)
 	local packageName = "wireshark-helper"
+	local http = require "luci.http"
+	local sys = require "luci.sys"
+	local uci = require "luci.model.uci".cursor()
+	local util = require "luci.util"
 	if name == "start" then
-		luci.sys.init.start(packageName)
+		sys.init.start(packageName)
 	elseif name == "action" then
-		luci.util.exec("/etc/init.d/" .. packageName .. " restart >/dev/null 2>&1")
+		util.exec("/etc/init.d/" .. packageName .. " restart >/dev/null 2>&1")
 	elseif name == "stop" then
-		luci.sys.init.stop(packageName)
+		sys.init.stop(packageName)
 	elseif name == "enable" then
-		luci.sys.init.enable(packageName)
+		uci:set(packageName, "config", "enabled", "1")
+		uci:commit(packageName)
 	elseif name == "disable" then
-		luci.sys.init.disable(packageName)
+		uci:set(packageName, "config", "enabled", "0")
+		uci:commit(packageName)
 	end
-	luci.http.prepare_content("text/plain")
-	luci.http.write("0")
+	http.prepare_content("text/plain")
+	http.write("0")
 end
