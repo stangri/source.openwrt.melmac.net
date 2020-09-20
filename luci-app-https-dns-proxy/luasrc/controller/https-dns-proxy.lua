@@ -10,7 +10,6 @@ function https_dns_proxy_action(name)
 	local packageName = "https-dns-proxy"
 	local http = require "luci.http"
 	local sys = require "luci.sys"
-	local uci = require "luci.model.uci".cursor()
 	local util = require "luci.util"
 	if name == "start" then
 		sys.init.start(packageName)
