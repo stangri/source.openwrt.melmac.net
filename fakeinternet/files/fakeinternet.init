@@ -1,4 +1,6 @@
 #!/bin/sh /etc/rc.common
+# Copyright 2019-2020 Stan Grishin (stangri@melmac.net)
+# shellcheck disable=SC2039,SC1091
 PKG_VERSION=
 
 export START=94

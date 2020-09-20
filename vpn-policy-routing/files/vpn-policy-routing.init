@@ -328,7 +328,8 @@ ips() {
 ipr()
 {
 	[ "$ipruleEnabled" -ne 0 ] || return 1
-	local comment="$1" tid=$(eval echo "\$tid_${2//-/_}") laddr="$3" failFlagIpv4=0 failFlagIpv6=1
+	local comment tid laddr failFlagIpv4 failFlagIpv6
+	comment="$1" tid=$(eval echo "\$tid_${2//-/_}") laddr="$3" failFlagIpv4=0 failFlagIpv6=1
 	ip -4 rule del from "$laddr" table "$tid" >/dev/null 2>&1
 	ip -4 rule add from "$laddr" table "$tid" >/dev/null 2>&1 || failFlagIpv4=1
 	if [ "$ipv6Enabled" -ne 0 ]; then
@@ -339,7 +340,8 @@ ipr()
 }
 
 insert_tor_policy() {
-	local comment="$1" iface="$(str_to_lower "$2")" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}"
+	local comment iface laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain
+	comment="$1" iface="$(str_to_lower "$2")" proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}"
 	if [ -n "${laddr}${lport}${rport}" ]; then
 		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'src_addr', 'src_port' and 'dest_port' for policy '$comment'\\n"
 	fi
@@ -354,9 +356,10 @@ insert_tor_policy() {
 }
 
 insert_policy() {
-	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}"
-	local mark=$(eval echo "\$mark_${iface//-/_}") param i valueNeg value
+	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain
 	local appendLP="$appendLocalPolicy" appendRP="$appendRemotePolicy"
+	local mark param i valueNeg value
+	proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}" mark=$(eval echo "\$mark_${iface//-/_}")
 	if [ "$ipv6Enabled" -eq 0 ] && ( is_ipv6 "$laddr" || is_ipv6 "$raddr" ); then
 		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$comment' as IPv6 support is disabled\\n"
 		return 1

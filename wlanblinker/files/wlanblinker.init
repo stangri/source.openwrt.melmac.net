@@ -1,4 +1,6 @@
 #!/bin/sh /etc/rc.common
+# Copyright 2017-2020 Stan Grishin (stangri@melmac.net)
+# shellcheck disable=SC2039,SC1091
 PKG_VERSION=
 
 export START=94
@@ -28,7 +30,7 @@ is_enabled() {
 	return 0
 }
 
-find_sta_ssid(){ if [ "$(uci -q get wireless."${1}".mode)" = "sta" ] && [ "$(uci -q get wireless."${1}".disabled)" != "1" ] && [ -z "$(eval echo \$$2)" ]; then eval "$2=$(uci -q get wireless."${1}".ssid)"; fi; }
+find_sta_ssid(){ if [ "$(uci -q get wireless."${1}".mode)" = "sta" ] && [ "$(uci -q get wireless."${1}".disabled)" != "1" ] && [ -z "$(eval echo \$"$2")" ]; then eval "$2=$(uci -q get wireless."${1}".ssid)"; fi; }
 find_radio(){
 	local sta_ssid
 	case $1 in
