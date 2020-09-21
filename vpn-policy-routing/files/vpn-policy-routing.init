@@ -16,20 +16,14 @@ readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
 
-export EXTRA_COMMANDS='support'
-export EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
+# shellcheck disable=SC2034
+EXTRA_COMMANDS='support'
+# shellcheck disable=SC2034
+EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
 		Use '-p' option to automatically upload data under VPR paste.ee account
 			WARNING: while paste.ee uploads are unlisted, they are still publicly available
 		List domain names after options to include their lookup in report"
-
-# shellcheck disable=SC2034
-EXTRA_COMMANDS='check dl killcache sizes show enable disable version'
-# shellcheck disable=SC2034
-EXTRA_HELP='	check	Checks if specified domain is found in current block-list
-	dl	Force-downloads all enabled block-list
-	sizes	Displays the file-sizes of enabled block-lists
-	show	Shows the service last-run status'
 
 readonly packageName='vpn-policy-routing'
 readonly serviceName="$packageName $PKG_VERSION"
@@ -46,7 +40,6 @@ output_fail() { s=1; output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
 str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
 str_contains() { [ "$1" != "$(str_replace "$1" "$2" "")" ]; }
-# shellcheck disable=SC2018,SC2019
 str_to_lower() { echo "$1" | tr 'A-Z' 'a-z'; }
 str_extras_to_underscore() { echo "$1" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_'; }
 str_extras_to_space() { echo "$1" | tr ';{}' ' '; }
