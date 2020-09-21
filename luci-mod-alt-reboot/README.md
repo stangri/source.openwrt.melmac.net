@@ -28,7 +28,7 @@ opkg update
 opkg --force-overwrite install luci-mod-alt-reboot
 ```
 
-If the ```luci-mod-alt-reboot``` package is not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/README.md#on-your-router) first.
+If the ```luci-mod-alt-reboot``` package is not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/README.md#on-your-router) first.
 
 ## How to uninstall
 

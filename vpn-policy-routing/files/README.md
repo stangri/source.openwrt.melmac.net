@@ -5,7 +5,7 @@
 
 ## Description
 
-This service allows you to define rules (policies) for routing traffic via WAN or your L2TP, Openconnect, OpenVPN, PPTP or Wireguard tunnels. Policies can be set based on any combination of local/remote ports, local/remote IPv4 or IPv6 addresses/subnets or domains. This service supersedes the ```VPN Bypass``` available on [GitHub](https://github.com/openwrt/packages/blob/master/net/vpnbypass/files/README.md)/[jsDelivr](https://cdn.jsdelivr.net/gh/openwrt/packages@master/net/vpnbypass/files/README.md) service, by supporting IPv6 and by allowing you to set explicit rules not just for WAN interface (bypassing OpenVPN tunnel), but for L2TP, Openconnect, OpenVPN, PPTP and Wireguard tunnels as well.
+This service allows you to define rules (policies) for routing traffic via WAN or your L2TP, Openconnect, OpenVPN, PPTP or Wireguard tunnels. Policies can be set based on any combination of local/remote ports, local/remote IPv4 or IPv6 addresses/subnets or domains. This service supersedes the ```VPN Bypass``` available on [GitHub](https://github.com/openwrt/packages/blob/master/net/vpnbypass/files/README.md)/[jsDelivr](https://cdn.jsdelivr.net/gh/openwrt/packages/net/vpnbypass/files/README.md) service, by supporting IPv6 and by allowing you to set explicit rules not just for WAN interface (bypassing OpenVPN tunnel), but for L2TP, Openconnect, OpenVPN, PPTP and Wireguard tunnels as well.
 
 ## Features
 
@@ -67,25 +67,25 @@ Two example custom user-files are provided: ```/etc/vpn-policy-routing.aws.user`
 ## Screenshots (luci-app-vpn-policy-routing)
 
 Service Status
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/vpn-policy-routing/screenshot04-status.png "Service Status")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/screenshots/vpn-policy-routing/screenshot04-status.png "Service Status")
 
 Configuration - Basic Configuration
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/vpn-policy-routing/screenshot04-config-basic.png "Basic Configuration")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/screenshots/vpn-policy-routing/screenshot04-config-basic.png "Basic Configuration")
 
 Configuration - Advanced Configuration
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/vpn-policy-routing/screenshot04-config-advanced.png "Advanced Configuration")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/screenshots/vpn-policy-routing/screenshot04-config-advanced.png "Advanced Configuration")
 
 Configuration - WebUI Configuration
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/vpn-policy-routing/screenshot04-config-webui.png "WebUI Configuration")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/screenshots/vpn-policy-routing/screenshot04-config-webui.png "WebUI Configuration")
 
 Policies
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/vpn-policy-routing/screenshot04-policies.png "Policies")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/screenshots/vpn-policy-routing/screenshot04-policies.png "Policies")
 
 DSCP Tagging
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/vpn-policy-routing/screenshot04-dscp.png "DSCP Tagging")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/screenshots/vpn-policy-routing/screenshot04-dscp.png "DSCP Tagging")
 
 Custom User File Includes
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/vpn-policy-routing/screenshot04-userfiles.png "Custom User File Includes")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/screenshots/vpn-policy-routing/screenshot04-userfiles.png "Custom User File Includes")
 
 ## How It Works
 
@@ -116,7 +116,7 @@ opkg update
 opkg install vpn-policy-routing luci-app-vpn-policy-routing
 ```
 
-If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/README.md#on-your-router) first.
+If these packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/README.md#on-your-router) first.
 
 These packages have been designed to be backwards compatible with OpenWrt 19.07, OpenWrt 18.06, LEDE Project 17.01 and OpenWrt 15.05. However, on systems older than OpenWrt 18.06.6 and/or a system which has deviated too far (or haven't been updated to keep in-sync) with official OpenWrt release you may get a message about missing ```luci-compat``` dependency, which (and only which) you can safely ignore and force-install the luci app using ```opkg install --force-depends``` command instead of ```opkg install```.
 
@@ -660,7 +660,7 @@ config rule
 
 #### Netflix Domains
 
-The following policy should route US Netflix traffic via WAN. For capturing international Netflix domain names, you can refer to the getdomainnames.sh-specific instructions on [GitHub](https://github.com/Xentrk/netflix-vpn-bypass/blob/master/README.md#ipset_netflix_domainssh)/[jsDelivr](https://cdn.jsdelivr.net/gh/Xentrk/openwrt_packages@master/netflix-vpn-bypass/README.md#ipset_netflix_domainssh) and don't forget to adjust them for OpenWrt. This may not work if Netflix changes things. For more reliable US Netflix routing you may want to consider using [custom user files](#custom-user-files).
+The following policy should route US Netflix traffic via WAN. For capturing international Netflix domain names, you can refer to the getdomainnames.sh-specific instructions on [GitHub](https://github.com/Xentrk/netflix-vpn-bypass/blob/master/README.md#ipset_netflix_domainssh)/[jsDelivr](https://cdn.jsdelivr.net/gh/Xentrk/openwrt_packages/netflix-vpn-bypass/README.md#ipset_netflix_domainssh) and don't forget to adjust them for OpenWrt. This may not work if Netflix changes things. For more reliable US Netflix routing you may want to consider using [custom user files](#custom-user-files).
 
 ```text
 config policy
@@ -861,9 +861,9 @@ If you just use the private DNS queries (WARP), [A Word About DNS-over-HTTPS](#a
 
 Some browsers, like [Mozilla Firefox](https://support.mozilla.org/en-US/kb/firefox-dns-over-https#w_about-dns-over-https) or [Google Chrome/Chromium](https://blog.chromium.org/2019/09/experimenting-with-same-provider-dns.html) have [DNS-over-HTTPS proxy](https://en.wikipedia.org/wiki/DNS_over_HTTPS) built-in. Their requests to web-sites cannot be affected if the ```dnsmasq.ipset``` is set for the ```dest_ipset``` option. To fix this, you can try either of the following:
 
-  1. Disable the DNS-over-HTTPS support in your browser and use the OpenWrt's ```net/https-dns-proxy``` (README on [GitHub](https://github.com/openwrt/packages/tree/master/net/https-dns-proxy)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/https-dns-proxy/files/README.md)) package with optional ```https-dns-proxy``` WebUI/luci app. You can then continue to use ```dnsmasq.ipset``` setting for the ```dest_ipset``` in VPN Policy Routing.
+  1. Disable the DNS-over-HTTPS support in your browser and use the OpenWrt's ```net/https-dns-proxy``` (README on [GitHub](https://github.com/openwrt/packages/tree/master/net/https-dns-proxy)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/https-dns-proxy/files/README.md)) package with optional ```https-dns-proxy``` WebUI/luci app. You can then continue to use ```dnsmasq.ipset``` setting for the ```dest_ipset``` in VPN Policy Routing.
 
-  2. Continue using DNS-over-HTTPS in your browser (which, by the way, also limits your options for router-level AdBlocking as described in ```dnsmasq.ipset``` option description here of ```net/simple-adblock``` README on [GitHub](https://github.com/openwrt/packages/tree/master/net/simple-adblock/files#dns-resolution-option)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/simple-adblock/files/README.md#dns-resolution-option)), you than would either have to disable the  ```dest_ipset``` or switch it to ```ipset```. Please note, you will lose all the benefits of [```dnsmasq.ipset```](#use-dnsmasq-ipset) option.
+  2. Continue using DNS-over-HTTPS in your browser (which, by the way, also limits your options for router-level AdBlocking as described in ```dnsmasq.ipset``` option description here of ```net/simple-adblock``` README on [GitHub](https://github.com/openwrt/packages/tree/master/net/simple-adblock/files#dns-resolution-option)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/simple-adblock/files/README.md#dns-resolution-option)), you than would either have to disable the  ```dest_ipset``` or switch it to ```ipset```. Please note, you will lose all the benefits of [```dnsmasq.ipset```](#use-dnsmasq-ipset) option.
 
 ### A Word About HTTP/3 (QUICK)
 

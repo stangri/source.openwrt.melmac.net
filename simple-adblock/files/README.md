@@ -22,25 +22,25 @@ A simple DNSMASQ/Unbound-based AdBlocking service for OpenWrt/LEDE Project.
 - Blocks ads inside browsers with [DNS-over-HTTPS proxy](https://en.wikipedia.org/wiki/DNS_over_HTTPS) built-in, like [Mozilla Firefox](https://support.mozilla.org/en-US/kb/firefox-dns-over-https#w_about-dns-over-https) or [Google Chrome/Chromium](https://blog.chromium.org/2019/09/experimenting-with-same-provider-dns.html) -- with the ```dnsmasq.ipset``` option.
 - Proudly made in Canada, using locally-sourced electrons.
 
-If you want a more robust AdBlocking, supporting free memory detection and complex block-lists, supporting IDN, check out ```net/adblock``` on [GitHub](https://github.com/openwrt/packages/tree/master/net/adblock/files)/[jsDelivr](https://cdn.jsdelivr.net/gh/openwrt/packages@master/net/adblock/files/README.md).
+If you want a more robust AdBlocking, supporting free memory detection and complex block-lists, supporting IDN, check out ```net/adblock``` on [GitHub](https://github.com/openwrt/packages/tree/master/net/adblock/files)/[jsDelivr](https://cdn.jsdelivr.net/gh/openwrt/packages/net/adblock/files/README.md).
 
 ## Screenshots (luci-app-simple-adblock)
 
 Service Status
 
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/simple-adblock/screenshot08-status.png "Service Status")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/screenshots/simple-adblock/screenshot08-status.png "Service Status")
 
 Configuration - Basic Configuration
 
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/simple-adblock/screenshot08-config-basic.png "Configuration - Basic Configuration")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/screenshots/simple-adblock/screenshot08-config-basic.png "Configuration - Basic Configuration")
 
 Configuration - Advanced Configuration
 
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/simple-adblock/screenshot08-config-advanced.png "Configuration - Advanced Configuration")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/screenshots/simple-adblock/screenshot08-config-advanced.png "Configuration - Advanced Configuration")
 
 Allowed and Blocked Lists Management
 
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/simple-adblock/screenshot09-lists.png "Allow-list and Block-list Management")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/screenshots/simple-adblock/screenshot09-lists.png "Allow-list and Block-list Management")
 
 ## Requirements
 
@@ -99,7 +99,7 @@ Install ```simple-adblock``` and ```luci-app-simple-adblock``` packages from Web
 opkg update; opkg install simple-adblock luci-app-simple-adblock
 ```
 
-If ```simple-adblock``` and ```luci-app-simple-adblock``` packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/README.md#on-your-router) first.
+If ```simple-adblock``` and ```luci-app-simple-adblock``` packages are not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/README.md#on-your-router) first.
 
 ## Default Settings
 
