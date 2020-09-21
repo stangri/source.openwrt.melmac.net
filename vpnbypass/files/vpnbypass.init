@@ -3,12 +3,27 @@
 # shellcheck disable=SC2039,SC1091,SC2086
 PKG_VERSION='dev-test'
 
-export START=94
-export USE_PROCD=1
+# shellcheck disable=SC2034
+START=94
+# shellcheck disable=SC2034
+USE_PROCD=1
+
+# shellcheck disable=SC2034
+EXTRA_COMMANDS='version'
+version() { echo "$PKG_VERSION"; }
 
 readonly __ERROR__='\033[0;31mERROR\033[0m'
 
-export serviceEnabled verbosity=2 TID='200' IPSET='vpnbypass' FW_MARK='0x010000' FW_MASK='0xff0000' wan_if4 wan_gw
+# shellcheck disable=SC2034
+serviceEnabled=0
+verbosity=2
+TID='200'
+IPSET='vpnbypass'
+FW_MARK='0x010000'
+FW_MASK='0xff0000'
+wan_if4=''
+wan_gw=''
+
 readonly packageName='vpnbypass'
 readonly serviceName="$packageName $PKG_VERSION"
 readonly sharedMemoryOutput="/dev/shm/$packageName-output"
