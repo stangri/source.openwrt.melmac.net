@@ -17,13 +17,15 @@ readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
 
 # shellcheck disable=SC2034
-EXTRA_COMMANDS='support'
+EXTRA_COMMANDS='support version'
 # shellcheck disable=SC2034
 EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
 		Use '-p' option to automatically upload data under VPR paste.ee account
 			WARNING: while paste.ee uploads are unlisted, they are still publicly available
 		List domain names after options to include their lookup in report"
+
+version() { echo "$PKG_VERSION"; }
 
 readonly packageName='vpn-policy-routing'
 readonly serviceName="$packageName $PKG_VERSION"
