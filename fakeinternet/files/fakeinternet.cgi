@@ -49,14 +49,14 @@ elif [ "$REQUEST_URI" = "/kindle-wifi/wifiredirect.html" ]; then
 	echo '</body>'
 	echo '</html>'
 	logger -t 'fakeinternet' "${HTTP_HOST}${REQUEST_URI}: Served 200 OK/HTML"
-elif [ "$REQUEST_URI" == "/check_network_status.txt" ]; then
+elif [ "$REQUEST_URI" = "/check_network_status.txt" ]; then
 	echo "Status: 200 OK"
 	echo "Content-Type: text/plain"
 	echo ""
 	echo "NetworkManager is online"
 	echo ""
 	logger -t 'fakeinternet' "${HTTP_HOST}${REQUEST_URI}: Served 200 OK"
-elif [ "$REQUEST_URI" == "/success.txt" ]; then
+elif [ "$REQUEST_URI" = "/success.txt" ]; then
 	echo "Status: 200 OK"
 	echo "Content-Type: text/plain"
 	echo ""
