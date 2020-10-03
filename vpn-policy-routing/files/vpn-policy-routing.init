@@ -771,41 +771,39 @@ process_tor_interface(){
 convert_config(){
 	local i
 	[ -s "/etc/config/${packageName}" ] || return 0
-	sed -i 's/ignored_interfaces/ignored_interface/g' "/etc/config/${packageName}"
-	sed -i 's/supported_interfaces/supported_interface/g' "/etc/config/${packageName}"
-	sed -i 's/local_addresses/local_address/g' "/etc/config/${packageName}"
-	sed -i 's/local_ports/local_port/g' "/etc/config/${packageName}"
-	sed -i 's/remote_addresses/remote_address/g' "/etc/config/${packageName}"
-	sed -i 's/remote_ports/remote_port/g' "/etc/config/${packageName}"
-	sed -i 's/ipset_enabled/remote_ipset/g' "/etc/config/${packageName}"
-	sed -i 's/dnsmasq_enabled/dnsmasq_ipset/g' "/etc/config/${packageName}"
-	sed -i 's/enable_control/webui_enable_column/g' "/etc/config/${packageName}"
-	sed -i 's/proto_control/webui_protocol_column/g' "/etc/config/${packageName}"
-	sed -i 's/chain_control/webui_chain_column/g' "/etc/config/${packageName}"
-	sed -i 's/sort_control/webui_sorting/g' "/etc/config/${packageName}"
-	sed -i 's/local_address/src_addr/g' "/etc/config/${packageName}"
-	sed -i 's/local_port/src_port/g' "/etc/config/${packageName}"
-	sed -i 's/remote_address/dest_addr/g' "/etc/config/${packageName}"
-	sed -i 's/remote_port/dest_port/g' "/etc/config/${packageName}"
-	sed -i 's/append_local_rules/append_src_rules/g' "/etc/config/${packageName}"
-	sed -i 's/append_remote_rules/append_dest_rules/g' "/etc/config/${packageName}"
-	sync
-	config_load "$packageName"
-	config_get_bool dnsmasqIpset        'config' 'dnsmasq_ipset' 0
-	config_get      remoteIpset         'config' 'remote_ipset'
-	config_get      webuiProtocol       'config' 'webui_supported_protocol'
-# shellcheck disable=SC2154
-	if [ "$dnsmasqIpset" = "1" ]; then
-		remoteIpset="dnsmasq.ipset";
-	elif [ "$remoteIpset" = "1" ]; then
-		remoteIpset="ipset";
-	elif [ "$remoteIpset" = "0" ]; then
-		remoteIpset=""
+	grep -q "ignored_interfaces" "/etc/config/${packageName}" && sed -i 's/ignored_interfaces/ignored_interface/g' "/etc/config/${packageName}"
+	grep -q "supported_interfaces" "/etc/config/${packageName}" && sed -i 's/supported_interfaces/supported_interface/g' "/etc/config/${packageName}"
+	grep -q "local_addresses" "/etc/config/${packageName}" && sed -i 's/local_addresses/local_address/g' "/etc/config/${packageName}"
+	grep -q "local_ports" "/etc/config/${packageName}" && sed -i 's/local_ports/local_port/g' "/etc/config/${packageName}"
+	grep -q "remote_addresses" "/etc/config/${packageName}" && sed -i 's/remote_addresses/remote_address/g' "/etc/config/${packageName}"
+	grep -q "remote_ports" "/etc/config/${packageName}" && sed -i 's/remote_ports/remote_port/g' "/etc/config/${packageName}"
+	grep -q "ipset_enabled" "/etc/config/${packageName}" && sed -i 's/ipset_enabled/remote_ipset/g' "/etc/config/${packageName}"
+	grep -q "dnsmasq_enabled" "/etc/config/${packageName}" && sed -i 's/dnsmasq_enabled/dnsmasq_ipset/g' "/etc/config/${packageName}"
+	grep -q "enable_control" "/etc/config/${packageName}" && sed -i 's/enable_control/webui_enable_column/g' "/etc/config/${packageName}"
+	grep -q "proto_control" "/etc/config/${packageName}" && sed -i 's/proto_control/webui_protocol_column/g' "/etc/config/${packageName}"
+	grep -q "chain_control" "/etc/config/${packageName}" && sed -i 's/chain_control/webui_chain_column/g' "/etc/config/${packageName}"
+	grep -q "sort_control" "/etc/config/${packageName}" && sed -i 's/sort_control/webui_sorting/g' "/etc/config/${packageName}"
+	grep -q "local_address" "/etc/config/${packageName}" && sed -i 's/local_address/src_addr/g' "/etc/config/${packageName}"
+	grep -q "local_port" "/etc/config/${packageName}" && sed -i 's/local_port/src_port/g' "/etc/config/${packageName}"
+	grep -q "remote_address" "/etc/config/${packageName}" && sed -i 's/remote_address/dest_addr/g' "/etc/config/${packageName}"
+	grep -q "remote_port" "/etc/config/${packageName}" && sed -i 's/remote_port/dest_port/g' "/etc/config/${packageName}"
+	grep -q "append_local_rules" "/etc/config/${packageName}" && sed -i 's/append_local_rules/append_src_rules/g' "/etc/config/${packageName}"
+	grep -q "append_remote_rules" "/etc/config/${packageName}" && sed -i 's/append_remote_rules/append_dest_rules/g' "/etc/config/${packageName}"
+	grep -q "local_ipset" "/etc/config/${packageName}" && sed -i 's/local_ipset/src_ipset/g' "/etc/config/${packageName}"
+	grep -q "remote_ipset" "/etc/config/${packageName}" && sed -i 's/remote_ipset/dest_ipset/g' "/etc/config/${packageName}"
+#	sync
+	if [ "$(uci -q get $packageName.config.dnsmasq_ipset)" = "1" ]; then
+		uci -q set "$packageName".config.dest_ipset='dnsmasq.ipset'
+		uci -q del "$packageName.config.dnsmasq_ipset"
+		uci -q del "$packageName.config.remote_ipset"
+	elif [ "$(uci -q get $packageName.config.remote_ipset)" = "1" ]; then
+		uci -q set "$packageName".config.dest_ipset='ipset'
+		uci -q del "$packageName.config.remote_ipset"
+	elif [ "$(uci -q get $packageName.config.remote_ipset)" = "0" ]; then
+		uci -q set "$packageName".config.dest_ipset=''
+		uci -q del "$packageName.config.remote_ipset"
 	fi
-	uci -q del "$packageName.config.dnsmasq_ipset"
-	uci -q set "$packageName".config.remote_ipset="$remoteIpset"
-# shellcheck disable=SC2154
-	if [ -z "$webuiProtocol" ]; then
+	if [ -z "$(uci -q get $packageName.config.webui_supported_protocol)" ]; then
 		uci add_list "$packageName".config.webui_supported_protocol='tcp'
 		uci add_list "$packageName".config.webui_supported_protocol='udp'
 		uci add_list "$packageName".config.webui_supported_protocol='tcp udp'
@@ -813,8 +811,6 @@ convert_config(){
 		uci add_list "$packageName".config.webui_supported_protocol='all'
 	fi
 	uci commit "$packageName"
-	sed -i 's/local_ipset/src_ipset/g' "/etc/config/${packageName}"
-	sed -i 's/remote_ipset/dest_ipset/g' "/etc/config/${packageName}"
 	for i in udp_proto_enabled forward_chain_enabled input_chain_enabled output_chain_enabled; do
 		grep -q "$i" "/etc/config/${packageName}" && output "${_WARNING_}: $i setting is not supported in ${serviceName}.\\n"
 	done
