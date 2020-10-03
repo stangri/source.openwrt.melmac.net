@@ -1,4 +1,4 @@
-# stangri's OpenWrt/OpenWrt packages repo
+# stangri's OpenWrt packages repo
 
 [![HitCount](http://hits.dwyl.com/stangri/openwrt.svg)](http://hits.dwyl.com/stangri/openwrt)
 
