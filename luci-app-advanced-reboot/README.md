@@ -1,4 +1,3 @@
-<!-- markdownlint-disable MD013 -->
 # Advanced Reboot Web UI (luci-app-advanced-reboot)
 
 [![HitCount](http://hits.dwyl.com/stangri/openwrt/luci-app-advanced-reboot.svg)](http://hits.dwyl.com/stangri/openwrt/luci-app-advanced-reboot)
@@ -15,7 +14,9 @@ Currently supported dual-partition devices include:
 - Linksys E4200v2
 - Linksys EA4500
 - Linksys EA6350v3
+- Linksys EA7300v2
 - Linksys EA8300
+- Linksys MR8300
 - Linksys EA8500
 - Linksys WRT1200AC
 - Linksys WRT1900AC
@@ -29,7 +30,7 @@ If your device is not in the list above, however it is a [dual-firmware device](
 
 ## Screenshot (luci-app-advanced-reboot)
 
-![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/screenshots/luci-app-advanced-reboot/screenshot02.png "screenshot")
+![screenshot](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/screenshots/luci-app-advanced-reboot/screenshot02.png "screenshot")
 
 ## How to install
 
@@ -40,7 +41,7 @@ opkg update
 opkg install luci-app-advanced-reboot
 ```
 
-If the ```luci-app-advanced-reboot``` package is not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages/README.md#on-your-router) first.
+If the ```luci-app-advanced-reboot``` package is not found in the official feed/repo for your version of OpenWrt/LEDE Project, you will need to add a custom repo to your router following instructions on [GitHub](https://github.com/stangri/openwrt_packages/blob/master/README.md#on-your-router)/[jsDelivr](https://cdn.jsdelivr.net/gh/stangri/openwrt_packages@master/README.md#on-your-router) first.
 
 ## Notes/Known Issues
 
