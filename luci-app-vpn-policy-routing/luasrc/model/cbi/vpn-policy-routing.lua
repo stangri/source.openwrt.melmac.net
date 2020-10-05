@@ -1,4 +1,4 @@
-local readmeURL = "https://github.com/openwrt/packages/tree/master/net/vpn-policy-routing/files/README.md"
+local readmeURL = "https://docs.openwrt.melmac.net/vpn-policy-routing/"
 
 local packageName = "vpn-policy-routing"
 local uci = require "luci.model.uci".cursor()

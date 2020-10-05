@@ -1,8 +1,7 @@
 -- Copyright 2016-2018 Stan Grishin <stangri@melmac.net>
 -- Licensed to the public under the Apache License 2.0.
 
-local readmeURL = "https://github.com/openwrt/packages/tree/master/net/simple-adblock/files/README.md"
--- local readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/simple-adblock/files/README.md"
+local readmeURL = "https://docs.openwrt.melmac.net/simple-adblock/"
 
 local packageName = "simple-adblock"
 local uci = require "luci.model.uci".cursor()

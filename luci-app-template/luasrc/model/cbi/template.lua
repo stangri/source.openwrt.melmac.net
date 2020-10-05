@@ -1,4 +1,4 @@
-readmeURL = "https://github.com/openwrt/packages/blob/master/net/template/files/README.md"
+readmeURL = "https://docs.openwrt.melmac.net/template/"
 
 m = Map("template", translate("Template Settings"))
 s = m:section(NamedSection, "config", "template")

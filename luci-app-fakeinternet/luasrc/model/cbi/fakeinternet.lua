@@ -1,7 +1,7 @@
 -- Copyright 2016-2018 Stan Grishin <stangri@melmac.net>
 -- Licensed to the public under the Apache License 2.0.
 
-local readmeURL = "https://github.com/openwrt/packages/blob/master/net/fakeinternet/files/README.md"
+local readmeURL = "https://docs.openwrt.melmac.net/fakeinternet/"
 
 m = Map("fakeinternet", translate("Fakeinternet Settings"))
 h = m:section(NamedSection, "config", "fakeinternet", translate("Service Status"))

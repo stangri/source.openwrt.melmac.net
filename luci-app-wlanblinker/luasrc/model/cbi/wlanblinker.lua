@@ -1,5 +1,4 @@
--- local readmeURL = "https://github.com/openwrt/packages/tree/master/net/wlanblinker/files/README.md"
-local readmeURL = "https://github.com/stangri/openwrt_packages/tree/master/wlanblinker/files/README.md"
+local readmeURL = "https://docs.openwrt.melmac.net/wlanblinker/"
 
 m = Map("wlanblinker", translate("WLAN Blinker Settings"))
 h = m:section(NamedSection, "config", "wlanblinker", translate("Service Status"))
