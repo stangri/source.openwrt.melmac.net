@@ -24,7 +24,7 @@ function getPackageVersion()
 end
 
 function createHelperText()
-	local initText = "<br />" .. translate("For more information on different options check") .. " "
+	local initText = translate("For more information on different options check") .. " "
 	for filename in fs.dir(providers_dir) do
 		local p_func = loadfile(providers_dir .. filename)
 		setfenv(p_func, { _ = i18n.translate })
@@ -122,9 +122,20 @@ else
 	buttons.template = packageName .. "/buttons"
 end
 
+c = m:section(NamedSection, "config", "https-dns-proxy", translate("Configuration"), translatef("If update DNSMASQ config is selected, when you add/remove any instances below, they will be used to override the 'DNS forwardings' section of %sDHCP and DNS%s.", "<a href=\"" .. dispatcher.build_url("admin/network/dhcp") .. "\">", "</a>"))
+d1 = c:option(ListValue, "update_dnsmasq_config", translate("Update DNSMASQ Config on Start/Stop"))
+d1:value('*', "Update all DNSMASQ configs")
+local dnsmasq_num = 0
+uci:foreach("dhcp", "dnsmasq", function(s)
+d1:value(tostring(dnsmasq_num), "Update only dnsmasq[" .. tostring(dnsmasq_num) .. "] config")
+dnsmasq_num = dnsmasq_num + 1
+end)
+d1:value('-', "Do not update DNSMASQ configs")
+d1.default = '*'
+
 createHelperText()
 s3 = m:section(TypedSection, "https-dns-proxy", translate("Instances"), 
-	translatef("When you add/remove any instances below, they will be used to override the 'DNS forwardings' section of %sDHCP and DNS%s.", "<a href=\"" .. dispatcher.build_url("admin/network/dhcp") .. "\">", "</a>") .. helperText)
+	translatef(helperText))
 s3.template = "cbi/tblsection"
 s3.sortable  = false
 s3.anonymous = true
