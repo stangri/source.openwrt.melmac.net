@@ -102,7 +102,6 @@ msgid "Grant UCI and file access for luci-app-https-dns-proxy"
 msgstr ""
 
 #: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:125
-msgctxt "<a href=\""
 msgid ""
 "If update DNSMASQ config is selected, when you add/remove any instances "
 "below, they will be used to override the 'DNS forwardings' section of %sDHCP "

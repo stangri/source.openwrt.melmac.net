@@ -122,7 +122,7 @@ else
 	buttons.template = packageName .. "/buttons"
 end
 
-c = m:section(NamedSection, "config", "https-dns-proxy", translate("Configuration"), translate("If update DNSMASQ config is selected, when you add/remove any instances below, they will be used to override the 'DNS forwardings' section of %sDHCP and DNS%s.", "<a href=\"" .. dispatcher.build_url("admin/network/dhcp") .. "\">", "</a>"))
+c = m:section(NamedSection, "config", "https-dns-proxy", translate("Configuration"), translatef("If update DNSMASQ config is selected, when you add/remove any instances below, they will be used to override the 'DNS forwardings' section of %sDHCP and DNS%s.", "<a href=\"" .. dispatcher.build_url("admin/network/dhcp") .. "\">", "</a>"))
 d1 = c:option(ListValue, "update_dnsmasq_config", translate("Update DNSMASQ Config on Start/Stop"))
 d1:value('*', translate("Update all configs"))
 local dnsmasq_num = 0
