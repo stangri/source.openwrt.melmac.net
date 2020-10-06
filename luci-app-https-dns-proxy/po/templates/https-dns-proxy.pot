@@ -81,6 +81,10 @@ msgstr ""
 msgid "Disable"
 msgstr ""
 
+#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:133
+msgid "Do not update configs"
+msgstr ""
+
 #: applications/luci-app-https-dns-proxy/luasrc/view/https-dns-proxy/buttons.htm:54
 msgid "Enable"
 msgstr ""
@@ -98,6 +102,7 @@ msgid "Grant UCI and file access for luci-app-https-dns-proxy"
 msgstr ""
 
 #: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:125
+msgctxt "<a href=\""
 msgid ""
 "If update DNSMASQ config is selected, when you add/remove any instances "
 "below, they will be used to override the 'DNS forwardings' section of %sDHCP "
@@ -196,8 +201,16 @@ msgstr ""
 msgid "Unknown Provider"
 msgstr ""
 
+#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:130
+msgid "Update %s config"
+msgstr ""
+
 #: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:126
 msgid "Update DNSMASQ Config on Start/Stop"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:127
+msgid "Update all configs"
 msgstr ""
 
 #: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:48
