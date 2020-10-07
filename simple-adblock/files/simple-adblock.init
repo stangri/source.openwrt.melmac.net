@@ -144,6 +144,7 @@ debug=0
 compressedCache=0
 ipv6Enabled=0
 configUpdateEnabled=0
+configUpdateURL=''
 bootDelay=120
 dlTimeout=20
 curlRetry=3
