@@ -1,4 +1,5 @@
-readmeURL = "https://docs.openwrt.melmac.net/template/"
+local packageName = "template"
+local readmeURL = "https://docs.openwrt.melmac.net/" .. packageName .. "/"
 
 m = Map("template", translate("Template Settings"))
 s = m:section(NamedSection, "config", "template")

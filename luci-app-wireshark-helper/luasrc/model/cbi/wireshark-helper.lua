@@ -1,9 +1,8 @@
 -- Copyright 2016-2018 Stan Grishin <stangri@melmac.net>
 -- Licensed to the public under the Apache License 2.0.
 
-local readmeURL = "https://docs.openwrt.melmac.net/wireshark-helper/"
-
 local packageName = "wireshark-helper"
+local readmeURL = "https://docs.openwrt.melmac.net/" .. packageName .. "/"
 local uci = require "luci.model.uci".cursor()
 local sys = require "luci.sys"
 local util = require "luci.util"

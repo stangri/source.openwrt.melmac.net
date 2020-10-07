@@ -1,9 +1,11 @@
-local readmeURL = "https://docs.openwrt.melmac.net/wlanblinker/"
+-- Copyright 2016-2018 Stan Grishin <stangri@melmac.net>
+-- Licensed to the public under the Apache License 2.0.
 
 m = Map("wlanblinker", translate("WLAN Blinker Settings"))
 h = m:section(NamedSection, "config", "wlanblinker", translate("Service Status"))
 
 local serviceName = "wlanblinker"
+local readmeURL = "https://docs.openwrt.melmac.net/" .. packageName .. "/"
 local uci = require("luci.model.uci").cursor()
 local enabledFlag = uci:get(serviceName, "config", "enabled")
 en = h:option(Button, "__toggle")

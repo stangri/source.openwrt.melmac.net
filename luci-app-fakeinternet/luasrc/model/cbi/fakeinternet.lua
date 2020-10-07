@@ -1,14 +1,14 @@
 -- Copyright 2016-2018 Stan Grishin <stangri@melmac.net>
 -- Licensed to the public under the Apache License 2.0.
 
-local readmeURL = "https://docs.openwrt.melmac.net/fakeinternet/"
+local packageName = "fakeinternet"
+local readmeURL = "https://docs.openwrt.melmac.net/" .. packageName .. "/"
+local uci = require("luci.model.uci").cursor()
+local enabledFlag = uci:get(packageName, "config", "enabled")
 
 m = Map("fakeinternet", translate("Fakeinternet Settings"))
 h = m:section(NamedSection, "config", "fakeinternet", translate("Service Status"))
 
-local serviceName = "fakeinternet"
-local uci = require("luci.model.uci").cursor()
-local enabledFlag = uci:get(serviceName, "config", "enabled")
 en = h:option(Button, "__toggle")
 if enabledFlag ~= "1" then
 	en.title      = translate("Service is disabled/stopped")
@@ -21,16 +21,16 @@ else
 end
 function en.write()
 	enabledFlag = enabledFlag == "1" and "0" or "1"
-	uci:set(serviceName, "config", "enabled", enabledFlag)
-	uci:save(serviceName)
-	uci:commit(serviceName)
+	uci:set(packageName, "config", "enabled", enabledFlag)
+	uci:save(packageName)
+	uci:commit(packageName)
 	if enabledFlag == "0" then
-		luci.sys.init.stop(serviceName)
+		luci.sys.init.stop(packageName)
 	else
-		luci.sys.init.enable(serviceName)
-		luci.sys.init.start(serviceName)
+		luci.sys.init.enable(packageName)
+		luci.sys.init.start(packageName)
 	end
-	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. serviceName))
+	luci.http.redirect(luci.dispatcher.build_url("admin/services/" .. packageName))
 end
 
 s1 = m:section(NamedSection, "config", "fakeinternet", translate("Configuration"))

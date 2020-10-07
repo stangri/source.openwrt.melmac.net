@@ -1,8 +1,8 @@
-local readmeURL = "https://docs.openwrt.melmac.net/vpnbypass/"
 local uci = require "luci.model.uci".cursor()
 local sys = require "luci.sys"
 local util = require "luci.util"
 local packageName = "vpnbypass"
+local readmeURL = "https://docs.openwrt.melmac.net/" .. packageName .. "/"
 
 function getPackageVersion()
 	local opkgFile = "/usr/lib/opkg/status"
