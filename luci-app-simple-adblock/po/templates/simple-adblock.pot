@@ -244,8 +244,8 @@ msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:265
 msgid ""
-"Pick the DNS resolution option to create the adblock list for, see the <a "
-"href=\"%s#dns-resolution-option\" target=\"_blank\">README</a> for details."
+"Pick the DNS resolution option to create the adblock list for, see the "
+"%sREADME%s for details."
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:255

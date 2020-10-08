@@ -262,7 +262,7 @@ end
 
 s:tab("advanced", translate("Advanced Configuration"))
 
-local dns_descr = translatef("Pick the DNS resolution option to create the adblock list for, see the <a href=\"%s#dns-resolution-option\" target=\"_blank\">README</a> for details.", readmeURL)
+local dns_descr = translatef("Pick the DNS resolution option to create the adblock list for, see the %sREADME%s for details.", "<a href=\"" .. readmeURL .. "#dns-resolution-option\" target=\"_blank\">", "</a>")
 
 if not checkDnsmasq() then
 	dns_descr = dns_descr .. "<br />" .. translatef("Please note that %s is not supported on this system.", "<i>dnsmasq.addnhosts</i>")
