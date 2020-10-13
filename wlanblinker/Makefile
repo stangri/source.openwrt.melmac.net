@@ -28,12 +28,6 @@ define Package/wlanblinker/conffiles
 /etc/config/wlanblinker
 endef
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)/files/
-	$(CP) ./files/wlanblinker.init $(PKG_BUILD_DIR)/files/wlanblinker.init
-	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/wlanblinker.init
-endef
-
 define Build/Configure
 endef
 
@@ -42,7 +36,8 @@ endef
 
 define Package/wlanblinker/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/wlanblinker.init $(1)/etc/init.d/wlanblinker
+	$(INSTALL_BIN) ./files/wlanblinker.init $(1)/etc/init.d/wlanblinker
+	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/wlanblinker
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/wlanblinker.conf $(1)/etc/config/wlanblinker
 	$(INSTALL_DIR) $(1)/usr/sbin

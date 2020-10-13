@@ -28,12 +28,6 @@ define Package/vpn-policy-routing/conffiles
 /etc/config/vpn-policy-routing
 endef
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)/files/
-	$(CP) ./files/vpn-policy-routing.init $(PKG_BUILD_DIR)/files/vpn-policy-routing.init
-	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/vpn-policy-routing.init
-endef
-
 define Build/Configure
 endef
 
@@ -42,7 +36,8 @@ endef
 
 define Package/vpn-policy-routing/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/vpn-policy-routing.init $(1)/etc/init.d/vpn-policy-routing
+	$(INSTALL_BIN) ./files/vpn-policy-routing.init $(1)/etc/init.d/vpn-policy-routing
+	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/vpn-policy-routing
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/vpn-policy-routing.conf $(1)/etc/config/vpn-policy-routing
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/firewall

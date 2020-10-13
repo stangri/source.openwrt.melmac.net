@@ -67,12 +67,6 @@ Package/slider-support-ar300m/conffiles = $(Package/slider-support/conffiles)
 Package/slider-support-ar750/conffiles = $(Package/slider-support/conffiles)
 Package/slider-support-mt300n/conffiles = $(Package/slider-support/conffiles)
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)/files/
-	$(CP) ./files/slider-support.init $(PKG_BUILD_DIR)/files/slider-support.init
-	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/slider-support.init
-endef
-
 define Build/Configure
 endef
 
@@ -81,7 +75,8 @@ endef
 
 define Package/slider-support/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/slider-support.init $(1)/etc/init.d/slider-support
+	$(INSTALL_BIN) ./files/slider-support.init $(1)/etc/init.d/slider-support
+	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/slider-support
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/slider-support.conf $(1)/etc/config/slider-support
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface

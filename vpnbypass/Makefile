@@ -39,7 +39,7 @@ endef
 
 define Package/vpnbypass/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/vpnbypass.init $(1)/etc/init.d/vpnbypass
+	$(INSTALL_BIN) ./files/vpnbypass.init $(1)/etc/init.d/vpnbypass
 	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/vpnbypass
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/vpnbypass.conf $(1)/etc/config/vpnbypass

@@ -28,12 +28,6 @@ define Package/fakeinternet/conffiles
 /etc/config/fakeinternet
 endef
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)/files/
-	$(CP) ./files/fakeinternet.init $(PKG_BUILD_DIR)/files/fakeinternet.init
-	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/fakeinternet.init
-endef
-
 define Build/Configure
 endef
 
@@ -42,7 +36,8 @@ endef
 
 define Package/fakeinternet/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/fakeinternet.init $(1)/etc/init.d/fakeinternet
+	$(INSTALL_BIN) ./files/fakeinternet.init $(1)/etc/init.d/fakeinternet
+	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/fakeinternet
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/fakeinternet.conf $(1)/etc/config/fakeinternet
 	$(INSTALL_DIR) $(1)/www_fakeinternet

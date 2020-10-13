@@ -37,8 +37,6 @@ define Build/Prepare
 	sed -i '/logger\./d' $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_VERSION)/app/views/antminer.py
 	sed -i "s/app.config\['DEBUG'\] = True/app.config\['DEBUG'\] = False/" $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_VERSION)/app/__init__.py
 	mkdir -p $(PKG_BUILD_DIR)/files/
-	$(CP) ./files/antminer-monitor.init $(PKG_BUILD_DIR)/files/antminer-monitor.init
-	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(PKG_BUILD_DIR)/files/antminer-monitor.init
 endef
 
 define Build/Configure
@@ -49,7 +47,8 @@ endef
 
 define Package/antminer-monitor/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/antminer-monitor.init $(1)/etc/init.d/antminer-monitor
+	$(INSTALL_BIN) ./files/antminer-monitor.init $(1)/etc/init.d/antminer-monitor
+	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/antminer-monitor
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_VERSION) $(1)/usr/sbin/antminer-monitor
 endef
