@@ -1,8 +1,7 @@
 #!/bin/sh /etc/rc.common
 # Copyright 2019-2020 Stan Grishin (stangri@melmac.net)
 # shellcheck disable=SC2039
-
-readonly PKG_VERSION='2020-08-21-1'
+PKG_VERSION='dev-test'
 
 # shellcheck disable=SC2034
 START=80
