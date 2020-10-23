@@ -164,10 +164,10 @@ load_package_config() {
 	config_get insertOption             'config' 'iptables_rule_option' 'append'
 	config_foreach append_used_chains   'policy'
 
+	supportedIfaces="$supportedIfaces ignore"
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
 	fi
-
 
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
@@ -335,8 +335,10 @@ ipr()
 }
 
 insert_tor_policy() {
-	local comment iface laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain
-	comment="$1" iface="$(str_to_lower "$2")" proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}"
+	local comment="$1" iface laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain
+	iface="$(str_to_lower "$2")"
+	proto="$(str_to_lower "$7")"
+	chain="${8:-PREROUTING}"
 	if [ -n "${laddr}${lport}${rport}" ]; then
 		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'src_addr', 'src_port' and 'dest_port' for policy '$comment'\\n"
 	fi
@@ -351,16 +353,23 @@ insert_tor_policy() {
 }
 
 insert_policy() {
-	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain
+	local comment="$1" iface laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain
 	local appendLP="$appendLocalPolicy" appendRP="$appendRemotePolicy"
-	local mark param i valueNeg value
-	proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}" mark=$(eval echo "\$mark_${iface//-/_}")
+	local mark param i valueNeg value dest
+	iface="$(str_to_lower "$2")"
+	proto="$(str_to_lower "$7")"
+	chain="${8:-PREROUTING}"
+	mark=$(eval echo "\$mark_${iface//-/_}")
 	if [ "$ipv6Enabled" -eq 0 ] && ( is_ipv6 "$laddr" || is_ipv6 "$raddr" ); then
 		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$comment' as IPv6 support is disabled\\n"
 		return 1
 	fi
 
-	if [ -z "$mark" ]; then
+	if [ -n "$mark" ]; then
+		dest="-j MARK --set-xmark ${mark}/${fwMask}"
+	elif [ "$iface" = "ignore" ]; then
+		dest="-j RETURN"
+	else
 		processPolicyError="${processPolicyError}${_ERROR_}: Unknown fw_mark for ${iface}\\n"
 		return 0
 	fi
@@ -400,12 +409,12 @@ insert_policy() {
 
 	for i in $proto; do
 		if [ "$i" = 'all' ]; then
-			param="-t mangle -I VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask}"
+			param="-t mangle -I VPR_${chain} $dest"
 		elif ! is_supported_protocol "$i"; then
 			processPolicyError="${processPolicyError}${_ERROR_}: Unknown protocol '$i' in policy '$comment'\\n"
 			return 0
 		else
-			param="-t mangle -I VPR_${chain} -j MARK --set-xmark ${mark}/${fwMask} -p $i"
+			param="-t mangle -I VPR_${chain} $dest -p $i"
 		fi
 
 		if [ -n "$laddr" ]; then
