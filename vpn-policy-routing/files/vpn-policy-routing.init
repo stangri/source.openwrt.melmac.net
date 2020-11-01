@@ -16,14 +16,23 @@ readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
 
-# shellcheck disable=SC2034
-EXTRA_COMMANDS='support version'
-# shellcheck disable=SC2034
-EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
+if type extra_command 1>/dev/null 2>&1; then
+	extra_command 'support' "Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
 		Use '-p' option to automatically upload data under VPR paste.ee account
 			WARNING: while paste.ee uploads are unlisted, they are still publicly available
 		List domain names after options to include their lookup in report"
+	extra_command 'version' 'Show version information'
+else
+# shellcheck disable=SC2034
+	EXTRA_COMMANDS='support version'
+# shellcheck disable=SC2034
+	EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
+		Use '-d' option for more detailed output
+		Use '-p' option to automatically upload data under VPR paste.ee account
+			WARNING: while paste.ee uploads are unlisted, they are still publicly available
+		List domain names after options to include their lookup in report"
+fi
 
 version() { echo "$PKG_VERSION"; }
 
