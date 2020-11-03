@@ -514,13 +514,8 @@ r_process_policy(){
 		if [ -n "$proto" ] && [ "$proto" != 'all' ]; then
 			processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment', domain '$raddr'\\n"
 		fi
-		case "$remoteIpset" in
-		ipset)
-			ips 'add' "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1;;
-		dnsmasq.ipset)
-			if is_domain "$raddr"; then ips 'add_dnsmasq' "${iface}" "$raddr" "${comment}" || ipsFailFlag=1
-			else ips 'add' "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1; fi;;
-		esac
+		if is_domain "$raddr"; then ips 'add_dnsmasq' "${iface}" "$raddr" "${comment}" || ipsFailFlag=1
+		else ips 'add' "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1; fi
 	else
 		ipsFailFlag=1
 	fi
