@@ -318,7 +318,6 @@ ips() {
 			ipset -q -! "$command" "${ipset}${appendix}" $param || failFlag=1
 			;;
 		destroy|flush)
-			[ -n "$ipsetSupported" ] || return 0
 			ipset -q -! "$command" "${ipset}6${appendix}" 2>/dev/null || failFlag=1
 			ipset -q -! "$command" "${ipset}${appendix}" 2>/dev/null || failFlag=1
 			return 0
