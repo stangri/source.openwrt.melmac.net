@@ -11,13 +11,6 @@ START=94
 # shellcheck disable=SC2034
 USE_PROCD=1
 
-readonly _OK_='\033[0;32m\xe2\x9c\x93\033[0m'
-readonly _FAIL_='\033[0;31m\xe2\x9c\x97\033[0m'
-readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
-readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
-readonly _ERROR_='\033[0;31mERROR\033[0m'
-readonly _WARNING_='\033[0;33mWARNING\033[0m'
-
 if type extra_command 1>/dev/null 2>&1; then
 	extra_command 'support' "Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
@@ -36,14 +29,30 @@ else
 		List domain names after options to include their lookup in report"
 fi
 
-version() { echo "$PKG_VERSION"; }
-
 readonly packageName='vpn-policy-routing'
 readonly serviceName="$packageName $PKG_VERSION"
 readonly PID="/var/run/${packageName}.pid"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
 readonly sharedMemoryOutput="/dev/shm/$packageName-output"
+readonly _OK_='\033[0;32m\xe2\x9c\x93\033[0m'
+readonly _FAIL_='\033[0;31m\xe2\x9c\x97\033[0m'
+readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
+readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
+readonly _ERROR_='\033[0;31mERROR\033[0m'
+readonly _WARNING_='\033[0;33mWARNING\033[0m'
 
+serviceEnabled=; verbosity=; strictMode=; 
+wanTableID=; wanMark=; fwMask=; 
+ipv6Enabled=; localIpsetEnabled=; remoteIpsetEnabled=; ipruleEnabled=;
+appendLocalPolicy=; appendRemotePolicy=;
+wanIface4=; wanIface6=; ifaceMark=; ifaceTableID=;
+ifAll=; ifSupported=; ignoredIfaces=; supportedIfaces=; icmpIface=;
+wanGW4=; wanGW6=; bootTimeout=; insertOption=;
+usedChainsList='PREROUTING'
+dnsmasqIpsetSupported='true'
+ipsetSupported='true'
+
+version() { echo "$PKG_VERSION"; }
 create_lock() { [ -e "$PID" ] && return 1; touch "$PID"; }
 remove_lock() { [ -e "$PID" ] && rm -f "$PID"; }
 trap remove_lock EXIT
@@ -76,13 +85,6 @@ output() {
 	fi
 }
 is_installed() { [ -s "/usr/lib/opkg/info/${1}.control" ]; }
-
-export serviceEnabled verbosity strictMode wanTableID wanMark fwMask
-export ipv6Enabled localIpset remoteIpset dnsmasqIpset='1' ipruleEnabled icmpIface
-export ignoredIfaces='' supportedIfaces=''
-export appendLocalPolicy='' appendRemotePolicy=''
-export wanIface4 wanIface6 ifaceMark ifaceTableID ifAll ifSupported wanGW4 wanGW6
-export bootTimeout insertOption usedChainsList='PREROUTING'
 
 list_iface() { ifAll="${ifAll}${1} "; }
 list_supported_iface() { is_supported_interface "$1" && ifSupported="${ifSupported}${1} "; }
@@ -159,8 +161,8 @@ load_package_config() {
 	config_get_bool serviceEnabled      'config' 'enabled' 0
 	config_get_bool strictMode          'config' 'strict_enforcement' 1
 	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' 0
-	config_get_bool localIpset          'config' 'src_ipset' 0
-	config_get_bool remoteIpset         'config' 'dest_ipset' 0
+	config_get_bool localIpsetEnabled   'config' 'src_ipset' 0
+	config_get_bool remoteIpsetEnabled  'config' 'dest_ipset' 0
 	config_get_bool ipruleEnabled       'config' 'iprule_enabled' 0
 	config_get appendLocalPolicy        'config' 'append_src_rules'
 	config_get appendRemotePolicy       'config' 'append_dest_rules'
@@ -207,23 +209,27 @@ is_enabled() {
 
 	if dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'; then
 		output "$_WARNING_: DNSMASQ ipsets are not supported on this system!\\n"
-		unset dnsmasqIpset
+		unset dnsmasqIpsetSupported
 	fi
 	if ! ipset help hash:net >/dev/null 2>&1; then
-		unset dnsmasqIpset
-		if [ "$remoteIpset" -ne 0 ]; then
-			output "$_ERROR_: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
-			unset remoteIpset
+		unset ipsetSupported
+		if [ -n "$dnsmasqIpsetSupported" ]; then
+			output "$_WARNING_: DNSMASQ ipsets are supported, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			unset dnsmasqIpsetSupported
 		fi
-		if [ "$localIpset" -ne 0 ]; then
+		if [ "$remoteIpsetEnabled" -ne 0 ]; then
+			output "$_ERROR_: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			remoteIpsetEnabled=0
+		fi
+		if [ "$localIpsetEnabled" -ne 0 ]; then
 			output "$_ERROR_: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
-			unset remoteIpset
+			localIpsetEnabled=0
 		fi
 	fi
 	if ! ipset help hash:mac >/dev/null 2>&1; then
-		if [ "$localIpset" -ne 0 ]; then
+		if [ "$localIpsetEnabled" -ne 0 ]; then
 			output "$_ERROR_: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:mac' type!\\n"
-			unset remoteIpset
+			localIpsetEnabled=0
 		fi
 	fi
 }
@@ -283,20 +289,12 @@ ips() {
 		ipset="${ipset//_mac}"; appendix='_mac';
 	fi
 
-	if [ "$command" = "add_dnsmasq" ] && [ -z "$dnsmasqIpset" ]; then
-		warningSummary="${warningSummary}${_WARNING_}: Domain name is used in the 'dest' option, but DNSMASQ ipsets are not supported on this system!\\n"
-		return 1
-#	elif [ "$command" = "add_unbound" ]; then
-#		[ "$remoteIpset" != 'unbound.ipset' ] && return 1
-	else
-		if [[ -z "$appendix" && "$remoteIpset" -eq 0 ]] || \
-			 [[ -n "$appendix" && "$localIpset" -eq 0 ]]; then
-			return 1
-		fi
-	fi
-
 	case "$command" in
 		add_dnsmasq)
+			if [ -z "$dnsmasqIpsetSupported" ]; then
+				warningSummary="${warningSummary}${_WARNING_}: Domain name '${param}' is used in the 'dest' option, but DNSMASQ ipsets are not supported on this system!\\n"
+				return 1
+			fi
 			if [ "$ipv6Enabled" -ne 0 ]; then
 				echo "ipset=/${param}/${ipset},${ipset}6 # $comment" >> "$dnsmasqFile" || failFlag=1
 			else
@@ -304,18 +302,23 @@ ips() {
 			fi
 			;;
 		add)
+			[ -n "$ipsetSupported" ] || return 1
+			if [ -z "$appendix" ] && [ "$remoteIpsetEnabled" -eq 0 ]; then return 1; fi
+			if [ -n "$appendix" ] && [ "$localIpsetEnabled" -eq 0 ]; then return 1; fi
 			if [ "$ipv6Enabled" -ne 0 ] && [ "$appendix" != "_mac" ]; then
 				ipset -q -! $command "${ipset}6${appendix}" $param comment "$comment" || failFlag=1
 			fi
 			ipset -q -! $command "${ipset}${appendix}" $param comment "$comment" || failFlag=1
 			;;
 		create)
+			[ -n "$ipsetSupported" ] || return 1
 			if [ "$ipv6Enabled" -ne 0 ] && [ "$appendix" != "_mac" ]; then
 				ipset -q -! "$command" "${ipset}6${appendix}" $param family inet6 || failFlag=1
 			fi
 			ipset -q -! "$command" "${ipset}${appendix}" $param || failFlag=1
 			;;
 		destroy|flush)
+			[ -n "$ipsetSupported" ] || return 0
 			ipset -q -! "$command" "${ipset}6${appendix}" 2>/dev/null || failFlag=1
 			ipset -q -! "$command" "${ipset}${appendix}" 2>/dev/null || failFlag=1
 			return 0
@@ -491,12 +494,12 @@ r_process_policy(){
 		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 	elif [ -n "$laddr" ] && [ -z "${lport}${raddr}${rport}" ] && [ "$chain" = 'PREROUTING' ]; then
 		if is_mac_address "$laddr"; then
-			if [ -n "$proto" ] && [ "$proto" != 'all' ] && [ "$localIpset" -ne 0 ]; then
+			if [ -n "$proto" ] && [ "$proto" != 'all' ] && [ "$localIpsetEnabled" -ne 0 ]; then
 				processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy: '$comment', mac-address: '$laddr'\\n"
 			fi
 			ips 'add' "${iface}_mac" "$laddr" "${comment}: $laddr" || ipsFailFlag=1
 		else
-			if [ -n "$proto" ] && [ "$proto" != "all" ] && [ "$localIpset" -ne 0 ]; then
+			if [ -n "$proto" ] && [ "$proto" != "all" ] && [ "$localIpsetEnabled" -ne 0 ]; then
 				processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy: '$comment', source: '$laddr'\\n"
 			fi
 #			ips 'add' "${iface}_ip" "$laddr" "${comment}: $laddr" || ipr "$comment" "$iface" "$i" || ipsFailFlag=1
@@ -652,7 +655,7 @@ table_create(){
 		if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
 			ipt -t mangle -I VPR_PREROUTING -m dscp --dscp "${dscp}" -j MARK --set-xmark "${mark}/${fwMask}" || s=1
 		fi
-		if [ -n "$remoteIpset" ]; then
+		if [ -n "$ipsetSupported" ] && { [ -n "$dnsmasqIpsetSupported" ] || [ "$remoteIpsetEnabled" -ne 0 ]; }; then
 			if ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}"; then
 				for i in $usedChainsList; do
 					ipt -t mangle -I VPR_${i} -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
@@ -662,17 +665,17 @@ table_create(){
 				s=1
 			fi
 		fi
-		if [ "$localIpset" -ne 0 ]; then
+		if [ -n "$ipsetSupported" ] && [ "$localIpsetEnabled" -ne 0 ]; then
 			if ips 'create' "${iface}_ip" 'hash:net comment' && ips 'flush' "${iface}_ip"; then
 				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
 				if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1; fi
 			else
-			s=1
+				s=1
 			fi
 			if ips 'create' "${iface}_mac" 'hash:mac comment' && ips 'flush' "${iface}_mac"; then
 				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_mac" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
 			else
-			s=1
+				s=1
 			fi
 		fi
 		if [ "$iface" = "$icmpIface" ]; then
