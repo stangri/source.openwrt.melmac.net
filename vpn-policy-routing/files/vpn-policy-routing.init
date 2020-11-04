@@ -293,16 +293,14 @@ ips() {
 		add_dnsmasq)
 			if [ -z "$dnsmasqIpsetSupported" ]; then
 				warningSummary="${warningSummary}${_WARNING_}: Domain name '${param}' is used in the 'dest' option, but DNSMASQ ipsets are not supported on this system!\\n"
-				return 1
-			fi
-			if [ "$ipv6Enabled" -ne 0 ]; then
+				failFlag=1
+			elif [ "$ipv6Enabled" -ne 0 ]; then
 				echo "ipset=/${param}/${ipset},${ipset}6 # $comment" >> "$dnsmasqFile" || failFlag=1
 			else
 				echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlag=1
 			fi
 			;;
 		add)
-			[ -n "$ipsetSupported" ] || return 1
 			if [ -z "$appendix" ] && [ "$remoteIpsetEnabled" -eq 0 ]; then return 1; fi
 			if [ -n "$appendix" ] && [ "$localIpsetEnabled" -eq 0 ]; then return 1; fi
 			if [ "$ipv6Enabled" -ne 0 ] && [ "$appendix" != "_mac" ]; then
@@ -311,7 +309,6 @@ ips() {
 			ipset -q -! $command "${ipset}${appendix}" $param comment "$comment" || failFlag=1
 			;;
 		create)
-			[ -n "$ipsetSupported" ] || return 1
 			if [ "$ipv6Enabled" -ne 0 ] && [ "$appendix" != "_mac" ]; then
 				ipset -q -! "$command" "${ipset}6${appendix}" $param family inet6 || failFlag=1
 			fi
