@@ -78,11 +78,11 @@ output() {
 is_installed() { [ -s "/usr/lib/opkg/info/${1}.control" ]; }
 
 export serviceEnabled verbosity strictMode wanTableID wanMark fwMask
-export ipv6Enabled localIpset remoteIpset ipruleEnabled icmpIface
-export ignoredIfaces="" supportedIfaces=""
-export appendLocalPolicy="" appendRemotePolicy=""
+export ipv6Enabled localIpset remoteIpset dnsmasqIpset='1' ipruleEnabled icmpIface
+export ignoredIfaces='' supportedIfaces=''
+export appendLocalPolicy='' appendRemotePolicy=''
 export wanIface4 wanIface6 ifaceMark ifaceTableID ifAll ifSupported wanGW4 wanGW6
-export bootTimeout insertOption usedChainsList="PREROUTING"
+export bootTimeout insertOption usedChainsList='PREROUTING'
 
 list_iface() { ifAll="${ifAll}${1} "; }
 list_supported_iface() { is_supported_interface "$1" && ifSupported="${ifSupported}${1} "; }
@@ -160,8 +160,8 @@ load_package_config() {
 	config_get_bool strictMode          'config' 'strict_enforcement' 1
 	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' 0
 	config_get_bool localIpset          'config' 'src_ipset' 0
+	config_get_bool remoteIpset         'config' 'dest_ipset' 0
 	config_get_bool ipruleEnabled       'config' 'iprule_enabled' 0
-	config_get remoteIpset              'config' 'dest_ipset'
 	config_get appendLocalPolicy        'config' 'append_src_rules'
 	config_get appendRemotePolicy       'config' 'append_dest_rules'
 	config_get verbosity                'config' 'verbosity' '2'
@@ -205,33 +205,25 @@ is_enabled() {
 		append|-a|-A|*) insertOption='-A';;
 	esac
 
-	case $remoteIpset in
-		ipset)
-			if ! ipset help hash:net >/dev/null 2>&1; then
-				output "$_ERROR_: ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
-				unset remoteIpset
-			fi
-			;;
-		dnsmasq.ipset)
-			if dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'; then				output "$_ERROR_: DNSMASQ ipset support is enabled in $packageName, but DNSMASQ is either not installed or installed DNSMASQ does not support ipsets!\\n"
-				unset remoteIpset
-			fi
-			if ! ipset help hash:net >/dev/null 2>&1; then
-				output "$_ERROR_: DNSMASQ ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
-				unset remoteIpset
-			fi
-			;;
-		*) unset remoteIpset;;
-	esac
-	
-	if [ "$localIpset" -ne 0 ]; then
-		if ! ipset help hash:net >/dev/null 2>&1; then
-			output "$_ERROR_: Local ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
-			unset localIpset
+	if dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'; then
+		output "$_WARNING_: DNSMASQ ipsets are not supported on this system!\\n"
+		unset dnsmasqIpset
+	fi
+	if ! ipset help hash:net >/dev/null 2>&1; then
+		unset dnsmasqIpset
+		if [ "$remoteIpset" -ne 0 ]; then
+			output "$_ERROR_: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			unset remoteIpset
 		fi
-		if ! ipset help hash:mac >/dev/null 2>&1; then
-			output "$_ERROR_: Local ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:mac' type!\\n"
-			unset localIpset
+		if [ "$localIpset" -ne 0 ]; then
+			output "$_ERROR_: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			unset remoteIpset
+		fi
+	fi
+	if ! ipset help hash:mac >/dev/null 2>&1; then
+		if [ "$localIpset" -ne 0 ]; then
+			output "$_ERROR_: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:mac' type!\\n"
+			unset remoteIpset
 		fi
 	fi
 }
@@ -291,12 +283,13 @@ ips() {
 		ipset="${ipset//_mac}"; appendix='_mac';
 	fi
 
-	if [ "$command" = "add_dnsmasq" ]; then
-		[ "$remoteIpset" != 'dnsmasq.ipset' ] && return 1
+	if [ "$command" = "add_dnsmasq" ] && [ -z "$dnsmasqIpset" ]; then
+		warningSummary="${warningSummary}${_WARNING_}: Domain name is used in the 'dest' option, but DNSMASQ ipsets are not supported on this system!\\n"
+		return 1
 #	elif [ "$command" = "add_unbound" ]; then
 #		[ "$remoteIpset" != 'unbound.ipset' ] && return 1
 	else
-		if [[ -z "$appendix" && -z "$remoteIpset" ]] || \
+		if [[ -z "$appendix" && "$remoteIpset" -eq 0 ]] || \
 			 [[ -n "$appendix" && "$localIpset" -eq 0 ]]; then
 			return 1
 		fi
@@ -499,41 +492,42 @@ r_process_policy(){
 	elif [ -n "$laddr" ] && [ -z "${lport}${raddr}${rport}" ] && [ "$chain" = 'PREROUTING' ]; then
 		if is_mac_address "$laddr"; then
 			if [ -n "$proto" ] && [ "$proto" != 'all' ] && [ "$localIpset" -ne 0 ]; then
-				processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment', mac-address '$laddr'\\n"
+				processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy: '$comment', mac-address: '$laddr'\\n"
 			fi
 			ips 'add' "${iface}_mac" "$laddr" "${comment}: $laddr" || ipsFailFlag=1
 		else
 			if [ -n "$proto" ] && [ "$proto" != "all" ] && [ "$localIpset" -ne 0 ]; then
-				processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment', address '$laddr'\\n"
+				processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy: '$comment', source: '$laddr'\\n"
 			fi
-			if ! ips 'add' "${iface}_ip" "$laddr" "${comment}: $laddr"; then
-				ipr "$comment" "$iface" "$i" || ipsFailFlag=1
-			fi
+#			ips 'add' "${iface}_ip" "$laddr" "${comment}: $laddr" || ipr "$comment" "$iface" "$i" || ipsFailFlag=1
+			ips 'add' "${iface}_ip" "$laddr" "${comment}: $laddr" || ipsFailFlag=1
 		fi
-	elif [ -n "$raddr" ] && [ -z "${laddr}${lport}${rport}" ] && [ "$chain" = 'PREROUTING' ] && [ -n "$remoteIpset" ]; then
+	elif [ -n "$raddr" ] && [ -z "${laddr}${lport}${rport}" ] && [ "$chain" = 'PREROUTING' ]; then
 		if [ -n "$proto" ] && [ "$proto" != 'all' ]; then
-			processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment', domain '$raddr'\\n"
+			processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy: '$comment', destination: '$raddr'\\n"
 		fi
-		if is_domain "$raddr"; then ips 'add_dnsmasq' "${iface}" "$raddr" "${comment}" || ipsFailFlag=1
-		else ips 'add' "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1; fi
+		if is_domain "$raddr"; then
+			ips 'add_dnsmasq' "${iface}" "$raddr" "${comment}" || ipsFailFlag=1
+		else 
+			ips 'add' "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1
+		fi
 	else
 		ipsFailFlag=1
 	fi
-	if [ -n "$ipsFailFlag" ]; then
-		if is_mac_address "$laddr"; then
+	[ -n "$ipsFailFlag" ] || return 0;
+	if is_mac_address "$laddr"; then
 		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
-		elif is_netmask "$laddr" || is_netmask "$raddr"; then
-			insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
+	elif is_netmask "$laddr" || is_netmask "$raddr"; then
+		insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
+	else
+		[ -n "$laddr" ] && resolved_laddr="$(resolveip "$laddr")"
+		[ -n "$raddr" ] && resolved_raddr="$(resolveip "$raddr")"
+		if [ -n "$resolved_laddr" ] && [ "$resolved_laddr" != "$laddr" ]; then
+			for i in $resolved_laddr; do [ -n "$i" ] && r_process_policy "$comment $laddr" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"; done
+		elif [ -n "$resolved_raddr" ] && [ "$resolved_raddr" != "$raddr" ]; then
+				for i in $resolved_raddr; do [ -n "$i" ] && r_process_policy "$comment $raddr" "$iface" "$laddr" "$lport" "$i" "$rport" "$proto" "$chain"; done
 		else
-			[ -n "$laddr" ] && resolved_laddr="$(resolveip "$laddr")"
-			[ -n "$raddr" ] && resolved_raddr="$(resolveip "$raddr")"
-			if [ -n "$resolved_laddr" ] && [ "$resolved_laddr" != "$laddr" ]; then
-				for i in $resolved_laddr; do [ -n "$i" ] && r_process_policy "$comment $laddr" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"; done
-			elif [ -n "$resolved_raddr" ] && [ "$resolved_raddr" != "$raddr" ]; then
-					for i in $resolved_raddr; do [ -n "$i" ] && r_process_policy "$comment $raddr" "$iface" "$laddr" "$lport" "$i" "$rport" "$proto" "$chain"; done
-			else
-				insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
-			fi
+			insert_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain"
 		fi
 	fi
 }
@@ -805,16 +799,10 @@ convert_config(){
 	grep -q "local_ipset" "/etc/config/${packageName}" && sed -i 's/local_ipset/src_ipset/g' "/etc/config/${packageName}"
 	grep -q "remote_ipset" "/etc/config/${packageName}" && sed -i 's/remote_ipset/dest_ipset/g' "/etc/config/${packageName}"
 #	sync
-	if [ "$(uci -q get $packageName.config.dnsmasq_ipset)" = "1" ]; then
-		uci -q set "$packageName".config.dest_ipset='dnsmasq.ipset'
-		uci -q del "$packageName.config.dnsmasq_ipset"
-		uci -q del "$packageName.config.remote_ipset"
-	elif [ "$(uci -q get $packageName.config.remote_ipset)" = "1" ]; then
-		uci -q set "$packageName".config.dest_ipset='ipset'
-		uci -q del "$packageName.config.remote_ipset"
-	elif [ "$(uci -q get $packageName.config.remote_ipset)" = "0" ]; then
-		uci -q set "$packageName".config.dest_ipset=''
-		uci -q del "$packageName.config.remote_ipset"
+	if [ "$(uci -q get $packageName.config.dest_ipset)" = "dnsmasq.ipset" ]; then
+		uci -q set "$packageName".config.dest_ipset='0'
+	elif [ "$(uci -q get $packageName.config.dest_ipset)" = "ipset" ]; then
+		uci -q set "$packageName".config.dest_ipset='1'
 	fi
 	if [ -z "$(uci -q get $packageName.config.webui_supported_protocol)" ]; then
 		uci add_list "$packageName".config.webui_supported_protocol='tcp'
