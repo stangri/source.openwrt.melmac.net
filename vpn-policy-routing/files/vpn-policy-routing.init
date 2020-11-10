@@ -357,7 +357,7 @@ insert_tor_policy() {
 insert_policy() {
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain
 	local appendLP="$appendLocalPolicy" appendRP="$appendRemotePolicy"
-	local mark param i valueNeg value dest
+	local mark param i valueNeg value dest ipInsertOption="-A"
 	proto="$(str_to_lower "$7")"
 	chain="${8:-PREROUTING}"
 	mark=$(eval echo "\$mark_${iface//-/_}")
@@ -367,9 +367,10 @@ insert_policy() {
 	fi
 
 	if [ -n "$mark" ]; then
-		dest="-j MARK --set-xmark ${mark}/${fwMask}"
+		dest="-g VPR_MARK${mark}"
 	elif [ "$iface" = "ignore" ]; then
 		dest="-j RETURN"
+#		ipInsertOption="-I"
 	else
 		processPolicyError="${processPolicyError}${_ERROR_}: Unknown fw_mark for ${iface}\\n"
 		return 0
@@ -410,12 +411,12 @@ insert_policy() {
 
 	for i in $proto; do
 		if [ "$i" = 'all' ]; then
-			param="-t mangle -I VPR_${chain} $dest"
+			param="-t mangle ${ipInsertOption} VPR_${chain} $dest"
 		elif ! is_supported_protocol "$i"; then
 			processPolicyError="${processPolicyError}${_ERROR_}: Unknown protocol '$i' in policy '$comment'\\n"
 			return 0
 		else
-			param="-t mangle -I VPR_${chain} $dest -p $i"
+			param="-t mangle ${ipInsertOption} VPR_${chain} $dest -p $i"
 		fi
 
 		if [ -n "$laddr" ]; then
@@ -585,6 +586,8 @@ process_policy(){
 table_destroy(){
 	local tid="$1" iface="$2" mark="$3"
 	if [ -n "$tid" ] && [ -n "$iface" ] && [ -n "$mark" ]; then
+		ipt -t mangle -F "VPR_MARK${mark}"
+		ipt -t mangle -X "VPR_MARK${mark}"
 		ip -4 rule del fwmark "$mark" table "$tid" >/dev/null 2>&1
 		ip -6 rule del fwmark "$mark" table "$tid" >/dev/null 2>&1
 	 	ip -4 rule del table "$tid" >/dev/null 2>&1
@@ -629,6 +632,9 @@ table_create(){
 		done
 		ip -4 route flush cache || ipv4_error=1
 		ip -4 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv4_error=1
+		ipt -t mangle -N "VPR_MARK${mark}" || ipv4_error=1
+		ipt -t mangle -A "VPR_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
+		ipt -t mangle -A "VPR_MARK${mark}" -j RETURN || ipv4_error=1
 	fi
 
 	if [ "$ipv6Enabled" -ne 0 ]; then
@@ -649,13 +655,13 @@ table_create(){
 	if [ $ipv4_error -eq 0 ] || [ $ipv6_error -eq 0 ]; then
 		dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
 		if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
-			ipt -t mangle -I VPR_PREROUTING -m dscp --dscp "${dscp}" -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+			ipt -t mangle -I VPR_PREROUTING -m dscp --dscp "${dscp}" -g "VPR_MARK${mark}" || s=1
 		fi
 		if [ -n "$ipsetSupported" ] && { [ -n "$dnsmasqIpsetSupported" ] || [ "$remoteIpsetEnabled" -ne 0 ]; }; then
 			if ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}"; then
 				for i in $usedChainsList; do
-					ipt -t mangle -I VPR_${i} -m set --match-set "${iface}" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1
-					if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_${i} -m set --match-set "${iface}6" dst -j MARK --set-xmark "${mark}/${fwMask}" || s=1; fi
+					ipt -t mangle -I VPR_${i} -m set --match-set "${iface}" dst -g "VPR_MARK${mark}" || s=1
+					if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_${i} -m set --match-set "${iface}6" dst -g "VPR_MARK${mark}" || s=1; fi
 				done
 			else
 				s=1
@@ -663,19 +669,19 @@ table_create(){
 		fi
 		if [ -n "$ipsetSupported" ] && [ "$localIpsetEnabled" -ne 0 ]; then
 			if ips 'create' "${iface}_ip" 'hash:net comment' && ips 'flush' "${iface}_ip"; then
-				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
-				if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_ip" src -j MARK --set-mark "${mark}/${fwMask}" || s=1; fi
+				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_ip" src -g "VPR_MARK${mark}" || s=1
+				if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_ip" src -g "VPR_MARK${mark}" || s=1; fi
 			else
 				s=1
 			fi
 			if ips 'create' "${iface}_mac" 'hash:mac comment' && ips 'flush' "${iface}_mac"; then
-				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_mac" src -j MARK --set-mark "${mark}/${fwMask}" || s=1
+				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_mac" src -g "VPR_MARK${mark}" || s=1
 			else
 				s=1
 			fi
 		fi
 		if [ "$iface" = "$icmpIface" ]; then
-			ipt -t mangle -I VPR_OUTPUT -p icmp -j MARK --set-xmark "${mark}/${fwMask}" || s=1
+			ipt -t mangle -I VPR_OUTPUT -p icmp -g "VPR_MARK${mark}" || s=1
 		fi
 	else
 		s=1
