@@ -905,7 +905,7 @@ start_service() {
 		if [ -z "$gatewaySummary" ]; then
 			errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway\\n"
 		else
-			output "$serviceName started with gateways:\\n${gatewaySummary}"
+			output "$serviceName started with gateways:\\n${gatewaySummary}\\n"
 			[ -n "$errorSummary" ] && output "${errorSummary}"
 			[ -n "$warningSummary" ] && output "${warningSummary}"
 		fi
@@ -974,7 +974,9 @@ service_triggers() {
 		validate_include
 	procd_close_validate
 
-	procd_add_reload_trigger 'firewall' 'openvpn' 'vpn-policy-routing'
+	procd_add_reload_trigger 'firewall'
+	procd_add_reload_trigger 'openvpn'
+	procd_add_reload_trigger 'vpn-policy-routing'
 	procd_open_trigger
 		for n in $ifSupported; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
 	procd_close_trigger
