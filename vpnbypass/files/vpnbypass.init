@@ -132,11 +132,13 @@ stop_service() {
 
 service_triggers_load_interface() { is_supported_interface "$1" && ifaces="${ifaces}${1} "; }
 service_triggers() {
-		local ifaces n
-		config_load network; config_foreach service_triggers_load_interface 'interface';
-		procd_add_reload_trigger 'firewall' 'openvpn' 'vpnbypass'
-		procd_open_trigger
-			for n in $ifaces; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/vpnbypass reload; done;
-			output "$serviceName monitoring interfaces: $ifaces\\n"
-		procd_close_trigger
+	local ifaces n
+	config_load network; config_foreach service_triggers_load_interface 'interface';
+	procd_add_reload_trigger 'firewall'
+	procd_add_reload_trigger 'openvpn'
+	procd_add_reload_trigger 'vpn-policy-routing'
+	procd_open_trigger
+		for n in $ifaces; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/vpnbypass reload; done;
+		output "$serviceName monitoring interfaces: $ifaces\\n"
+	procd_close_trigger
 }
