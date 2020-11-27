@@ -974,10 +974,10 @@ service_triggers() {
 		validate_include
 	procd_close_validate
 
-	procd_add_reload_trigger 'firewall'
-	procd_add_reload_trigger 'openvpn'
-	procd_add_reload_trigger 'vpn-policy-routing'
 	procd_open_trigger
+		procd_add_reload_trigger 'openvpn'
+		procd_add_service_trigger "service.restart" "firewall" /etc/init.d/${packageName} reload
+		procd_add_config_trigger "config.change" "${packageName}" /etc/init.d/${packageName} reload
 		for n in $ifSupported; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
 	procd_close_trigger
 

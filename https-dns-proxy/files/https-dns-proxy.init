@@ -15,11 +15,11 @@ else
 	EXTRA_COMMANDS='version'
 fi
 
-version() { echo "$PKG_VERSION"; }
-
+readonly PROG=/usr/sbin/https-dns-proxy
 dnsmasqConfig=''
 
-PROG=/usr/sbin/https-dns-proxy
+version() { echo "$PKG_VERSION"; }
+
 
 xappend() { param="$param $1"; }
 
@@ -91,10 +91,6 @@ start_instance() {
 	p="$((p+1))"
 }
 
-service_triggers() {
-	procd_add_reload_trigger 'https-dns-proxy'
-}
-
 start_service() {
 	local p=5053
 	config_load 'https-dns-proxy'
@@ -110,7 +106,7 @@ start_service() {
 
 stop_service() {
 	config_load 'https-dns-proxy'
-	config_get dnsmasqConfig	'config' 'update_dnsmasq_config' '*'
+	config_get dnsmasqConfig 'config' 'update_dnsmasq_config' '*'
 	dhcp_backup 'restore'
 	if [ -n "$(uci -q changes dhcp)" ]; then
 		uci -q commit dhcp
@@ -119,7 +115,7 @@ stop_service() {
 }
 
 service_triggers() {
-		procd_add_reload_trigger 'https-dns-proxy'
+	procd_add_config_trigger "config.change" "https-dns-proxy" /etc/init.d/https-dns-proxy reload
 }
 
 dnsmasq_add_doh_server() {

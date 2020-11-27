@@ -65,5 +65,5 @@ stop_service () {
 }
 
 service_triggers() {
-	procd_add_reload_trigger 'wireshark-helper'
+	procd_add_config_trigger "config.change" "$packageName" /etc/init.d/$packageName reload
 }
