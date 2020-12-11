@@ -136,7 +136,9 @@ service_triggers() {
 	config_load network; config_foreach service_triggers_load_interface 'interface';
 	procd_open_trigger
 		procd_add_reload_trigger 'openvpn'
-		procd_add_service_trigger "service.restart" "firewall" /etc/init.d/${packageName} reload
+		if type procd_add_service_trigger 1>/dev/null 2>&1; then
+			procd_add_service_trigger "service.restart" "firewall" /etc/init.d/${packageName} reload
+		fi
 		procd_add_config_trigger "config.change" "${packageName}" /etc/init.d/${packageName} reload
 		for n in $ifaces; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/vpnbypass reload; done;
 		output "$serviceName monitoring interfaces: $ifaces\\n"
