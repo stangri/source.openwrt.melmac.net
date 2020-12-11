@@ -1026,9 +1026,9 @@ support() {
 		if [ -n "$set_d" ]; then ip rule list; fi
 		i=0; while [ $i -lt $tableCount ]; do 
 			echo ""
-			echo "IPv4 Table $((wanTableID + i)): $(ip route show table $((wanTableID + i)))"
+			echo "IPv4 Table $((wanTableID + i)): $(ip -4 route show table $((wanTableID + i)))"
 			echo "IPv4 Table $((wanTableID + i)) Rules:"
-			ip rule list | grep $((wanTableID + i))
+			ip -4 rule list table "$((wanTableID + i))"
 			i=$((i + 1))
 		done
 
