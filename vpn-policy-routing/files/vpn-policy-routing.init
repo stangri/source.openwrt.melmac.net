@@ -1044,13 +1044,15 @@ support() {
 		for j in Mangle NAT; do
 			if [ -z "$set_d" ]; then
 				for i in $usedChainsList; do
-					echo "$_SEPARATOR_"
-					echo "$j IP Table: $i"
-					iptables -v -t "$(str_to_lower $j)" -S "VPR_${i}"
-					if [ "$ipv6Enabled" -ne 0 ]; then
+					if iptables -v -t "$(str_to_lower $j)" -S "VPR_${i}" 1>/dev/null 2>&1; then
 						echo "$_SEPARATOR_"
-						echo "$j IPv6 Table: $i"
-						ip6tables -v -t "$(str_to_lower $j)" -S "VPR_${i}"
+						echo "$j IP Table: $i"
+						iptables -v -t "$(str_to_lower $j)" -S "VPR_${i}"
+						if [ "$ipv6Enabled" -ne 0 ]; then
+							echo "$_SEPARATOR_"
+							echo "$j IPv6 Table: $i"
+							ip6tables -v -t "$(str_to_lower $j)" -S "VPR_${i}"
+						fi
 					fi
 				done
 			else
