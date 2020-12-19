@@ -164,13 +164,14 @@ ${EXTRA_HELP}"
 			_procd_status "$(basename ${basescript:-$initscript})" "$1"
 		fi
 	}
+
+	status_ubus() {
+		name="$(basename "${initscript}")"
+		/bin/ubus call service list "{'name': '$name'}"
+		return 0
+	}
 }
 
-status_ubus() {
-	name="$(basename "${initscript}")"
-	/bin/ubus call service list "{'name': '$name'}"
-	return 0
-}
 
 ALL_COMMANDS="start stop reload restart boot shutdown enable disable enabled depends status-ubus ${EXTRA_COMMANDS}"
 list_contains ALL_COMMANDS "$action" && action="${action/-/_}" || action=help
