@@ -162,9 +162,9 @@ load_package_config() {
 	config_get_bool serviceEnabled      'config' 'enabled' 0
 	config_get_bool strictMode          'config' 'strict_enforcement' 1
 	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' 0
-	config_get_bool localIpsetEnabled   'config' 'src_ipset' 0
-	config_get_bool remoteIpsetEnabled  'config' 'dest_ipset' 0
 	config_get_bool ipruleEnabled       'config' 'iprule_enabled' 0
+	config_get localIpsetEnabled        'config' 'src_ipset' '0'
+	config_get remoteIpsetEnabled       'config' 'dest_ipset' 'dnsmasq.ipset'
 	config_get appendLocalPolicy        'config' 'append_src_rules'
 	config_get appendRemotePolicy       'config' 'append_dest_rules'
 	config_get verbosity                'config' 'verbosity' '2'
@@ -178,9 +178,11 @@ load_package_config() {
 	config_get insertOption             'config' 'iptables_rule_option' 'append'
 	config_foreach append_used_chains   'policy'
 
+	[ "$localIpsetEnabled" = "1" ] && localIpsetEnabled="ipset"
+	[ "$remoteIpsetEnabled" = "1" ] && remoteIpsetEnabled="dnsmasq.ipset"
 	supportedIfaces="$supportedIfaces ignore"
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
-		verbosity=1
+		verbosity=2
 	fi
 
 	. /lib/functions/network.sh
@@ -292,8 +294,9 @@ ips() {
 
 	case "$command" in
 		add_dnsmasq)
+			[ "$remoteIpsetEnabled" = "dnsmasq.ipset" ] || return 1
 			if [ -z "$dnsmasqIpsetSupported" ]; then
-				warningSummary="${warningSummary}${_WARNING_}: Domain name '${param}' is used in the 'dest' option, but DNSMASQ ipsets are not supported on this system!\\n"
+				warningSummary="${warningSummary}${_WARNING_}: The 'dnsmasq.ipset' option is enabled, but DNSMASQ ipsets are not supported on this system!\\n"
 				failFlag=1
 			elif [ "$ipv6Enabled" -ne 0 ]; then
 				echo "ipset=/${param}/${ipset},${ipset}6 # $comment" >> "$dnsmasqFile" || failFlag=1
@@ -302,8 +305,8 @@ ips() {
 			fi
 			;;
 		add)
-			if [ -z "$appendix" ] && [ "$remoteIpsetEnabled" -eq 0 ]; then return 1; fi
-			if [ -n "$appendix" ] && [ "$localIpsetEnabled" -eq 0 ]; then return 1; fi
+			if [ -z "$appendix" ] && [ "$remoteIpsetEnabled" != "ipset" ]; then return 1; fi
+			if [ -n "$appendix" ] && [ "$localIpsetEnabled" != "ipset" ]; then return 1; fi
 			if [ "$ipv6Enabled" -ne 0 ] && [ "$appendix" != "_mac" ]; then
 				ipset -q -! $command "${ipset}6${appendix}" $param comment "$comment" || failFlag=1
 			fi
@@ -500,14 +503,14 @@ r_process_policy(){
 			if [ -n "$proto" ] && [ "$proto" != "all" ] && [ "$localIpsetEnabled" -ne 0 ]; then
 				processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy: '$comment', source: '$laddr'\\n"
 			fi
-#			ips 'add' "${iface}_ip" "$laddr" "${comment}: $laddr" || ipr "$comment" "$iface" "$i" || ipsFailFlag=1
+#			ips 'add' "${iface}_ip" "$laddr" "${comment}: $laddr" || ipr "$comment" "$iface" "$laddr" || ipsFailFlag=1
 			ips 'add' "${iface}_ip" "$laddr" "${comment}: $laddr" || ipsFailFlag=1
 		fi
 	elif [ -n "$raddr" ] && [ -z "${laddr}${lport}${rport}" ] && [ "$chain" = 'PREROUTING' ]; then
 		if [ -n "$proto" ] && [ "$proto" != 'all' ]; then
 			processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy: '$comment', destination: '$raddr'\\n"
 		fi
-		if is_domain "$raddr"; then
+		if is_domain "$raddr" && [ "$remoteIpsetEnabled" = "dnsmasq.ipset" ] ; then
 			ips 'add_dnsmasq' "${iface}" "$raddr" "${comment}" || ipsFailFlag=1
 		else 
 			ips 'add' "${iface}" "$raddr" "${comment}: $raddr" || ipsFailFlag=1
@@ -782,7 +785,7 @@ process_tor_interface(){
 }
 
 convert_config(){
-	local i
+	local i src_ipset dest_ipset
 	[ -s "/etc/config/${packageName}" ] || return 0
 	grep -q "ignored_interfaces" "/etc/config/${packageName}" && sed -i 's/ignored_interfaces/ignored_interface/g' "/etc/config/${packageName}"
 	grep -q "supported_interfaces" "/etc/config/${packageName}" && sed -i 's/supported_interfaces/supported_interface/g' "/etc/config/${packageName}"
@@ -790,7 +793,7 @@ convert_config(){
 	grep -q "local_ports" "/etc/config/${packageName}" && sed -i 's/local_ports/local_port/g' "/etc/config/${packageName}"
 	grep -q "remote_addresses" "/etc/config/${packageName}" && sed -i 's/remote_addresses/remote_address/g' "/etc/config/${packageName}"
 	grep -q "remote_ports" "/etc/config/${packageName}" && sed -i 's/remote_ports/remote_port/g' "/etc/config/${packageName}"
-	grep -q "ipset_enabled" "/etc/config/${packageName}" && sed -i 's/ipset_enabled/remote_ipset/g' "/etc/config/${packageName}"
+	grep -q "ipset_enabled" "/etc/config/${packageName}" && sed -i 's/ipset_enabled/dest_ipset/g' "/etc/config/${packageName}"
 	grep -q "dnsmasq_enabled" "/etc/config/${packageName}" && sed -i 's/dnsmasq_enabled/dnsmasq_ipset/g' "/etc/config/${packageName}"
 	grep -q "enable_control" "/etc/config/${packageName}" && sed -i 's/enable_control/webui_enable_column/g' "/etc/config/${packageName}"
 	grep -q "proto_control" "/etc/config/${packageName}" && sed -i 's/proto_control/webui_protocol_column/g' "/etc/config/${packageName}"
@@ -805,10 +808,14 @@ convert_config(){
 	grep -q "local_ipset" "/etc/config/${packageName}" && sed -i 's/local_ipset/src_ipset/g' "/etc/config/${packageName}"
 	grep -q "remote_ipset" "/etc/config/${packageName}" && sed -i 's/remote_ipset/dest_ipset/g' "/etc/config/${packageName}"
 #	sync
-	if [ "$(uci -q get $packageName.config.dest_ipset)" = "dnsmasq.ipset" ]; then
-		uci -q set "$packageName".config.dest_ipset='0'
-	elif [ "$(uci -q get $packageName.config.dest_ipset)" = "ipset" ]; then
-		uci -q set "$packageName".config.dest_ipset='1'
+	dest_ipset="$(uci -q get $packageName.config.dest_ipset)"
+	src_ipset="$(uci -q get $packageName.config.src_ipset)"
+	
+	if [ "$dest_ipset" = "1" ]; then
+		uci -q set "$packageName".config.dest_ipset='dnsmasq.ipset'
+	fi
+	if [ "$src_ipset" = "1" ]; then
+		uci -q set "$packageName".config.src_ipset='ipset'
 	fi
 	if [ -z "$(uci -q get $packageName.config.webui_supported_protocol)" ]; then
 		uci add_list "$packageName".config.webui_supported_protocol='tcp'

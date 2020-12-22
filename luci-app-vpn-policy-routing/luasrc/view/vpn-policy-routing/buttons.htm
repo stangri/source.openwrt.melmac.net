@@ -5,11 +5,13 @@
 
 <%-
 	local packageName = "vpn-policy-routing"
+	local uci = require "luci.model.uci".cursor()
+	local sys = require "luci.sys"
 	local serviceRunning, serviceEnabled = false, false;
-	if luci.sys.call("iptables -t mangle -L | grep -q VPR_PREROUTING") == 0 then
+	if sys.call("iptables -t mangle -L | grep -q VPR_PREROUTING") == 0 then
 		serviceRunning = true
 	end
-	if luci.model.uci.cursor():get(packageName, "config", "enabled") == "1" then
+	if uci:get(packageName, "config", "enabled") == "1" then
 		serviceEnabled = true
 	end
 

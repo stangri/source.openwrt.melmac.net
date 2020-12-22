@@ -176,16 +176,15 @@ se.default = 1
 
 dest_ipset = config:taboption("basic", ListValue, "dest_ipset", translate("The ipset option for remote policies"),
 	translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>"))
-dest_ipset:value("", translate("Disabled"))
+dest_ipset:value("0", translate("Disabled"))
 dest_ipset:value("ipset", translate("Use ipset command"))
 dest_ipset:value("dnsmasq.ipset", translate("Use DNSMASQ ipset"))
-dest_ipset.default = ""
-dest_ipset.rmempty = true
+dest_ipset.default = "dnsmasq.ipset"
 
 src_ipset = config:taboption("basic", ListValue, "src_ipset", translate("The ipset option for local policies"),
 	translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>"))
 src_ipset:value("0", translate("Disabled"))
-src_ipset:value("1", translate("Use ipset command"))
+src_ipset:value("ipset", translate("Use ipset command"))
 
 ipv6 = config:taboption("basic", ListValue, "ipv6_enabled", translate("IPv6 Support"))
 ipv6:value("0", translate("Disabled"))
