@@ -174,17 +174,11 @@ se:value("0", translate("Do not enforce policies when their gateway is down"))
 se:value("1", translate("Strictly enforce policies when their gateway is down"))
 se.default = 1
 
-dest_ipset = config:taboption("basic", ListValue, "dest_ipset", translate("The ipset option for remote policies"),
+resolver_ipset = config:taboption("basic", ListValue, "resolver_ipset", translate("Use resolver's ipset for domains"),
 	translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>"))
-dest_ipset:value("0", translate("Disabled"))
-dest_ipset:value("ipset", translate("Use ipset command"))
-dest_ipset:value("dnsmasq.ipset", translate("Use DNSMASQ ipset"))
-dest_ipset.default = "dnsmasq.ipset"
-
-src_ipset = config:taboption("basic", ListValue, "src_ipset", translate("The ipset option for local policies"),
-	translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>"))
-src_ipset:value("0", translate("Disabled"))
-src_ipset:value("ipset", translate("Use ipset command"))
+resolver_ipset:value("none", translate("Disabled"))
+resolver_ipset:value("dnsmasq.ipset", translate("DNSMASQ ipset"))
+resolver_ipset.default = "dnsmasq.ipset"
 
 ipv6 = config:taboption("basic", ListValue, "ipv6_enabled", translate("IPv6 Support"))
 ipv6:value("0", translate("Disabled"))
@@ -204,14 +198,22 @@ timeout = config:taboption("advanced", Value, "boot_timeout", translate("Boot Ti
 timeout.optional = false
 timeout.rmempty = true
 
+dest_ipset = config:taboption("advanced", ListValue, "dest_ipset", translate("The ipset option for remote policies"),
+	translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>"))
+dest_ipset:value("0", translate("Disabled"))
+dest_ipset:value("1", translate("Use ipset command"))
+dest_ipset.default = "0"
+
+src_ipset = config:taboption("advanced", ListValue, "src_ipset", translate("The ipset option for local policies"),
+	translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>"))
+src_ipset:value("0", translate("Disabled"))
+src_ipset:value("1", translate("Use ipset command"))
+src_ipset.default = "0"
+
 insert = config:taboption("advanced", ListValue, "iptables_rule_option", translate("IPTables rule option"), translate("Select Append for -A and Insert for -I."))
 insert:value("append", translate("Append"))
 insert:value("insert", translate("Insert"))
 insert.default = "append"
-
-iprule = config:taboption("advanced", ListValue, "iprule_enabled", translate("IP Rules Support"), translate("Add an ip rule, not an iptables entry for policies with just the local address. Use with caution to manipulte policies priorities."))
-iprule:value("0", translate("Disabled"))
-iprule:value("1", translate("Enabled"))
 
 icmp = config:taboption("advanced", ListValue, "icmp_interface", translate("Default ICMP Interface"), translate("Force the ICMP protocol interface."))
 icmp:value("", translate("No Change"))
@@ -354,6 +356,7 @@ uci:foreach("network", "interface", function(s)
 		gw:value(name, name:upper()) 
 	end
 end)
+gw:value("ignore", "IGNORE")
 
 dscp = m:section(NamedSection, "config", "vpn-policy-routing", translate("DSCP Tagging"), 
 	translatef("Set DSCP tags (in range between 1 and 63) for specific interfaces. See the %sREADME%s for details.", "<a href=\"" .. readmeURL .. "#dscp-tag-based-policies" .. "\" target=\"_blank\">", "</a>"))
