@@ -358,6 +358,7 @@ insert_policy() {
 		dest="-g VPR_MARK${mark}"
 	elif [ "$iface" = "ignore" ]; then
 		dest="-j RETURN"
+		ipInsertOption="-I"
 	else
 		processPolicyError="${processPolicyError}${_ERROR_}: Unknown fw_mark for ${iface}\\n"
 		return 0
@@ -1064,6 +1065,16 @@ support() {
 					ip6tables -L -t "$(str_to_lower $j)"
 				fi
 			fi
+			i=0; ifaceMark="$wanMark";
+			while [ $i -lt $tableCount ]; do
+				if iptables -v -t "$(str_to_lower $j)" -S "VPR_MARK${ifaceMark}" 1>/dev/null 2>&1; then
+					echo "$_SEPARATOR_"
+					echo "$j IP Table MARK Chain: VPR_MARK${ifaceMark}"
+					iptables -v -t "$(str_to_lower $j)" -S "VPR_MARK${ifaceMark}"
+					ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
+				fi
+				i=$((i + 1))
+			done
 		done
 
 		echo "$_SEPARATOR_"
