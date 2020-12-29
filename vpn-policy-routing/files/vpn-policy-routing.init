@@ -358,7 +358,7 @@ insert_policy() {
 		dest="-g VPR_MARK${mark}"
 	elif [ "$iface" = "ignore" ]; then
 		dest="-j RETURN"
-		ipInsertOption="-I"
+#		ipInsertOption="-I"
 	else
 		processPolicyError="${processPolicyError}${_ERROR_}: Unknown fw_mark for ${iface}\\n"
 		return 0
