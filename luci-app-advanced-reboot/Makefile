@@ -12,7 +12,6 @@ LUCI_DESCRIPTION:=Provides Web UI (found under System/Advanced Reboot) to reboot
 	routers are listed at https://docs.openwrt.melmac.net/luci-app-advanced-reboot/
 LUCI_DEPENDS:=+luci-mod-admin-full
 LUCI_PKGARCH:=all
-PKG_RELEASE:=55
 
 include ../../luci.mk
 
