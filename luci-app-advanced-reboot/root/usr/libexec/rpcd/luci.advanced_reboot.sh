@@ -27,7 +27,7 @@ is_alt_mountable() {
 alt_partition_mount() {
 	local ubi_dev op_ubi="$1"
 	for i in alt_rom alt_overlay firmware; do [ ! -d "$i" ] && mkdir -p "/alt/${i}"; done
-	ubi_dev = "$(ubiattach -m $op_ubi)"
+	ubi_dev="$(ubiattach -m "$op_ubi")"
 	ubi_dev="$(echo "$ubi_dev" | sed -n "s/^UBI device number\s*\(\d*\),.*$/\1/p")"
 	if [ -z "$ubi_dev" ]; then 
 		ubidetach -m "$op_ubi"
@@ -40,9 +40,9 @@ alt_partition_mount() {
 }
 
 alt_partition_unmount() {
-	local i="0" op_ubi="$1"
-	local mtdCount = "$(ubinfo | grep 'Present UBI devices' | grep -c ',')"
-	[ -z "$mtdCount" ] && mtdCount = 10
+	local mtdCount i="0" op_ubi="$1"
+	mtdCount="$(ubinfo | grep 'Present UBI devices' | grep -c ',')"
+	[ -z "$mtdCount" ] && mtdCount=10
 	# [ -d /alt/firmware ] && umount /alt/firmware
 	[ -d /alt/alt_overlay ] && umount /alt/alt_overlay
 	[ -d /alt/alt_rom ] && umount /alt/alt_rom
@@ -50,7 +50,7 @@ alt_partition_unmount() {
 		if [ ! -e "/sys/devices/virtual/ubi/ubi${i}/mtd_num" ]; then
 			break
 		fi
-		ubi_mtd = "$(cat /sys/devices/virtual/ubi/ubi${i}/mtd_num)"
+		ubi_mtd="$(cat /sys/devices/virtual/ubi/ubi${i}/mtd_num)"
 		if [ -n "$ubi_mtd" ] && [ "$ubi_mtd" = "$op_ubi" ]; then
 			ubiblock --remove /dev/ubi${i}_0
 			ubidetach -m "$op_ubi"
