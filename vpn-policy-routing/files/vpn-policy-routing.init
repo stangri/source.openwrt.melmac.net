@@ -124,7 +124,15 @@ is_oc() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:11}"
 is_ovpn() { local dev; dev=$(uci -q get network."$1".ifname); [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
 is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "pptp" ]; }
 is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
-is_tor_running() { [ -s "/etc/tor/torrc" ] && [ "$(jsonfilter -s "$(ubus call service list "{ 'name': 'tor' }")" -l1 -e "@['tor']['instances']['instance1']['running']")" = "true" ]; }
+is_tor_running() { 
+	local ret=0
+	if [ -s "/etc/tor/torrc" ]; then
+		json_load "$(ubus call service list "{ 'name': 'tor' }")"
+		json_select 'tor'; json_select 'instances'; json_select 'instance1';
+		json_get_var ret 'running'; json_cleanup
+	fi
+	if [ "$ret" = "0" ]; then return 1; else return 0; fi
+}
 is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
 is_tunnel() { is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_tor "$1" || is_wg "$1"; }
 is_wan() { [ "$1" = "$wanIface4" ] || { [ "${1##wan}" != "$1" ] && [ "${1##wan6}" = "$1" ]; } || [ "${1%%wan}" != "$1" ]; }
