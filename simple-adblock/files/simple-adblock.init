@@ -467,14 +467,11 @@ dnsOps() {
 tmpfs() {
 	local action="$1" instance="$2" value="$3"
 	local status message error stats
-	local readReload readRestart curReload curRestart ret
-	if [ -s "$jsonFile" ]; then
-		status="$(jsonfilter -i $jsonFile -l1 -e "@['data']['status']")"
-		message="$(jsonfilter -i $jsonFile -l1 -e "@['data']['message']")"
-		error="$(jsonfilter -i $jsonFile -l1 -e "@['data']['error']")"
-		stats="$(jsonfilter -i $jsonFile -l1 -e "@['data']['stats']")"
-		readReload="$(jsonfilter -i $jsonFile -l1 -e "@['data']['reload']")"
-		readRestart="$(jsonfilter -i $jsonFile -l1 -e "@['data']['restart']")"
+	local reload restart curReload curRestart ret i
+	if [ -s "$jsonFile" ] && json_load_file "$jsonFile"; then
+		for i in status message error stats reload restart; do
+			json_get_var $i "$i"
+		done
 	fi
 	case "$action" in
 		get)
@@ -492,9 +489,9 @@ tmpfs() {
 					curRestart="$compressedCache $forceDNS $led"
 					if [ ! -s "$jsonFile" ]; then
 						ret='on_boot'
-					elif [ "$curReload" != "$readReload" ]; then
+					elif [ "$curReload" != "$reload" ]; then
 						ret='download'
-					elif [ "$curRestart" != "$readRestart" ]; then
+					elif [ "$curRestart" != "$restart" ]; then
 						ret='restart'
 					fi
 					printf "%b" "$ret"
@@ -530,7 +527,7 @@ tmpfs() {
 				stats) 
 					unset stats;;
 				triggers) 
-					unset readReload; unset readRestart;;
+					unset reload; unset restart;;
 			esac
 			;;
 		set)
@@ -544,8 +541,8 @@ tmpfs() {
 				stats) 
 					stats="$value";;
 				triggers) 
-					readReload="$parallelDL $debug $dlTimeout $allowed_domains $blocked_domains $allowed_domains_urls $blocked_domains_urls $blocked_hosts_urls $targetDNS"
-					readRestart="$compressedCache $forceDNS $led"
+					reload="$parallelDL $debug $dlTimeout $allowed_domains $blocked_domains $allowed_domains_urls $blocked_domains_urls $blocked_hosts_urls $targetDNS"
+					restart="$compressedCache $forceDNS $led"
 					;;
 			esac
 			;;
@@ -557,8 +554,8 @@ tmpfs() {
 	json_add_string message "$message"
 	json_add_string error "$error"
 	json_add_string stats "$stats"
-	json_add_string reload "$readReload"
-	json_add_string restart "$readRestart"
+	json_add_string reload "$reload"
+	json_add_string restart "$restart"
 	json_close_object
 	json_dump > "$jsonFile"
 	sync
