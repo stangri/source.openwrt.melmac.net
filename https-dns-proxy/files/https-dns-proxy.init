@@ -51,6 +51,7 @@ start_instance() {
 	append_parm "$cfg" 'resolver_url' '-r'
 	append_parm "$cfg" 'listen_addr' '-a' '127.0.0.1'
 	append_parm "$cfg" 'listen_port' '-p' "$p"
+	append_parm "$cfg" 'dscp_codepoint' '-c'
 	append_parm "$cfg" 'bootstrap_dns' '-b'
 	append_parm "$cfg" 'user' '-u' 'nobody'
 	append_parm "$cfg" 'group' '-g' 'nogroup'
