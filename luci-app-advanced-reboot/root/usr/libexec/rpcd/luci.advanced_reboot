@@ -277,7 +277,7 @@ toggle_boot_partition(){
 				if [ "$curEnvSetting" = "$bev1p1" ]; then
 					newEnvSetting="$bev1p2"
 				else
-					newEnvSetting="$bev1p2"
+					newEnvSetting="$bev1p1"
 				fi
 				if ! fw_setenv "$bev1" "$newEnvSetting"; then
 					logger "$(printf "Unable to set firmware environment variable: %s to %s." "$bev1" "$newEnvSetting")"
@@ -327,6 +327,8 @@ toggle_boot_partition(){
 				fi
 			fi
 		fi
+		json_init
+		json_dump; json_cleanup;
 	else # NetGear device
 		if [ -z "$zyxelFlagPartition" ]; then
 			zyxelFlagPartition="$(find_mtd_part 0:DUAL_FLAG 2>/dev/null)"
@@ -356,6 +358,8 @@ toggle_boot_partition(){
 				fi
 			fi
 		fi
+		json_init
+		json_dump; json_cleanup;
 	fi
 }
 
