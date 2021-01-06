@@ -128,7 +128,6 @@ obtain_device_info(){
 	if [ -n "$labelOffset" ]; then
 		if [ -n "$partition1MTD" ]; then
 			p1_label="$(dd if="/dev/${partition1MTD}" bs=1 skip="${labelOffset}" count=128 2>/dev/null)"
-			# n, p1_version = p1_label:match('(Linux)-([%d|.]+)')
 			p1_version="$(echo "$p1_label" | sed -n "s/^Linux-\([0-9.]\+\).*$/\1/p")"
 			if [ -n "$p1_label" ]; then
 				if [ "${p1_label//LEDE}" != "$p1_label" ]; then p1_os="LEDE"; fi
@@ -176,7 +175,7 @@ obtain_device_info(){
 			zyxelFlagPartition="$(find_mtd_part 0:DUAL_FLAG 2>/dev/null)"
 		fi
 		if [ -n "$zyxelFlagPartition" ]; then
-			current_partition="(dd if=${zyxelFlagPartition} bs=1 count=1 2>/dev/null | hexdump -n 1 -e '1/1 \"%d\"')"
+			current_partition="$(dd if="${zyxelFlagPartition}" bs=1 count=1 2>/dev/null | hexdump -n 1 -e '1/1 \"%d\"')"
 		else
 			print_json 'error' 'NO_DUAL_FLAG'
 			logger "Unable to find Dual Boot Environment or Dual Boot Flag Partition."
@@ -336,7 +335,7 @@ toggle_boot_partition(){
 			print_json 'error' 'NO_DUAL_FLAG'
 			return
 		else
-			zyxelBootFlag="(dd if=${zyxelFlagPartition} bs=1 count=1 2>/dev/null | hexdump -n 1 -e '1/1 \"%d\"')"
+			zyxelBootFlag="$(dd if="${zyxelFlagPartition}" bs=1 count=1 2>/dev/null | hexdump -n 1 -e '1/1 \"%d\"')"
 			if [ "$zyxelBootFlag" = "1" ]; then
 				zyxelNewBootFlag="\\xff"
 			else
