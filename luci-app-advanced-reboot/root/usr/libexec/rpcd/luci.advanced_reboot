@@ -62,7 +62,7 @@ get_main_partition_os_info(){
 	if [ -s "/etc/os-release" ]; then
 		cp_info="$(. /etc/os-release && echo "$PRETTY_NAME")"
 		if [ "${cp_info//SNAPSHOT}" != "$cp_info" ]; then
-			cp_info="$(. /etc/os-release && echo "$OPENWRT_RELEASE")"
+			cp_info="$(. /etc/os-release && echo "${OPENWRT_RELEASE%%-*}")"
 		fi
 	fi
 	echo "$cp_info"
@@ -76,7 +76,7 @@ get_alt_partition_os_info(){
 	if [ -s "/alt/alt_rom/etc/os-release" ]; then
 		op_info="$(. /alt/alt_rom/etc/os-release && echo "$PRETTY_NAME")"
 		if [ "${op_info//SNAPSHOT}" != "$op_info" ]; then
-			op_info="$(. /alt/alt_rom/etc/os-release && echo "$OPENWRT_RELEASE")"
+			op_info="$(. /alt/alt_rom/etc/os-release && echo "${OPENWRT_RELEASE%%-*}")"
 		fi
 	fi
 	logger "attempting to unmount alternative partition (mtd${op_ubi})"
@@ -119,17 +119,17 @@ obtain_device_info(){
 	fi
 
 	json_load_file "$p"
-	for i in vendorName deviceName partition1MTD partition2MTD labelOffset\
-		bootEnv1 bootEnv1Partition1Value bootEnv1Partition2Value\
+	for i in vendorName deviceName partition1MTD partition2MTD labelOffset \
+		bootEnv1 bootEnv1Partition1Value bootEnv1Partition2Value \
 		bootEnv2 bootEnv2Partition1Value bootEnv2Partition2Value; do
 		json_get_var $i "$i"
 	done
 
 	if [ -n "$labelOffset" ]; then
 		if [ -n "$partition1MTD" ]; then
-			p1_label="$(dd if="/dev/${partition1MTD}" bs=1 skip="${labelOffset}" count=128 2>/dev/null)"
-			p1_version="$(echo "$p1_label" | sed -n "s/^Linux-\([0-9.]\+\).*$/\1/p")"
+			p1_label="$(dd if="/dev/${partition1MTD}" bs=1 skip="${labelOffset}" count=64 2>/dev/null)"
 			if [ -n "$p1_label" ]; then
+				p1_version="$(echo "$p1_label" | sed -n "s/\(.*\)Linux-\([0-9.]\+\).*$/\2/p")"
 				if [ "${p1_label//LEDE}" != "$p1_label" ]; then p1_os="LEDE"; fi
 				if [ "${p1_label//OpenWrt}" != "$p1_label" ]; then p1_os="OpenWrt"; fi
 				if [ -n "$vendorName" ] && [ "${p1_label//$vendorName}" != "$p1_label" ]; then 
@@ -139,15 +139,12 @@ obtain_device_info(){
 			if [ -z "$p1_os" ]; then
 				p1_os="${vendorName:-Unknown}/Unknown"
 			fi
-			if [ -n "$p1_os" ] && [ -n "$p1_version" ]; then
-				p1_os="$p1_os (Linux ${p1_version})"
-			fi
 		fi
 
 		if [ -n "$partition2MTD" ]; then
-			p2_label="$(dd if="/dev/${partition2MTD}" bs=1 skip="${labelOffset}" count=128 2>/dev/null)"
-			p2_version="$(echo "$p2_label" | sed -n "s/^Linux-\([0-9.]\+\).*$/\1/p")"
+			p2_label="$(dd if="/dev/${partition2MTD}" bs=1 skip="${labelOffset}" count=64 2>/dev/null)"
 			if [ -n "$p2_label" ]; then
+				p2_version="$(echo "$p2_label" | sed -n "s/\(.*\)Linux-\([0-9.]\+\).*$/\2/p")"
 				if [ "${p2_label//LEDE}" != "$p2_label" ]; then p2_os="LEDE"; fi
 				if [ "${p2_label//OpenWrt}" != "$p2_label" ]; then p2_os="OpenWrt"; fi
 				if [ -n "$vendorName" ] && [ "${p2_label//$vendorName}" != "$p2_label" ]; then 
@@ -157,13 +154,10 @@ obtain_device_info(){
 			if [ -z "$p2_os" ]; then
 				p2_os="${vendorName:-Unknown}/Unknown"
 			fi
-			if [ -n "$p2_os" ] && [ -n "$p2_version" ]; then
-				p2_os="$p2_os (Linux ${p2_version})"
-			fi
 		fi
 	else
-	p1_os="${vendorName}/Unknown (Compressed)"
-	p2_os="${vendorName}/Unknown (Compressed)"
+		p1_os="${vendorName}/Unknown (Compressed)"
+		p2_os="${vendorName}/Unknown (Compressed)"
 	fi
 
 	if [ -n "$bootEnv1" ]; then
@@ -175,7 +169,7 @@ obtain_device_info(){
 			zyxelFlagPartition="$(find_mtd_part 0:DUAL_FLAG 2>/dev/null)"
 		fi
 		if [ -n "$zyxelFlagPartition" ]; then
-			current_partition="$(dd if="${zyxelFlagPartition}" bs=1 count=1 2>/dev/null | hexdump -n 1 -e '1/1 \"%d\"')"
+			current_partition="$(dd if="${zyxelFlagPartition}" bs=1 count=1 2>/dev/null | hexdump -n 1 -e '1/1 "%d"')"
 		else
 			print_json 'error' 'NO_DUAL_FLAG'
 			logger "Unable to find Dual Boot Environment or Dual Boot Flag Partition."
@@ -199,9 +193,16 @@ obtain_device_info(){
 			p2_os="${cp_info:-$p2_os}"
 		fi
 	fi
+	if [ -n "$p1_os" ] && [ -n "$p1_version" ]; then
+		p1_os="$p1_os (Linux ${p1_version})"
+	fi
+	if [ -n "$p2_os" ] && [ -n "$p2_version" ]; then
+		p2_os="$p2_os (Linux ${p2_version})"
+	fi
+
 
 	json_init
-	json_add_string 'current_partition' "$current_partition"
+	json_add_int 'current_partition' "$current_partition"
 	json_add_string 'device_name' "$vendorName $deviceName"
 	json_add_array 'partitions'
 	json_add_object
@@ -211,7 +212,7 @@ obtain_device_info(){
 		json_add_string 'state' "Alternative"
 	fi
 	json_add_string 'os' "$p1_os"
-	json_add_string 'number' "$bootEnv1Partition1Value"
+	json_add_int 'number' "$bootEnv1Partition1Value"
 	json_close_object
 	json_add_object
 	if [ "$bootEnv1Partition2Value" = "$current_partition" ]; then
@@ -220,7 +221,7 @@ obtain_device_info(){
 		json_add_string 'state' "Alternative"
 	fi
 	json_add_string 'os' "$p2_os"
-	json_add_string 'number' "$bootEnv1Partition2Value"
+	json_add_int 'number' "$bootEnv1Partition2Value"
 	json_close_object
 	json_close_array
 	json_add_string 'rom_board_name' "$romBoardName"
@@ -248,8 +249,8 @@ toggle_boot_partition(){
 	fi
 
 	json_load_file "$p"
-	for i in vendorName deviceName partition1MTD partition2MTD labelOffset\
-		bootEnv1 bootEnv1Partition1Value bootEnv1Partition2Value\
+	for i in vendorName deviceName partition1MTD partition2MTD labelOffset \
+		bootEnv1 bootEnv1Partition1Value bootEnv1Partition2Value \
 		bootEnv2 bootEnv2Partition1Value bootEnv2Partition2Value; do
 		json_get_var $i "$i"
 	done
@@ -335,7 +336,7 @@ toggle_boot_partition(){
 			print_json 'error' 'NO_DUAL_FLAG'
 			return
 		else
-			zyxelBootFlag="$(dd if="${zyxelFlagPartition}" bs=1 count=1 2>/dev/null | hexdump -n 1 -e '1/1 \"%d\"')"
+			zyxelBootFlag="$(dd if="${zyxelFlagPartition}" bs=1 count=1 2>/dev/null | hexdump -n 1 -e '1/1 "%d"')"
 			if [ "$zyxelBootFlag" = "1" ]; then
 				zyxelNewBootFlag="\\xff"
 			else
