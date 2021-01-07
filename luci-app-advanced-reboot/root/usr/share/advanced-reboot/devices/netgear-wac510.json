@@ -4,7 +4,7 @@
 	"boardNames": [ "netgear,wac510" ],
 	"partition1MTD": "mtd9",
 	"partition2MTD": "mtd10",
-	"labelOffset": 32,
+	"labelOffset": null,
 	"bootEnv1": "primary",
 	"bootEnv1Partition1Value": 0,
 	"bootEnv1Partition2Value": 3800000,
