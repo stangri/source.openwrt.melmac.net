@@ -85,14 +85,18 @@ get_alt_partition_os_info(){
 }
 
 find_device_data(){
-	local boardNames filename romBoardName="$1"
+	local boardNames filename i romBoardName="$1"
 	for filename in "${devices_dir}"*.json; do
 		[ "$filename" = "${devices_dir}*.json" ] && return
-		boardNames="$(jsonfilter -i "$filename" -l1 -e "@['boardNames']")"
-		if [ "${boardNames//$romBoardName}" != "$boardNames" ]; then
-			echo "$filename"
-			return
-		fi
+		json_load_file "$filename"
+		json_get_values boardNames 'boardNames'
+		json_cleanup
+		for i in $boardNames; do 
+			if [ "$i" = "$romBoardName" ]; then
+				echo "$filename"
+				return
+			fi
+		done
 	done
 }
 
@@ -124,6 +128,7 @@ obtain_device_info(){
 		bootEnv2 bootEnv2Partition1Value bootEnv2Partition2Value; do
 		json_get_var $i "$i"
 	done
+	json_cleanup
 
 	if [ -n "$labelOffset" ]; then
 		if [ -n "$partition1MTD" ]; then
@@ -254,6 +259,7 @@ toggle_boot_partition(){
 		bootEnv2 bootEnv2Partition1Value bootEnv2Partition2Value; do
 		json_get_var $i "$i"
 	done
+	json_cleanup
 
 	bev1="$bootEnv1"
 	bev2="$bootEnv2"
