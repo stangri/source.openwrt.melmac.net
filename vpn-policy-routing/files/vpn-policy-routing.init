@@ -619,7 +619,7 @@ table_create(){
 			ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 #			ip -4 route add default dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 		fi
-		ip -4 route ls table main | grep -v 'br-lan' | while read -r i; do
+		ip -4 route list table main | grep -v 'br-lan' | while read -r i; do
 			idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
 			if ! is_supported_iface_dev "$idev"; then
 				ip -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
@@ -638,7 +638,7 @@ table_create(){
 			if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 				ip -6 route add unreachable default table "$tid" || ipv6_error=1
 			else
-				ip -6 route ls table main | grep " dev $dev6 " | while read -r i; do
+				ip -6 route list table main | grep " dev $dev6 " | while read -r i; do
 					ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
 				done
 			fi
