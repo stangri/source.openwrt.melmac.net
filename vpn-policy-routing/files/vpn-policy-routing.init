@@ -62,7 +62,7 @@ output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
 output_fail() { s=1; output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
 str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
-str_contains() { [ "$1" != "$(str_replace "$1" "$2" "")" ]; }
+str_contains() { [ -n "$2" ] && [ "${1//$2}" != "$1" ]; }
 str_to_lower() { echo "$1" | tr 'A-Z' 'a-z'; }
 str_extras_to_underscore() { echo "$1" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_'; }
 str_extras_to_space() { echo "$1" | tr ';{}' ' '; }
@@ -143,14 +143,14 @@ is_ignored_interface() { string_match_word "$ignoredIfaces" "$1"; }
 is_supported_interface() { string_match_word "$supportedIfaces" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; }; }
 is_mac_address() { expr "$1" : '[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]$' >/dev/null; }
 is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; }
-is_ipv6() { ! is_mac_address "$1" && [ "${1//:}" != "$1" ]; }
+is_ipv6() { ! is_mac_address "$1" && str_contains "$1" ":"; }
 is_family_mismatch() { ( is_netmask "${1//!}" && is_ipv6 "${2//!}" ) || ( is_ipv6 "${1//!}" && is_netmask "${2//!}" ); }
 is_ipv6_link_local() { [ "${1:0:4}" = "fe80" ]; }
 is_ipv6_unique_local() { [ "${1:0:2}" = "fc" ] || [ "${1:0:2}" = "fd" ]; }
 is_ipv6_global() { [ "${1:0:4}" = "2001" ]; }
 # is_ipv6_global() { is_ipv6 "$1" && ! is_ipv6_link_local "$1" && ! is_ipv6_link_local "$1"; }
 is_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
-is_domain() { [ "${1//[a-zA-Z-]}" != "$1" ]; }
+is_domain() { str_contains "$1" '[a-zA-Z]'; }
 is_phys_dev() { [ "${1:0:1}" = "@" ] && ip l show | grep -E -q "^\\d+\\W+${1:1}"; }
 is_turris() { /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05'; }
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
@@ -169,13 +169,13 @@ append_chains_targets() {
 	config_get name "$1" 'name' 'blank'
 	config_get chain "$1" 'chain' 'PREROUTING'
 	config_get iface "$1" 'interface'
-	if [ "${usedChainsList//$chain}" = "$usedChainsList" ]; then
+	if ! str_contains "$usedChainsList" "$chain"; then
 		usedChainsList="$usedChainsList $chain"
 		if [ "$chain" != 'PREROUTING' ] && [ "$webuiChainColumn" != '1' ]; then
 			warningSummary="${warningSummary}$_WARNING_: Chain '$chain' is used by a policy '$name', but a WebUI setting to show chains column (webui_chain_column) is disabled!\\n"
 		fi
 	fi
-	if [ "$iface" = 'ignore' ] && [ "${supportedIfaces// ignore}" = "$supportedIfaces" ]; then
+	if [ "$iface" = 'ignore' ] && ! str_contains "$supportedIfaces" 'ignore'; then
 		supportedIfaces="$supportedIfaces ignore"
 		if [ "$webuiShowIgnore" != '1' ]; then
 			warningSummary="${warningSummary}$_WARNING_: The 'ignore' target is used by a policy '$name', but a WebUI setting to show 'ignore' target (webui_show_ignore_target) is disabled!\\n"
@@ -318,9 +318,9 @@ ipt() {
 # shellcheck disable=SC2086
 ips() {
 	local command="$1" ipset="${2//-/_}" param="$3" comment="$4" appendix failFlag=0
-	if [ "${ipset//_ip}" != "${ipset}" ]; then
+	if str_contains "$ipset" '_ip'; then
 		ipset="${ipset//_ip}"; appendix='_ip';
-	elif [ "${ipset//_mac}" != "${ipset}" ]; then
+	elif str_contains "$ipset" '_mac'; then
 		ipset="${ipset//_mac}"; appendix='_mac';
 	fi
 
@@ -469,16 +469,16 @@ insert_policy() {
 
 r_process_policy(){
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$7" chain="$8" resolved_laddr resolved_raddr i ipsFailFlag
-	if [ "${laddr//[ ;\{\}]/}" != "$laddr" ]; then
+	if str_contains "$laddr" '[ ;\{\}]'; then
 		for i in $(str_extras_to_space "$laddr"); do [ -n "$i" ] && r_process_policy "$comment" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"; done
 		return 0
-	elif [ "${lport//[ ;\{\}]/}" != "$lport" ]; then
+	elif str_contains "$lport" '[ ;\{\}]'; then
 		for i in $(str_extras_to_space "$lport"); do [ -n "$i" ] && r_process_policy "$comment" "$iface" "$laddr" "$i" "$raddr" "$rport" "$proto" "$chain"; done
 		return 0
-	elif [ "${raddr//[ ;\{\}]/}" != "$raddr" ]; then
+	elif str_contains "$raddr" '[ ;\{\}]'; then
 		for i in $(str_extras_to_space "$raddr"); do [ -n "$i" ] && r_process_policy "$comment" "$iface" "$laddr" "$lport" "$i" "$rport" "$proto" "$chain"; done
 		return 0
-	elif [ "${rport//[ ;\{\}]/}" != "$rport" ]; then
+	elif str_contains "$rport" '[ ;\{\}]'; then
 		for i in $(str_extras_to_space "$rport"); do [ -n "$i" ] && r_process_policy "$comment" "$iface" "$laddr" "$lport" "$raddr" "$i" "$proto" "$chain"; done
 		return 0
 	fi
@@ -927,7 +927,7 @@ start_service() {
 		[ -n "$gatewaySummary" ] && json_add_string gateway "$gatewaySummary"
 		[ -n "$errorSummary" ] && json_add_string error "$errorSummary"
 		[ -n "$warningSummary" ] && json_add_string warning "$warningSummary"
-		if [ "$strictMode" -ne 0 ] && [ "${gatewaySummary//0.0.0.0}" != "${gatewaySummary}" ]; then
+		if [ "$strictMode" -ne 0 ] && str_contains "$gatewaySummary" '0.0.0.0'; then
 			json_add_string mode "strict"
 		fi
 		json_close_object
