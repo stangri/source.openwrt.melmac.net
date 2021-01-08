@@ -224,12 +224,6 @@ uci:foreach("network", "interface", function(s)
 end)
 icmp.rmempty = true
 
-append_local = config:taboption("advanced", Value, "append_src_rules", translate("Append local IP Tables rules"), translate("Special instructions to append iptables rules for local IPs/netmasks/devices."))
-append_local.rmempty = true
-
-append_remote = config:taboption("advanced", Value, "append_dest_rules", translate("Append remote IP Tables rules"), translate("Special instructions to append iptables rules for remote IPs/netmasks."))
-append_remote.rmempty = true
-
 wantid = config:taboption("advanced", Value, "wan_tid", translate("WAN Table ID"), translate("Starting (WAN) Table ID number for tables created by the service."))
 wantid.rmempty = true
 wantid.placeholder = "201"
@@ -262,11 +256,14 @@ webui_chain_column = config:taboption("webui", ListValue, "webui_chain_column", 
 webui_chain_column:value("0", translate("Disabled"))
 webui_chain_column:value("1", translate("Enabled"))
 
+webui_show_ignore_target = config:taboption("webui", ListValue, "webui_show_ignore_target", translate("Add IGNORE Target"), translate("Adds `IGNORE` to the list of interfaces for policies, allowing you to skip further processing by VPN Policy Routing."))
+webui_show_ignore_target:value("0", translate("Disabled"))
+webui_show_ignore_target:value("1", translate("Enabled"))
+
 webui_sorting = config:taboption("webui", ListValue, "webui_sorting", translate("Show Up/Down Buttons"), translate("Shows the Up/Down buttons for policies, allowing you to move a policy up or down in the list."))
 webui_sorting:value("0", translate("Disabled"))
 webui_sorting:value("1", translate("Enabled"))
 webui_sorting.default = "1"
-
 
 -- Policies
 p = m:section(TypedSection, "policy", translate("Policies"), translate("Comment, interface and at least one other field are required. Multiple local and remote addresses/devices/domains and ports can be space separated. Placeholders below represent just the format/syntax and will not be used if fields are left blank."))
@@ -356,7 +353,10 @@ uci:foreach("network", "interface", function(s)
 		gw:value(name, name:upper()) 
 	end
 end)
-gw:value("ignore", "IGNORE")
+enc = tonumber(uci:get("vpn-policy-routing", "config", "webui_show_ignore_target"))
+if enc and enc ~= 0 then
+	gw:value("ignore", "IGNORE")
+end
 
 dscp = m:section(NamedSection, "config", "vpn-policy-routing", translate("DSCP Tagging"), 
 	translatef("Set DSCP tags (in range between 1 and 63) for specific interfaces. See the %sREADME%s for details.", "<a href=\"" .. readmeURL .. "#dscp-tag-based-policies" .. "\" target=\"_blank\">", "</a>"))
