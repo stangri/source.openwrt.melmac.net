@@ -132,7 +132,7 @@ m = Map("vpn-policy-routing", translate("VPN and WAN Policy-Based Routing"))
 
 h = m:section(NamedSection, "config", packageName, translatef("Service Status [%s %s]", packageName, packageVersion))
 status = h:option(DummyValue, "_dummy", translate("Service Status"))
-status.template = "vpn-policy-routing/status"
+status.template = "vpn-policy-routing/status-service"
 status.value = statusText
 if serviceRunning and serviceGateways and serviceGateways ~= "" then
 	gateways = h:option(DummyValue, "_dummy", translate("Service Gateways"))
@@ -141,12 +141,12 @@ if serviceRunning and serviceGateways and serviceGateways ~= "" then
 end
 if serviceErrors and serviceErrors ~= "" then
 	errors = h:option(DummyValue, "_dummy", translate("Service Errors"))
-	errors.template = packageName .. "/status-textarea"
+	errors.template = packageName .. "/status"
 	errors.value = serviceErrors
 end
 if serviceWarnings and serviceWarnings ~= "" then
 	warnings = h:option(DummyValue, "_dummy", translate("Service Warnings"))
-	warnings.template = packageName .. "/status-textarea"
+	warnings.template = packageName .. "/status"
 	warnings.value = serviceWarnings
 end
 if packageVersion ~= "" then

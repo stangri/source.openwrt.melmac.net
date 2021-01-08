@@ -49,8 +49,9 @@ ifAll=; ifSupported=; ignoredIfaces=; supportedIfaces=; icmpIface=;
 wanGW4=; wanGW6=; bootTimeout=; insertOption=;
 webuiChainColumn=;webuiShowIgnore=;
 usedChainsList='PREROUTING'
-dnsmasqIpsetSupported='true'
+dnsmasqIpsetSupported=;
 ipsetSupported='true'
+configLoaded='false'
 
 version() { echo "$PKG_VERSION"; }
 create_lock() { [ -e "$PID" ] && return 1; touch "$PID"; }
@@ -164,24 +165,27 @@ is_supported_iface_dev() {
 }
 is_supported_protocol () { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
 append_chains_targets() {
-	local chain iface
+	local chain iface name
+	config_get name "$1" 'name' 'blank'
 	config_get chain "$1" 'chain' 'PREROUTING'
 	config_get iface "$1" 'interface'
 	if [ "${usedChainsList//$chain}" = "$usedChainsList" ]; then
 		usedChainsList="$usedChainsList $chain"
 		if [ "$chain" != 'PREROUTING' ] && [ "$webuiChainColumn" != '1' ]; then
-			output "$_WARNING_: Chain other than 'PREROUTING' is used by a policy, but a WebUI setting to show chain column (webui_chain_column) is disabled!\\n"
+			warningSummary="${warningSummary}$_WARNING_: Chain '$chain' is used by a policy '$name', but a WebUI setting to show chains column (webui_chain_column) is disabled!\\n"
 		fi
 	fi
 	if [ "$iface" = 'ignore' ] && [ "${supportedIfaces// ignore}" = "$supportedIfaces" ]; then
 		supportedIfaces="$supportedIfaces ignore"
 		if [ "$webuiShowIgnore" != '1' ]; then
-			output "$_WARNING_: The 'ignore' target is used by a policy, but a WebUI setting to show 'ignore' target (webui_show_ignore_target) is disabled!\\n"
+			warningSummary="${warningSummary}$_WARNING_: The 'ignore' target is used by a policy '$name', but a WebUI setting to show 'ignore' target (webui_show_ignore_target) is disabled!\\n"
 		fi
 	fi
 }
 
 load_package_config() {
+	[ "$configLoaded" = 'false' ] || return 0
+
 	config_load "$packageName"
 	config_get_bool serviceEnabled      'config' 'enabled' 0
 	config_get_bool strictMode          'config' 'strict_enforcement' 1
@@ -201,8 +205,6 @@ load_package_config() {
 	config_get_bool webuiChainColumn    'config' 'webui_chain_column' '0'
 	config_get_bool webuiShowIgnore     'config' 'webui_show_ignore_target' '0'
 
-	config_foreach append_chains_targets 'policy'
-
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=2
 	fi
@@ -214,6 +216,44 @@ load_package_config() {
 	[ -n "$wanIface4" ] && network_get_gateway wanGW4 "$wanIface4"
 	[ -n "$wanIface6" ] && network_get_gateway6 wanGW6 "$wanIface6"
 	wanGW="${wanGW4:-$wanGW6}"
+
+	config_foreach append_chains_targets 'policy'; 
+
+	case $insertOption in
+		insert|-i|-I) insertOption='-I';;
+		append|-a|-A|*) insertOption='-A';;
+	esac
+
+	[ "$resolverIpset" = 'dnsmasq.ipset' ] && dnsmasqIpsetSupported='true'
+	if dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'; then
+		unset dnsmasqIpsetSupported
+		if [ -n "$dnsmasqIpsetSupported" ]; then
+			errorSummary="${errorSummary}$_ERROR_: Resolver ipset support (dnsmasq.ipset) is enabled in $packageName, but DNSMASQ ipsets are not supported on this system!\\n"
+		fi
+	fi
+	if ! ipset help hash:net >/dev/null 2>&1; then
+		unset ipsetSupported
+		if [ -n "$dnsmasqIpsetSupported" ]; then
+			errorSummary="${errorSummary}$_ERROR_: DNSMASQ ipsets are supported, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			unset dnsmasqIpsetSupported
+		fi
+		if [ "$destIpset" -ne 0 ]; then
+			errorSummary="${errorSummary}$_ERROR_: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			destIpset=0
+		fi
+		if [ "$srcIpset" -ne 0 ]; then
+			errorSummary="${errorSummary}$_ERROR_: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			srcIpset=0
+		fi
+	fi
+	if ! ipset help hash:mac >/dev/null 2>&1; then
+		if [ "$srcIpset" -ne 0 ]; then
+			errorSummary="${errorSummary}$_ERROR_: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:mac' type!\\n"
+			srcIpset=0
+		fi
+	fi
+
+	configLoaded='true'
 }
 
 is_enabled() {
@@ -227,36 +267,6 @@ is_enabled() {
 		return 1
 	fi
 
-	case $insertOption in
-		insert|-i|-I) insertOption='-I';;
-		append|-a|-A|*) insertOption='-A';;
-	esac
-
-	if dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'; then
-		output "$_WARNING_: DNSMASQ ipsets are not supported on this system!\\n"
-		unset dnsmasqIpsetSupported
-	fi
-	if ! ipset help hash:net >/dev/null 2>&1; then
-		unset ipsetSupported
-		if [ -n "$dnsmasqIpsetSupported" ]; then
-			output "$_WARNING_: DNSMASQ ipsets are supported, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
-			unset dnsmasqIpsetSupported
-		fi
-		if [ "$destIpset" -ne 0 ]; then
-			output "$_ERROR_: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
-			destIpset=0
-		fi
-		if [ "$srcIpset" -ne 0 ]; then
-			output "$_ERROR_: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
-			srcIpset=0
-		fi
-	fi
-	if ! ipset help hash:mac >/dev/null 2>&1; then
-		if [ "$srcIpset" -ne 0 ]; then
-			output "$_ERROR_: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:mac' type!\\n"
-			srcIpset=0
-		fi
-	fi
 }
 
 is_wan_up() {
@@ -903,7 +913,7 @@ start_service() {
 		if [ -z "$gatewaySummary" ]; then
 			errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway\\n"
 		else
-			output "$serviceName started with gateways:\\n${gatewaySummary}\\n"
+			output "$serviceName started with gateways:\\n${gatewaySummary}"
 			[ -n "$errorSummary" ] && output "${errorSummary}"
 			[ -n "$warningSummary" ] && output "${warningSummary}"
 		fi
