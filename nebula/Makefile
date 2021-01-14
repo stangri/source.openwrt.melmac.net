@@ -29,7 +29,7 @@ define Package/nebula
   CATEGORY:=Network
   TITLE:=nebula
   URL:=https://github.com/slackhq/nebula
-  DEPENDS:=$(GO_ARCH_DEPENDS)
+  DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-tun
 endef
 
 define Package/nebula/description
