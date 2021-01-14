@@ -16,6 +16,7 @@ define Package/fakeinternet
 	CATEGORY:=Network
 	DEPENDS:=+uhttpd +uhttpd-mod-ubus
 	TITLE:=Fakeinternet Service
+	URL:=https://docs.openwrt.melmac.net/fakeinternet/
 	PKGARCH:=all
 endef
 

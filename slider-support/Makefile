@@ -17,6 +17,7 @@ define Package/slider-support/default
 	DEPENDS:=+relayd
 	PKGARCH:=all
 	TITLE:=Slider support
+	URL:=https://docs.openwrt.melmac.net/slider-support/
 endef
 
 define Package/slider-support-ar150

@@ -15,6 +15,7 @@ define Package/vpnbypass
 	SECTION:=net
 	CATEGORY:=Network
 	TITLE:=VPN Bypass Service
+	URL:=https://docs.openwrt.melmac.net/vpnbypass/
 	DEPENDS:=+ipset +iptables
 	PKGARCH:=all
 endef

@@ -15,6 +15,7 @@ define Package/antminer-monitor
 	SECTION:=net
 	CATEGORY:=Network
 	TITLE:=Antminer Monitor Service
+	URL:=https://docs.openwrt.melmac.net/antminer-monitor/
 	DEPENDS:=+python-light +python-pip
 	PKGARCH:=all
 endef

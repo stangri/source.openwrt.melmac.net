@@ -15,6 +15,7 @@ define Package/vpn-policy-routing
 	SECTION:=net
 	CATEGORY:=Network
 	TITLE:=VPN Policy-Based Routing Service
+	URL:=https://docs.openwrt.melmac.net/vpn-policy-routing/
 	DEPENDS:=+jshn +ipset +iptables +resolveip +kmod-ipt-ipset +iptables-mod-ipopt +ip-full
 	PKGARCH:=all
 endef

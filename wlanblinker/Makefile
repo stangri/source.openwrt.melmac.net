@@ -16,6 +16,7 @@ define Package/wlanblinker
 	CATEGORY:=Network
 	DEPENDS:=+coreutils-sleep +iwinfo
 	TITLE:=WLAN Blinker Service
+	URL:=https://docs.openwrt.melmac.net/wlanblinker/
 	PKGARCH:=all
 endef
 
