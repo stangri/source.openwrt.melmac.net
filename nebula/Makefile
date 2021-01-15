@@ -24,17 +24,43 @@ include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
 
 define Package/nebula
-  SECTION:=net
-  CATEGORY:=Network
-  TITLE:=nebula
-  URL:=https://github.com/slackhq/nebula
-  DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-tun
+	SECTION:=net
+	CATEGORY:=Network
+	TITLE:=nebula
+	URL:=https://github.com/slackhq/nebula
+	DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-tun
+endef
+
+define Package/nebula-full
+$(call Package/nebula)
+	VARIANT:=full
+	TITLE+=-full
 endef
 
 define Package/nebula/description
-  Nebula is a scalable overlay networking tool with a focus on performance,
-  simplicity and security. It lets you seamlessly connect computers anywhere in the world.
+	Nebula is a scalable overlay networking tool with a focus on performance,
+	simplicity and security. It lets you seamlessly connect computers anywhere in the world.
+endef
+
+Package/nebula-full/description = $(Package/nebula/description)
+
+define Package/nebula/install
+	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/doc/nebula
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula $(1)/usr/sbin/nebula
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula/LICENSE
+endef
+
+define Package/nebula-full/install
+	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/doc/nebula
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula $(1)/usr/sbin/nebula
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula-cert $(1)/usr/sbin/nebula-cert
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula/LICENSE
 endef
 
 $(eval $(call GoBinPackage,nebula))
 $(eval $(call BuildPackage,nebula))
+
+$(eval $(call GoBinPackage,nebula-full))
+$(eval $(call BuildPackage,nebula-full))
