@@ -1,3 +1,3 @@
 #!/bin/sh
 
-"$1" --version 2>&1 | grep "Version"
+"/usr/sbin/$1" -version 2>&1 | grep "$2"
