@@ -32,6 +32,12 @@ define Package/nebula
 	DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-tun
 endef
 
+define Package/nebula-cert
+$(call Package/nebula)
+	VARIANT:=cert
+	TITLE+=-cert
+endef
+
 define Package/nebula-full
 $(call Package/nebula)
 	VARIANT:=full
@@ -39,8 +45,13 @@ $(call Package/nebula)
 endef
 
 define Package/nebula/description
-	Nebula is a scalable overlay networking tool with a focus on performance,
-	simplicity and security. It lets you seamlessly connect computers anywhere in the world.
+	Nebula is a scalable overlay networking tool with a focus on performance, simplicity
+	and security. It lets you seamlessly connect computers anywhere in the world.
+endef
+
+define Package/nebula-cert/description
+	$(call Package/nebula/description)
+	This package only contains nebula-cert binary.
 endef
 
 define Package/nebula-full/description
@@ -55,9 +66,15 @@ define Package/nebula/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula/LICENSE
 endef
 
+define Package/nebula-cert/install
+	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula-cert $(1)/usr/sbin/nebula-cert
+endef
+
 define Package/nebula-full/install
 	$(call Package/nebula/install,$(1))
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula-cert $(1)/usr/sbin/nebula-cert
+	$(call Package/nebula-cert/install,$(1))
 endef
 
 define Package/nebula/postinst
@@ -67,10 +84,14 @@ define Package/nebula/postinst
 	fi
 endef
 
+Package/nebula-cert/postinst = $(Package/nebula/postinst)
 Package/nebula-full/postinst = $(Package/nebula/postinst)
 
 $(eval $(call GoBinPackage,nebula))
 $(eval $(call BuildPackage,nebula))
+
+$(eval $(call GoBinPackage,nebula-cert))
+$(eval $(call BuildPackage,nebula-cert))
 
 $(eval $(call GoBinPackage,nebula-full))
 $(eval $(call BuildPackage,nebula-full))
