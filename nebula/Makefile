@@ -24,22 +24,28 @@ GO_PKG_LDFLAGS_X:=main.Build=$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
 
-define Package/nebula
+define Package/nebula/default
 	SECTION:=net
 	CATEGORY:=Network
 	TITLE:=nebula
 	URL:=https://github.com/slackhq/nebula
-	DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-tun
+	DEPENDS:=$(GO_ARCH_DEPENDS)
+endef
+
+define Package/nebula
+$(call Package/nebula/default)
+	DEPENDS+= +kmod-tun
 endef
 
 define Package/nebula-cert
-$(call Package/nebula)
+$(call Package/nebula/default)
 	VARIANT:=cert
 	TITLE+=-cert
 endef
 
 define Package/nebula-full
-$(call Package/nebula)
+$(call Package/nebula/default)
+	DEPENDS+= +kmod-tun
 	VARIANT:=full
 	TITLE+=-full
 endef
