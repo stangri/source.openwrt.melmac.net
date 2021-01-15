@@ -60,6 +60,15 @@ define Package/nebula-full/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula-cert $(1)/usr/sbin/nebula-cert
 endef
 
+define Package/nebula/postinst
+	#!/bin/sh
+	if [ -z "$${IPKG_INSTROOT}" ]; then
+		grep -q '^/etc/nebula/' /etc/sysupgrade.conf || echo '/etc/nebula/' >> /etc/sysupgrade.conf
+	fi
+endef
+
+Package/nebula-full/postinst = $(Package/nebula/postinst)
+
 $(eval $(call GoBinPackage,nebula))
 $(eval $(call BuildPackage,nebula))
 
