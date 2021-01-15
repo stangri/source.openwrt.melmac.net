@@ -42,7 +42,10 @@ define Package/nebula/description
 	simplicity and security. It lets you seamlessly connect computers anywhere in the world.
 endef
 
-Package/nebula-full/description = $(Package/nebula/description)
+define Package/nebula-full/description
+	$(call Package/nebula/description)
+	This package also contains nebula-cert binary.
+endef
 
 define Package/nebula/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
@@ -52,11 +55,8 @@ define Package/nebula/install
 endef
 
 define Package/nebula-full/install
-	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/doc/nebula
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula $(1)/usr/sbin/nebula
+	$(call Package/nebula/install,$(1))
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula-cert $(1)/usr/sbin/nebula-cert
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula/LICENSE
 endef
 
 $(eval $(call GoBinPackage,nebula))
