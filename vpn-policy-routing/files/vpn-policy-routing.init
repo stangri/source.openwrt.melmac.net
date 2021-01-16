@@ -1045,7 +1045,7 @@ support() {
 
 		if [ "$ipv6Enabled" -ne 0 ]; then
 			i=0; while [ $i -lt $tableCount ]; do
-				ip -6 route show table $((wanTableID + i)) | while read -r param; do 
+				ip -6 route show table $((wanTableID + i)) | while read -r param; do
 					echo "IPv6 Table $((wanTableID + i)): $param"
 				done
 				i=$((i + 1))
