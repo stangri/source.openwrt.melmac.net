@@ -170,7 +170,7 @@ append_chains_targets() {
 	config_get name "$1" 'name' 'blank'
 	config_get chain "$1" 'chain' 'PREROUTING'
 	config_get iface "$1" 'interface'
-	if ! str_contains "$usedChainsList" "$chain"; then
+	if ! str_contains_word "$usedChainsList" "$chain"; then
 		usedChainsList="$usedChainsList $chain"
 		if [ "$chain" != 'PREROUTING' ] && [ "$webuiChainColumn" != '1' ]; then
 			warningSummary="${warningSummary}$_WARNING_: Chain '$chain' is used by a policy '$name', but a WebUI setting to show chains column (webui_chain_column) is disabled!\\n"
