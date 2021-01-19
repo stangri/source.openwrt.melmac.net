@@ -994,9 +994,7 @@ service_triggers() {
 		for n in $ifSupported; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
 	procd_close_trigger
 
-	if [ "$verbosity" -eq 2 ]; then
-		output "$serviceName monitoring interfaces: $ifSupported\\n"
-	fi
+	output 3 "$serviceName monitoring interfaces: $ifSupported"; output_okn;
 }
 
 status_service() { support "$@"; }
