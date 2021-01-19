@@ -64,6 +64,7 @@ output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
 str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
 str_replace() { echo "${1//$2/$3}"; }
 str_contains() { [ -n "$2" ] && [ "${1//$2}" != "$1" ]; }
+str_match_word() { echo "$1" | grep -q -w "$2"; }
 str_to_lower() { echo "$1" | tr 'A-Z' 'a-z'; }
 str_extras_to_underscore() { echo "$1" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_'; }
 str_extras_to_space() { echo "$1" | tr ';{}' ' '; }
@@ -139,9 +140,8 @@ is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" 
 is_tunnel() { is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_tor "$1" || is_wg "$1"; }
 is_wan() { [ "$1" = "$wanIface4" ] || { [ "${1##wan}" != "$1" ] && [ "${1##wan6}" = "$1" ]; } || [ "${1%%wan}" != "$1" ]; }
 is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ] || [ "${1/#wan6}" != "$1" ] || [ "${1/%wan6}" != "$1" ]; }
-string_match_word() { echo "$1" | grep -q -w "$2"; }
-is_ignored_interface() { string_match_word "$ignoredIfaces" "$1"; }
-is_supported_interface() { string_match_word "$supportedIfaces" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; }; }
+is_ignored_interface() { str_match_word "$ignoredIfaces" "$1"; }
+is_supported_interface() { str_match_word "$supportedIfaces" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; }; }
 is_mac_address() { expr "$1" : '[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]$' >/dev/null; }
 is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; }
 is_ipv6() { ! is_mac_address "$1" && str_contains "$1" ":"; }
@@ -592,8 +592,8 @@ table_destroy(){
 		ip -6 rule del fwmark "$mark" table "$tid" >/dev/null 2>&1
 	 	ip -4 rule del table "$tid" >/dev/null 2>&1
 		ip -6 rule del table "$tid" >/dev/null 2>&1
-		ip -4 route flush table "$tid";
-		ip -6 route flush table "$tid";
+		ip -4 route flush table "$tid" >/dev/null 2>&1
+		ip -6 route flush table "$tid" >/dev/null 2>&1
 		ips 'flush' "${iface}"; ips 'destroy' "${iface}";
 		ips 'flush' "${iface}_ip"; ips 'destroy' "${iface}_ip";
 		ips 'flush' "${iface}_mac"; ips 'destroy' "${iface}_mac";
