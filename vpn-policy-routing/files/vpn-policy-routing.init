@@ -205,6 +205,7 @@ load_package_config() {
 	config_get insertOption             'config' 'iptables_rule_option' 'append'
 	config_get_bool webuiChainColumn    'config' 'webui_chain_column' '0'
 	config_get_bool webuiShowIgnore     'config' 'webui_show_ignore_target' '0'
+	config_foreach append_chains_targets 'policy'
 
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=2
@@ -217,8 +218,6 @@ load_package_config() {
 	[ -n "$wanIface4" ] && network_get_gateway wanGW4 "$wanIface4"
 	[ -n "$wanIface6" ] && network_get_gateway6 wanGW6 "$wanIface6"
 	wanGW="${wanGW4:-$wanGW6}"
-
-	config_foreach append_chains_targets 'policy'; 
 
 	case $insertOption in
 		insert|-i|-I) insertOption='-I';;
