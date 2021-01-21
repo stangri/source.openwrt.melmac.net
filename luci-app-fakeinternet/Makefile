@@ -10,7 +10,6 @@ LUCI_TITLE:=Fakeinternet Web UI
 LUCI_DESCRIPTION:=Provides Web UI for Fakeinternet.
 LUCI_DEPENDS:=+luci-compat +luci-mod-admin-full +fakeinternet
 LUCI_PKGARCH:=all
-PKG_RELEASE:=7
 
 include ../../luci.mk
 

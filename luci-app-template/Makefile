@@ -10,7 +10,6 @@ LUCI_TITLE:=Template Web UI
 LUCI_DESCRIPTION:=Provides Web UI for Template.
 LUCI_DEPENDS:=+luci-compat +luci-mod-admin-full +template
 LUCI_PKGARCH:=all
-PKG_RELEASE:=1
 
 include ../../luci.mk
 
