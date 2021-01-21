@@ -469,6 +469,7 @@ tmpfs() {
 	local status message error stats
 	local reload restart curReload curRestart ret i
 	if [ -s "$jsonFile" ] && json_load_file "$jsonFile"; then
+		json_select 'data'
 		for i in status message error stats reload restart; do
 			json_get_var $i "$i"
 		done
