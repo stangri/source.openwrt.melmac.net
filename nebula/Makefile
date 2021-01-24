@@ -19,7 +19,7 @@ PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
 PKG_USE_MIPS16:=0
 GO_PKG:=github.com/slackhq/nebula
-GO_PKG_LDFLAGS_X:=main.Build=$(PKG_VERSION)
+GO_PKG_LDFLAGS_X:=main.Build=$(PKG_VERSION)-$(PKG_RELEASE)
 
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
