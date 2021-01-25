@@ -17,7 +17,7 @@ fi
 
 readonly PROG=/usr/sbin/nebula
 
-version() { echo "$PKG_VERSION"; }
+version() { echo "Version: $PKG_VERSION"; }
 
 start_instance() {
 	local cfg="$1" port

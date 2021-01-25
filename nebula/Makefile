@@ -14,55 +14,54 @@ PKG_HASH:=b94fba0251a4a436e25b127d0b9bc0181b991631f1dc8e344b1c8e895b55375d
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/nebula-$(PKG_VERSION)
 PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
 PKG_USE_MIPS16:=0
 GO_PKG:=github.com/slackhq/nebula
-GO_PKG_LDFLAGS_X:=main.Build=$(PKG_VERSION)-$(PKG_RELEASE)
+GO_PKG_LDFLAGS_X:=main.Build=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
-include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
+include ../../lang/golang/golang-package.mk
 
 define Package/nebula/default
-	SECTION:=net
-	CATEGORY:=Network
-	TITLE:=nebula
-	URL:=https://github.com/slackhq/nebula
-	DEPENDS:=$(GO_ARCH_DEPENDS)
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=nebula
+  URL:=https://github.com/slackhq/nebula
+  DEPENDS:=$(GO_ARCH_DEPENDS)
 endef
 
 define Package/nebula
 $(call Package/nebula/default)
-	DEPENDS+= +kmod-tun
+  DEPENDS+= +kmod-tun
 endef
 
 define Package/nebula-cert
 $(call Package/nebula/default)
-	VARIANT:=cert
-	TITLE+=-cert
+  VARIANT:=cert
+  TITLE+=-cert
 endef
 
 define Package/nebula-full
 $(call Package/nebula/default)
-	DEPENDS+= +kmod-tun
-	VARIANT:=full
-	TITLE+=-full
+  DEPENDS+= +kmod-tun
+  VARIANT:=full
+  TITLE+=-full
 endef
 
 define Package/nebula/description
-	Nebula is a scalable overlay networking tool with a focus on performance, simplicity
-	and security. It lets you seamlessly connect computers anywhere in the world.
+  Nebula is a scalable overlay networking tool with a focus on performance, simplicity
+  and security. It lets you seamlessly connect computers anywhere in the world.
 endef
 
 define Package/nebula-cert/description
-	$(call Package/nebula/description)
-	This package only contains nebula-cert binary.
+$(call Package/nebula/description)
+  This package only contains nebula-cert binary.
 endef
 
 define Package/nebula-full/description
-	$(call Package/nebula/description)
-	This package also contains nebula-cert binary.
+$(call Package/nebula/description)
+  This package also contains nebula-cert binary.
 endef
 
 define Package/nebula/install
@@ -86,10 +85,10 @@ define Package/nebula-full/install
 endef
 
 define Package/nebula/postinst
-	#!/bin/sh
-	if [ -z "$${IPKG_INSTROOT}" ]; then
-		grep -q '^/etc/nebula/' /etc/sysupgrade.conf || echo '/etc/nebula/' >> /etc/sysupgrade.conf
-	fi
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ]; then
+	grep -q '^/etc/nebula/' /etc/sysupgrade.conf || echo '/etc/nebula/' >> /etc/sysupgrade.conf
+fi
 endef
 
 Package/nebula-cert/postinst = $(Package/nebula/postinst)
