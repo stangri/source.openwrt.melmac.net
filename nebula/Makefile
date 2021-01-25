@@ -66,33 +66,26 @@ endef
 
 define Package/nebula/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
-	$(INSTALL_DIR) $(1)/etc/init.d $(1)/usr/sbin $(1)/usr/share/doc/nebula
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/usr/sbin $(1)/usr/share/doc/nebula $(1)/lib/upgrade/keep.d 
 	$(INSTALL_BIN) ./files/nebula.init $(1)/etc/init.d/nebula
 	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/nebula
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula $(1)/usr/sbin/nebula
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula/LICENSE
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula/LICENSE
+	$(INSTALL_DATA) ./files/nebula.upgrade $(1)/lib/upgrade/keep.d/nebula
 endef
 
 define Package/nebula-cert/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
-	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/doc/nebula $(1)/lib/upgrade/keep.d
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula-cert $(1)/usr/sbin/nebula-cert
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula/LICENSE
+	$(INSTALL_DATA) ./files/nebula.upgrade $(1)/lib/upgrade/keep.d/nebula
 endef
 
 define Package/nebula-full/install
 	$(call Package/nebula/install,$(1))
 	$(call Package/nebula-cert/install,$(1))
 endef
-
-define Package/nebula/postinst
-#!/bin/sh
-if [ -z "$${IPKG_INSTROOT}" ]; then
-	grep -q '^/etc/nebula/' /etc/sysupgrade.conf || echo '/etc/nebula/' >> /etc/sysupgrade.conf
-fi
-endef
-
-Package/nebula-cert/postinst = $(Package/nebula/postinst)
-Package/nebula-full/postinst = $(Package/nebula/postinst)
 
 $(eval $(call GoBinPackage,nebula))
 $(eval $(call BuildPackage,nebula))
