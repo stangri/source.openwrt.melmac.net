@@ -20,7 +20,7 @@ readonly PROG=/usr/sbin/nebula
 version() { echo "Version: $PKG_VERSION"; }
 
 start_instance() {
-	local cfg="$1" port
+	local cfg="$1" port name="${1##*/}"
 	port="$(grep -A2 "^listen:" "$cfg" | grep "port: " | awk '{print $2}')"
 	procd_open_instance
 	procd_set_param command ${PROG} -config "${cfg}"
@@ -30,8 +30,8 @@ start_instance() {
 	procd_open_data
 	json_add_array firewall
 		json_add_object ''
-		json_add_string type rule
-		json_add_string name "Allow-${cfg##*/}"
+		json_add_string type 'rule'
+		json_add_string name "Allow-$name"
 		json_add_string src 'wan'
 		json_add_string dest_port "$port"
 		json_add_string proto 'udp'
