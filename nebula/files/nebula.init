@@ -59,5 +59,5 @@ service_triggers() {
 	procd_close_trigger
 }
 
-service_started() { is_ipset_procd && procd_set_config_changed firewall; }
-service_stopped() { is_ipset_procd && procd_set_config_changed firewall; }
+service_started() { procd_set_config_changed firewall; }
+service_stopped() { procd_set_config_changed firewall; }
