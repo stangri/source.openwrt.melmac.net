@@ -48,6 +48,7 @@ start_service() {
 		[ -s "$f" ] && start_instance "$f"
 	done
 }
+
 service_triggers() {
 	procd_open_trigger
 	if type procd_add_service_trigger 1>/dev/null 2>&1; then
@@ -57,3 +58,6 @@ service_triggers() {
 	fi
 	procd_close_trigger
 }
+
+service_started() { is_ipset_procd && procd_set_config_changed firewall; }
+service_stopped() { is_ipset_procd && procd_set_config_changed firewall; }
