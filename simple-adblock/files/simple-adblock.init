@@ -467,9 +467,11 @@ tmpfs() {
 	local action="$1" instance="$2" value="$3"
 	local status message error stats
 	local reload restart curReload curRestart ret i
-	if [ -s "$jsonFile" ] && json_load_file "$jsonFile" 2>/dev/null && json_select 'data'; then
+	if [ -s "$jsonFile" ] ]; then
+		json_load_file "$jsonFile" 2>/dev/null
+		json_select 'data' 2>/dev/null
 		for i in status message error stats reload restart; do
-			json_get_var $i "$i"
+			json_get_var $i "$i" 2>/dev/null
 		done
 	fi
 #	if [ -s "$jsonFile" ]; then
