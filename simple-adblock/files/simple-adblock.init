@@ -467,12 +467,16 @@ tmpfs() {
 	local action="$1" instance="$2" value="$3"
 	local status message error stats
 	local reload restart curReload curRestart ret i
-	if [ -s "$jsonFile" ] && json_load_file "$jsonFile"; then
-		json_select 'data'
+	if [ -s "$jsonFile" ] && json_load_file "$jsonFile" 2>/dev/null && json_select 'data'; then
 		for i in status message error stats reload restart; do
 			json_get_var $i "$i"
 		done
 	fi
+#	if [ -s "$jsonFile" ]; then
+#		for i in status message error stats reload restart; do
+#			export "$i=$(jsonfilter -i $jsonFile -l1 -e "@['data']['$i']")"
+#		done
+#	fi
 	case "$action" in
 		get)
 			case "$instance" in
@@ -1110,11 +1114,6 @@ stop_service() {
 
 service_triggers() {
 	procd_open_trigger
-	if type procd_add_service_trigger 1>/dev/null 2>&1; then
-		procd_add_service_trigger "service.restart" "firewall" /etc/init.d/${packageName} reload
-	else
-		procd_add_reload_trigger "firewall"
-	fi
 	procd_add_config_trigger "config.change" "${packageName}" /etc/init.d/${packageName} reload
 	procd_close_trigger
 }
