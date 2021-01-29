@@ -49,15 +49,5 @@ start_service() {
 	done
 }
 
-service_triggers() {
-	procd_open_trigger
-	if type procd_add_service_trigger 1>/dev/null 2>&1; then
-		procd_add_service_trigger "service.restart" "firewall" /etc/init.d/nebula reload
-	else
-		procd_add_reload_trigger "firewall"
-	fi
-	procd_close_trigger
-}
-
 service_started() { procd_set_config_changed firewall; }
 service_stopped() { procd_set_config_changed firewall; }
