@@ -474,11 +474,6 @@ tmpfs() {
 			json_get_var $i "$i" 2>/dev/null
 		done
 	fi
-#	if [ -s "$jsonFile" ]; then
-#		for i in status message error stats reload restart; do
-#			export "$i=$(jsonfilter -i $jsonFile -l1 -e "@['data']['$i']")"
-#		done
-#	fi
 	case "$action" in
 		get)
 			case "$instance" in
