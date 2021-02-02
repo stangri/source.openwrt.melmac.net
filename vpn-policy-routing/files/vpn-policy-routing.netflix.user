@@ -1,14 +1,30 @@
 #!/bin/sh
 # This file is heavily based on code from https://github.com/Xentrk/netflix-vpn-bypass/blob/master/IPSET_Netflix.sh
-# Thanks https://forum.openwrt.org/u/dscpl for new URL!
+# Credits to https://forum.openwrt.org/u/dscpl for api.hackertarget.com code.
+# Credits to https://github.com/kkeker and https://github.com/tophirsch for api.bgpview.io code.
 
 TARGET_IPSET='wan'
 TARGET_ASN='2906'
 TARGET_FNAME="/var/tmp_AS${TARGET_ASN}"
-#TARGET_URL="https://ipinfo.io/AS${TARGET_ASN}"
-#curl "$TARGET_URL" 2>/dev/null | grep -E "a href.*${TARGET_ASN}\/" | grep -v ":" | sed "s/^.*<a href=\"\/AS${TARGET_ASN}\///; s/\" >//" > "$TARGET_FNAME"
+#DB_SOURCE='ipinfo.io'
+DB_SOURCE='api.hackertarget.com'
+#DB_SOURCE='api.bgpview.io' # WARNING, using this source will fail if you don't have jq installed
 
-TARGET_URL="https://api.hackertarget.com/aslookup/?q=AS${TARGET_ASN}"
-curl "$TARGET_URL" 2>/dev/null | sed '1d' > "$TARGET_FNAME"
-awk -v ipset="$TARGET_IPSET" '{print "add " ipset " " $1}' "$TARGET_FNAME" | ipset restore -!
-rm -f "$TARGET_FNAME"
+if [ "$DB_SOURCE" = "ipinfo.io" ]; then
+	TARGET_URL="https://ipinfo.io/AS${TARGET_ASN}"
+	curl "$TARGET_URL" 2>/dev/null | grep -E "a href.*${TARGET_ASN}\/" | grep -v ":" | sed "s/^.*<a href=\"\/AS${TARGET_ASN}\///; s/\" >//" > "$TARGET_FNAME"
+fi
+
+if [ "$DB_SOURCE" = "api.hackertarget.com" ]; then
+	TARGET_URL="https://api.hackertarget.com/aslookup/?q=AS${TARGET_ASN}"
+	curl "$TARGET_URL" 2>/dev/null | sed '1d' > "$TARGET_FNAME"
+	awk -v ipset="$TARGET_IPSET" '{print "add " ipset " " $1}' "$TARGET_FNAME" | ipset restore -!
+	rm -f "$TARGET_FNAME"
+fi
+
+if [ "$DB_SOURCE" = "api.bgpview.io" ] && command -v jq >/dev/null 2>&1; then
+	TARGET_URL="https://api.bgpview.io/asn/${TARGET_ASN}/prefixes"
+	curl -s "$TARGET_URL" 2>/dev/null | jq -r '.data.ipv4_prefixes[].prefix' > "$TARGET_FNAME"
+	awk -v ipset="$TARGET_IPSET" '{print "add " ipset " " $1}' "$TARGET_FNAME" | ipset restore -!
+	rm -f "$TARGET_FNAME"
+fi
