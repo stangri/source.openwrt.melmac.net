@@ -38,7 +38,7 @@ endef
 define Package/fakeinternet/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/fakeinternet.init $(1)/etc/init.d/fakeinternet
-	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/fakeinternet
+	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/fakeinternet
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/fakeinternet.conf $(1)/etc/config/fakeinternet
 	$(INSTALL_DIR) $(1)/www_fakeinternet

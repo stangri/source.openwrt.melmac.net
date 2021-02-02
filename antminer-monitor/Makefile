@@ -35,8 +35,8 @@ $(eval $(call Download,antminer-monitor))
 define Build/Prepare
 	$(PKG_UNPACK)
 	tar -C $(PKG_BUILD_DIR) -xvzf $(DL_DIR)/$(AMSRC).tar.gz
-	sed -i '/logger\./d' $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_VERSION)/app/views/antminer.py
-	sed -i "s/app.config\['DEBUG'\] = True/app.config\['DEBUG'\] = False/" $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_VERSION)/app/__init__.py
+	$(SED) '/logger\./d' $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_VERSION)/app/views/antminer.py
+	$(SED) "s/app.config\['DEBUG'\] = True/app.config\['DEBUG'\] = False/" $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_VERSION)/app/__init__.py
 	mkdir -p $(PKG_BUILD_DIR)/files/
 endef
 
@@ -49,7 +49,7 @@ endef
 define Package/antminer-monitor/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/antminer-monitor.init $(1)/etc/init.d/antminer-monitor
-	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/antminer-monitor
+	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/antminer-monitor
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_VERSION) $(1)/usr/sbin/antminer-monitor
 endef

@@ -77,7 +77,7 @@ endef
 define Package/slider-support/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/slider-support.init $(1)/etc/init.d/slider-support
-	sed -i "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/slider-support
+	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/slider-support
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/slider-support.conf $(1)/etc/config/slider-support
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
