@@ -42,13 +42,6 @@ $(call Package/nebula/default)
   TITLE+=-cert
 endef
 
-define Package/nebula-full
-$(call Package/nebula/default)
-  DEPENDS+= +kmod-tun
-  VARIANT:=full
-  TITLE+=-full
-endef
-
 define Package/nebula/description
   Nebula is a scalable overlay networking tool with a focus on performance, simplicity
   and security. It lets you seamlessly connect computers anywhere in the world.
@@ -57,11 +50,6 @@ endef
 define Package/nebula-cert/description
 $(call Package/nebula/description)
   This package only contains nebula-cert binary.
-endef
-
-define Package/nebula-full/description
-$(call Package/nebula/description)
-  This package also contains nebula-cert binary.
 endef
 
 define Package/nebula/install
@@ -76,15 +64,42 @@ endef
 
 define Package/nebula-cert/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/doc/nebula $(1)/lib/upgrade/keep.d
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/tmp
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula-cert $(1)/usr/sbin/nebula-cert
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula/LICENSE
-	$(INSTALL_DATA) ./files/nebula.upgrade $(1)/lib/upgrade/keep.d/nebula
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/tmp/nebula.LICENSE
+	$(INSTALL_DATA) ./files/nebula.upgrade $(1)/tmp/nebula.upgrade
 endef
 
-define Package/nebula-full/install
-	$(call Package/nebula/install,$(1))
-	$(call Package/nebula-cert/install,$(1))
+define Package/nebula-cert/postinst
+	#!/bin/sh
+	# check if we are on real system
+	if [ -z "$${IPKG_INSTROOT}" ]; then
+		if [ -s /usr/share/doc/nebula/LICENSE ]; then
+			rm -f /tmp/nebula.LICENSE
+		else
+			mkdir -p /usr/share/doc/nebula/
+			cp -f /tmp/nebula.LICENSE /usr/share/doc/nebula/LICENSE
+		fi
+		if [ -s /lib/upgrade/keep.d/nebula ]; then
+			rm -f /tmp/nebula.upgrade
+		else
+			mkdir -p /lib/upgrade/keep.d/
+			cp -f /tmp/nebula.upgrade /lib/upgrade/keep.d/nebula
+		fi
+	fi
+	exit 0
+endef
+
+define Package/nebula-cert/prerm
+	#!/bin/sh
+	# check if we are on real system
+	if [ -z "$${IPKG_INSTROOT}" ]; then
+		if ! command -v nebula >/dev/null 2>&1; then
+			rm -f /lib/upgrade/keep.d/nebula
+			rm -rf /usr/share/doc/nebula/
+		fi
+	fi
+	exit 0
 endef
 
 $(eval $(call GoBinPackage,nebula))
@@ -92,6 +107,3 @@ $(eval $(call BuildPackage,nebula))
 
 $(eval $(call GoBinPackage,nebula-cert))
 $(eval $(call BuildPackage,nebula-cert))
-
-$(eval $(call GoBinPackage,nebula-full))
-$(eval $(call BuildPackage,nebula-full))
