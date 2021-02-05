@@ -64,42 +64,10 @@ endef
 
 define Package/nebula-cert/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/tmp
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/doc/nebula $(1)/lib/upgrade/keep.d
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula-cert $(1)/usr/sbin/nebula-cert
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/tmp/nebula.LICENSE
-	$(INSTALL_DATA) ./files/nebula.upgrade $(1)/tmp/nebula.upgrade
-endef
-
-define Package/nebula-cert/postinst
-	#!/bin/sh
-	# check if we are on real system
-	if [ -z "$${IPKG_INSTROOT}" ]; then
-		if [ -s /usr/share/doc/nebula/LICENSE ]; then
-			rm -f /tmp/nebula.LICENSE
-		else
-			mkdir -p /usr/share/doc/nebula/
-			cp -f /tmp/nebula.LICENSE /usr/share/doc/nebula/LICENSE
-		fi
-		if [ -s /lib/upgrade/keep.d/nebula ]; then
-			rm -f /tmp/nebula.upgrade
-		else
-			mkdir -p /lib/upgrade/keep.d/
-			cp -f /tmp/nebula.upgrade /lib/upgrade/keep.d/nebula
-		fi
-	fi
-	exit 0
-endef
-
-define Package/nebula-cert/prerm
-	#!/bin/sh
-	# check if we are on real system
-	if [ -z "$${IPKG_INSTROOT}" ]; then
-		if ! command -v nebula >/dev/null 2>&1; then
-			rm -f /lib/upgrade/keep.d/nebula
-			rm -rf /usr/share/doc/nebula/
-		fi
-	fi
-	exit 0
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula-cert/LICENSE
+	$(INSTALL_DATA) ./files/nebula.upgrade $(1)/lib/upgrade/keep.d/nebula-cert
 endef
 
 $(eval $(call GoBinPackage,nebula))
