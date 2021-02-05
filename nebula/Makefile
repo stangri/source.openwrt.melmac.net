@@ -64,7 +64,7 @@ endef
 
 define Package/nebula-cert/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/doc/nebula $(1)/lib/upgrade/keep.d
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/doc/nebula-cert $(1)/lib/upgrade/keep.d
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula-cert $(1)/usr/sbin/nebula-cert
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula-cert/LICENSE
 	$(INSTALL_DATA) ./files/nebula.upgrade $(1)/lib/upgrade/keep.d/nebula-cert
