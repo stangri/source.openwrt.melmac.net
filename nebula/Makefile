@@ -46,7 +46,7 @@ endef
 
 define Package/nebula-cert/description
 $(call Package/nebula/description)
-  This package only contains nebula-cert binary.
+  This package contains only nebula-cert binary.
 endef
 
 define Package/nebula/install
