@@ -124,12 +124,12 @@ function poweroff(button) {
 }
 //]]></script>
 
-<input class="cbi-button cbi-button-apply important" type="button" value="<%:Perform reboot%>" onclick="reboot(this)" />
+<input class="btn cbi-button cbi-button-apply important" type="button" value="<%:Perform reboot%>" onclick="reboot(this)" />
 <%- if device_name then -%>
-<input class="cbi-button cbi-button-apply important" type="button" value="<%:Perform reboot to partition:%><%=" " .. other_partition%>" onclick="altreboot(this)" />
+<input class="btn cbi-button cbi-button-apply important" type="button" value="<%:Perform reboot to partition:%><%=" " .. other_partition%>" onclick="altreboot(this)" />
 <%- end -%>
 <%- if nixio.fs.access("/sbin/poweroff") then -%>
-<input class="cbi-button cbi-button-apply" type="button" value="<%:Perform power off%>" onclick="poweroff(this)" />
+<input class="btn cbi-button cbi-button-apply" type="button" value="<%:Perform power off%>" onclick="poweroff(this)" />
 <%- end -%>
 
 <p class="alert-message" style="display:none">
