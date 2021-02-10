@@ -124,6 +124,7 @@ dnsmasq_hup() { killall -q -HUP dnsmasq; }
 dnsmasq_kill() { killall -q -KILL dnsmasq; }
 dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
 unbound_restart() { /etc/init.d/unbound restart >/dev/null 2>&1; }
+is_force_dns_active() { iptables-save | grep -q -w -- '--dport 53'; }
 
 output() {
 # Can take a single parameter (text) to be output at any verbosity
