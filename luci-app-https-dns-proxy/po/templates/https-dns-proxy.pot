@@ -127,9 +127,9 @@ msgstr ""
 
 #: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:125
 msgid ""
-"If update DNSMASQ config is selected, the 'DNS forwardings' section of "
-"%sDHCP and DNS%s will be automatically updated to use selected DoH providers "
-"(%smore information%s)."
+"If update option is selected, the 'DNS forwardings' section of %sDHCP and DNS"
+"%s will be automatically updated to use selected DoH providers (%smore "
+"information%s)."
 msgstr ""
 
 #: applications/luci-app-https-dns-proxy/luasrc/model/cbi/https-dns-proxy.lua:140
