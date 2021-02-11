@@ -41,15 +41,15 @@ readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
 
-serviceEnabled=; verbosity=; strictMode=; 
-wanTableID=; wanMark=; fwMask=; 
-ipv6Enabled=; srcIpset=; destIpset=; resolverIpset=;
-wanIface4=; wanIface6=; ifaceMark=; ifaceTableID=;
-ifAll=; ifSupported=; ignoredIfaces=; supportedIfaces=; icmpIface=;
-wanGW4=; wanGW6=; bootTimeout=; insertOption=;
-webuiChainColumn=;webuiShowIgnore=;
+# declare gatewaySummary errorSummary warningSummary
+# declare serviceEnabled verbosity strictMode 
+# declare wanTableID wanMark fwMask 
+# declare ipv6Enabled srcIpset destIpset resolverIpset
+# declare wanIface4 wanIface6 ifaceMark ifaceTableID
+# declare ifAll ifSupported ignoredIfaces supportedIfaces icmpIface
+# declare wanGW4 wanGW6 bootTimeout insertOption
+# declare webuiChainColumn webuiShowIgnore dnsmasqIpsetSupported
 usedChainsList='PREROUTING'
-dnsmasqIpsetSupported=;
 ipsetSupported='true'
 configLoaded='false'
 
@@ -875,7 +875,7 @@ process_user_file(){
 }
 
 start_service() {
-	local gatewaySummary errorSummary warningSummary dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0
+	local dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0
 	convert_config
 	is_enabled 'on_start' || return 1
 	is_wan_up || return 0
@@ -950,8 +950,15 @@ start_service() {
 	fi
 }
 
-restart() { reload; }
-restart_service() { reload; }
+service_started() {
+	if [ -n "$errorSummary" ]; then
+		return 2
+	elif [ -n "$warningSummary" ]; then
+		return 1
+	else
+		return 0
+	fi
+}
 
 stop_service() {
 	local i
