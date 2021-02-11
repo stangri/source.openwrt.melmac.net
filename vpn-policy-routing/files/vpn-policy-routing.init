@@ -824,9 +824,15 @@ convert_config(){
 		uci add_list "$packageName".config.webui_supported_protocol='all'
 		uci commit "$packageName"
 	fi
-	for i in udp_proto_enabled forward_chain_enabled input_chain_enabled output_chain_enabled \
-	iprule_enabled append_local_rules append_src_rules append_remote_rules append_dest_rules; do
+	for i in append_local_rules append_src_rules \
+		append_remote_rules append_dest_rules; do
 		if [ -n "$(uci -q get $packageName.config.$i)" ]; then
+			warningSummary="${warningSummary}$_WARNING_: $i setting is not supported in ${serviceName}.\\n"
+		fi
+	done
+	for i in udp_proto_enabled forward_chain_enabled input_chain_enabled \
+		output_chain_enabled iprule_enabled; do
+		if [ "$(uci -q get $packageName.config.$i)" = "1" ]; then
 			warningSummary="${warningSummary}$_WARNING_: $i setting is not supported in ${serviceName}.\\n"
 		fi
 	done
