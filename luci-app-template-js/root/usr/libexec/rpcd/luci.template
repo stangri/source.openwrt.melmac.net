@@ -1,0 +1,32 @@
+#!/bin/sh
+# Copyright 2021 Stan Grishin (stangri@melmac.net)
+# shellcheck disable=SC2039,SC1091
+
+# TechRef: https://openwrt.org/docs/techref/rpcd
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+logger() { /usr/bin/logger -t template "$1"; }
+
+print_json() { json_init; json_add_string "$1" "$2"; json_dump; json_cleanup; }
+
+case "$1" in
+	list)
+		json_init
+		json_add_object "function_1"
+		json_close_object
+		json_add_object "function_2"
+		json_close_object
+		json_dump
+		json_cleanup
+		;;
+	call)
+		case "$2" in
+			function_1)
+				logger "function_1";;
+			function_2)
+				logger "function_2";;
+		esac
+	;;
+esac

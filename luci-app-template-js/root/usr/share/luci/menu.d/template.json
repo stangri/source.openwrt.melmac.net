@@ -1,0 +1,15 @@
+{
+	"admin/services/template": {
+		"title": "Template",
+		"order": 90,
+		"action": {
+			"type": "view",
+			"path": "services/template"
+		},
+		"depends": {
+			"acl": [
+				"luci-app-template"
+			]
+		}
+	}
+}

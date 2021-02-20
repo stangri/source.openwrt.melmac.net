@@ -1,0 +1,28 @@
+{
+	"luci-app-template-js": {
+		"description": "Grant UCI and file access for luci-app-template",
+		"read": {
+			"ubus": {
+				"luci.template": [
+					"function_1",
+					"function_2"
+				],
+				"system": [
+					"reboot"
+				]
+			},
+			"file": {
+				"/usr/sbin/fw_printenv": [
+					"list"
+				],
+				"/usr/sbin/fw_setenv": [
+					"list"
+				],
+				"/sbin/poweroff": [
+					"list",
+					"exec"
+				]
+			}
+		}
+	}
+}
