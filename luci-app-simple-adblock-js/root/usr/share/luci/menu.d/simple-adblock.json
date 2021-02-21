@@ -1,0 +1,15 @@
+{
+	"admin/services/simple-adblock": {
+		"title": "Template",
+		"order": 90,
+		"action": {
+			"type": "view",
+			"path": "services/simple-adblock"
+		},
+		"depends": {
+			"acl": [
+				"luci-app-simple-adblock"
+			]
+		}
+	}
+}

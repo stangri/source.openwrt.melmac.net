@@ -1,0 +1,13 @@
+{
+	"luci-app-simple-adblock": {
+		"description": "Grant UCI and file access for luci-app-simple-adblock",
+		"read": {
+			"ubus": {
+				"luci.simple-adblock": [
+					"getInitList",
+					"setInitAction"
+				]
+			}
+		}
+	}
+}
