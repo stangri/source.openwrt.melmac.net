@@ -1,0 +1,15 @@
+{
+	"admin/services/https-dns-proxy": {
+		"title": "Template",
+		"order": 90,
+		"action": {
+			"type": "view",
+			"path": "services/https-dns-proxy"
+		},
+		"depends": {
+			"acl": [
+				"luci-app-https-dns-proxy"
+			]
+		}
+	}
+}
