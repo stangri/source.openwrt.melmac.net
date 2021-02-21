@@ -1,0 +1,15 @@
+{
+	"admin/services/vpn-policy-routing": {
+		"title": "Template",
+		"order": 90,
+		"action": {
+			"type": "view",
+			"path": "services/vpn-policy-routing"
+		},
+		"depends": {
+			"acl": [
+				"luci-app-vpn-policy-routing"
+			]
+		}
+	}
+}
