@@ -1,0 +1,15 @@
+{
+	"admin/services/vpnbypass": {
+		"title": "Template",
+		"order": 90,
+		"action": {
+			"type": "view",
+			"path": "services/vpnbypass"
+		},
+		"depends": {
+			"acl": [
+				"luci-app-vpnbypass"
+			]
+		}
+	}
+}
