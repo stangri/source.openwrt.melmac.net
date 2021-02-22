@@ -35,6 +35,15 @@ done
 
 
 for i in https-dns-proxy simple-adblock vpn-policy-routing vpnbypass; do
+mkdir -p "luci-app-${i}-js"/htdocs/luci-static/resources/view/"${i}"
+mv "luci-app-${i}-js"/htdocs/luci-static/resources/view/services/"${i}".js "luci-app-${i}-js"/htdocs/luci-static/resources/view/"${i}"/overview.js
+mkdir -p "luci-app-${i}-js"/htdocs/luci-static/resources/view/resources/"${i}"
+done
+
+for i in https-dns-proxy simple-adblock vpn-policy-routing vpnbypass; do
+rm -rf "luci-app-${i}-js"/htdocs/luci-static/resources/view/resources/
+rm -rf "luci-app-${i}-js"/htdocs/luci-static/resources/view/services/
+mkdir -p "luci-app-${i}-js"/htdocs/luci-static/resources/"${i}"
 done
 
 ```
