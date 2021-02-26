@@ -34,7 +34,7 @@ set_init_action() {
 		start|stop|reload|restart)
 			cmd="/etc/init.d/${name} ${action}";;
 	esac
-	if [ -n "$cmd" ] && { eval "${cmd}"; } 1>/dev/null 2>&1; then
+	if [ -n "$cmd" ] && eval "${cmd}" 1>/dev/null 2>&1; then
 		print_json_bool "result" '1'
 	else
 		print_json_bool "result" '0'
