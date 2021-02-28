@@ -465,7 +465,8 @@ dnsOps() {
 }
 
 tmpfs() {
-	local action="$1" instance="$2" value="$3"
+# shellcheck disable=SC2034
+	local action="$1" param="$2" value="$3"
 	local status message error stats
 	local reload restart curReload curRestart ret i
 	if [ -s "$jsonFile" ]; then
@@ -477,15 +478,7 @@ tmpfs() {
 	fi
 	case "$action" in
 		get)
-			case "$instance" in
-				status)
-					printf "%b" "$status"; return;;
-				message) 
-					printf "%b" "$message"; return;;
-				error) 
-					printf "%b" "$error"; return;;
-				stats) 
-					printf "%b" "$stats"; return;;
+			case "$param" in
 				triggers)
 					curReload="$parallelDL $debug $dlTimeout $allowed_domains $blocked_domains $allowed_domains_urls $blocked_domains_urls $blocked_hosts_urls $targetDNS"
 					curRestart="$compressedCache $forceDNS $led"
@@ -498,54 +491,30 @@ tmpfs() {
 					fi
 					printf "%b" "$ret"
 					return;;
+				*)
+					printf "%b" "$(eval echo "\$$param")"; return;;
 			esac
 			;;
 		add)
-			case "$instance" in
-				status)
-					[ -n "$status" ] && status="$status $value" || status="$value";;
-				message) 
-					[ -n "$message" ] && message="$message $value" || message="$value";;
-				error)
-					[ -n "$error" ] && error="$error $value" || error="$value";;
-				stats) 
-					[ -n "$stats" ] && stats="$stats $value" || stats="$value";;
-			esac
-			;;
+			eval "$param"='$(eval echo "\$$param")${value} ';;
 		del)
-			case "$instance" in
+			case "$param" in
 				all)
-					unset status;
-					unset message;
-					unset error;
-					unset stats;
-					;;
-				status)
-					unset status;;
-				message) 
-					unset message;;
-				error) 
-					unset error;;
-				stats) 
-					unset stats;;
+					unset status message error stats;;
 				triggers) 
-					unset reload; unset restart;;
+					unset reload restart;;
+				*)
+					unset "$param";;
 			esac
 			;;
 		set)
-			case "$instance" in
-				status)
-					status="$value";;
-				message) 
-					message="$value";;
-				error) 
-					error="$value";;
-				stats) 
-					stats="$value";;
+			case "$param" in
 				triggers) 
 					reload="$parallelDL $debug $dlTimeout $allowed_domains $blocked_domains $allowed_domains_urls $blocked_domains_urls $blocked_hosts_urls $targetDNS"
 					restart="$compressedCache $forceDNS $led"
 					;;
+				*)
+					eval "$param"='$value';;
 			esac
 			;;
 	esac
