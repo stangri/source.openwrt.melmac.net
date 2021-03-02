@@ -125,6 +125,7 @@ dnsmasq_kill() { killall -q -KILL dnsmasq; }
 dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
 unbound_restart() { /etc/init.d/unbound restart >/dev/null 2>&1; }
 is_force_dns_active() { iptables-save | grep -q -w -- '--dport 53'; }
+is_present() { command -v "$1" >/dev/null 2>&1; }
 
 output() {
 # Can take a single parameter (text) to be output at any verbosity
@@ -263,10 +264,10 @@ load_package_config() {
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
 	# Prefer curl because it supports the file:// scheme.
-	if command -v curl >/dev/null 2>&1; then
+	if is_present curl; then
 		dl_command="curl --insecure --retry $curlRetry --connect-timeout $dlTimeout --silent"
 		dl_flag="-o"
-	elif command -v wget >/dev/null 2>&1 && wget --version 2>/dev/null | grep -q "+https"; then
+	elif is_present wget && wget --version 2>/dev/null | grep -q "+https"; then
 		dl_command="wget --no-check-certificate --timeout $dlTimeout -q"
 		dl_flag="-O"
 	else
