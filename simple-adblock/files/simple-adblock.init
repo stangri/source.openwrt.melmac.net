@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 # Copyright 2017-2020 Stan Grishin (stangri@melmac.net)
-# shellcheck disable=SC2039,SC1091
+# shellcheck disable=SC2039,SC1091,SC2016
 PKG_VERSION='dev-test'
 
 # shellcheck disable=SC2034
@@ -146,35 +146,13 @@ output() {
 	fi
 }
 
-serviceEnabled=1
-forceDNS=1
-parallelDL=1
-debug=0
-compressedCache=0
-ipv6Enabled=0
-configUpdateEnabled=0
-configUpdateURL=''
-bootDelay=120
-dlTimeout=20
-curlRetry=3
-verbosity=2
-led=''
-targetDNS=dnsmasq.servers
-dnsInstance=0
-allowed_domains=''
-blocked_domains=''
-allowed_domains_urls=''
-blocked_domains_urls=''
-blocked_hosts_urls=''
-dl_command=''
-dl_flag=''
-outputFilter=''
-outputFilterIPv6=''
-outputFile=''
-outputGzip=''
-outputCache='' 
-isSSLSupported=''
-allowIDN=0
+awk=''; serviceEnabled=''; forceDNS=''; parallelDL=''; debug=''; compressedCache='';
+ipv6Enabled=''; configUpdateEnabled=''; configUpdateURL=''; bootDelay='';
+dlTimeout=''; curlRetry=''; verbosity=''; led=''; targetDNS=''; dnsInstance=''; 
+allowed_domains=''; allowed_domains_urls='';
+blocked_domains=''; blocked_domains_urls=''; blocked_hosts_urls='';
+dl_command=''; dl_flag=''; isSSLSupported=''; allowIDN='';
+outputFilter=''; outputFilterIPv6=''; outputFile=''; outputGzip=''; outputCache='';
 
 load_package_config() {
 	config_load "$packageName"
@@ -263,6 +241,11 @@ load_package_config() {
 	fi
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
+	if is_present gawk; then
+		awk='gawk'
+	else
+		awk='awk'
+	fi
 	# Prefer curl because it supports the file:// scheme.
 	if is_present curl; then
 		dl_command="curl --insecure --retry $curlRetry --connect-timeout $dlTimeout --silent"
@@ -648,7 +631,7 @@ download_lists() {
 	tmpfs set status "statusDownloading"
 
 	rm -f "$A_TMP" "$B_TMP" "$outputFile" "$outputCache" "$outputGzip"
-	if [ "$(awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
+	if [ "$($awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
 		output 3 'Low free memory, restarting resolver... '
 		if dnsOps 'quiet'; then
 			output_okn
@@ -729,11 +712,11 @@ $(cat $A_TMP)"
 		# TLD optimization written by Dirk Brenken (dev@brenken.org)
 		output 2 'Optimizing combined list '
 		tmpfs set message "$(getStatusText "statusProcessing"): optimizing combined list"
-# 	sed -E 'G;:t;s/(.*)(\.)(.*)(\n)(.*)/\1\4\5\2\3/;tt;s/(.*)\n(\.)(.*)/\3\2\1/' is actually slower than awk
-		if awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$A_TMP" > "$B_TMP"; then
+# 	sed -E 'G;:t;s/(.*)(\.)(.*)(\n)(.*)/\1\4\5\2\3/;tt;s/(.*)\n(\.)(.*)/\3\2\1/' is actually slower than command below
+		if $awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$A_TMP" > "$B_TMP"; then
 			if sort "$B_TMP" > "$A_TMP"; then
-				if awk '{if(NR=1){tld=$NF};while(getline){if($NF!~tld"\\."){print tld;tld=$NF}}print tld}' "$A_TMP" > "$B_TMP"; then
-					if awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$B_TMP" > "$A_TMP"; then
+				if $awk '{if(NR=1){tld=$NF};while(getline){if($NF!~tld"\\."){print tld;tld=$NF}}print tld}' "$A_TMP" > "$B_TMP"; then
+					if $awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$B_TMP" > "$A_TMP"; then
 						if sort -u "$A_TMP" > "$B_TMP"; then
 							output_ok
 						else
@@ -1125,7 +1108,7 @@ sizes() {
 	for i in $blocked_domains_urls; do
 		[ "${i//melmac}" != "$i" ] && continue
 		if $dl_command "$i" $dl_flag /tmp/sast 2>/dev/null && [ -s /tmp/sast ]; then
-			echo "# File size: $(du -sh /tmp/sast | awk '{print $1}')"
+			echo "# File size: $(du -sh /tmp/sast | $awk '{print $1}')"
 			if compare_values "$(du -sk /tmp/sast)" "500"; then
 				echo "# block-list too big for most routers"
 			elif compare_values "$(du -sk /tmp/sast)" "100"; then
@@ -1143,7 +1126,7 @@ sizes() {
 
 	for i in $blocked_hosts_urls; do
 		if $dl_command "$i" $dl_flag /tmp/sast 2>/dev/null && [ -s /tmp/sast ]; then
-			echo "# File size: $(du -sh /tmp/sast | awk '{print $1}')"
+			echo "# File size: $(du -sh /tmp/sast | $awk '{print $1}')"
 			if compare_values "$(du -sk /tmp/sast)" "500"; then
 				echo "# block-list too big for most routers"
 			elif compare_values "$(du -sk /tmp/sast)" "100"; then
