@@ -114,9 +114,9 @@ output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
 output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
 output_fail() { output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
-str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
+str_replace() { printf "%b" "$1" | $sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
 str_contains() { test "$1" != "$(str_replace "$1" "$2" '')"; }
-compare_values() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
+compare_values() { test "$(printf '%s\n' "$@" | $sort -V | head -n 1)" != "$1"; }
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
 led_on(){ if [ -n "${1}" ] && [ -e "${1}/trigger" ]; then echo 'default-on' > "${1}/trigger" 2>&1; fi; }
 led_off(){ if [ -n "${1}" ] &&  [ -e "${1}/trigger" ]; then echo 'none' > "${1}/trigger" 2>&1; fi; }
@@ -146,13 +146,14 @@ output() {
 	fi
 }
 
-awk=''; serviceEnabled=''; forceDNS=''; parallelDL=''; debug=''; compressedCache='';
+serviceEnabled=''; forceDNS=''; parallelDL=''; debug=''; compressedCache='';
 ipv6Enabled=''; configUpdateEnabled=''; configUpdateURL=''; bootDelay='';
 dlTimeout=''; curlRetry=''; verbosity=''; led=''; targetDNS=''; dnsInstance=''; 
 allowed_domains=''; allowed_domains_urls='';
 blocked_domains=''; blocked_domains_urls=''; blocked_hosts_urls='';
 dl_command=''; dl_flag=''; isSSLSupported=''; allowIDN='';
 outputFilter=''; outputFilterIPv6=''; outputFile=''; outputGzip=''; outputCache='';
+awk='awk'; sed='sed'; sort='sort';
 
 load_package_config() {
 	config_load "$packageName"
@@ -241,11 +242,9 @@ load_package_config() {
 	fi
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
-	if is_present gawk; then
-		awk='gawk'
-	else
-		awk='awk'
-	fi
+	is_present 'gawk' && awk='gawk'
+	is_present 'gnu-sed' && sed='gnu-sed'
+	is_present 'gnu-sort' && sort='gnu-sort'
 	# Prefer curl because it supports the file:// scheme.
 	if is_present curl; then
 		dl_command="curl --insecure --retry $curlRetry --connect-timeout $dlTimeout --silent"
@@ -584,7 +583,7 @@ process_url() {
 		output 2 "[DL] $type $label $__FAIL__\\n"
 		echo "errorDownloadingList|${1}" >> "$sharedMemoryError"
 	else
-		sed -i "$filter" "$R_TMP"
+		$sed -i "$filter" "$R_TMP"
 		if [ ! -s "$R_TMP" ]; then
 			output 1 "$_FAIL_"
 			output 2 "[DL] $type $label $__FAIL__\\n"
@@ -611,7 +610,7 @@ process_config_update() {
 		output 2 "[DL] Config  Update:  $label $__FAIL__\\n"
 		tmpfs add error "errorDownloadingConfigUpdate"
 	else
-		if [ -s "$R_TMP" ] && sed -f "$R_TMP" -i /etc/config/simple-adblock; then
+		if [ -s "$R_TMP" ] && $sed -f "$R_TMP" -i /etc/config/simple-adblock; then
 			output 1 "$_OK_"
 			output 2 "[DL] Config  Update:  $label $__OK__\\n"
 		else
@@ -679,10 +678,10 @@ download_lists() {
 		rm -f "$sharedMemoryError"
 	fi
 
-	[ -n "$blocked_domains" ] && for hf in ${blocked_domains}; do echo "$hf" | sed "$domainsFilter" >> $B_TMP; done
+	[ -n "$blocked_domains" ] && for hf in ${blocked_domains}; do echo "$hf" | $sed "$domainsFilter" >> $B_TMP; done
 	allowed_domains="${allowed_domains}
 $(cat $A_TMP)"
-	[ -n "$allowed_domains" ] && for hf in ${allowed_domains}; do hf="$(echo "$hf" | sed 's/\./\\./g')"; w_filter="$w_filter/^${hf}$/d;/\\.${hf}$/d;"; done
+	[ -n "$allowed_domains" ] && for hf in ${allowed_domains}; do hf="$(echo "$hf" | $sed 's/\./\\./g')"; w_filter="$w_filter/${hf}$/d;"; done
 
 	[ ! -s "$B_TMP" ] && return 1
 
@@ -690,14 +689,14 @@ $(cat $A_TMP)"
 	output 2 'Sorting combined list '
 	tmpfs set message "$(getStatusText "statusProcessing"): sorting combined list"
 	if [ "$allowIDN" -gt 0 ]; then
-		if sort -u "$B_TMP" > "$A_TMP"; then
+		if $sort -u "$B_TMP" > "$A_TMP"; then
 			output_ok
 		else
 			output_failn
 			tmpfs add error "errorSorting"
 		fi
 	else
-		if sort -u "$B_TMP" | grep -E -v '[^a-zA-Z0-9=/.-]' > "$A_TMP"; then
+		if $sort -u "$B_TMP" | grep -E -v '[^a-zA-Z0-9=/.-]' > "$A_TMP"; then
 			output_ok
 		else
 			output_failn
@@ -714,10 +713,10 @@ $(cat $A_TMP)"
 		tmpfs set message "$(getStatusText "statusProcessing"): optimizing combined list"
 # 	sed -E 'G;:t;s/(.*)(\.)(.*)(\n)(.*)/\1\4\5\2\3/;tt;s/(.*)\n(\.)(.*)/\3\2\1/' is actually slower than command below
 		if $awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$A_TMP" > "$B_TMP"; then
-			if sort "$B_TMP" > "$A_TMP"; then
+			if $sort "$B_TMP" > "$A_TMP"; then
 				if $awk '{if(NR=1){tld=$NF};while(getline){if($NF!~tld"\\."){print tld;tld=$NF}}print tld}' "$A_TMP" > "$B_TMP"; then
 					if $awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$B_TMP" > "$A_TMP"; then
-						if sort -u "$A_TMP" > "$B_TMP"; then
+						if $sort -u "$A_TMP" > "$B_TMP"; then
 							output_ok
 						else
 							output_failn
@@ -748,7 +747,7 @@ $(cat $A_TMP)"
 
 	output 2 'Allowing domains '
 	tmpfs set message "$(getStatusText "statusProcessing"): allowing domains"
-	if sed -i "$w_filter" "$B_TMP"; then
+	if $sed -i "$w_filter" "$B_TMP"; then
 		output_ok
 	else
 		output_failn
@@ -758,7 +757,7 @@ $(cat $A_TMP)"
 	output 2 'Formatting merged file '
 	tmpfs set message "$(getStatusText "statusProcessing"): formatting merged file"
 	if [ -z "$outputFilterIPv6" ]; then
-		if sed "$outputFilter" "$B_TMP" > "$A_TMP"; then
+		if $sed "$outputFilter" "$B_TMP" > "$A_TMP"; then
 			output_ok
 		else
 			output_failn
@@ -767,8 +766,8 @@ $(cat $A_TMP)"
 	else
 		case "$targetDNS" in
 			dnsmasq.addnhosts)
-				if sed "$outputFilter" "$B_TMP" > "$A_TMP" && \
-					sed "$outputFilterIPv6" "$B_TMP" >> "$A_TMP"; then
+				if $sed "$outputFilter" "$B_TMP" > "$A_TMP" && \
+					$sed "$outputFilterIPv6" "$B_TMP" >> "$A_TMP"; then
 					output_ok
 				else
 					output_failn
@@ -1085,15 +1084,15 @@ check() {
 		fi
 		case "$targetDNS" in
 			dnsmasq.addnhosts)
-				grep "$string" "$outputFile" | sed 's|^127.0.0.1 ||;s|^:: ||;';;
+				grep "$string" "$outputFile" | $sed 's|^127.0.0.1 ||;s|^:: ||;';;
 			dnsmasq.conf)
-				grep "$string" "$outputFile" | sed 's|local=/||;s|/$||;';;
+				grep "$string" "$outputFile" | $sed 's|local=/||;s|/$||;';;
 			dnsmasq.ipset)
-				grep "$string" "$outputFile" | sed 's|ipset=/||;s|/adb$||;';;
+				grep "$string" "$outputFile" | $sed 's|ipset=/||;s|/adb$||;';;
 			dnsmasq.servers)
-				grep "$string" "$outputFile" | sed 's|server=/||;s|/$||;';;
+				grep "$string" "$outputFile" | $sed 's|server=/||;s|/$||;';;
 			unbound.adb_list)
-				grep "$string" "$outputFile" | sed 's|^local-zone: "||;s|" static$||;';;
+				grep "$string" "$outputFile" | $sed 's|^local-zone: "||;s|" static$||;';;
 		esac
 	else
 		echo "The $string is not found in current block-list ('$outputFile')."
