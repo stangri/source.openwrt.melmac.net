@@ -115,7 +115,7 @@ output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
 output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
 output_fail() { output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
-str_replace() { printf "%b" "$1" | $sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
+str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
 str_contains() { test "$1" != "$(str_replace "$1" "$2" '')"; }
 compare_values() { test "$(printf '%s\n' "$@" | $sort -V | head -n 1)" != "$1"; }
 is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
@@ -247,7 +247,7 @@ load_package_config() {
 	is_present 'gnu-sed' && sed='gnu-sed'
 	is_present 'gnu-sort' && sort='gnu-sort'
 	# Prefer curl because it supports the file:// scheme.
-	if is_present curl; then
+	if is_present 'curl'; then
 		dl_command="curl --insecure --retry $curlRetry --connect-timeout $dlTimeout --silent"
 		dl_flag="-o"
 	elif is_present wget && wget --version 2>/dev/null | grep -q "+https"; then
