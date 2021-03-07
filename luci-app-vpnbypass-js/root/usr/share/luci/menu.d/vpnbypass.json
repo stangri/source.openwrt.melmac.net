@@ -1,5 +1,5 @@
 {
-	"admin/services/vpnbypass": {
+	"admin/vpn/vpnbypass": {
 		"title": "VPN Bypass",
 		"order": 90,
 		"action": {

@@ -46,10 +46,10 @@ return view.extend({
 		o.optional = false;
 
 		d = new form.Map('dhcp');
-		s = m.section(form.TypedSection, 'dnsmasq');
+		s = d.section(form.TypedSection, 'dnsmasq');
 		s.anonymous = true;
 		o = s.option(form.DynamicList, 'ipset', _('Domains to Bypass'), _('Domains to be accessed directly (outside of the VPN tunnel)'));
 
-		return m.render();
+		return Promise.all([m.render(), d.render()]);
 	}
 });
