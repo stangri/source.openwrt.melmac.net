@@ -882,7 +882,7 @@ process_user_file(){
 	if ! . "$path"; then
 		errorSummary="${errorSummary}${_ERROR_}: Error running custom user file '$path'!\\n"
 		if grep -q -w 'curl' "$path" && ! is_present 'curl'; then
-			errorSummary="${errorSummary}${_ERROR_}: Use of 'curl' is detected in custom user file '$path', but 'curl' isn't present!\\n"
+			errorSummary="${errorSummary}${_ERROR_}: Use of 'curl' is detected in custom user file '$path', but 'curl' isn't installed!\\n"
 			errorSummary="${errorSummary}${_ERROR_}: If 'curl' is needed, install it with 'opkg update; opkg install curl;' command in CLI.\\n"
 		fi
 		output_fail
