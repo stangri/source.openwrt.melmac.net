@@ -54,7 +54,7 @@ ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 ss.template = packageName .. "/status"
 ss.value = statusText
 if packageVersion ~= "" then
-	buttons = h:option(DummyValue, "_dummy")
+	buttons = h:option(DummyValue, "_dummy", translate("Service Control"))
 	buttons.template = packageName .. "/buttons"
 end
 

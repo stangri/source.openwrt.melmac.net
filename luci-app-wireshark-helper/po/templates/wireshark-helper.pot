@@ -55,6 +55,10 @@ msgstr ""
 msgid "See the %sREADME%s for details."
 msgstr ""
 
+#: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:57
+msgid "Service Control"
+msgstr ""
+
 #: applications/luci-app-wireshark-helper/luasrc/model/cbi/wireshark-helper.lua:53
 msgid "Service Status"
 msgstr ""

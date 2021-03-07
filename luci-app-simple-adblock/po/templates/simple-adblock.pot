@@ -269,6 +269,10 @@ msgstr ""
 msgid "Run service after set delay on boot."
 msgstr ""
 
+#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:223
+msgid "Service Control"
+msgstr ""
+
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:172
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:182
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:195
