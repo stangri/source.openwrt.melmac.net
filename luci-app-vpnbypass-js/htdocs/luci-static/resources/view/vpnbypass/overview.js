@@ -1,184 +1,57 @@
+'use strict';
 'require ui';
+'require view';
+'require uci';
 'require rpc';
 'require form';
+'require vpnbypass.widgets as widgets';
 
-var _getInitList = rpc.declare({
-	object: 'luci.vpnbypass',
-	method: 'getInitList',
-	params: ['name']
-});
+return view.extend({
 
-var _setInitAction = rpc.declare({
-	object: 'luci.vpnbypass',
-	method: 'setInitAction',
-	params: ['name', 'action'],
-	expect: { result: false }
-});
-
-var _getInitStatus = rpc.declare({
-	object: 'luci.vpnbypass',
-	method: 'getInitStatus',
-	params: ['name']
-});
-
-var RPC = {
-	listeners: [],
-	on: function on(event, callback) {
-		var pair = { event: event, callback: callback }
-		this.listeners.push(pair);
-		return function unsubscribe() {
-			this.listeners = this.listeners.filter(function (listener) {
-				return listener !== pair;
-			});
-		}.bind(this);
+	load: function () {
+		return Promise.all([
+			uci.load('vpnbypass'),
+			uci.load('dhcp')
+		]);
 	},
-	emit: function emit(event, data) {
-		this.listeners.forEach(function (listener) {
-			if (listener.event === event) {
-				listener.callback(data);
-			}
-		});
-	},
-	getInitList: function getInitList(name) {
-		_getInitList(name).then(function (result) {
-			this.emit('getInitList', result);
-		}.bind(this));
 
-	},
-	getInitStatus: function getInitStatus(name) {
-		_getInitStatus(name).then(function (result) {
-			this.emit('getInitStatus', result);
-		}.bind(this));
-	},
-	setInitAction: function setInitAction(name, action) {
-		_setInitAction(name, action).then(function (result) {
-			this.emit('setInitAction', result);
-		}.bind(this));
+	render: function (data) {
+
+		var m, d, s, o;
+
+		m = new form.Map('vpnbypass', _('VPN Bypass'));
+
+		s = m.section(form.NamedSection, 'config', 'vpnbypass');
+
+		o = s.option(widgets.Status, '', _('Service Status'));
+
+		o = s.option(widgets.Buttons, '', _('Service Control'));
+
+		o = s.option(form.DynamicList, 'localport', _('Local Ports to Bypass'), _('Local ports to trigger VPN Bypass'));
+		o.datatype = 'portrange';
+		o.addremove = false;
+		o.optional = false;
+
+		o = s.option(form.DynamicList, 'remoteport', _('Remote Ports to Bypass'), _('Remote ports to trigger VPN Bypass'));
+		o.datatype = 'portrange';
+		o.addremove = false;
+		o.optional = false;
+
+		o = s.option(form.DynamicList, 'localsubnet', _('Local IP Addresses to Bypass'), _('Local IP addresses or subnets with direct internet access (outside of the VPN tunnel)'));
+		o.datatype = 'ip4addr';
+		o.addremove = false;
+		o.optional = false;
+
+		o = s.option(form.DynamicList, 'remotesubnet', _('Remote IP Addresses to Bypass'), _('Remote IP addresses or subnets which will be accessed directly (outside of the VPN tunnel)'));
+		o.datatype = 'ip4addr';
+		o.addremove = false;
+		o.optional = false;
+
+		d = new form.Map('dhcp');
+		s = d.section(form.TypedSection, 'dnsmasq');
+		s.anonymous = true;
+		o = s.option(form.DynamicList, 'ipset', _('Domains to Bypass'), _('Domains to be accessed directly (outside of the VPN tunnel)'));
+
+		return Promise.all([m.render(), d.render()]);
 	}
-}
-
-var statusCBI = form.DummyValue.extend({
-	renderWidget: function (section) {
-		var status = E('span', {}, _("Quering") + "...");
-		var refreshStatus = function () {
-			_getInitStatus('vpnbypass').then(function (reply) {
-				status.innerText = _("Running");
-				if (reply["vpnbypass"].running) {
-					status.innerText = _("Running") + "(" + _("version: ") + reply["vpnbypass"].version + ")";
-				}
-				else {
-					if (reply["vpnbypass"].enabled) {
-						status.innerText = _("Stopped");
-					}
-					else {
-						status.innerText = _("Stopped") + " (" + _("Disabled") + ")";
-					}
-				}
-			});
-		}
-		RPC.on('setInitAction', function (data) {
-			refreshStatus();
-		});
-		refreshStatus();
-		return E('div', {}, [status]);
-	}
-});
-
-var buttonsCBI = form.DummyValue.extend({
-	renderWidget: function (section) {
-
-		var btn_gap = E('span', {}, '&nbsp;&nbsp;');
-		var btn_gap_long = E('span', {}, '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
-
-		var btn_start = E('button', {
-			'class': 'btn cbi-button cbi-button-apply',
-			click: function (ev) {
-				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Starting vpnbypass service'))
-				]);
-				return RPC.setInitAction('vpnbypass', 'start');
-			}
-		}, _('Start'))
-
-		var btn_action = E('button', {
-			'class': 'btn cbi-button cbi-button-apply',
-			click: function (ev) {
-				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Restarting vpnbypass service'))
-				]);
-				return RPC.setInitAction('vpnbypass', 'reload');
-			}
-		}, _('Restart'))
-
-		var btn_stop = E('button', {
-			'class': 'btn cbi-button cbi-button-reset',
-			click: function (ev) {
-				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Stopping vpnbypass service'))
-				]);
-				return RPC.setInitAction('vpnbypass', 'stop');
-			}
-		}, _('Stop'))
-
-		var btn_enable = E('button', {
-			'class': 'btn cbi-button cbi-button-apply',
-			click: function (ev) {
-				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Enabling vpnbypass service'))
-				]);
-				return RPC.setInitAction('vpnbypass', 'enable');
-			}
-		}, _('Enable'))
-
-		var btn_disable = E('button', {
-			'class': 'btn cbi-button cbi-button-reset',
-			click: function (ev) {
-				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Disabling vpnbypass service'))
-				]);
-				return RPC.setInitAction('vpnbypass', 'disable');
-			}
-		}, _('Disable'))
-
-		var refreshButtons = function () {
-			_getInitList('vpnbypass').then(function (reply) {
-				if (reply["vpnbypass"].enabled) {
-					btn_start.disabled = false;
-					btn_action.disabled = false;
-					btn_stop.disabled = false;
-					btn_enable.disabled = true;
-					btn_disable.disabled = false;
-				}
-				else {
-					btn_start.disabled = true;
-					btn_action.disabled = true;
-					btn_stop.disabled = true;
-					btn_enable.disabled = false;
-					btn_disable.disabled = true;
-				}
-				if (reply["vpnbypass"].running) {
-					btn_start.disabled = true;
-					btn_action.disabled = false;
-					btn_stop.disabled = false;
-				}
-				else {
-					btn_action.disabled = true;
-					btn_stop.disabled = true;
-				}
-			});
-		}
-
-		RPC.on('setInitAction', function (data) {
-			ui.hideModal();
-			refreshButtons();
-		});
-		refreshButtons();
-
-		return E('div', {}, [btn_start, btn_gap, btn_action, btn_gap, btn_stop, btn_gap_long, btn_enable, btn_gap, btn_disable]);
-	}
-});
-
-return L.Class.extend({
-	Status: statusCBI,
-	Buttons: buttonsCBI
 });
