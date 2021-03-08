@@ -4,7 +4,7 @@
 'require uci';
 'require rpc';
 'require form';
-'require vpnbypass.buttons as buttons';
+'require vpnbypass.widgets as widgets';
 
 return view.extend({
 
@@ -17,13 +17,13 @@ return view.extend({
 
 	render: function (data) {
 
-		var m, s, o, d;
+		var m, d, s, o;
 
 		m = new form.Map('vpnbypass', _('VPN Bypass'));
 
 		s = m.section(form.NamedSection, 'config', 'vpnbypass');
 
-		var b1 = s.option('buttons', buttonsWidget, _('Service Control'), _('Service Control Description'));
+		o = s.option(widgets.Buttons, '', _('Service Control'));
 
 		o = s.option(form.DynamicList, 'localport', _('Local Ports to Bypass'), _('Local ports to trigger VPN Bypass'));
 		o.datatype = 'portrange';

@@ -41,15 +41,30 @@ set_init_action() {
 	fi
 }
 
+get_init_status() {
+	local name="$1" opkgFile="/usr/lib/opkg/status"
+	json_init
+	json_add_object "$name"
+	json_add_boolean "enabled" "$(is_enabled "$name")"
+	json_add_boolean "running" "$(is_running "$name")"
+	json_add_string "version" "$(grep -A2 -w "$name" "$opkgFile" | sed -n 's/Version: //p')"
+	json_close_object
+	json_dump
+	json_cleanup
+}
+
 case "$1" in
 	list)
 		json_init
 		json_add_object "getInitList"
-			json_add_string 'name' "name"
+			json_add_string 'name' 'name'
 		json_close_object
 		json_add_object "setInitAction"
-			json_add_string 'name' "name"
-			json_add_string 'action' "action"
+			json_add_string 'name' 'name'
+			json_add_string 'action' 'action'
+		json_close_object
+		json_add_object "getInitStatus"
+			json_add_string 'name' 'name'
 		json_close_object
 		json_dump
 		json_cleanup
@@ -59,17 +74,24 @@ case "$1" in
 			getInitList)
 				read -r input
 				json_load "$input"
-				json_get_var name "name"
+				json_get_var name 'name'
 				json_cleanup
 				get_init_list "$name"
 				;;
 			setInitAction)
 				read -r input
 				json_load "$input"
-				json_get_var name "name"
-				json_get_var action "action"
+				json_get_var name 'name'
+				json_get_var action 'action'
 				json_cleanup
 				set_init_action "$name" "$action"
+				;;
+			getInitStatus)
+				read -r input
+				json_load "$input"
+				json_get_var name 'name'
+				json_cleanup
+				get_init_status "$name"
 				;;
 		esac
 	;;

@@ -5,7 +5,8 @@
 			"ubus": {
 				"luci.vpnbypass": [
 					"getInitList",
-					"setInitAction"
+					"setInitAction",
+					"getInitStatus"
 				]
 			},
 			"uci": [
