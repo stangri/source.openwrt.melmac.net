@@ -21,6 +21,71 @@ var callInitStatus = rpc.declare({
 	params: ['name']
 });
 
+var _getInitList = rpc.declare({
+	object: 'luci.vpnbypass',
+	method: 'getInitList',
+	params: ['name']
+});
+
+var _setInitAction = rpc.declare({
+	object: 'luci.vpnbypass',
+	method: 'setInitAction',
+	params: ['name', 'action'],
+	expect: { result: false }
+});
+
+var _getInitStatus = rpc.declare({
+	object: 'luci.vpnbypass',
+	method: 'getInitStatus',
+	params: ['name']
+});
+
+var RPC = {
+	listeners: [],
+	on: function on(event, callback) {
+		var pair = { event: event, callback: callback }
+		this.listeners.push(pair);
+		return function unsubscribe() {
+			this.listeners = this.listeners.filter(function (listener) {
+				return listener !== pair;
+			});
+		}.bind(this);
+	},
+	emit: function emit(event, data) {
+		this.listeners.forEach(function (listener) {
+			if (listener.event === event) {
+				listener.callback(data);
+			}
+		});
+	},
+	getInitList: function getInitList(name) {
+		_getInitList(name).then(function (result) {
+			this.emit('getInitList', result);
+		}.bind(this));
+
+	},
+	getInitStatus: function getInitStatus(name) {
+		_getInitStatus(name).then(function (result) {
+			this.emit('getInitStatus', result);
+		}.bind(this));
+	},
+	setInitAction: function setInitAction(name, action) {
+		_setInitAction(name, action).then(function (result) {
+			this.emit('setInitAction', result);
+		}.bind(this));
+	}
+}
+
+RPC.on('getInitList', function (data) {
+	console.log('getInitList', data);
+});
+
+RPC.on('getInitList', function (data) {
+	console.log('getInitList2', data);
+});
+
+RPC.getInitList('test');
+
 var statusCBI = form.DummyValue.extend({
 	renderWidget: function (section) {
 		var status = E('span', {}, _("Quering") + "...");
@@ -40,6 +105,10 @@ var statusCBI = form.DummyValue.extend({
 				}
 			});
 		}
+		RPC.on('setInitAction', function (data) {
+			console.log('setInitAction', data);
+			refreshStatus();
+		});
 		refreshStatus();
 		return E('div', {}, [status]);
 	}
