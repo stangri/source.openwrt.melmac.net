@@ -76,16 +76,6 @@ var RPC = {
 	}
 }
 
-RPC.on('getInitList', function (data) {
-	console.log('getInitList', data);
-});
-
-RPC.on('getInitList', function (data) {
-	console.log('getInitList2', data);
-});
-
-RPC.getInitList('test');
-
 var statusCBI = form.DummyValue.extend({
 	renderWidget: function (section) {
 		var status = E('span', {}, _("Quering") + "...");
@@ -126,7 +116,7 @@ var buttonsCBI = form.DummyValue.extend({
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Starting vpnbypass service'))
 				]);
-				return callInitAction('vpnbypass', 'start').then(function (reply) {
+				return RPC.setInitAction('vpnbypass', 'start').then(function (reply) {
 					ui.hideModal();
 					refreshButtons();
 				});
@@ -139,7 +129,7 @@ var buttonsCBI = form.DummyValue.extend({
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Restarting vpnbypass service'))
 				]);
-				return callInitAction('vpnbypass', 'reload').then(function (reply) {
+				return RPC.setInitAction('vpnbypass', 'reload').then(function (reply) {
 					ui.hideModal();
 					refreshButtons();
 				});
@@ -152,7 +142,7 @@ var buttonsCBI = form.DummyValue.extend({
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Stopping vpnbypass service'))
 				]);
-				return callInitAction('vpnbypass', 'stop').then(function (reply) {
+				return RPC.setInitAction('vpnbypass', 'stop').then(function (reply) {
 					ui.hideModal();
 					refreshButtons();
 				});
@@ -167,7 +157,7 @@ var buttonsCBI = form.DummyValue.extend({
 					E('p', { 'class': 'spinning' }, _('Enabling vpnbypass service'))
 				]);
 
-				return callInitAction('vpnbypass', 'enable').then(function (reply) {
+				return RPC.setInitAction('vpnbypass', 'enable').then(function (reply) {
 					ui.hideModal();
 					refreshButtons();
 				});
@@ -180,7 +170,7 @@ var buttonsCBI = form.DummyValue.extend({
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Disabling vpnbypass service'))
 				]);
-				return callInitAction('vpnbypass', 'disable').then(function (reply) {
+				return RPC.setInitAction('vpnbypass', 'disable').then(function (reply) {
 					ui.hideModal();
 					refreshButtons();
 				});
