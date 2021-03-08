@@ -48,7 +48,8 @@ var statusCBI = form.DummyValue.extend({
 var buttonsCBI = form.DummyValue.extend({
 	renderWidget: function (section) {
 
-		var btn_separator = E('span', {}, '&nbsp;&nbsp;&nbsp;&nbsp;');
+		var btn_gap = E('span', {}, '&nbsp;&nbsp;');
+		var btn_gap_long = E('span', {}, '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;');
 
 		var btn_start = E('button', {
 			'class': 'btn cbi-button cbi-button-apply',
@@ -148,7 +149,7 @@ var buttonsCBI = form.DummyValue.extend({
 
 		refreshButtons();
 
-		return E('div', {}, [btn_start, btn_action, btn_stop, btn_separator, btn_enable, btn_disable]);
+		return E('div', {}, [btn_start, btn_gap, btn_action, btn_gap, btn_stop, btn_gap_long, btn_enable, btn_gap, btn_disable]);
 	}
 });
 
