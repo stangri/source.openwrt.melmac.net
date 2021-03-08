@@ -2,25 +2,6 @@
 'require rpc';
 'require form';
 
-var callInitList = rpc.declare({
-	object: 'luci.vpnbypass',
-	method: 'getInitList',
-	params: ['name']
-});
-
-var callInitAction = rpc.declare({
-	object: 'luci.vpnbypass',
-	method: 'setInitAction',
-	params: ['name', 'action'],
-	expect: { result: false }
-});
-
-var callInitStatus = rpc.declare({
-	object: 'luci.vpnbypass',
-	method: 'getInitStatus',
-	params: ['name']
-});
-
 var _getInitList = rpc.declare({
 	object: 'luci.vpnbypass',
 	method: 'getInitList',
@@ -80,7 +61,7 @@ var statusCBI = form.DummyValue.extend({
 	renderWidget: function (section) {
 		var status = E('span', {}, _("Quering") + "...");
 		var refreshStatus = function () {
-			callInitStatus('vpnbypass').then(function (reply) {
+			_getInitStatus('vpnbypass').then(function (reply) {
 				status.innerText = _("Running");
 				if (reply["vpnbypass"].running) {
 					status.innerText = _("Running") + "(" + _("version: ") + reply["vpnbypass"].version + ")";
@@ -96,7 +77,6 @@ var statusCBI = form.DummyValue.extend({
 			});
 		}
 		RPC.on('setInitAction', function (data) {
-			console.log('setInitAction', data);
 			refreshStatus();
 		});
 		refreshStatus();
@@ -116,10 +96,7 @@ var buttonsCBI = form.DummyValue.extend({
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Starting vpnbypass service'))
 				]);
-				return RPC.setInitAction('vpnbypass', 'start').then(function (reply) {
-					ui.hideModal();
-					refreshButtons();
-				});
+				return RPC.setInitAction('vpnbypass', 'start');
 			}
 		}, _('Start'))
 
@@ -129,10 +106,7 @@ var buttonsCBI = form.DummyValue.extend({
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Restarting vpnbypass service'))
 				]);
-				return RPC.setInitAction('vpnbypass', 'reload').then(function (reply) {
-					ui.hideModal();
-					refreshButtons();
-				});
+				return RPC.setInitAction('vpnbypass', 'reload');
 			}
 		}, _('Restart'))
 
@@ -142,25 +116,17 @@ var buttonsCBI = form.DummyValue.extend({
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Stopping vpnbypass service'))
 				]);
-				return RPC.setInitAction('vpnbypass', 'stop').then(function (reply) {
-					ui.hideModal();
-					refreshButtons();
-				});
+				return RPC.setInitAction('vpnbypass', 'stop');
 			}
 		}, _('Stop'))
 
 		var btn_enable = E('button', {
 			'class': 'btn cbi-button cbi-button-apply',
 			click: function (ev) {
-				console.log('Button Enable Click', arguments, this);
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Enabling vpnbypass service'))
 				]);
-
-				return RPC.setInitAction('vpnbypass', 'enable').then(function (reply) {
-					ui.hideModal();
-					refreshButtons();
-				});
+				return RPC.setInitAction('vpnbypass', 'enable');
 			}
 		}, _('Enable'))
 
@@ -170,16 +136,12 @@ var buttonsCBI = form.DummyValue.extend({
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Disabling vpnbypass service'))
 				]);
-				return RPC.setInitAction('vpnbypass', 'disable').then(function (reply) {
-					ui.hideModal();
-					refreshButtons();
-				});
+				return RPC.setInitAction('vpnbypass', 'disable');
 			}
 		}, _('Disable'))
 
 		var refreshButtons = function () {
-			callInitList('vpnbypass').then(function (reply) {
-				//				console.log('callInitList', reply);
+			_getInitList('vpnbypass').then(function (reply) {
 				if (reply["vpnbypass"].enabled) {
 					btn_start.disabled = false;
 					btn_action.disabled = false;
@@ -206,6 +168,10 @@ var buttonsCBI = form.DummyValue.extend({
 			});
 		}
 
+		RPC.on('setInitAction', function (data) {
+			ui.hideModal();
+			refreshButtons();
+		});
 		refreshButtons();
 
 		return E('div', {}, [btn_start, btn_gap, btn_action, btn_gap, btn_stop, btn_gap_long, btn_enable, btn_gap, btn_disable]);
