@@ -195,7 +195,7 @@ else
 		ss = h:option(DummyValue, "_dummy", translate("Service Status"))
 		ss.template = "simple-adblock/status"
 		if tmpfsStatus == "statusSuccess" then
-			ss.value = translatef("%s is blocking %s domains (with %s).", packageVersion, getFileLines(outputFile), targetDNS)
+			ss.value = translatef("Blocking %s domains (with %s).", getFileLines(outputFile), targetDNS)
 		else
 			ss.value = statusTable[tmpfsStatus]
 		end
