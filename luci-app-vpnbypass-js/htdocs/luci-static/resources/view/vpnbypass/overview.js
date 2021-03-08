@@ -4,7 +4,7 @@
 'require uci';
 'require rpc';
 'require form';
-/* 'require vpnbypass.buttons as buttons'; */
+'require vpnbypass.buttons as buttons';
 
 return view.extend({
 
@@ -23,7 +23,7 @@ return view.extend({
 
 		s = m.section(form.NamedSection, 'config', 'vpnbypass');
 
-/*		var b1 = s.option('buttons', buttonsWidget, _('Service Control'), _('Service Control Description')); */
+		var b1 = s.option('buttons', buttonsWidget, _('Service Control'), _('Service Control Description'));
 
 		o = s.option(form.DynamicList, 'localport', _('Local Ports to Bypass'), _('Local ports to trigger VPN Bypass'));
 		o.datatype = 'portrange';
