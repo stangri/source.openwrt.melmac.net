@@ -78,6 +78,13 @@ case "$1" in
 				json_cleanup
 				get_init_list "$name"
 				;;
+			getInitStatus)
+				read -r input
+				json_load "$input"
+				json_get_var name 'name'
+				json_cleanup
+				get_init_status "$name"
+				;;
 			setInitAction)
 				read -r input
 				json_load "$input"
@@ -85,13 +92,6 @@ case "$1" in
 				json_get_var action 'action'
 				json_cleanup
 				set_init_action "$name" "$action"
-				;;
-			getInitStatus)
-				read -r input
-				json_load "$input"
-				json_get_var name 'name'
-				json_cleanup
-				get_init_status "$name"
 				;;
 		esac
 	;;

@@ -2,6 +2,10 @@
 'require rpc';
 'require form';
 
+var pkg = {
+	get Name() { return 'vpnbypass'; }
+};
+
 var _getInitList = rpc.declare({
 	object: 'luci.vpnbypass',
 	method: 'getInitList',
@@ -60,26 +64,20 @@ var RPC = {
 var statusCBI = form.DummyValue.extend({
 	renderWidget: function (section) {
 		var status = E('span', {}, _("Quering") + "...");
-		var refreshStatus = function () {
-			_getInitStatus('vpnbypass').then(function (reply) {
-				status.innerText = _("Running");
-				if (reply["vpnbypass"].running) {
-					status.innerText = _("Running") + "(" + _("version: ") + reply["vpnbypass"].version + ")";
+		RPC.on('getInitStatus', function (reply) {
+			console.log('status: getInitStatus', reply);
+			if (reply[pkg.Name].running) {
+				status.innerText = _("Running") + "(" + _("version: ") + reply[pkg.Name].version + ")";
+			}
+			else {
+				if (reply[pkg.Name].enabled) {
+					status.innerText = _("Stopped");
 				}
 				else {
-					if (reply["vpnbypass"].enabled) {
-						status.innerText = _("Stopped");
-					}
-					else {
-						status.innerText = _("Stopped") + " (" + _("Disabled") + ")";
-					}
+					status.innerText = _("Stopped") + " (" + _("Disabled") + ")";
 				}
-			});
-		}
-		RPC.on('setInitAction', function (data) {
-			refreshStatus();
+			}
 		});
-		refreshStatus();
 		return E('div', {}, [status]);
 	}
 });
@@ -92,71 +90,65 @@ var buttonsCBI = form.DummyValue.extend({
 
 		var btn_start = E('button', {
 			'class': 'btn cbi-button cbi-button-apply',
+			disabled: true,
 			click: function (ev) {
 				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Starting vpnbypass service'))
+					E('p', { 'class': 'spinning' }, _('Starting ' + pkg.Name + ' service'))
 				]);
-				return RPC.setInitAction('vpnbypass', 'start');
+				return RPC.setInitAction(pkg.Name, 'start');
 			}
-		}, _('Start'))
+		}, _('Start'));
 
 		var btn_action = E('button', {
 			'class': 'btn cbi-button cbi-button-apply',
+			disabled: true,
 			click: function (ev) {
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Restarting vpnbypass service'))
 				]);
-				return RPC.setInitAction('vpnbypass', 'reload');
+				return RPC.setInitAction(pkg.Name, 'reload');
 			}
-		}, _('Restart'))
+		}, _('Restart'));
 
 		var btn_stop = E('button', {
 			'class': 'btn cbi-button cbi-button-reset',
+			disabled: true,
 			click: function (ev) {
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Stopping vpnbypass service'))
 				]);
-				return RPC.setInitAction('vpnbypass', 'stop');
+				return RPC.setInitAction(pkg.Name, 'stop');
 			}
-		}, _('Stop'))
+		}, _('Stop'));
 
 		var btn_enable = E('button', {
 			'class': 'btn cbi-button cbi-button-apply',
+			disabled: true,
 			click: function (ev) {
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Enabling vpnbypass service'))
 				]);
-				return RPC.setInitAction('vpnbypass', 'enable');
+				return RPC.setInitAction(pkg.Name, 'enable');
 			}
-		}, _('Enable'))
+		}, _('Enable'));
 
 		var btn_disable = E('button', {
 			'class': 'btn cbi-button cbi-button-reset',
+			disabled: true,
 			click: function (ev) {
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Disabling vpnbypass service'))
 				]);
-				return RPC.setInitAction('vpnbypass', 'disable');
+				return RPC.setInitAction(pkg.Name, 'disable');
 			}
-		}, _('Disable'))
+		}, _('Disable'));
 
-		var refreshButtons = function () {
-			_getInitList('vpnbypass').then(function (reply) {
-				if (reply["vpnbypass"].enabled) {
-					btn_start.disabled = false;
-					btn_action.disabled = false;
-					btn_stop.disabled = false;
-					btn_enable.disabled = true;
-					btn_disable.disabled = false;
-				}
-				else {
-					btn_start.disabled = true;
-					btn_action.disabled = true;
-					btn_stop.disabled = true;
-					btn_enable.disabled = false;
-					btn_disable.disabled = true;
-				}
-				if (reply["vpnbypass"].running) {
+		RPC.on('getInitStatus', function (reply) {
+			console.log('buttons: getInitStatus', reply);
+			if (reply[pkg.Name].enabled) {
+				btn_enable.disabled = true;
+				btn_disable.disabled = false;
+				if (reply[pkg.Name].running) {
 					btn_start.disabled = true;
 					btn_action.disabled = false;
 					btn_stop.disabled = false;
@@ -165,18 +157,30 @@ var buttonsCBI = form.DummyValue.extend({
 					btn_action.disabled = true;
 					btn_stop.disabled = true;
 				}
-			});
-		}
-
-		RPC.on('setInitAction', function (data) {
-			ui.hideModal();
-			refreshButtons();
+			}
+			else {
+				btn_start.disabled = true;
+				btn_action.disabled = true;
+				btn_stop.disabled = true;
+				btn_enable.disabled = false;
+				btn_disable.disabled = true;
+			}
 		});
-		refreshButtons();
 
 		return E('div', {}, [btn_start, btn_gap, btn_action, btn_gap, btn_stop, btn_gap_long, btn_enable, btn_gap, btn_disable]);
 	}
 });
+
+RPC.on('setInitAction', function (reply) {
+	ui.hideModal();
+	RPC.getInitStatus(pkg.Name);
+});
+
+RPC.on('getInitStatus', function (reply) {
+	console.log('main: getInitStatus', reply);
+});
+
+RPC.getInitStatus(pkg.Name);
 
 return L.Class.extend({
 	Status: statusCBI,
