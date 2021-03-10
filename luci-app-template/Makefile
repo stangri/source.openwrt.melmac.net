@@ -1,15 +1,15 @@
-# Copyright 2017-2018 Stan Grishin (stangri@melmac.net)
+# Copyright 2021 Stan Grishin (stangri@melmac.net)
 # This is free software, licensed under the GNU General Public License v3.
 
 include $(TOPDIR)/rules.mk
 
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
-PKG_VERSION:=0.0.1-1
 
-LUCI_TITLE:=Template Web UI
-LUCI_DESCRIPTION:=Provides Web UI for Template.
-LUCI_DEPENDS:=+luci-compat +luci-mod-admin-full +template
+LUCI_TITLE:=Template JS Web UI
+LUCI_URL:=https://docs.openwrt.melmac.net/luci-app-template-js/
+LUCI_DESCRIPTION:=Provides template for JS-based Web UI applications.
+LUCI_DEPENDS:=+luci-mod-admin-full +jshn
 LUCI_PKGARCH:=all
 
 include ../../luci.mk
