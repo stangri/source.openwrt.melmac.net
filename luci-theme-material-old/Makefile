@@ -8,6 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
+PKG_VERSION:=1.0.0-1
 
 LUCI_TITLE:=Material Theme (Old Style)
 LUCI_DESCRIPTION:=This is Material Theme with the old style colorful buttons.
