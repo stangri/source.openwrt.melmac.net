@@ -7,10 +7,12 @@
 . /lib/functions.sh
 . /usr/share/libubox/jshn.sh
 
+pkgName="vpnbypass"
+
 is_enabled() { uci -q get "${1}.config.enabled"; }
 is_running() { iptables -t mangle -L | grep -q VPNBYPASS && echo '1' || echo '0'; }
 
-logger() { /usr/bin/logger -t vpnbypass "$@"; }
+logger() { /usr/bin/logger -t "$pkgName" "$@"; }
 print_json_bool() { json_init; json_add_boolean "$1" "$2"; json_dump; json_cleanup; }
 
 get_init_list() {
@@ -47,7 +49,7 @@ get_init_status() {
 	json_add_object "$name"
 	json_add_boolean "enabled" "$(is_enabled "$name")"
 	json_add_boolean "running" "$(is_running "$name")"
-	json_add_string "version" "$(grep -A2 -w "$name" "$opkgFile" | sed -n 's/Version: //p')"
+	json_add_string "version" "$(grep -A2 -w "Package: $name$" "$opkgFile" | sed -n 's/Version: //p')"
 	json_close_object
 	json_dump
 	json_cleanup

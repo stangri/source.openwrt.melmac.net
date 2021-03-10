@@ -1,3 +1,5 @@
+// Thsis file wouldn't have been possible without [@vsviridov](https://github.com/vsviridov)
+
 'require ui';
 'require rpc';
 'require form';
@@ -65,16 +67,21 @@ var statusCBI = form.DummyValue.extend({
 	renderWidget: function (section) {
 		var status = E('span', {}, _("Quering") + "...");
 		RPC.on('getInitStatus', function (reply) {
-			if (reply[pkg.Name].running) {
-				status.innerText = _("Running (version: %s)").format(reply[pkg.Name].version);
-			}
-			else {
-				if (reply[pkg.Name].enabled) {
-					status.innerText = _("Stopped");
+			if (reply[pkg.Name].version) {
+				if (reply[pkg.Name].running) {
+					status.innerText = _("Running (version: %s)").format(reply[pkg.Name].version);
 				}
 				else {
-					status.innerText = _("Stopped (Disabled)");
+					if (reply[pkg.Name].enabled) {
+						status.innerText = _("Stopped (version: %s)").format(reply[pkg.Name].version);
+					}
+					else {
+						status.innerText = _("Stopped (Disabled)");
+					}
 				}
+			}
+			else {
+				status.innerText = _("Not installed or not found")
 			}
 		});
 		return E('div', {}, [status]);
@@ -143,28 +150,32 @@ var buttonsCBI = form.DummyValue.extend({
 		}, _('Disable'));
 
 		RPC.on('getInitStatus', function (reply) {
-			if (reply[pkg.Name].enabled) {
-				btn_enable.disabled = true;
-				btn_disable.disabled = false;
-				if (reply[pkg.Name].running) {
-					btn_start.disabled = true;
-					btn_action.disabled = false;
-					btn_stop.disabled = false;
+			if (reply[pkg.Name].version) {
+				if (reply[pkg.Name].enabled) {
+					btn_enable.disabled = true;
+					btn_disable.disabled = false;
+					if (reply[pkg.Name].running) {
+						btn_start.disabled = true;
+						btn_action.disabled = false;
+						btn_stop.disabled = false;
+					}
+					else {
+						btn_action.disabled = true;
+						btn_stop.disabled = true;
+					}
 				}
 				else {
+					btn_start.disabled = true;
 					btn_action.disabled = true;
 					btn_stop.disabled = true;
+					btn_enable.disabled = false;
+					btn_disable.disabled = true;
 				}
 			}
-			else {
-				btn_start.disabled = true;
-				btn_action.disabled = true;
-				btn_stop.disabled = true;
-				btn_enable.disabled = false;
-				btn_disable.disabled = true;
-			}
 		});
+
 		RPC.getInitStatus(pkg.Name);
+		
 		return E('div', {}, [btn_start, btn_gap, btn_action, btn_gap, btn_stop, btn_gap_long, btn_enable, btn_gap, btn_disable]);
 	}
 });
