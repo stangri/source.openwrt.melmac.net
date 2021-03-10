@@ -160,6 +160,7 @@ var buttonsCBI = form.DummyValue.extend({
 						btn_stop.disabled = false;
 					}
 					else {
+						btn_start.disabled = false;
 						btn_action.disabled = true;
 						btn_stop.disabled = true;
 					}
