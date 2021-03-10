@@ -65,7 +65,6 @@ var statusCBI = form.DummyValue.extend({
 	renderWidget: function (section) {
 		var status = E('span', {}, _("Quering") + "...");
 		RPC.on('getInitStatus', function (reply) {
-			console.log('status: getInitStatus', reply);
 			if (reply[pkg.Name].running) {
 				status.innerText = _("Running") + "(" + _("version: ") + reply[pkg.Name].version + ")";
 			}
@@ -144,7 +143,6 @@ var buttonsCBI = form.DummyValue.extend({
 		}, _('Disable'));
 
 		RPC.on('getInitStatus', function (reply) {
-			console.log('buttons: getInitStatus', reply);
 			if (reply[pkg.Name].enabled) {
 				btn_enable.disabled = true;
 				btn_disable.disabled = false;
@@ -166,7 +164,7 @@ var buttonsCBI = form.DummyValue.extend({
 				btn_disable.disabled = true;
 			}
 		});
-
+		RPC.getInitStatus(pkg.Name);
 		return E('div', {}, [btn_start, btn_gap, btn_action, btn_gap, btn_stop, btn_gap_long, btn_enable, btn_gap, btn_disable]);
 	}
 });
@@ -175,12 +173,6 @@ RPC.on('setInitAction', function (reply) {
 	ui.hideModal();
 	RPC.getInitStatus(pkg.Name);
 });
-
-RPC.on('getInitStatus', function (reply) {
-	console.log('main: getInitStatus', reply);
-});
-
-RPC.getInitStatus(pkg.Name);
 
 return L.Class.extend({
 	Status: statusCBI,
