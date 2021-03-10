@@ -7,20 +7,20 @@ var pkg = {
 };
 
 var _getInitList = rpc.declare({
-	object: 'luci.vpnbypass',
+	object: 'luci.' + pkg.Name,
 	method: 'getInitList',
 	params: ['name']
 });
 
 var _setInitAction = rpc.declare({
-	object: 'luci.vpnbypass',
+	object: 'luci.' + pkg.Name,
 	method: 'setInitAction',
 	params: ['name', 'action'],
 	expect: { result: false }
 });
 
 var _getInitStatus = rpc.declare({
-	object: 'luci.vpnbypass',
+	object: 'luci.' + pkg.Name,
 	method: 'getInitStatus',
 	params: ['name']
 });
@@ -66,14 +66,14 @@ var statusCBI = form.DummyValue.extend({
 		var status = E('span', {}, _("Quering") + "...");
 		RPC.on('getInitStatus', function (reply) {
 			if (reply[pkg.Name].running) {
-				status.innerText = _("Running") + "(" + _("version: ") + reply[pkg.Name].version + ")";
+				status.innerText = _("Running (version: %s)").format(reply[pkg.Name].version);
 			}
 			else {
 				if (reply[pkg.Name].enabled) {
 					status.innerText = _("Stopped");
 				}
 				else {
-					status.innerText = _("Stopped") + " (" + _("Disabled") + ")";
+					status.innerText = _("Stopped (Disabled)");
 				}
 			}
 		});
@@ -92,7 +92,7 @@ var buttonsCBI = form.DummyValue.extend({
 			disabled: true,
 			click: function (ev) {
 				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Starting ' + pkg.Name + ' service'))
+					E('p', { 'class': 'spinning' }, _('Starting %s service').format(pkg.Name))
 				]);
 				return RPC.setInitAction(pkg.Name, 'start');
 			}
@@ -103,7 +103,7 @@ var buttonsCBI = form.DummyValue.extend({
 			disabled: true,
 			click: function (ev) {
 				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Restarting vpnbypass service'))
+					E('p', { 'class': 'spinning' }, _('Restarting %s service').format(pkg.Name))
 				]);
 				return RPC.setInitAction(pkg.Name, 'reload');
 			}
@@ -114,7 +114,7 @@ var buttonsCBI = form.DummyValue.extend({
 			disabled: true,
 			click: function (ev) {
 				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Stopping vpnbypass service'))
+					E('p', { 'class': 'spinning' }, _('Stopping %s service').format(pkg.Name))
 				]);
 				return RPC.setInitAction(pkg.Name, 'stop');
 			}
@@ -125,7 +125,7 @@ var buttonsCBI = form.DummyValue.extend({
 			disabled: true,
 			click: function (ev) {
 				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Enabling vpnbypass service'))
+					E('p', { 'class': 'spinning' }, _('Enabling %s service').format(pkg.Name))
 				]);
 				return RPC.setInitAction(pkg.Name, 'enable');
 			}
@@ -136,7 +136,7 @@ var buttonsCBI = form.DummyValue.extend({
 			disabled: true,
 			click: function (ev) {
 				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Disabling vpnbypass service'))
+					E('p', { 'class': 'spinning' }, _('Disabling %s service').format(pkg.Name))
 				]);
 				return RPC.setInitAction(pkg.Name, 'disable');
 			}
