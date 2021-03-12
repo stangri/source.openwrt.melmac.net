@@ -36,14 +36,11 @@ define Build/Compile
 endef
 
 define Package/fakeinternet/install
-	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config $(1)/www_fakeinternet
 	$(INSTALL_BIN) ./files/fakeinternet.init $(1)/etc/init.d/fakeinternet
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/fakeinternet
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/fakeinternet.conf $(1)/etc/config/fakeinternet
-	$(INSTALL_DIR) $(1)/www_fakeinternet
+	$(INSTALL_CONF) ./files/fakeinternet.config $(1)/etc/config/fakeinternet
 	$(INSTALL_BIN) ./files/fakeinternet.cgi $(1)/www_fakeinternet/error.cgi
-	chmod 0755 $(1)/www_fakeinternet/error.cgi
 endef
 
 define Package/fakeinternet/postinst

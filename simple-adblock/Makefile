@@ -38,15 +38,12 @@ define Build/Compile
 endef
 
 define Package/simple-adblock/install
-	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config $(1)/tmp $(1)/etc/hotplug.d/iface
 	$(INSTALL_BIN) ./files/simple-adblock.init $(1)/etc/init.d/simple-adblock
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/simple-adblock
-	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/simple-adblock.conf $(1)/etc/config/simple-adblock
-	$(INSTALL_DIR) $(1)/tmp
 	$(INSTALL_CONF) ./files/simple-adblock.conf.update $(1)/tmp/simple-adblock.conf.update
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
-	$(INSTALL_BIN) ./files/simple-adblock.hotplug $(1)/etc/hotplug.d/iface/80-simple-adblock
+	$(INSTALL_DATA) ./files/simple-adblock.hotplug $(1)/etc/hotplug.d/iface/80-simple-adblock
 endef
 
 define Package/simple-adblock/postinst

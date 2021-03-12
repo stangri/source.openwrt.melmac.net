@@ -35,11 +35,10 @@ define Build/Compile
 endef
 
 define Package/wireshark-helper/install
-	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config
 	$(INSTALL_BIN) ./files/wireshark-helper.init $(1)/etc/init.d/wireshark-helper
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/wireshark-helper
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/wireshark-helper.conf $(1)/etc/config/wireshark-helper
+	$(INSTALL_CONF) ./files/wireshark-helper.config $(1)/etc/config/wireshark-helper
 endef
 
 define Package/wireshark-helper/postinst

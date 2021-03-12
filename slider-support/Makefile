@@ -75,18 +75,13 @@ define Build/Compile
 endef
 
 define Package/slider-support/install
-	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config $(1)/etc/hotplug.d/iface $(1)/lib/functions $(1)/etc/rc.button
 	$(INSTALL_BIN) ./files/slider-support.init $(1)/etc/init.d/slider-support
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/slider-support
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/slider-support.conf $(1)/etc/config/slider-support
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_CONF) ./files/slider-support.config $(1)/etc/config/slider-support
 	$(INSTALL_DATA) ./files/stabridge.hotplug $(1)/etc/hotplug.d/iface/99-stabridge
-	$(INSTALL_DIR) $(1)/lib/functions
 	$(INSTALL_DATA) ./files/checkslider.$(VARIANT) $(1)/lib/functions/checkslider.sh
-	$(INSTALL_DIR) $(1)/etc/rc.button
-	$(INSTALL_DATA) ./files/slider-support.button $(1)/etc/rc.button/$(USEBUTTON)
-	chmod 0755 $(1)/etc/rc.button/$(USEBUTTON)
+	$(INSTALL_BIN) ./files/slider-support.button $(1)/etc/rc.button/$(USEBUTTON)
 endef
 
 Package/slider-support-ar150/install = $(Package/slider-support/install)
