@@ -138,9 +138,10 @@ output() {
 	fi
 }
 
-serviceEnabled=''; forceDNS=''; parallelDL=''; debug=''; compressedCache='';
-ipv6Enabled=''; configUpdateEnabled=''; configUpdateURL=''; bootDelay='';
-dlTimeout=''; curlRetry=''; verbosity=''; led=''; targetDNS=''; dnsInstance=''; 
+serviceEnabled=''; forceDNS=''; forceDNSPorts=''; parallelDL=''; debug='';
+compressedCache=''; ipv6Enabled=''; configUpdateEnabled=''; configUpdateURL='';
+bootDelay=''; dlTimeout=''; curlRetry=''; verbosity=''; led='';
+targetDNS=''; dnsInstance=''; 
 allowed_domains=''; allowed_domains_urls='';
 blocked_domains=''; blocked_domains_urls=''; blocked_hosts_urls='';
 dl_command=''; dl_flag=''; isSSLSupported=''; allowIDN='';
@@ -156,6 +157,7 @@ load_package_config() {
 	config_get_bool compressedCache       'config' 'compressed_cache' 0
 	config_get_bool ipv6Enabled           'config' 'ipv6_enabled' 0
 	config_get_bool configUpdateEnabled   'config' 'config_update_enabled' 0
+	config_get forceDNSPorts              'config' 'force_dns_port' '53 853 5353'
 	config_get bootDelay                  'config' 'boot_delay' '120'
 	config_get dlTimeout                  'config' 'download_timeout' '20'
 	config_get curlRetry                  'config' 'curl_retry' '3'
@@ -885,16 +887,29 @@ start_service() {
 	procd_open_data
 	json_add_array firewall
 	if [ "$forceDNS" -ne 0 ]; then
-		json_add_object ''
-		json_add_string type redirect
-		json_add_string name simple_adblock_dns_redirect
-		json_add_string target DNAT
-		json_add_string src lan
-		json_add_string proto tcpudp
-		json_add_string src_dport 53
-		json_add_string dest_port 53
-		json_add_string reflection 0
-		json_close_object
+		for c in $forceDNSPorts; do
+			if netstat -tuln | grep LISTEN | grep ":${c}" >/dev/null 2>&1; then
+				json_add_object ''
+				json_add_string type redirect
+				json_add_string name "simple_adblock_redirect_dns_${c}"
+				json_add_string target DNAT
+				json_add_string src lan
+				json_add_string proto tcpudp
+				json_add_string src_dport "$c"
+				json_add_string dest_port "$c"
+				json_add_string reflection 0
+				json_close_object
+			else
+				json_add_object ''
+				json_add_string type rule
+				json_add_string name "simple_adblock_reject_dns_${c}"
+				json_add_string target REJECT
+				json_add_string src lan
+				json_add_string proto tcpudp
+				json_add_string src_dport "$c"
+				json_close_object
+			fi
+		done
 	fi
 	if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
 		json_add_object ''
@@ -980,8 +995,7 @@ start_service() {
 		output 0 "$__OK__\\n";
 		tmpfs del message
 		tmpfs set status "statusSuccess"
-		c="$(wc -l < "$outputFile")"
-		tmpfs set stats "$serviceName is blocking $c domains (with ${targetDNS})"
+		tmpfs set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${targetDNS})"
 		showstatus
 	else
 		output 0 "$__FAIL__\\n";
