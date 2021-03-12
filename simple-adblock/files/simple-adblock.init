@@ -612,7 +612,7 @@ process_config_update() {
 		output 2 "[DL] Config  Update:  $label $__FAIL__\\n"
 		tmpfs add error "errorDownloadingConfigUpdate"
 	else
-		if [ -s "$R_TMP" ] && sed -f "$R_TMP" -i /etc/config/simple-adblock; then
+		if [ -s "$R_TMP" ] && sed -f "$R_TMP" -i /etc/config/simple-adblock 2>/dev/null; then
 			output 1 "$_OK_"
 			output 2 "[DL] Config  Update:  $label $__OK__\\n"
 		else
@@ -891,7 +891,6 @@ start_service() {
 			if netstat -tuln | grep LISTEN | grep ":${c}" >/dev/null 2>&1; then
 				json_add_object ''
 				json_add_string type 'redirect'
-				json_add_string name "simple_adblock_redirect_dns_${c}"
 				json_add_string target 'DNAT'
 				json_add_string src 'lan'
 				json_add_string proto 'tcp udp'
@@ -902,7 +901,6 @@ start_service() {
 			else
 				json_add_object ''
 				json_add_string type 'rule'
-				json_add_string name "simple_adblock_rule_dns_${c}"
 				json_add_string src 'lan'
 				json_add_string dest '*'
 				json_add_string proto 'tcp udp'
@@ -921,7 +919,6 @@ start_service() {
 		json_close_object
 		json_add_object ''
 		json_add_string type 'rule'
-		json_add_string name 'simple_adblock_rule_ipset'
 		json_add_string ipset 'adb'
 		json_add_string src 'lan'
 		json_add_string dest '*'
@@ -963,33 +960,31 @@ start_service() {
 			fi
 		fi
 	fi
-	case "$action" in
-		download)
-			if [ -s "$outputFile" ] || cacheOps 'test' || cacheOps 'testGzip'; then
-				output 0 "Force-reloading $serviceName... "
-				output 3 "Force-reloading $serviceName...\\n"
-				tmpfs set status "statusForceReloading"
-			else
-				output 0 "Starting $serviceName... "
-				output 3 "Starting $serviceName...\\n"
-				tmpfs set status "statusStarting"
-			fi
-			download_lists
-			dnsOps 'on_start'
-		;;
-		restart)
-			output 0 "Restarting $serviceName... "
-			output 3 "Restarting $serviceName...\\n"
-			tmpfs set status "statusRestarting"
-			dnsOps 'on_start'
-		;;
-		start)
+	if [ "$action" = 'download' ]; then
+		if [ -s "$outputFile" ] || cacheOps 'test' || cacheOps 'testGzip'; then
+			output 0 "Force-reloading $serviceName... "
+			output 3 "Force-reloading $serviceName...\\n"
+			tmpfs set status "statusForceReloading"
+		else
 			output 0 "Starting $serviceName... "
 			output 3 "Starting $serviceName...\\n"
 			tmpfs set status "statusStarting"
-			dnsOps 'on_start'
-		;;
-	esac
+		fi
+		download_lists
+		dnsOps 'on_start'
+	fi
+	if [ "$action" = 'restart' ]; then
+		output 0 "Restarting $serviceName... "
+		output 3 "Restarting $serviceName...\\n"
+		tmpfs set status "statusRestarting"
+		dnsOps 'on_start'
+	fi
+	if [ "$action" = 'start' ]; then
+		output 0 "Starting $serviceName... "
+		output 3 "Starting $serviceName...\\n"
+		tmpfs set status "statusStarting"
+		dnsOps 'on_start'
+	fi
 	if [ -s "$outputFile" ] && [ "$(tmpfs get status)" != "statusFail" ]; then
 		output 0 "$__OK__\\n";
 		tmpfs del message
