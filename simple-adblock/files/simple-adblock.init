@@ -162,7 +162,7 @@ load_package_config() {
 	config_get dlTimeout                  'config' 'download_timeout' '20'
 	config_get curlRetry                  'config' 'curl_retry' '3'
 	config_get verbosity                  'config' 'verbosity' '2'
-	config_get led        	              'config' 'led'
+	config_get led                        'config' 'led'
 	config_get targetDNS                  'config' 'dns' 'dnsmasq.servers'
 	config_get dnsInstance                'config' 'dns_instance' '0'
 	config_get allowed_domains            'config' 'allowed_domain'
