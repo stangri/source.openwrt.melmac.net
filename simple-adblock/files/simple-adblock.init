@@ -157,7 +157,7 @@ load_package_config() {
 	config_get_bool compressedCache       'config' 'compressed_cache' 0
 	config_get_bool ipv6Enabled           'config' 'ipv6_enabled' 0
 	config_get_bool configUpdateEnabled   'config' 'config_update_enabled' 0
-	config_get forceDNSPorts              'config' 'force_dns_port' '53 853 5353'
+	config_get forceDNSPorts              'config' 'force_dns_port' '53 853'
 	config_get bootDelay                  'config' 'boot_delay' '120'
 	config_get dlTimeout                  'config' 'download_timeout' '20'
 	config_get curlRetry                  'config' 'curl_retry' '3'

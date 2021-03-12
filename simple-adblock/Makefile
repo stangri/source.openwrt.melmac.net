@@ -42,9 +42,9 @@ define Package/simple-adblock/install
 	$(INSTALL_BIN) ./files/simple-adblock.init $(1)/etc/init.d/simple-adblock
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/simple-adblock
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/simple-adblock.conf $(1)/etc/config/simple-adblock
+	$(INSTALL_CONF) ./files/simple-adblock.config $(1)/etc/config/simple-adblock
 	$(INSTALL_DIR) $(1)/tmp
-	$(INSTALL_CONF) ./files/simple-adblock.conf.update $(1)/tmp/simple-adblock.conf.update
+	$(INSTALL_CONF) ./files/simple-adblock.config.update $(1)/tmp/simple-adblock.config.update
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_BIN) ./files/simple-adblock.hotplug $(1)/etc/hotplug.d/iface/80-simple-adblock
 endef
@@ -53,7 +53,7 @@ define Package/simple-adblock/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
-		sed -f /tmp/simple-adblock.conf.update -i /etc/config/simple-adblock || true
+		sed -f /tmp/simple-adblock.config.update -i /etc/config/simple-adblock || true
 		/etc/init.d/simple-adblock enable
 	fi
 	exit 0
