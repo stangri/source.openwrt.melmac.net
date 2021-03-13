@@ -2,11 +2,9 @@
 // Many thanks to [@vsviridov](https://github.com/vsviridov) for help with transition to JS
 
 'use strict';
-'require ui';
-'require view';
-'require uci';
-'require rpc';
 'require form';
+'require uci';
+'require view';
 'require vpnbypass.widgets as widgets';
 
 var pkg = {

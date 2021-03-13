@@ -11,16 +11,16 @@ pkgName="vpnbypass"
 
 is_enabled() { uci -q get "${1}.config.enabled"; }
 is_running() { iptables -t mangle -L | grep -q VPNBYPASS && echo '1' || echo '0'; }
-
-logger() { /usr/bin/logger -t "$pkgName" "$@"; }
+get_version() { grep -A2 -w "Package: $1$" /usr/lib/opkg/status | sed -n 's/Version: //p'; }
 print_json_bool() { json_init; json_add_boolean "$1" "$2"; json_dump; json_cleanup; }
+logger() { /usr/bin/logger -t "$pkgName" "$@"; }
 
 get_init_list() {
 	local name="$1"
 	json_init
 	json_add_object "$name"
-	json_add_boolean "enabled" "$(is_enabled "$name")"
-	json_add_boolean "running" "$(is_running "$name")"
+	json_add_boolean 'enabled' "$(is_enabled "$name")"
+	json_add_boolean 'running' "$(is_running "$name")"
 	json_close_object
 	json_dump
 	json_cleanup
@@ -44,12 +44,12 @@ set_init_action() {
 }
 
 get_init_status() {
-	local name="$1" opkgFile="/usr/lib/opkg/status"
+	local name="$1"
 	json_init
 	json_add_object "$name"
-	json_add_boolean "enabled" "$(is_enabled "$name")"
-	json_add_boolean "running" "$(is_running "$name")"
-	json_add_string "version" "$(grep -A2 -w "Package: $name$" "$opkgFile" | sed -n 's/Version: //p')"
+	json_add_boolean 'enabled' "$(is_enabled "$name")"
+	json_add_boolean 'running' "$(is_running "$name")"
+	json_add_string 'version' "$(get_version "$name")"
 	json_close_object
 	json_dump
 	json_cleanup

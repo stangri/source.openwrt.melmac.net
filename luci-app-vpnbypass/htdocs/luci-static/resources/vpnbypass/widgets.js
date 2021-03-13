@@ -1,4 +1,4 @@
-// Thsis file wouldn't have been possible without [@vsviridov](https://github.com/vsviridov)
+// Thsis file wouldn't have been possible without help from [@vsviridov](https://github.com/vsviridov)
 
 'require ui';
 'require rpc';
@@ -112,7 +112,7 @@ var buttonsCBI = form.DummyValue.extend({
 				ui.showModal(null, [
 					E('p', { 'class': 'spinning' }, _('Restarting %s service').format(pkg.Name))
 				]);
-				return RPC.setInitAction(pkg.Name, 'reload');
+				return RPC.setInitAction(pkg.Name, 'restart');
 			}
 		}, _('Restart'));
 
