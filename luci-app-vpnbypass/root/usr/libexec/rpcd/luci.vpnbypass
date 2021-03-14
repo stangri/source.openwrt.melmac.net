@@ -13,6 +13,7 @@ is_enabled() { uci -q get "${1}.config.enabled"; }
 is_running() { iptables -t mangle -L | grep -q VPNBYPASS && echo '1' || echo '0'; }
 get_version() { grep -A2 -w "Package: $1$" /usr/lib/opkg/status | sed -n 's/Version: //p'; }
 print_json_bool() { json_init; json_add_boolean "$1" "$2"; json_dump; json_cleanup; }
+print_json_string() { json_init; json_add_string "$1" "$2"; json_dump; json_cleanup; }
 logger() { /usr/bin/logger -t "$pkgName" "$@"; }
 
 get_init_list() {
@@ -28,6 +29,10 @@ get_init_list() {
 
 set_init_action() {
 	local name="$1" action="$2" cmd
+	if [ ! -f "/etc/init.d/$name" ]; then
+		print_json_string 'error' 'Init script not found!'
+		return
+	fi
 	case $action in
 		enable)
 			cmd="uci -q set ${name}.config.enabled=1 && uci commit $name";;

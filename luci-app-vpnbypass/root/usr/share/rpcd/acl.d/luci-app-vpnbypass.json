@@ -5,7 +5,6 @@
 			"ubus": {
 				"luci.vpnbypass": [
 					"getInitList",
-					"setInitAction",
 					"getInitStatus"
 				]
 			},
@@ -13,6 +12,13 @@
 				"vpnbypass",
 				"dnsmasq"
 			]
+		},
+		"write": {
+			"ubus": {
+				"luci.vpnbypass": [
+					"setInitAction"
+				]
+			}
 		}
 	}
 }
