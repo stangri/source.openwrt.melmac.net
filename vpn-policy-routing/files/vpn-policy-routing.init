@@ -56,9 +56,6 @@ ipsetSupported='true'
 configLoaded='false'
 
 version() { echo "$PKG_VERSION"; }
-create_lock() { [ -e "$PIDFile" ] && return 1; touch "$PIDFile"; }
-remove_lock() { [ -e "$PIDFile" ] && rm -f "$PIDFile"; }
-trap remove_lock EXIT
 output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
 output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
 output_fail() { s=1; output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
@@ -893,76 +890,71 @@ process_user_file(){
 	fi
 }
 
+boot() { rc_procd start_service 'on_boot' && rc_procd service_triggers; }
+
 start_service() {
-	local dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0
-	convert_config
-	is_enabled 'on_start' || return 1
-	is_wan_up || return 1
-	if create_lock; then
-		if [ -s "$dnsmasqFile" ]; then
-			dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
-			rm -f "$dnsmasqFile"
-		fi
-
-		for i in xt_set ip_set ip_set_hash_ip; do
-			modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
-		done
-
-		if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then
-			errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
-		fi
-
-		for i in $usedChainsList; do
-			ipt -t mangle -N "VPR_${i}"
-			ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
-		done
-
-		output 1 'Processing Interfaces '
-		config_load 'network'; config_foreach process_interface 'interface' 'create';
-		process_tor_interface 'tor' 'destroy'; is_tor_running && process_tor_interface 'tor' 'create';
-		output 1 '\n'
-		if is_config_enabled 'policy'; then
-			output 1 'Processing Policies '
-			config_load "$packageName"; config_foreach process_policy 'policy';
-			output 1 '\n'
-		fi
-		if is_config_enabled 'include'; then
-			output 1 'Processing User File(s) '
-			config_load "$packageName"; config_foreach process_user_file 'include';
-			output 1 '\n'
-		fi
-
-		if [ -s "$dnsmasqFile" ]; then
-			dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
-		fi
-		[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
-
-		if [ -z "$gatewaySummary" ]; then
-			errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway!\\n"
-		fi
-		procd_open_instance "main"
-		procd_set_param command /bin/true
-		procd_set_param stdout 1
-		procd_set_param stderr 1
-		procd_open_data
-		json_add_array 'status'
-		json_add_object ''
-		[ -n "$gatewaySummary" ] && json_add_string gateway "$gatewaySummary"
-		[ -n "$errorSummary" ] && json_add_string error "$errorSummary"
-		[ -n "$warningSummary" ] && json_add_string warning "$warningSummary"
-		if [ "$strictMode" -ne 0 ] && str_contains "$gatewaySummary" '0.0.0.0'; then
-			json_add_string mode "strict"
-		fi
-		json_close_object
-		json_close_array
-		procd_close_data
-		procd_close_instance
-		remove_lock
-	else
-		output "$serviceName: another instance of ${packageName} is currently running "
-		output_failn
-		return 1
+local dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0
+convert_config
+is_enabled 'on_start' || return 1
+is_wan_up || return 1
+	if [ -s "$dnsmasqFile" ]; then
+		dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+		rm -f "$dnsmasqFile"
 	fi
+
+	for i in xt_set ip_set ip_set_hash_ip; do
+		modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
+	done
+
+	if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then
+		errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
+	fi
+
+	for i in $usedChainsList; do
+		ipt -t mangle -N "VPR_${i}"
+		ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
+	done
+
+	output 1 'Processing Interfaces '
+	config_load 'network'; config_foreach process_interface 'interface' 'create';
+	process_tor_interface 'tor' 'destroy'; is_tor_running && process_tor_interface 'tor' 'create';
+	output 1 '\n'
+	if is_config_enabled 'policy'; then
+		output 1 'Processing Policies '
+		config_load "$packageName"; config_foreach process_policy 'policy';
+		output 1 '\n'
+	fi
+	if is_config_enabled 'include'; then
+		output 1 'Processing User File(s) '
+		config_load "$packageName"; config_foreach process_user_file 'include';
+		output 1 '\n'
+	fi
+
+	if [ -s "$dnsmasqFile" ]; then
+		dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+	fi
+	[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
+
+	if [ -z "$gatewaySummary" ]; then
+		errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway!\\n"
+	fi
+	procd_open_instance "main"
+	procd_set_param command /bin/true
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_open_data
+	json_add_array 'status'
+	json_add_object ''
+	[ -n "$gatewaySummary" ] && json_add_string gateway "$gatewaySummary"
+	[ -n "$errorSummary" ] && json_add_string error "$errorSummary"
+	[ -n "$warningSummary" ] && json_add_string warning "$warningSummary"
+	if [ "$strictMode" -ne 0 ] && str_contains "$gatewaySummary" '0.0.0.0'; then
+		json_add_string mode "strict"
+	fi
+	json_close_object
+	json_close_array
+	procd_close_data
+	procd_close_instance
 }
 
 tmpfs() {
@@ -1070,7 +1062,10 @@ service_triggers() {
 			procd_add_service_trigger "service.restart" "firewall" /etc/init.d/${packageName} reload
 		fi
 		procd_add_config_trigger "config.change" "${packageName}" /etc/init.d/${packageName} reload
-		for n in $ifSupported; do procd_add_reload_interface_trigger "$n"; procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload; done;
+		for n in $ifSupported; do 
+			procd_add_reload_interface_trigger "$n"
+			procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload
+		done
 	procd_close_trigger
 
 	output 3 "$serviceName monitoring interfaces: $ifSupported"; output_okn;
