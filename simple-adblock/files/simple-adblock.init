@@ -9,12 +9,22 @@ START=94
 USE_PROCD=1
 LC_ALL=C
 
-extra_command 'check' 'Checks if specified domain is found in current block-list'
-extra_command 'dl' 'Force-downloads all enabled block-list'
-extra_command 'killcache' 'Delete all cached files'
-extra_command 'sizes' 'Displays the file-sizes of enabled block-listo'
-extra_command 'show' 'Shows the service last-run status'
-extra_command 'version' 'Show version information'
+if type extra_command 1>/dev/null 2>&1; then
+	extra_command 'check' 'Checks if specified domain is found in current block-list'
+	extra_command 'dl' 'Force-downloads all enabled block-list'
+	extra_command 'killcache' 'Delete all cached files'
+	extra_command 'sizes' 'Displays the file-sizes of enabled block-listo'
+	extra_command 'show' 'Shows the service last-run status'
+	extra_command 'version' 'Show version information'
+else
+# shellcheck disable=SC2034
+	EXTRA_COMMANDS='check dl killcache sizes show version'
+# shellcheck disable=SC2034
+	EXTRA_HELP='	check	Checks if specified domain is found in current block-list
+	dl	Force-downloads all enabled block-list
+	sizes	Displays the file-sizes of enabled block-lists
+	show	Shows the service last-run status'
+fi
 
 readonly packageName='simple-adblock'
 readonly serviceName="$packageName $PKG_VERSION"
@@ -41,7 +51,6 @@ readonly unboundGzip="/etc/${packageName}.unbound.gz"
 readonly unboundOutputFilter='s|^|local-zone: "|;s|$|" static|'
 readonly A_TMP="/var/${packageName}.hosts.a.tmp"
 readonly B_TMP="/var/${packageName}.hosts.b.tmp"
-readonly PIDFile="/var/run/${packageName}.pid"
 readonly jsonFile="/var/run/${packageName}.json"
 readonly sharedMemoryError="/dev/shm/$packageName-error"
 readonly sharedMemoryOutput="/dev/shm/$packageName-output"
@@ -99,9 +108,6 @@ getErrorText() {
 	printf "%b" "$_ret"
 }
 
-create_lock() { [ -e "$PIDFile" ] && return 1; touch "$PIDFile"; }
-remove_lock() { [ -e "$PIDFile" ] && rm -f "$PIDFile"; }
-trap remove_lock EXIT
 output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
 output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
 output_fail() { output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
@@ -356,8 +362,8 @@ dnsOps() {
 	case $1 in
 		on_start)
 			if [ ! -s "$outputFile" ]; then
-				tmpfs set status "statusFail"
-				tmpfs add error "errorOutputFileCreate"
+				jsonOps set status "statusFail"
+				jsonOps add error "errorOutputFileCreate"
 				output "$_ERROR_: $(getErrorText 'errorOutputFileCreate')!\\n"
 				return 1
 			fi
@@ -398,15 +404,15 @@ dnsOps() {
 			fi
 			output 1 "$output_text "
 			output 2 "$output_text "
-			tmpfs set message "$output_text"
+			jsonOps set message "$output_text"
 			if eval "$param"; then
-				tmpfs set status "statusSuccess"
+				jsonOps set status "statusSuccess"
 				led_on "$led"
 				output_okn
 			else 
 				output_fail
-				tmpfs set status "statusFail"
-				tmpfs add error "errorDNSReload"
+				jsonOps set status "statusFail"
+				jsonOps add error "errorDNSReload"
 				output "$_ERROR_: $(getErrorText 'errorDNSReload')!\\n"
 				return 1
 			fi
@@ -449,7 +455,7 @@ dnsOps() {
 	esac
 }
 
-tmpfs() {
+jsonOps() {
 # shellcheck disable=SC2034
 	local action="$1" param="$2" value="$3"
 	local status message error stats
@@ -481,7 +487,11 @@ tmpfs() {
 			esac
 			;;
 		add)
-			eval "$param"='$(eval echo "\$$param")${value} ';;
+			if [ -n "$(eval echo "\$$param")" ]; then
+				value="$(eval echo "\$$param") ${value}"
+			fi
+				eval "$param"='${value}'
+			;;
 		del)
 			case "$param" in
 				all)
@@ -495,8 +505,8 @@ tmpfs() {
 		set)
 			case "$param" in
 				triggers) 
-					reload="$parallelDL $debug $dlTimeout $allowed_domains $blocked_domains $allowed_domains_urls $blocked_domains_urls $blocked_hosts_urls $targetDNS"
-					restart="$compressedCache $forceDNS $led"
+					reload="$parallelDL $debug $dlTimeout $allowed_domains $blocked_domains $allowed_domains_urls $blocked_domains_urls $blocked_hosts_urls $targetDNS $configUpdateEnabled $configUpdateURL"
+					restart="$compressedCache $forceDNS $led $forceDNSPorts"
 					;;
 				*)
 					eval "$param"='$value';;
@@ -610,7 +620,7 @@ process_config_update() {
 	if ! $dl_command "$1" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 1 "$_FAIL_"
 		output 2 "[DL] Config  Update:  $label $__FAIL__\\n"
-		tmpfs add error "errorDownloadingConfigUpdate"
+		jsonOps add error "errorDownloadingConfigUpdate"
 	else
 		if [ -s "$R_TMP" ] && sed -f "$R_TMP" -i /etc/config/simple-adblock 2>/dev/null; then
 			output 1 "$_OK_"
@@ -618,7 +628,7 @@ process_config_update() {
 		else
 			output 1 "$_FAIL_"
 			output 2 "[DL] Config  Update:  $label $__FAIL__\\n"
-			tmpfs add error "errorParsingConfigUpdate"
+			jsonOps add error "errorParsingConfigUpdate"
 		fi
 	fi
 	rm -f "$R_TMP"
@@ -628,8 +638,8 @@ process_config_update() {
 download_lists() {
 	local hf w_filter j=0 R_TMP
 
-	tmpfs set message "$(getStatusText "statusDownloading")..."
-	tmpfs set status "statusDownloading"
+	jsonOps set message "$(getStatusText "statusDownloading")..."
+	jsonOps set status "statusDownloading"
 
 	rm -f "$A_TMP" "$B_TMP" "$outputFile" "$outputCache" "$outputGzip"
 	if [ "$($awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
@@ -675,7 +685,7 @@ download_lists() {
 	output 1 '\n'
 	if [ -s "$sharedMemoryError" ]; then
 		while IFS= read -r line; do
-			tmpfs add error "$line"
+			jsonOps add error "$line"
 		done < "$sharedMemoryError"
 		rm -f "$sharedMemoryError"
 	fi
@@ -689,20 +699,20 @@ $(cat $A_TMP)"
 
 	output 1 'Processing downloads '
 	output 2 'Sorting combined list '
-	tmpfs set message "$(getStatusText "statusProcessing"): sorting combined list"
+	jsonOps set message "$(getStatusText "statusProcessing"): sorting combined list"
 	if [ "$allowIDN" -gt 0 ]; then
 		if sort -u "$B_TMP" > "$A_TMP"; then
 			output_ok
 		else
 			output_failn
-			tmpfs add error "errorSorting"
+			jsonOps add error "errorSorting"
 		fi
 	else
 		if sort -u "$B_TMP" | grep -E -v '[^a-zA-Z0-9=/.-]' > "$A_TMP"; then
 			output_ok
 		else
 			output_failn
-			tmpfs add error "errorSorting"
+			jsonOps add error "errorSorting"
 		fi
 	fi
 
@@ -712,7 +722,7 @@ $(cat $A_TMP)"
 		 [ "$targetDNS" = 'unbound.adb_list' ]; then
 		# TLD optimization written by Dirk Brenken (dev@brenken.org)
 		output 2 'Optimizing combined list '
-		tmpfs set message "$(getStatusText "statusProcessing"): optimizing combined list"
+		jsonOps set message "$(getStatusText "statusProcessing"): optimizing combined list"
 # 	sed -E 'G;:t;s/(.*)(\.)(.*)(\n)(.*)/\1\4\5\2\3/;tt;s/(.*)\n(\.)(.*)/\3\2\1/' is actually slower than command below
 		if $awk -F "." '{for(f=NF;f>1;f--)printf "%s.",$f;print $1}' "$A_TMP" > "$B_TMP"; then
 			if sort "$B_TMP" > "$A_TMP"; then
@@ -722,25 +732,25 @@ $(cat $A_TMP)"
 							output_ok
 						else
 							output_failn
-							tmpfs add error "errorOptimization"
+							jsonOps add error "errorOptimization"
 							mv "$A_TMP" "$B_TMP"
 						fi
 					else
 						output_failn
-						tmpfs add error "errorOptimization"
+						jsonOps add error "errorOptimization"
 					fi
 				else
 					output_failn
-					tmpfs add error "errorOptimization"
+					jsonOps add error "errorOptimization"
 					mv "$A_TMP" "$B_TMP"
 				fi
 			else
 				output_failn
-				tmpfs add error "errorOptimization"
+				jsonOps add error "errorOptimization"
 			fi
 		else
 			output_failn
-			tmpfs add error "errorOptimization"
+			jsonOps add error "errorOptimization"
 			mv "$A_TMP" "$B_TMP"
 		fi
 	else
@@ -748,22 +758,22 @@ $(cat $A_TMP)"
 	fi
 
 	output 2 'Allowing domains '
-	tmpfs set message "$(getStatusText "statusProcessing"): allowing domains"
+	jsonOps set message "$(getStatusText "statusProcessing"): allowing domains"
 	if sed -i "$w_filter" "$B_TMP"; then
 		output_ok
 	else
 		output_failn
-		tmpfs add error "errorAllowListProcessing"
+		jsonOps add error "errorAllowListProcessing"
 	fi
 
 	output 2 'Formatting merged file '
-	tmpfs set message "$(getStatusText "statusProcessing"): formatting merged file"
+	jsonOps set message "$(getStatusText "statusProcessing"): formatting merged file"
 	if [ -z "$outputFilterIPv6" ]; then
 		if sed "$outputFilter" "$B_TMP" > "$A_TMP"; then
 			output_ok
 		else
 			output_failn
-			tmpfs add error "errorDataFileFormatting"
+			jsonOps add error "errorDataFileFormatting"
 		fi
 	else
 		case "$targetDNS" in
@@ -773,7 +783,7 @@ $(cat $A_TMP)"
 					output_ok
 				else
 					output_failn
-					tmpfs add error "errorDataFileFormatting"
+					jsonOps add error "errorDataFileFormatting"
 				fi
 				;;
 		esac
@@ -782,77 +792,70 @@ $(cat $A_TMP)"
 	case "$targetDNS" in
 		dnsmasq.addnhosts)
 			output 2 'Creating DNSMASQ addnhosts file '
-			tmpfs set message "$(getStatusText "statusProcessing"): creating DNSMASQ addnhosts file"
+			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ addnhosts file"
 			;;
 		dnsmasq.conf)
 			output 2 'Creating DNSMASQ config file '
-			tmpfs set message "$(getStatusText "statusProcessing"): creating DNSMASQ config file"
+			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ config file"
 			;;
 		dnsmasq.ipset)
 			output 2 'Creating DNSMASQ ipset file '
-			tmpfs set message "$(getStatusText "statusProcessing"): creating DNSMASQ ipset file"
+			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ ipset file"
 			;;
 		dnsmasq.servers)
 			output 2 'Creating DNSMASQ servers file '
-			tmpfs set message "$(getStatusText "statusProcessing"): creating DNSMASQ servers file"
+			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ servers file"
 			;;
 		unbound.adb_list)
 			output 2 'Creating Unbound adb_list file '
-			tmpfs set message "$(getStatusText "statusProcessing"): creating Unbound adb_list file"
+			jsonOps set message "$(getStatusText "statusProcessing"): creating Unbound adb_list file"
 			;;
 	esac
 	if mv "$A_TMP" "$outputFile"; then
 		output_ok
 	else
 		output_failn
-		tmpfs add error "errorMovingDataFile"
+		jsonOps add error "errorMovingDataFile"
 	fi
 	if [ "$compressedCache" -gt 0 ]; then
 		output 2 'Creating compressed cache '
-		tmpfs set message "$(getStatusText "statusProcessing"): creating compressed cache"
+		jsonOps set message "$(getStatusText "statusProcessing"): creating compressed cache"
 		if cacheOps 'createGzip'; then
 			output_ok
 		else
 			output_failn
-			tmpfs add error "errorCreatingCompressedCache"
+			jsonOps add error "errorCreatingCompressedCache"
 		fi
 	else
 		rm -f "$outputGzip"
 	fi
 	output 2 'Removing temporary files '
-	tmpfs set message "$(getStatusText "statusProcessing"): removing temporary files"
+	jsonOps set message "$(getStatusText "statusProcessing"): removing temporary files"
 	rm -f "/tmp/${packageName}_tmp.*" "$A_TMP" "$B_TMP" "$outputCache" || j=1
 	if [ $j -eq 0 ]; then
 		output_ok
 	else
 		output_failn
-		tmpfs add error "errorRemovingTempFiles"
+		jsonOps add error "errorRemovingTempFiles"
 	fi
 	output 1 '\n'
 }
 
 boot() { 
 	load_package_config
-	if create_lock; then
-		sleep "$bootDelay"
-		remove_lock
-		rc_procd start_service 'on_boot' && rc_procd service_triggers
-	fi
+	sleep "$bootDelay"
+	rc_procd start_service 'on_boot' && rc_procd service_triggers
 }
 
 start_service() {
 	is_enabled 'on_start' || return 1
 	local action status error message stats c
-	if ! create_lock; then
-		output 3 "$serviceName: another instance is starting up "; output_fail
-		return 0
-	fi
 
-	status="$(tmpfs get status)"
-	error="$(tmpfs get error)"
-	message="$(tmpfs get message)"
-	stats="$(tmpfs get stats)"
-	action="$(tmpfs get triggers)"
+	status="$(jsonOps get status)"
+	error="$(jsonOps get error)"
+	message="$(jsonOps get message)"
+	stats="$(jsonOps get stats)"
+	action="$(jsonOps get triggers)"
 
 	if [ "$action" = 'on_boot' ] || [ "$1" = 'on_boot' ]; then
 		if cacheOps 'testGzip' || cacheOps 'test'; then
@@ -871,14 +874,14 @@ start_service() {
 	elif [ "$action" = 'restart' ] || [ "$1" = 'restart' ]; then
 		action='restart'
 	elif [ -s "$outputFile" ] && [ "$status" = "statusSuccess" ] && [ -z "$error" ]; then
-		[ "$1" != 'hotplug' ] && showstatus
+		showstatus
 		exit 0
 	else
 		action='download'
 	fi
 
-	tmpfs del all
-	tmpfs set triggers
+	jsonOps del all
+	jsonOps set triggers
 
 	procd_open_instance 'main'
 	procd_set_param command /bin/true
@@ -933,28 +936,28 @@ start_service() {
 	if [ "$action" = 'restore' ]; then
 		output 0 "Starting $serviceName... "
 		output 3 "Starting $serviceName...\\n"
-		tmpfs set status "statusStarting"
+		jsonOps set status "statusStarting"
 		if cacheOps 'testGzip' && ! cacheOps 'test' && [ ! -s "$outputFile" ]; then
 			output 3 'Found compressed cache file, unpacking it '
-			tmpfs set message 'found compressed cache file, unpacking it.'
+			jsonOps set message 'found compressed cache file, unpacking it.'
 			if cacheOps 'unpackGzip'; then
 				output_okn
 			else
 				output_fail
-				tmpfs add error "errorRestoreCompressedCache"
+				jsonOps add error "errorRestoreCompressedCache"
 				output "$_ERROR_: $(getErrorText 'errorRestoreCompressedCache')!\\n"
 				action='download'
 			fi
 		fi
 		if cacheOps 'test' && [ ! -s "$outputFile" ]; then
 			output 3 'Found cache file, reusing it '
-			tmpfs set message 'found cache file, reusing it.'
+			jsonOps set message 'found cache file, reusing it.'
 			if cacheOps 'restore'; then 
 				output_okn
 				dnsOps 'on_start'
 			else
 				output_fail
-				tmpfs add error "errorRestoreCache"
+				jsonOps add error "errorRestoreCache"
 				output "$_ERROR_: $(getErrorText 'errorRestoreCache')!\\n"
 				action='download'
 			fi
@@ -964,11 +967,11 @@ start_service() {
 		if [ -s "$outputFile" ] || cacheOps 'test' || cacheOps 'testGzip'; then
 			output 0 "Force-reloading $serviceName... "
 			output 3 "Force-reloading $serviceName...\\n"
-			tmpfs set status "statusForceReloading"
+			jsonOps set status "statusForceReloading"
 		else
 			output 0 "Starting $serviceName... "
 			output 3 "Starting $serviceName...\\n"
-			tmpfs set status "statusStarting"
+			jsonOps set status "statusStarting"
 		fi
 		download_lists
 		dnsOps 'on_start'
@@ -976,28 +979,27 @@ start_service() {
 	if [ "$action" = 'restart' ]; then
 		output 0 "Restarting $serviceName... "
 		output 3 "Restarting $serviceName...\\n"
-		tmpfs set status "statusRestarting"
+		jsonOps set status "statusRestarting"
 		dnsOps 'on_start'
 	fi
 	if [ "$action" = 'start' ]; then
 		output 0 "Starting $serviceName... "
 		output 3 "Starting $serviceName...\\n"
-		tmpfs set status "statusStarting"
+		jsonOps set status "statusStarting"
 		dnsOps 'on_start'
 	fi
-	if [ -s "$outputFile" ] && [ "$(tmpfs get status)" != "statusFail" ]; then
+	if [ -s "$outputFile" ] && [ "$(jsonOps get status)" != "statusFail" ]; then
 		output 0 "$__OK__\\n";
-		tmpfs del message
-		tmpfs set status "statusSuccess"
-		tmpfs set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${targetDNS})"
+		jsonOps del message
+		jsonOps set status "statusSuccess"
+		jsonOps set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${targetDNS})"
 		showstatus
 	else
 		output 0 "$__FAIL__\\n";
-		tmpfs set status "statusFail"
-		tmpfs add error "errorOhSnap"
+		jsonOps set status "statusFail"
+		jsonOps add error "errorOhSnap"
 		showstatus
 	fi
-	remove_lock
 }
 
 service_started() { procd_set_config_changed firewall; }
@@ -1023,10 +1025,10 @@ show() { showstatus; }
 status_service() { showstatus; }
 showstatus() {
 	local c url status message error stats
-	status="$(tmpfs get status)"
-	message="$(tmpfs get message)"
-	error="$(tmpfs get error)"
-	stats="$(tmpfs get stats)"
+	status="$(jsonOps get status)"
+	message="$(jsonOps get message)"
+	error="$(jsonOps get error)"
+	stats="$(jsonOps get stats)"
 	if [ "$status" = "statusSuccess" ]; then
 		output "$stats "; output_okn;
 	else
@@ -1059,12 +1061,12 @@ stop_service() {
 		if dnsOps 'on_stop'; then
 			led_off "$led"
 			output 0 "$__OK__\\n"; output_okn;
-			tmpfs set status "statusStopped"
-			tmpfs del message
+			jsonOps set status "statusStopped"
+			jsonOps del message
 		else 
 			output 0 "$__FAIL__\\n"; output_fail;
-			tmpfs set status "statusFail"
-			tmpfs add error "errorStopping"
+			jsonOps set status "statusFail"
+			jsonOps add error "errorStopping"
 			output "$_ERROR_: $(getErrorText 'errorStopping')!\\n"
 		fi
 	fi
@@ -1072,7 +1074,9 @@ stop_service() {
 
 service_triggers() {
 	procd_open_trigger
-	procd_add_config_trigger "config.change" "${packageName}" /etc/init.d/${packageName} reload
+	procd_add_config_trigger 'config.change' "${packageName}" /etc/init.d/${packageName} reload
+	procd_add_reload_interface_trigger 'wan'
+	procd_add_interface_trigger 'interface.*.up' 'wan' /etc/init.d/${packageName} reload
 	procd_close_trigger
 }
 
