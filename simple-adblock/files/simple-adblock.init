@@ -994,11 +994,11 @@ start_service() {
 
 service_started() { procd_set_config_changed firewall; }
 service_stopped() { procd_set_config_changed firewall; }
+
 restart_service() { rc_procd start_service 'restart'; }
-reload_service() { restart_service; }
-restart() { restart_service; }
-reload() { restart_service; }
+reload_service() { rc_procd start_service 'restart'; }
 dl() { rc_procd start_service 'download'; }
+
 killcache() {
 	rm -f "$addnhostsCache" "$addnhostsGzip"
 	rm -f "$dnsmasqCache" "$dnsmasqGzip"
