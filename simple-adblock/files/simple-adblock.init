@@ -247,6 +247,9 @@ load_package_config() {
 	if is_present 'curl'; then
 		dl_command="curl --insecure --retry $curlRetry --connect-timeout $dlTimeout --silent"
 		dl_flag="-o"
+	elif is_present '/usr/libexec/wget-ssl'; then
+		dl_command="/usr/libexec/wget-ssl --no-check-certificate --timeout $dlTimeout -q"
+		dl_flag="-O"
 	elif is_present wget && wget --version 2>/dev/null | grep -q "+https"; then
 		dl_command="wget --no-check-certificate --timeout $dlTimeout -q"
 		dl_flag="-O"
