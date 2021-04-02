@@ -903,10 +903,13 @@ process_user_file(){
 boot() { rc_procd start_service && rc_procd service_triggers; }
 
 start_service() {
-local dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0
-convert_config
-is_enabled 'on_start' || return 1
-is_wan_up || return 1
+	local dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0 reloadedIface="$1"
+	convert_config
+	is_enabled 'on_start' || return 1
+	is_wan_up || return 1
+
+	iptables -t 'mangle' --list 'VPR_PREROUTING' >/dev/null 2>&1 || unset reloadedIface
+
 	if [ -s "$dnsmasqFile" ]; then
 		dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
 		rm -f "$dnsmasqFile"
@@ -920,27 +923,27 @@ is_wan_up || return 1
 		errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
 	fi
 
-	if [ -z "$1" ]; then
+	if [ -z "$reloadedIface" ]; then
 		for i in $usedChainsList; do
 			ipt -t mangle -N "VPR_${i}"
 			ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
 		done
 	fi
 
-	if [ -z "$1" ]; then
+	if [ -z "$reloadedIface" ]; then
 		output 1 'Processing Interfaces '
 		config_load 'network'; config_foreach process_interface 'interface' 'create';
 		process_tor_interface 'tor' 'destroy'; is_tor_running && process_tor_interface 'tor' 'create';
 		output 1 '\n'
 	else
-		output 1 "Reloading Interface $1 "
-		config_load 'network'; config_foreach process_interface 'interface' 'create' "$1";
+		output 1 "Reloading Interface $reloadedIface "
+		config_load 'network'; config_foreach process_interface 'interface' 'create' "$reloadedIface";
 		output 1 '\n'
 	fi
 
 	if is_config_enabled 'policy'; then
 		output 1 'Processing Policies '
-		config_load "$packageName"; config_foreach process_policy 'policy' "$1";
+		config_load "$packageName"; config_foreach process_policy 'policy' "$reloadedIface";
 		output 1 '\n'
 	fi
 	if is_config_enabled 'include'; then
