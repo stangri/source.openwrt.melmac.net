@@ -644,11 +644,9 @@ table_create(){
 		done
 		ip -4 route flush cache || ipv4_error=1
 		ip -4 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv4_error=1
-		if [ -z "$match" ]; then # do not try to create chain if we're reloading interface
-			ipt -t mangle -N "VPR_MARK${mark}" || ipv4_error=1
-			ipt -t mangle -A "VPR_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
-			ipt -t mangle -A "VPR_MARK${mark}" -j RETURN || ipv4_error=1
-		fi
+		ipt -t mangle -N "VPR_MARK${mark}" || ipv4_error=1
+		ipt -t mangle -A "VPR_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
+		ipt -t mangle -A "VPR_MARK${mark}" -j RETURN || ipv4_error=1
 	fi
 
 	if [ "$ipv6Enabled" -ne 0 ]; then
@@ -704,6 +702,57 @@ table_create(){
 	return $s
 }
 
+table_reload() {
+	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" match="$8" dscp s=0 i ipv4_error=0 ipv6_error=1
+
+	if [ -z "$tid" ] || [ -z "$mark" ] || [ -z "$iface" ]; then
+		return 1
+	fi
+
+	ip -4 route del default table "$tid" >/dev/null 2>&1
+	if [ -n "$gw4" ] || [ "$strictMode" -ne 0 ]; then
+		if [ -z "$gw4" ]; then
+			ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
+		else
+			ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+		fi
+		ip -4 route flush cache || ipv4_error=1
+		ip -4 rule del fwmark "${mark}/${fwMask}" table "$tid" >/dev/null 2>&1
+		ip -4 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv4_error=1
+	fi
+
+	if [ "$ipv6Enabled" -ne 0 ]; then
+		ip -6 route del default table "$tid" >/dev/null 2>&1
+		ipv6_error=0
+		if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strictMode" -ne 0 ]; then
+			if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
+				ip -6 route add unreachable default table "$tid" || ipv6_error=1
+			else
+				ip -6 route list table main | grep " dev $dev6 " | while read -r i; do
+					ip -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+				done
+			fi
+			ip -6 route flush cache || ipv6_error=1
+			ip -6 rule del fwmark "${mark}/${fwMask}" table "$tid" >/dev/null 2>&1
+			ip -6 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv6_error=1
+		fi
+	fi
+
+	if [ $ipv4_error -eq 0 ] || [ $ipv6_error -eq 0 ]; then
+		dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
+		if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
+			ipt -t mangle -I VPR_PREROUTING -m dscp --dscp "${dscp}" -g "VPR_MARK${mark}" || s=1
+		fi
+		if [ "$iface" = "$icmpIface" ]; then
+			ipt -t mangle -I VPR_OUTPUT -p icmp -g "VPR_MARK${mark}" || s=1
+		fi
+	else
+		s=1
+	fi
+
+	return $s
+}
+
 process_interface(){
 	local gw4 gw6 dev dev6 s=0 dscp iface="$1" action="$2" match="$3" displayText
 
@@ -729,7 +778,7 @@ process_interface(){
 		create)
 			eval "mark_${iface//-/_}"='$ifaceMark'
 			eval "tid_${iface//-/_}"='$ifaceTableID'
-			if [ -z "$match" ] || [ "$iface" = "$match" ]; then
+			if [ -z "$match" ]; then
 				table_destroy "$ifaceTableID" "$iface"
 			fi
 			vpr_get_gateway gw4 "$iface" "$dev"
@@ -740,7 +789,7 @@ process_interface(){
 				displayText="${iface}/${dev}/${gw4:-0.0.0.0}"
 			fi
 			[ "$ipv6Enabled" -ne 0 ] && displayText="${displayText}/${gw6:-::/0}"
-			if [ -z "$match" ] || [ "$iface" = "$match" ]; then
+			if [ -z "$match" ]; then
 				output 2 "Creating table '$displayText' "
 				is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
 				if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$match"; then
@@ -748,6 +797,16 @@ process_interface(){
 					output_ok
 				else
 					errorSummary="${errorSummary}${_ERROR_}: Failed to set up '$displayText'\\n"
+					output_fail
+				fi
+			elif [ "$iface" = "$match" ]; then
+				output 2 "Reloading table '$displayText' "
+				is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
+				if table_reload "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$match"; then
+					gatewaySummary="${gatewaySummary}${displayText}\\n"
+					output_ok
+				else
+					errorSummary="${errorSummary}${_ERROR_}: Failed to reload '$displayText'\\n"
 					output_fail
 				fi
 			else
@@ -935,20 +994,19 @@ start_service() {
 		config_load 'network'; config_foreach process_interface 'interface' 'create';
 		process_tor_interface 'tor' 'destroy'; is_tor_running && process_tor_interface 'tor' 'create';
 		output 1 '\n'
+		if is_config_enabled 'policy'; then
+			output 1 'Processing Policies '
+			config_load "$packageName"; config_foreach process_policy 'policy' "$reloadedIface";
+			output 1 '\n'
+		fi
+		if is_config_enabled 'include'; then
+			output 1 'Processing User File(s) '
+			config_load "$packageName"; config_foreach process_user_file 'include';
+			output 1 '\n'
+		fi
 	else
-		output 1 "Reloading Interface $reloadedIface "
+		output 1 "Reloading Interface: $reloadedIface "
 		config_load 'network'; config_foreach process_interface 'interface' 'create' "$reloadedIface";
-		output 1 '\n'
-	fi
-
-	if is_config_enabled 'policy'; then
-		output 1 'Processing Policies '
-		config_load "$packageName"; config_foreach process_policy 'policy' "$reloadedIface";
-		output 1 '\n'
-	fi
-	if is_config_enabled 'include'; then
-		output 1 'Processing User File(s) '
-		config_load "$packageName"; config_foreach process_user_file 'include';
 		output 1 '\n'
 	fi
 
