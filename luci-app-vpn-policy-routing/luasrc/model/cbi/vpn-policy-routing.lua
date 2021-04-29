@@ -353,6 +353,7 @@ uci:foreach("network", "interface", function(s)
 		gw:value(name, name:upper()) 
 	end
 end)
+if fs.access("/etc/tor/torrc") then gw:value("tor", "TOR") end
 enc = tonumber(uci:get("vpn-policy-routing", "config", "webui_show_ignore_target"))
 if enc and enc ~= 0 then
 	gw:value("ignore", "IGNORE")
