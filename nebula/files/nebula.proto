@@ -1,5 +1,5 @@
 #!/bin/sh
-# shellcheck disable=SC1091,SC2039,SC2034
+# shellcheck disable=SC1091,SC2039,SC2034,SC3043
 
 readonly PROG=/usr/sbin/nebula
 readonly INIT=/etc/init.d/nebula
