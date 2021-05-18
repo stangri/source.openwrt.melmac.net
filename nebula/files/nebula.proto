@@ -2,7 +2,7 @@
 # shellcheck disable=SC1091,SC2039,SC2034,SC3043
 
 readonly PROG=/usr/sbin/nebula
-readonly INIT=/etc/init.d/nebula
+readonly INIT=/usr/sbin/nebula.init
 
 [ -x "$PROG" ] || exit 0
 [ -x "$INIT" ] || exit 0
@@ -13,19 +13,64 @@ readonly INIT=/etc/init.d/nebula
 init_proto "$@"
 }
 
+# https://gist.github.com/pkuczynski/8665367
+# shellcheck disable=SC2086,SC2155
+parse_yaml() {
+	local prefix=$2
+	local s='[[:space:]]*' w='[a-zA-Z0-9_-]*' fs=$(echo @|tr @ '\034'|tr -d '\015')
+	sed -ne "s|^\($s\)\($w\)$s:$s\"\(.*\)\"$s\$|\1$fs\2$fs\3|p" \
+	-e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p" "$1" |
+	awk "-F$fs" '{
+		indent = length($1)/2;
+		vname[indent] = $2;
+		for (i in vname) {if (i > indent) {delete vname[i]}}
+		if (length($3) > 0) {
+			vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+			printf("%s%s%s=\"%s\"\n", "'$prefix'", vn, $2, $3);
+		}
+	}'
+}
+
 proto_nebula_init_config() {
 	available=1
 	no_proto_task=1
-	proto_config_add_string config
+	proto_config_add_string "config"
 }
 
 proto_nebula_setup() {
 	local interface="$1" config address addresses
+	local yaml_listen_host yaml_listen_port yaml_tun_dev
 	proto_init_update "$interface" 1
+
 	json_get_vars config
+	[ -s "$config" ] || return
+	eval "$(parse_yaml "$config" "yaml_")"
+
 	proto_export "INTERFACE=$interface"
-	"$INIT" start "$interface"
-#	proto_run_command "$interface" "$PROG" -config "$config"
+#	"$INIT" start "$interface"
+	proto_run_command "$interface" "$PROG" -config "$config"
+
+	procd_open_instance
+	procd_set_param command ${PROG} -config "${config}"
+	procd_set_param stderr 1
+	procd_set_param stdout 1
+	procd_set_param respawn
+	procd_open_data
+	json_add_array firewall
+		json_add_object ""
+		json_add_string type rule
+		json_add_string name "$config"
+		json_add_string src "*"
+		json_add_string dest_ip "${yaml_listen_host:-0.0.0.0}"
+		json_add_string dest_port "${yaml_listen_port:-4242}"
+		json_add_string proto udp
+		json_add_string target ACCEPT
+		json_close_object
+	json_close_array
+	procd_close_data
+	procd_close_instance
+
+
 	addresses="$(ip -4 a list dev "$interface" | grep inet | awk '{print $2}')"
 	for address in ${addresses}; do
 		case "${address}" in
@@ -48,8 +93,8 @@ proto_nebula_setup() {
 
 proto_nebula_teardown() {
 	local interface="$1"
-#	proto_kill_command "$interface"
-	"$INIT" stop "$interface"
+	proto_kill_command "$interface"
+#	"$INIT" stop "$interface"
 }
 
 [ -n "$INCLUDE_ONLY" ] || add_protocol nebula

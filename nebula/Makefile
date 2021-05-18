@@ -4,13 +4,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nebula
-PKG_VERSION:=1.3.0
+PKG_VERSION:=1.4.0
 PKG_RELEASE:=1
-PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
-PKG_SOURCE:=v$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/slackhq/nebula/archive/
-PKG_HASH:=b94fba0251a4a436e25b127d0b9bc0181b991631f1dc8e344b1c8e895b55375d
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://codeload.github.com/slackhq/nebula/tar.gz/v$(PKG_VERSION)?
+PKG_HASH:=e8d79231f6100a2cd240d6a092d0dcc2bfccadffa83cb40e99b7328f6c75c2ec
+
+PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
 
@@ -51,19 +52,21 @@ endef
 
 define Package/nebula/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
-	$(INSTALL_DIR) $(1)/etc/init.d $(1)/lib/netifd/proto $(1)/lib/upgrade/keep.d
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/doc/nebula
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula $(1)/usr/sbin/nebula
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula/LICENSE
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/lib/netifd/proto
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/lib/upgrade/keep.d
+	$(INSTALL_DIR) $(1)/usr/share/doc/nebula
 	$(INSTALL_BIN) ./files/nebula.init $(1)/etc/init.d/nebula
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/nebula
 	$(INSTALL_BIN) ./files/nebula.proto $(1)/lib/netifd/proto/nebula.sh
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula $(1)/usr/sbin/nebula
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula/LICENSE
 	$(INSTALL_DATA) ./files/nebula.upgrade $(1)/lib/upgrade/keep.d/nebula
 endef
 
 define Package/nebula-cert/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/doc/nebula-cert $(1)/lib/upgrade/keep.d
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/lib/upgrade/keep.d
+	$(INSTALL_DIR) $(1)/usr/share/doc/nebula-cert
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula-cert $(1)/usr/sbin/nebula-cert
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula-cert/LICENSE
 	$(INSTALL_DATA) ./files/nebula.upgrade $(1)/lib/upgrade/keep.d/nebula-cert
