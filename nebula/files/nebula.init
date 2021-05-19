@@ -33,14 +33,13 @@ parse_yaml() {
 }
 
 start_instance() {
-	local cfg="$1" proto config_file
-	local yaml_listen_host yaml_listen_port yaml_tun_dev
-	config_get proto       "$cfg" 'proto'
-	config_get config_file "$cfg" 'config'
-	[ "$proto" = "nebula" ] || return
-	[ -s "$config_file" ] || return
+	local config_file="$1"
+	local yaml_listen_host yaml_listen_port
+	if [ ! -x "$PROG" ]; then
+		echo "Nebula binary not found! Please install 'nebula' package."
+	fi
+	[ -s "$config_file" ] || return 1
 	eval "$(parse_yaml "$config_file" "yaml_")"
-	[ "$cfg" = "$yaml_tun_dev" ] || return
 	procd_open_instance
 	procd_set_param command ${PROG} -config "${config_file}"
 	procd_set_param stderr 1
@@ -50,7 +49,7 @@ start_instance() {
 	json_add_array firewall
 		json_add_object ""
 		json_add_string type rule
-		json_add_string name "$config_file"
+		json_add_string name "${config_file##*/}"
 		json_add_string src "*"
 		json_add_string dest_ip "${yaml_listen_host:-0.0.0.0}"
 		json_add_string dest_port "${yaml_listen_port:-4242}"
@@ -63,12 +62,10 @@ start_instance() {
 }
 
 start_service() {
-	config_load 'network'
-	if [ -n "$1" ]; then
-		start_instance "$1"
-	else
-		config_foreach start_instance 'interface'
-	fi
+	local f
+	for f in /etc/nebula/*.yml; do
+		start_instance "$f"
+	done
 }
 
 service_started() { procd_set_config_changed firewall; }
