@@ -28,7 +28,7 @@ define Package/nebula
   SECTION:=net
   CATEGORY:=Network
   TITLE:=nebula
-  URL:=https://github.com/slackhq/nebula
+  URL:=https://docs.openwrt.melmac.net/nebula/
   DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-tun
 endef
 
@@ -36,15 +36,15 @@ define Package/nebula-cert
   SECTION:=net
   CATEGORY:=Network
   TITLE:=nebula-cert
-  URL:=https://github.com/slackhq/nebula
+  URL:=https://docs.openwrt.melmac.net/nebula/
   DEPENDS:=$(GO_ARCH_DEPENDS)
 endef
 
 define Package/nebula-proto
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=nebula
-  URL:=https://github.com/slackhq/nebula
+  TITLE:=nebula-proto
+  URL:=https://docs.openwrt.melmac.net/nebula/
   DEPENDS:=nebula
   PKGARCH:=all
 endef
@@ -52,8 +52,8 @@ endef
 define Package/nebula-service
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=nebula
-  URL:=https://github.com/slackhq/nebula
+  TITLE:=nebula-service
+  URL:=https://docs.openwrt.melmac.net/nebula/
   DEPENDS:=nebula
   PKGARCH:=all
 endef
