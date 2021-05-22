@@ -58,7 +58,7 @@ proto_nebula_setup() {
 	json_add_array firewall
 		json_add_object ""
 		json_add_string type rule
-		json_add_string name "$config"
+		json_add_string name "$interface"
 		json_add_string src "*"
 		json_add_string dest_ip "${yaml_listen_host:-0.0.0.0}"
 		json_add_string dest_port "${yaml_listen_port:-4242}"
