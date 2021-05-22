@@ -7,7 +7,7 @@
 
 return network.registerProtocol('nebula', {
 	getI18n: function () {
-		return _('Nebula');
+		return _('Nebula Network');
 	},
 
 	getIfname: function () {
