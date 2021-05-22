@@ -6,7 +6,6 @@ PKG_VERSION='dev-test'
 readonly PROG=/usr/sbin/nebula
 
 [ -x "$PROG" ] || exit 0
-[ -x "$INIT" ] || exit 0
 
 [ -n "$INCLUDE_ONLY" ] || {
 . /lib/functions.sh
@@ -45,10 +44,8 @@ proto_nebula_setup() {
 	local yaml_listen_host yaml_listen_port yaml_tun_dev
 	proto_init_update "$interface" 1
 
-	if [ ! -x "$PROG" ]; then
-		echo "Nebula binary not found! Please install 'nebula' package."
-	fi
 	json_get_vars config
+	logger -t nebula "start $interface with config: $config"
 	[ -s "$config" ] || return 1
 	eval "$(parse_yaml "$config" "yaml_")"
 
