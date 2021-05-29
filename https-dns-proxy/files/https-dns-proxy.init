@@ -182,8 +182,8 @@ dnsmasq_create_server_backup() {
 		fi
 	fi
 	if ! uci -q get "dhcp.${cfg}.doh_backup_server" >/dev/null; then
-		if [ -z "$(uci -q get dhcp.@dnsmasq[0].servers)" ]; then
-				uci -q add_list "dhcp.${cfg}.doh_backup_server="
+		if [ -z "$(uci -q get "dhcp.${cfg}.server")" ]; then
+			uci -q add_list "dhcp.${cfg}.doh_backup_server="
 		fi
 		for i in $(uci -q get "dhcp.${cfg}.server"); do
 			uci -q add_list "dhcp.${cfg}.doh_backup_server=$i"
