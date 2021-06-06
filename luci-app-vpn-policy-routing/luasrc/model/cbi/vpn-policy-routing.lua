@@ -103,6 +103,8 @@ function is_supported_interface(arg)
 	local name=arg['.name']
 	local proto=arg['proto']
 	local ifname=arg['ifname']
+	local device=arg['device']
+	ifname = ifname or device
 
 	if name and is_wan(name) then return true end
 	if name and supportedIfaces:match('%f[%w]' .. name .. '%f[%W]') then return true end
