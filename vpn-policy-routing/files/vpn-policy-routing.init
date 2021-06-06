@@ -123,7 +123,7 @@ vpr_get_gateway6() {
 }
 is_l2tp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "l2tp" ]; }
 is_oc() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:11}" = "openconnect" ]; }
-is_ovpn() { local dev; dev=$(uci -q get network."$1".ifname); [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
+is_ovpn() { local dev i; for i in ifname device; do [ -z "$dev" ] && dev="$(uci -q get "network.${1}.${i}")"; done; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
 is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "pptp" ]; }
 is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
 is_tor_running() { 
