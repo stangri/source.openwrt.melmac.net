@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC1091
 # enable access from client network
 [ "$INTERFACE" = "trm_wwan" ] || exit 0
 if [ "$ACTION" != "ifup" ] && [ "$ACTION" != "ifupdate" ]; then exit 0; fi
@@ -8,7 +9,7 @@ if [ -n "$(uci -q get network.stabridge)" ]; then
 	network_get_ipaddr ip 'trm_wwan'
 	network_find_wan wanIface4
 	network_get_gateway wanGW4 "$wanIface4"
-	uci set network.stabridge.ipaddr=$ip
+	uci set network.stabridge.ipaddr="$ip"
 	uci set network.lan.gateway="$wanGW4"
 	uci set network.lan.dns="$wanGW4"
 	uci commit network

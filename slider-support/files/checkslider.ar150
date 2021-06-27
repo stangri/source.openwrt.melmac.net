@@ -1,8 +1,9 @@
 #!/bin/sh
-# shellcheck disable=SC2039
+# shellcheck disable=SC2039,SC3043
 checkslider() { grep 'gpio-8.*hi' /sys/kernel/debug/gpio; }
 checkports() {
 	local up i r=0;
+# shellcheck disable=SC2043
 	for i in "wan"; do
 		if /bin/ubus list | grep -q "network.interface.${i}"; then
 			json_load "$(/bin/ubus call network.interface.${i} status)"; json_get_vars up;

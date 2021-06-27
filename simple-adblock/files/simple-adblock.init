@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 # Copyright 2017-2020 Stan Grishin (stangri@melmac.net)
-# shellcheck disable=SC2039,SC1091,SC2016
+# shellcheck disable=SC2039,SC1091,SC2016,SC3043,SC3057,SC3060
 PKG_VERSION='dev-test'
 
 # shellcheck disable=SC2034
@@ -584,7 +584,7 @@ process_url() {
 	else
 		type='Allowed'; D_TMP="$A_TMP";
 	fi
-	if [ "${1:0:5}" == "https" ] && [ -z "$isSSLSupported" ]; then
+	if [ "${1:0:5}" = "https" ] && [ -z "$isSSLSupported" ]; then
 		output 1 "$_FAIL_"
 		output 2 "[DL] $type $label $__FAIL__\\n"
 		echo "errorNoSSLSupport|${1}" >> "$sharedMemoryError"
@@ -1051,7 +1051,7 @@ showstatus() {
 				*)
 					output "$_ERROR_: $(getErrorText "$c")!\\n";;
 			esac
-			let n=n+1
+			n=$((n+1))
 		done
 	fi
 }

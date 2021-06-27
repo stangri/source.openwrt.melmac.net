@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 # Copyright 2017-2020 Stan Grishin (stangri@melmac.net)
-# shellcheck disable=SC2039,SC1091,SC2086
+# shellcheck disable=SC2039,SC1091,SC2086,SC3043,SC3057,SC3060
 PKG_VERSION='dev-test'
 
 # shellcheck disable=SC2034
@@ -70,7 +70,7 @@ is_enabled() {
 		[ -n "$wan_if4" ] && network_get_gateway wan_gw "$wan_if4"
 		if [ $sleepCount -ge 25 ] || [ -n "$wan_gw" ]; then break; fi
 		output "$serviceName waiting for wan gateway...\\n"
-		sleep 2; network_flush_cache; let "sleepCount+=1";
+		sleep 2; network_flush_cache; sleepCount=$((sleepCount+1));
 	done
 	[ -n "$wan_gw" ] && return 0
 	output "$__ERROR__: $serviceName failed to discover WAN gateway.\\n"; return 1;

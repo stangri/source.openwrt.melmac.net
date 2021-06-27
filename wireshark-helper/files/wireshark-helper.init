@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# shellcheck disable=SC2039,SC2154
+# shellcheck disable=SC2039,SC2154,SC3043,SC3057,SC3060
 PKG_VERSION='dev-test'
 
 export START=94
