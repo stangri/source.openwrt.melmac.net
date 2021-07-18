@@ -21,7 +21,7 @@ if type extra_command 1>/dev/null 2>&1; then
 	extra_command 'reload_interface' 'Reload specific interface only'
 else
 # shellcheck disable=SC2034
-	EXTRA_COMMANDS='support version'
+	EXTRA_COMMANDS='reload_interface support version'
 # shellcheck disable=SC2034
 	EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
@@ -787,9 +787,6 @@ process_interface() {
 		create)
 			eval "mark_${iface//-/_}"='$ifaceMark'
 			eval "tid_${iface//-/_}"='$ifaceTableID'
-			if [ -z "$match" ]; then
-				table_destroy "$ifaceTableID" "$iface"
-			fi
 			vpr_get_gateway gw4 "$iface" "$dev"
 			vpr_get_gateway6 gw6 "$iface" "$dev6"
 			if [ "$iface" = "$dev" ]; then
