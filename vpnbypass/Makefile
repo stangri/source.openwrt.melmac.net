@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=vpnbypass
-PKG_VERSION:=1.3.1
-PKG_RELEASE:=9
+PKG_VERSION:=1.3.2
+PKG_RELEASE:=1
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 

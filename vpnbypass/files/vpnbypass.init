@@ -76,7 +76,7 @@ is_enabled() {
 	output "$__ERROR__: $serviceName failed to discover WAN gateway.\\n"; return 1;
 }
 
-is_ovpn() { local dev; dev=$(uci -q get network."$1".ifname); if [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; then return 0; else return 1; fi; }
+is_ovpn() { local dev i; for i in ifname device; do [ -z "$dev" ] && dev="$(uci -q get "network.${1}.${i}")"; done; if [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; then return 0; else return 1; fi; }
 is_wan() { if [ -n "$wan_if4" ] && [ "$1" = "$wan_if4" ]; then return 0; else return 1; fi; }
 is_supported_interface() { if is_wan "$1" || is_ovpn "$1"; then return 0; else return 1; fi; }
 
