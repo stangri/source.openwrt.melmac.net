@@ -1037,7 +1037,7 @@ start_service() {
 	else
 		output 1 "Reloading Interface: $reloadedIface "
 		config_load 'network'; config_foreach process_interface 'interface' 'create' "$reloadedIface";
-		config_load 'network'; config_foreach process_interface 'interface' 'create_ipt' "$reloadedIface";
+#		config_foreach process_interface 'interface' 'create_ipt' "$reloadedIface"
 		output 1 '\n'
 	fi
 
