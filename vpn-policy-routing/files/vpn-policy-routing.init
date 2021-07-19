@@ -50,7 +50,7 @@ ipv6Enabled=''; srcIpset=''; destIpset=''; resolverIpset='';
 wanIface4=''; wanIface6=''; ifaceMark=''; ifaceTableID='';
 ifAll=''; ifSupported=''; ignoredIfaces=''; supportedIfaces=''; icmpIface='';
 wanGW4=''; wanGW6=''; bootTimeout=''; insertOption='';
-webuiChainColumn=''; webuiShowIgnore=''; dnsmasqIpsetSupported='';
+webuiChainColumn=''; webuiShowIgnore=''; dnsmasqIpsetSupported='0';
 procdReloadDelay=''; mainTableListing='';
 usedChainsList='PREROUTING'
 ipsetSupported='true'
@@ -236,18 +236,17 @@ load_package_config() {
 		append|-a|-A|*) insertOption='-A';;
 	esac
 
-	[ "$resolverIpset" = 'dnsmasq.ipset' ] && dnsmasqIpsetSupported='true'
+	[ "$resolverIpset" = 'dnsmasq.ipset' ] && dnsmasqIpsetSupported='1'
 	if dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'; then
-		unset dnsmasqIpsetSupported
-		if [ -n "$dnsmasqIpsetSupported" ]; then
+		if [ "$dnsmasqIpsetSupported" -ne 0 ]; then
 			errorSummary="${errorSummary}${_ERROR_}: Resolver ipset support (dnsmasq.ipset) is enabled in $packageName, but DNSMASQ ipsets are not supported on this system!\\n"
+			dnsmasqIpsetSupported='0'
 		fi
 	fi
 	if ! ipset help hash:net >/dev/null 2>&1; then
-		unset ipsetSupported
-		if [ -n "$dnsmasqIpsetSupported" ]; then
+		if [ "$dnsmasqIpsetSupported" -ne 0 ]; then
 			errorSummary="${errorSummary}${_ERROR_}: DNSMASQ ipsets are supported, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
-			unset dnsmasqIpsetSupported
+			dnsmasqIpsetSupported='0'
 		fi
 		if [ "$destIpset" -ne 0 ]; then
 			errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
@@ -349,7 +348,7 @@ ips() {
 	case "$command" in
 		add_dnsmasq)
 			[ "$resolverIpset" = "dnsmasq.ipset" ] || return 1
-			if [ -z "$dnsmasqIpsetSupported" ]; then
+			if [ "$dnsmasqIpsetSupported" -eq 0 ]; then
 				warningSummary="${warningSummary}${_WARNING_}: The 'resolver_ipset' is set to 'dnsmasq.ipset', but DNSMASQ ipsets are not supported on this system!\\n"
 				failFlag=1
 			elif [ "$ipv6Enabled" -ne 0 ]; then
@@ -393,7 +392,7 @@ ips() {
 					fi
 					;;
 				*)
-					if [ -n "$ipsetSupported" ] && { [ -n "$dnsmasqIpsetSupported" ] || [ "$destIpset" -ne 0 ]; }; then
+					if [ -n "$ipsetSupported" ] && { [ "$dnsmasqIpsetSupported" -ne 0 ] || [ "$destIpset" -ne 0 ]; }; then
 						if ! iptables-save | grep -q -- "-A VPR_PREROUTING -m set --match-set $ipset dst"; then
 							for i in $usedChainsList; do
 								ipt -t mangle -A VPR_${i} -m set --match-set "${ipset}" dst -g "VPR_MARK${mark}" || failFlag=1
@@ -708,7 +707,7 @@ EOF
 		if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
 			ipt -t mangle -I VPR_PREROUTING -m dscp --dscp "${dscp}" -g "VPR_MARK${mark}" || s=1
 		fi
-		if [ -n "$ipsetSupported" ] && { [ -n "$dnsmasqIpsetSupported" ] || [ "$destIpset" -ne 0 ]; }; then
+		if [ -n "$ipsetSupported" ] && { [ "$dnsmasqIpsetSupported" -ne 0 ] || [ "$destIpset" -ne 0 ]; }; then
 			ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}" || s=1
 		fi
 		if [ -n "$ipsetSupported" ] && [ "$srcIpset" -ne 0 ]; then
@@ -837,7 +836,7 @@ process_interface() {
 			fi
 			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
 			;;
-		create_ipt)
+		create_ips_ipt)
 			if [ -z "$match" ] || [ "$iface" = "$match" ]; then
 				ips 'create_ipt' "$iface"
 			fi
@@ -1029,15 +1028,14 @@ start_service() {
 			output 1 '\n'
 		fi
 		if is_config_enabled 'include'; then
+			config_load 'network'; config_foreach process_interface 'interface' 'create_ips_ipt';
 			output 1 'Processing User File(s) '
 			config_load "$packageName"; config_foreach process_user_file 'include';
 			output 1 '\n'
 		fi
-		config_load 'network'; config_foreach process_interface 'interface' 'create_ipt';
 	else
 		output 1 "Reloading Interface: $reloadedIface "
 		config_load 'network'; config_foreach process_interface 'interface' 'create' "$reloadedIface";
-#		config_foreach process_interface 'interface' 'create_ipt' "$reloadedIface"
 		output 1 '\n'
 	fi
 
