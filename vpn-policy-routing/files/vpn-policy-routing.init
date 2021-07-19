@@ -362,9 +362,9 @@ ips() {
 			if [ -z "$appendix" ] && [ "$destIpset" -eq 0 ]; then return 1; fi
 			if [ -n "$appendix" ] && [ "$srcIpset" -eq 0 ]; then return 1; fi
 			if [ "$ipv6Enabled" -ne 0 ] && [ "$appendix" != "_mac" ]; then
-				ipset -q -! $command "${ipset}6${appendix}" $param comment "$comment" || failFlag=1
+				ipset -q -! "$command" "${ipset}6${appendix}" $param comment "$comment" || failFlag=1
 			fi
-			ipset -q -! $command "${ipset}${appendix}" $param comment "$comment" || failFlag=1
+			ipset -q -! "$command" "${ipset}${appendix}" $param comment "$comment" || failFlag=1
 			[ "$failFlag" -eq 0 ] && ips 'create_ipt' "${ipset}${appendix}"
 			;;
 		create)
@@ -654,7 +654,6 @@ table_destroy() {
 	fi
 }
 
-# shellcheck disable=SC2086
 table_create() {
 	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" match="$8" dscp s=0 i ipv4_error=0 ipv6_error=1
 
@@ -672,6 +671,7 @@ table_create() {
 		else
 			ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 		fi
+# shellcheck disable=SC2086
 		while read -r i; do
 			idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
 			if ! is_supported_iface_dev "$idev"; then
@@ -693,6 +693,7 @@ EOF
 			if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 				ip -6 route add unreachable default table "$tid" || ipv6_error=1
 			else
+# shellcheck disable=SC2086
 				while read -r i; do
 					ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
 				done << EOF
@@ -738,9 +739,6 @@ table_reload() {
 		else
 			ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 		fi
-		ip -4 route flush cache || ipv4_error=1
-		ip -4 rule del fwmark "${mark}/${fwMask}" table "$tid" >/dev/null 2>&1
-		ip -4 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv4_error=1
 	fi
 
 	if [ "$ipv6Enabled" -ne 0 ]; then
@@ -750,13 +748,13 @@ table_reload() {
 			if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 				ip -6 route add unreachable default table "$tid" || ipv6_error=1
 			else
-				ip -6 route list table main | grep " dev $dev6 " | while read -r i; do
-					ip -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
-				done
+				while read -r i; do
+# shellcheck disable=SC2086
+					ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
+				done << EOF
+$(ip -6 route list default table main | grep " dev $dev6 ")
+EOF
 			fi
-			ip -6 route flush cache || ipv6_error=1
-			ip -6 rule del fwmark "${mark}/${fwMask}" table "$tid" >/dev/null 2>&1
-			ip -6 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv6_error=1
 		fi
 	fi
 
@@ -836,7 +834,7 @@ process_interface() {
 			fi
 			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
 			;;
-		create_ips_ipt)
+		create_ipset_rules)
 			if [ -z "$match" ] || [ "$iface" = "$match" ]; then
 				ips 'create_ipt' "$iface"
 			fi
@@ -1024,11 +1022,12 @@ start_service() {
 		output 1 '\n'
 		if is_config_enabled 'policy'; then
 			output 1 'Processing Policies '
+#			config_load 'network'; config_foreach process_interface 'interface' 'flush_ipsets';
 			config_load "$packageName"; config_foreach process_policy 'policy' "$reloadedIface";
 			output 1 '\n'
 		fi
 		if is_config_enabled 'include'; then
-			config_load 'network'; config_foreach process_interface 'interface' 'create_ips_ipt';
+			config_load 'network'; config_foreach process_interface 'interface' 'create_ipset_rules';
 			output 1 'Processing User File(s) '
 			config_load "$packageName"; config_foreach process_user_file 'include';
 			output 1 '\n'
