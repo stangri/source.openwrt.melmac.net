@@ -339,7 +339,7 @@ ipt() {
 
 # shellcheck disable=SC2086
 ips() {
-	local command="$1" ipset="${2//-/_}" param="$3" comment="$4" appendix failFlag=0
+	local command="$1" ipset="${2//-/_}" param="$3" comment="$4" appendix failFlag=0 mark
 	if str_contains "$ipset" '_ip'; then
 		ipset="${ipset//_ip}"; appendix='_ip';
 	elif str_contains "$ipset" '_mac'; then
@@ -357,6 +357,7 @@ ips() {
 			else
 				echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlag=1
 			fi
+			[ "$failFlag" -eq 0 ] && ips 'create_ipt' "${ipset}${appendix}"
 			;;
 		add)
 			if [ -z "$appendix" ] && [ "$destIpset" -eq 0 ]; then return 1; fi
@@ -365,12 +366,43 @@ ips() {
 				ipset -q -! $command "${ipset}6${appendix}" $param comment "$comment" || failFlag=1
 			fi
 			ipset -q -! $command "${ipset}${appendix}" $param comment "$comment" || failFlag=1
+			[ "$failFlag" -eq 0 ] && ips 'create_ipt' "${ipset}${appendix}"
 			;;
 		create)
 			if [ "$ipv6Enabled" -ne 0 ] && [ "$appendix" != "_mac" ]; then
 				ipset -q -! "$command" "${ipset}6${appendix}" $param family inet6 || failFlag=1
 			fi
 			ipset -q -! "$command" "${ipset}${appendix}" $param || failFlag=1
+			;;
+		create_ipt)
+			mark=$(eval echo "\$mark_${ipset//-/_}")
+			case $appendix in
+				_ip)
+					if [ -n "$ipsetSupported" ] && [ "$srcIpset" -ne 0 ]; then
+						if ! iptables-save | grep -q -- "-A VPR_PREROUTING -m set --match-set ${ipset}_ip src"; then
+							ipt -t mangle -A VPR_PREROUTING -m set --match-set "${ipset}_ip" src -g "VPR_MARK${mark}" || failFlag=1
+							if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A VPR_PREROUTING -m set --match-set "${ipset}6_ip" src -g "VPR_MARK${mark}" || failFlag=1; fi
+						fi
+					fi
+					;;
+				_mac)
+					if [ -n "$ipsetSupported" ] && [ "$srcIpset" -ne 0 ]; then
+						if ! iptables-save | grep -q -- "-A VPR_PREROUTING -m set --match-set ${ipset}_mac src"; then
+							ipt -t mangle -A VPR_PREROUTING -m set --match-set "${ipset}_mac" src -g "VPR_MARK${mark}" || s=1
+						fi
+					fi
+					;;
+				*)
+					if [ -n "$ipsetSupported" ] && { [ -n "$dnsmasqIpsetSupported" ] || [ "$destIpset" -ne 0 ]; }; then
+						if ! iptables-save | grep -q -- "-A VPR_PREROUTING -m set --match-set $ipset dst"; then
+							for i in $usedChainsList; do
+								ipt -t mangle -A VPR_${i} -m set --match-set "${ipset}" dst -g "VPR_MARK${mark}" || failFlag=1
+								if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_${i} -m set --match-set "${iface}6" dst -g "VPR_MARK${mark}" || failFlag=1; fi
+							done
+						fi
+					fi
+					;;
+			esac
 			;;
 		destroy|flush)
 			ipset -q -! "$command" "${ipset}6${appendix}" 2>/dev/null || failFlag=1
@@ -677,27 +709,11 @@ EOF
 			ipt -t mangle -I VPR_PREROUTING -m dscp --dscp "${dscp}" -g "VPR_MARK${mark}" || s=1
 		fi
 		if [ -n "$ipsetSupported" ] && { [ -n "$dnsmasqIpsetSupported" ] || [ "$destIpset" -ne 0 ]; }; then
-			if ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}"; then
-				for i in $usedChainsList; do
-					ipt -t mangle -I VPR_${i} -m set --match-set "${iface}" dst -g "VPR_MARK${mark}" || s=1
-					if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_${i} -m set --match-set "${iface}6" dst -g "VPR_MARK${mark}" || s=1; fi
-				done
-			else
-				s=1
-			fi
+			ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}" || s=1
 		fi
 		if [ -n "$ipsetSupported" ] && [ "$srcIpset" -ne 0 ]; then
-			if ips 'create' "${iface}_ip" 'hash:net comment' && ips 'flush' "${iface}_ip"; then
-				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_ip" src -g "VPR_MARK${mark}" || s=1
-				if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_ip" src -g "VPR_MARK${mark}" || s=1; fi
-			else
-				s=1
-			fi
-			if ips 'create' "${iface}_mac" 'hash:mac comment' && ips 'flush' "${iface}_mac"; then
-				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_mac" src -g "VPR_MARK${mark}" || s=1
-			else
-				s=1
-			fi
+			ips 'create' "${iface}_ip" 'hash:net comment' && ips 'flush' "${iface}_ip" || s=1
+			ips 'create' "${iface}_mac" 'hash:mac comment' && ips 'flush' "${iface}_mac" || s=1
 		fi
 		if [ "$iface" = "$icmpIface" ]; then
 			ipt -t mangle -I VPR_OUTPUT -p icmp -g "VPR_MARK${mark}" || s=1
@@ -820,6 +836,11 @@ process_interface() {
 				gatewaySummary="${gatewaySummary}${displayText}\\n"
 			fi
 			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
+			;;
+		create_ipt)
+			if [ -z "$match" ] || [ "$iface" = "$match" ]; then
+				ips 'create_ipt' "$iface"
+			fi
 			;;
 	esac
 	return $s
@@ -1012,9 +1033,11 @@ start_service() {
 			config_load "$packageName"; config_foreach process_user_file 'include';
 			output 1 '\n'
 		fi
+		config_load 'network'; config_foreach process_interface 'interface' 'create_ipt';
 	else
 		output 1 "Reloading Interface: $reloadedIface "
 		config_load 'network'; config_foreach process_interface 'interface' 'create' "$reloadedIface";
+		config_load 'network'; config_foreach process_interface 'interface' 'create_ipt' "$reloadedIface";
 		output 1 '\n'
 	fi
 
