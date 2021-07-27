@@ -40,7 +40,7 @@ define Package/vpn-policy-routing/install
 	$(INSTALL_BIN) ./files/vpn-policy-routing.init $(1)/etc/init.d/vpn-policy-routing
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/vpn-policy-routing
 	$(INSTALL_CONF) ./files/vpn-policy-routing.config $(1)/etc/config/vpn-policy-routing
-	$(INSTALL_DATA) ./files/vpn-policy-routing.firewall.hotplug $(1)/etc/hotplug.d/firewall/70-vpn-policy-routing
+	$(INSTALL_DATA) ./files/vpn-policy-routing.hotplug.firewall $(1)/etc/hotplug.d/firewall/70-vpn-policy-routing
 	$(INSTALL_DATA) ./files/vpn-policy-routing.aws.user $(1)/etc/vpn-policy-routing.aws.user
 	$(INSTALL_DATA) ./files/vpn-policy-routing.netflix.user $(1)/etc/vpn-policy-routing.netflix.user
 endef
