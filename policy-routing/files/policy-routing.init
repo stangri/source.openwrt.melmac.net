@@ -167,10 +167,12 @@ is_supported_iface_dev() {
 }
 is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
 append_chains_targets() {
-	local chain iface name
+	local chain iface name enabled
 	config_get name "$1" 'name' 'blank'
 	config_get chain "$1" 'chain' 'PREROUTING'
 	config_get iface "$1" 'interface'
+	config_get_bool enabled "$1" 'enabled' 1
+	[ "$enabled" -ne 0 ] || return
 	if ! str_contains_word "$usedChainsList" "$chain"; then
 		usedChainsList="$usedChainsList $chain"
 		if [ "$chain" != 'PREROUTING' ] && [ "$webuiChainColumn" != '1' ]; then
@@ -969,11 +971,6 @@ start_service() {
 		param='on_reload'
 	fi
 
-	if [ -s "$dnsmasqFile" ]; then
-		dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
-		rm -f "$dnsmasqFile"
-	fi
-
 	case $param in
 		on_iface_reload)
 			output 1 "Reloading Interface: $reloadedIface "
@@ -981,6 +978,10 @@ start_service() {
 			output 1 '\n'
 			;;
 		on_reload)
+			if [ -s "$dnsmasqFile" ]; then
+				dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+				rm -f "$dnsmasqFile"
+			fi
 			for i in $usedChainsList; do
 				ipt -t mangle -N "PR_${i}"
 				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "PR_${i}"
@@ -1004,6 +1005,10 @@ start_service() {
 			[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
 			;;
 		on_start|*)
+			if [ -s "$dnsmasqFile" ]; then
+				dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+				rm -f "$dnsmasqFile"
+			fi
 			for i in xt_set ip_set ip_set_hash_ip; do
 				modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
 			done
