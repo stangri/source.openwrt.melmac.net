@@ -1,0 +1,6 @@
+#!/bin/sh
+
+[ "$ACTION" = "reload" ] || exit 0
+
+logger -t "policy-routing" "Reloading policy-routing due to $ACTION of firewall"
+/etc/init.d/policy-routing reload

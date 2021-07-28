@@ -1,0 +1,3 @@
+#!/bin/sh
+logger -t policy-routing "Reloading policy-routing $INTERFACE due to $ACTION of $INTERFACE ($DEVICE)"
+/etc/init.d/policy-routing reload_interface "$INTERFACE"
