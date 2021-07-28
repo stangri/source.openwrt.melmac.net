@@ -796,9 +796,22 @@ interface_process() {
 	[ -z "$ifaceMark" ] && ifaceMark="$(printf '0x%x' "$wanMark")";
 
 	case "$action" in
+		enumerate)
+			eval "mark_${iface//-/_}"='$ifaceMark'
+			eval "tid_${iface//-/_}"='$ifaceTableID'
+			pr_get_gateway gw4 "$iface" "$dev"
+			pr_get_gateway6 gw6 "$iface" "$dev6"
+			if [ "$iface" = "$dev" ]; then
+				displayText="${iface}/${gw4:-0.0.0.0}"
+			else
+				displayText="${iface}/${dev}/${gw4:-0.0.0.0}"
+			fi
+			[ "$ipv6Enabled" -ne 0 ] && displayText="${displayText}/${gw6:-::/0}"
+			is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
+			gatewaySummary="${gatewaySummary}${displayText}\\n"
+			;;
 		destroy)
 			table_destroy "${ifaceTableID}" "${iface}" "${ifaceMark}"
-			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))";
 			;;
 		create)
 			eval "mark_${iface//-/_}"='$ifaceMark'
@@ -835,25 +848,30 @@ interface_process() {
 				is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
 				gatewaySummary="${gatewaySummary}${displayText}\\n"
 			fi
-			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))";
 			;;
 		create_default_ipset)
 			if [ -z "$reloadedIface" ] || [ "$iface" = "$reloadedIface" ]; then
 				if ips 'create_default' "$iface"; then
 					if ! iptables-save | grep -q -- "-A PR_PREROUTING -m set --match-set pr_${iface}_dst_ip src"; then
-						ipt -t mangle -A PR_PREROUTING -m set --match-set "pr_${iface}_dst_ip" src -g "PR_MARK${mark}" || failFlag=1
-						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A PR_PREROUTING -m set --match-set "pr_${iface}6_dst_ip" src -g "PR_MARK${mark}" || failFlag=1; fi
+						ipt -t mangle -A PR_PREROUTING -m set --match-set "pr_${iface}_dst_ip" src -g "PR_MARK${ifaceMark}" || failFlag=1
+						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A PR_PREROUTING -m set --match-set "pr_${iface}6_dst_ip" src -g "PR_MARK${ifaceMark}" || failFlag=1; fi
 					fi
 				fi
 			fi
 			;;
 	esac
+	ifaceTableID="$((ifaceTableID + 1))"
+	ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))"
 	return $s
 }
 
-process_tor_interface() {
+interface_process_tor() {
 	local s=0 iface="$1" action="$2" displayText ipset
 	case "$action" in
+		enumerate)
+			displayText="${iface}/53->${dnsPort}/80,443->${transPort}"
+			gatewaySummary="${gatewaySummary}${displayText}\\n"
+			;;
 		destroy)
 			for i in PREROUTING FORWARD INPUT OUTPUT; do
 				ipt -t nat -D "${i}" -m mark --mark "0x0/${fwMask}" -j "PR_${i}"
@@ -928,7 +946,7 @@ user_file_process() {
 boot() { rc_procd start_service && rc_procd service_triggers; }
 
 start_service() {
-	local dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0 reloadedIface="$1"
+	local dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0 reloadedIface="$1" param
 	is_enabled 'on_start' || return 1
 	is_wan_up || return 1
 
@@ -936,56 +954,88 @@ start_service() {
 		return 0
 	fi
 
-	iptables -t 'mangle' --list 'PR_PREROUTING' >/dev/null 2>&1 || unset reloadedIface
-	[ -n "$(tmpfs get status)" ] || unset reloadedIface
+	if [ -n "$(json get error)" ] || [ -n "$(json get warning)" ]; then
+		param='on_start'
+		unset reloadedIface
+	elif ! iptables -t 'mangle' --list 'PR_PREROUTING' >/dev/null 2>&1; then
+		param='on_start'
+		unset reloadedIface
+	elif [ -z "$(json get gateway)" ]; then
+		param='on_start'
+		unset reloadedIface
+	elif [ -n "$reloadedIface" ]; then
+		param='on_iface_reload'
+	else
+		param='on_reload'
+	fi
 
 	if [ -s "$dnsmasqFile" ]; then
 		dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
 		rm -f "$dnsmasqFile"
 	fi
 
-	for i in xt_set ip_set ip_set_hash_ip; do
-		modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
-	done
-
-	if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then
-		errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
-	fi
-
-	if [ -z "$reloadedIface" ]; then
-		for i in $usedChainsList; do
-			ipt -t mangle -N "PR_${i}"
-			ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "PR_${i}"
-		done
-	fi
-
-	if [ -z "$reloadedIface" ]; then
-		output 1 'Processing Interfaces '
-		config_load 'network'; config_foreach interface_process 'interface' 'create';
-		process_tor_interface 'tor' 'destroy'; is_tor_running && process_tor_interface 'tor' 'create';
-		ip route flush cache
-		output 1 '\n'
-		if is_config_enabled 'policy'; then
-			output 1 'Processing Policies '
-			config_load "$packageName"; config_foreach policy_process 'policy';
+	case $param in
+		on_iface_reload)
+			output 1 "Reloading Interface: $reloadedIface "
+			config_load 'network'; config_foreach interface_process 'interface' 'create' "$reloadedIface";
 			output 1 '\n'
-		fi
-		if is_config_enabled 'include'; then
-			config_load 'network'; config_foreach interface_process 'interface' 'create_default_ipset';
-			output 1 'Processing User File(s) '
-			config_load "$packageName"; config_foreach user_file_process 'include';
+			;;
+		on_reload)
+			for i in $usedChainsList; do
+				ipt -t mangle -N "PR_${i}"
+				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "PR_${i}"
+			done
+			config_load 'network'; config_foreach interface_process 'interface' 'enumerate';
+			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'enumerate';
+			if is_config_enabled 'policy'; then
+				output 1 'Processing Policies '
+				config_load "$packageName"; config_foreach policy_process 'policy';
+				output 1 '\n'
+			fi
+			if is_config_enabled 'include'; then
+				config_load 'network'; config_foreach interface_process 'interface' 'create_default_ipset';
+				output 1 'Processing User File(s) '
+				config_load "$packageName"; config_foreach user_file_process 'include';
+				output 1 '\n'
+			fi
+			if [ -s "$dnsmasqFile" ]; then
+				dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+			fi
+			[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
+			;;
+		on_start|*)
+			for i in xt_set ip_set ip_set_hash_ip; do
+				modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
+			done
+			if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then
+				errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
+			fi
+			for i in $usedChainsList; do
+				ipt -t mangle -N "PR_${i}"
+				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "PR_${i}"
+			done
+			output 1 'Processing Interfaces '
+			config_load 'network'; config_foreach interface_process 'interface' 'create';
+			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'create';
+			ip route flush cache
 			output 1 '\n'
-		fi
-	else
-		output 1 "Reloading Interface: $reloadedIface "
-		config_load 'network'; config_foreach interface_process 'interface' 'create' "$reloadedIface";
-		output 1 '\n'
-	fi
-
-	if [ -s "$dnsmasqFile" ]; then
-		dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
-	fi
-	[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
+			if is_config_enabled 'policy'; then
+				output 1 'Processing Policies '
+				config_load "$packageName"; config_foreach policy_process 'policy';
+				output 1 '\n'
+			fi
+			if is_config_enabled 'include'; then
+				config_load 'network'; config_foreach interface_process 'interface' 'create_default_ipset';
+				output 1 'Processing User File(s) '
+				config_load "$packageName"; config_foreach user_file_process 'include';
+				output 1 '\n'
+			fi
+			if [ -s "$dnsmasqFile" ]; then
+				dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+			fi
+			[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
+			;;
+	esac
 
 	if [ -z "$gatewaySummary" ]; then
 		errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway!\\n"
@@ -1009,7 +1059,7 @@ start_service() {
 	procd_close_instance
 }
 
-tmpfs() {
+json() {
 	local action="$1" param="$2" value="$3"
 # shellcheck disable=SC2034
 	local gateway error warning mode i
@@ -1048,11 +1098,11 @@ tmpfs() {
 }
 
 service_started() {
-	tmpfs set 'gateway' "$gatewaySummary"
-	tmpfs set 'error' "$errorSummary"
-	tmpfs set 'warning' "$warningSummary"
+	json set 'gateway' "$gatewaySummary"
+	json set 'error' "$errorSummary"
+	json set 'warning' "$warningSummary"
 	if [ "$strictMode" -ne 0 ] && str_contains "$gatewaySummary" '0.0.0.0'; then
-		tmpfs set 'mode' 'strict'
+		json set 'mode' 'strict'
 	fi
 	[ -n "$gatewaySummary" ] && output "$serviceName started with gateways:\\n${gatewaySummary}"
 	[ -n "$errorSummary" ] && output "${errorSummary}"
@@ -1075,7 +1125,7 @@ stop_service() {
 		ipt -t mangle -F "PR_${i}"; ipt -t mangle -X "PR_${i}";
 	done
 	config_load 'network'; config_foreach interface_process 'interface' 'destroy';
-	process_tor_interface 'tor' 'destroy'
+	interface_process_tor 'tor' 'destroy'
 	ip route flush cache
 	config_load "$packageName"; config_foreach policy_destroy_ipsets 'policy';
 	unset ifaceTableID; unset ifaceMark;
