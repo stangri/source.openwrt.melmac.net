@@ -168,11 +168,11 @@ msgstr ""
 msgid "Loading"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/https-dns-proxy/providers/net.mullvad.doh.lua:3
+#: applications/luci-app-https-dns-proxy/luasrc/https-dns-proxy/providers.disabled/net.mullvad.doh.lua:3
 msgid "Mullvad"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/https-dns-proxy/providers/net.mullvad.doh.adblocker.lua:3
+#: applications/luci-app-https-dns-proxy/luasrc/https-dns-proxy/providers.disabled/net.mullvad.doh.adblocker.lua:3
 msgid "Mullvad (AdBlock)"
 msgstr ""
 
