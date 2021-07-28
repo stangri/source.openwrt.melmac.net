@@ -187,6 +187,16 @@ append_chains_targets() {
 # shellcheck disable=SC2016
 resolveip_to_ipt() { resolveip "$1" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d'; }
 
+check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
+
+is_config_enabled() {
+	local cfg="$1" _cfg_enabled=1
+	[ -n "$1" ] || return 1
+	config_load "$packageName"
+	config_foreach check_config "$cfg"
+	return "$_cfg_enabled"
+}
+
 load_package_config() {
 	[ "$configLoaded" -eq 0 ] || return 0
 
@@ -556,7 +566,7 @@ insert_policy() {
 	done
 }
 
-process_policy() {
+policy_process() {
 	local name="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6"
 	local proto="$7" chain="$8" uid="$9"
 	local i j enabled
@@ -598,13 +608,13 @@ process_policy() {
 	fi
 
 	if str_contains "$laddr" '[ ;\{\}]'; then
-		for i in $(str_extras_to_space "$laddr"); do [ -n "$i" ] && process_policy "$name" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain" "$uid"; done
+		for i in $(str_extras_to_space "$laddr"); do [ -n "$i" ] && policy_process "$name" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain" "$uid"; done
 	elif str_contains "$lport" '[ ;\{\}]'; then
-		for i in $(str_extras_to_space "$lport"); do [ -n "$i" ] && process_policy "$name" "$iface" "$laddr" "$i" "$raddr" "$rport" "$proto" "$chain" "$uid"; done
+		for i in $(str_extras_to_space "$lport"); do [ -n "$i" ] && policy_process "$name" "$iface" "$laddr" "$i" "$raddr" "$rport" "$proto" "$chain" "$uid"; done
 	elif str_contains "$raddr" '[ ;\{\}]'; then
-		for i in $(str_extras_to_space "$raddr"); do [ -n "$i" ] && process_policy "$name" "$iface" "$laddr" "$lport" "$i" "$rport" "$proto" "$chain" "$uid"; done
+		for i in $(str_extras_to_space "$raddr"); do [ -n "$i" ] && policy_process "$name" "$iface" "$laddr" "$lport" "$i" "$rport" "$proto" "$chain" "$uid"; done
 	elif str_contains "$rport" '[ ;\{\}]'; then
-		for i in $(str_extras_to_space "$rport"); do [ -n "$i" ] && process_policy "$name" "$iface" "$laddr" "$lport" "$raddr" "$i" "$proto" "$chain" "$uid"; done
+		for i in $(str_extras_to_space "$rport"); do [ -n "$i" ] && policy_process "$name" "$iface" "$laddr" "$lport" "$raddr" "$i" "$proto" "$chain" "$uid"; done
 	else
 		if is_tor "$iface"; then
 			insert_tor_policy "$name" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain" "$uid"
@@ -628,16 +638,24 @@ process_policy() {
 	fi
 }
 
+policy_destroy_ipsets() {
+	local uid="$1" iface i j
+	config_get iface "$1" 'interface'
+	for i in dst src; do
+		for j in ip net mac; do
+			ips 'destroy' "${iface}" "${i}" "${j}" "${uid}"
+		done
+	done
+}
+
 table_destroy() {
 	local tid="$1" iface="$2" mark="$3"
 	if [ -n "$tid" ] && [ -n "$iface" ] && [ -n "$mark" ]; then
 		ipt -t mangle -F "PR_MARK${mark}"
 		ipt -t mangle -X "PR_MARK${mark}"
-		ip rule del fwmark "$mark" table "$tid" >/dev/null 2>&1
-	 	ip rule del table "$tid" >/dev/null 2>&1
+		ip rule del fwmark "$mark/$fwMask" table "$tid" >/dev/null 2>&1
 		ip route flush table "$tid" >/dev/null 2>&1
-		ips 'flush' "${iface}"; ips 'destroy' "${iface}";
-		ip route flush cache
+		ips 'flush' "pr_${iface}_dst_ip"; ips 'destroy' "pr_${iface}_dst_ip";
 		sed -i "/$iface/d" /etc/iproute2/rt_tables
 		return 0
 	else
@@ -757,7 +775,7 @@ EOF
 	return $s
 }
 
-process_interface() {
+interface_process() {
 	local gw4 gw6 dev dev6 s=0 dscp iface="$1" action="$2" reloadedIface="$3" displayText
 
 	is_supported_interface "$iface" || return 0
@@ -774,12 +792,13 @@ process_interface() {
 	fi
 	[ -z "$dev6" ] && dev6="$dev"
 
-	[ -z "$ifaceTableID" ] && ifaceTableID="$wanTableID"; [ -z "$ifaceMark" ] && ifaceMark="$wanMark";
+	[ -z "$ifaceTableID" ] && ifaceTableID="$wanTableID"
+	[ -z "$ifaceMark" ] && ifaceMark="$(printf '0x%x' "$wanMark")";
 
 	case "$action" in
 		destroy)
 			table_destroy "${ifaceTableID}" "${iface}" "${ifaceMark}"
-			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
+			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))";
 			;;
 		create)
 			eval "mark_${iface//-/_}"='$ifaceMark'
@@ -816,7 +835,7 @@ process_interface() {
 				is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
 				gatewaySummary="${gatewaySummary}${displayText}\\n"
 			fi
-			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
+			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))";
 			;;
 		create_default_ipset)
 			if [ -z "$reloadedIface" ] || [ "$iface" = "$reloadedIface" ]; then
@@ -875,17 +894,7 @@ process_tor_interface() {
 	return $s
 }
 
-check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
-
-is_config_enabled() {
-	local cfg="$1" _cfg_enabled=1
-	[ -n "$1" ] || return 1
-	config_load "$packageName"
-	config_foreach check_config "$cfg"
-	return "$_cfg_enabled"
-}
-
-process_user_file() {
+user_file_process() {
 	local path enabled shellBin="${SHELL:-/bin/ash}"
 	config_get_bool enabled "$1" 'enabled' 1
 	config_get      path    "$1" 'path'
@@ -952,24 +961,24 @@ start_service() {
 
 	if [ -z "$reloadedIface" ]; then
 		output 1 'Processing Interfaces '
-		config_load 'network'; config_foreach process_interface 'interface' 'create';
+		config_load 'network'; config_foreach interface_process 'interface' 'create';
 		process_tor_interface 'tor' 'destroy'; is_tor_running && process_tor_interface 'tor' 'create';
 		ip route flush cache
 		output 1 '\n'
 		if is_config_enabled 'policy'; then
 			output 1 'Processing Policies '
-			config_load "$packageName"; config_foreach process_policy 'policy';
+			config_load "$packageName"; config_foreach policy_process 'policy';
 			output 1 '\n'
 		fi
 		if is_config_enabled 'include'; then
-			config_load 'network'; config_foreach process_interface 'interface' 'create_default_ipset';
+			config_load 'network'; config_foreach interface_process 'interface' 'create_default_ipset';
 			output 1 'Processing User File(s) '
-			config_load "$packageName"; config_foreach process_user_file 'include';
+			config_load "$packageName"; config_foreach user_file_process 'include';
 			output 1 '\n'
 		fi
 	else
 		output 1 "Reloading Interface: $reloadedIface "
-		config_load 'network'; config_foreach process_interface 'interface' 'create' "$reloadedIface";
+		config_load 'network'; config_foreach interface_process 'interface' 'create' "$reloadedIface";
 		output 1 '\n'
 	fi
 
@@ -1065,8 +1074,10 @@ stop_service() {
 		ipt -t mangle -D "${i}" -m mark --mark "0x0/${fwMask}" -j "PR_${i}"
 		ipt -t mangle -F "PR_${i}"; ipt -t mangle -X "PR_${i}";
 	done
-	config_load 'network'; config_foreach process_interface 'interface' 'destroy';
+	config_load 'network'; config_foreach interface_process 'interface' 'destroy';
 	process_tor_interface 'tor' 'destroy'
+	ip route flush cache
+	config_load "$packageName"; config_foreach policy_destroy_ipsets 'policy';
 	unset ifaceTableID; unset ifaceMark;
 	if [ -s "$dnsmasqFile" ]; then
 		rm -f "$dnsmasqFile"
@@ -1195,7 +1206,7 @@ support() {
 					echo "$_SEPARATOR_"
 					echo "$j IP Table MARK Chain: PR_MARK${ifaceMark}"
 					iptables -v -t "$(str_to_lower $j)" -S "PR_MARK${ifaceMark}"
-					ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
+					ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))";
 				fi
 				i=$((i + 1))
 			done
