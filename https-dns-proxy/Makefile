@@ -1,20 +1,20 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=https-dns-proxy
-PKG_VERSION:=2021-07-29
+PKG_VERSION:=2021-07-23
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/baranyaib90/https_dns_proxy/
-PKG_SOURCE_DATE:=2021-07-29
-PKG_SOURCE_VERSION:=04db5de69c6f030b432f44fc2a17cd9a28f91e61
-PKG_MIRROR_HASH:=
+PKG_SOURCE_URL:=https://github.com/aarond10/https_dns_proxy/
+PKG_SOURCE_DATE:=2021-07-23
+PKG_SOURCE_VERSION:=30b2f3616b29d34a9a11144724a5bc0abd168c7d
+PKG_MIRROR_HASH:=2f4017d7729bec011b908055c19755ffe83ea82e033b60dd16a182fe5926dbe9
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
 
 include $(INCLUDE_DIR)/package.mk
-include ../../devel/ninja/ninja-cmake.mk
+include $(INCLUDE_DIR)/cmake.mk
 
 CMAKE_OPTIONS += -DCLANG_TIDY_EXE=
 
