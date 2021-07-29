@@ -79,7 +79,7 @@ output() {
 	if [ "$(printf "%b" "$msg" | wc -l)" -gt 0 ]; then
 		[ -s "$sharedMemoryOutput" ] && memmsg="$(cat "$sharedMemoryOutput")"
 		logmsg="$(printf "%b" "${memmsg}${msg}" | sed 's/\x1b\[[0-9;]*m//g')"
-		logger -t "${packageName:-service} [$$]" "$(printf "%b" "$logmsg")"
+		logger -t "${packageName:-service}" "$(printf "%b" "$logmsg")"
 		rm -f "$sharedMemoryOutput"
 	else
 		printf "%b" "$msg" >> "$sharedMemoryOutput"

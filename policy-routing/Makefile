@@ -1,6 +1,5 @@
 # Copyright 2017-2018 Stan Grishin (stangri@melmac.net)
 # This is free software, licensed under the GNU General Public License v3.
-#	$(INSTALL_DATA) ./files/policy-routing.hotplug.iface $(1)/etc/hotplug.d/iface/70-policy-routing
 
 include $(TOPDIR)/rules.mk
 
@@ -43,6 +42,7 @@ define Package/policy-routing/install
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/policy-routing
 	$(INSTALL_CONF) ./files/policy-routing.config $(1)/etc/config/policy-routing
 	$(INSTALL_DATA) ./files/policy-routing.hotplug.firewall $(1)/etc/hotplug.d/firewall/70-policy-routing
+	$(INSTALL_DATA) ./files/policy-routing.hotplug.iface $(1)/etc/hotplug.d/iface/70-policy-routing
 	$(INSTALL_DATA) ./files/policy-routing.user.aws $(1)/etc/policy-routing.user.aws
 	$(INSTALL_DATA) ./files/policy-routing.user.netflix $(1)/etc/policy-routing.user.netflix
 endef
