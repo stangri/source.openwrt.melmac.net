@@ -32,7 +32,6 @@ fi
 
 readonly packageName='policy-routing'
 readonly serviceName="$packageName $PKG_VERSION"
-readonly PIDFile="/var/run/${packageName}.pid"
 readonly jsonFile="/var/run/${packageName}.json"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
 readonly sharedMemoryOutput="/dev/shm/$packageName-output"
@@ -51,7 +50,7 @@ wanIface4=''; wanIface6=''; ifaceMark=''; ifaceTableID='';
 ifAll=''; ifSupported=''; ignoredIfaces=''; supportedIfaces=''; icmpIface='';
 wanGW4=''; wanGW6=''; bootTimeout=''; insertOption='';
 webuiChainColumn=''; webuiShowIgnore='';
-procdReloadDelay='';
+procdReloadDelay=''; serviceStartTrigger='';
 processPolicyError=''; processPolicyWarning='';
 usedChainsList='PREROUTING'; configLoaded='0';
 
@@ -230,7 +229,6 @@ load_package_config() {
 
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
-	mkdir -p "${PIDFile%/*}"
 	mkdir -p "${jsonFile%/*}"
 	mkdir -p "${dnsmasqFile%/*}"
 
@@ -948,7 +946,7 @@ user_file_process() {
 boot() { rc_procd start_service && rc_procd service_triggers; }
 
 start_service() {
-	local dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0 reloadedIface="$1" param
+	local dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0 reloadedIface="$1"
 	is_enabled 'on_start' || return 1
 	is_wan_up || return 1
 
@@ -957,21 +955,21 @@ start_service() {
 	fi
 
 	if [ -n "$(json get error)" ] || [ -n "$(json get warning)" ]; then
-		param='on_start'
+		serviceStartTrigger='on_start'
 		unset reloadedIface
 	elif ! iptables -t 'mangle' --list 'PR_PREROUTING' >/dev/null 2>&1; then
-		param='on_start'
+		serviceStartTrigger='on_start'
 		unset reloadedIface
 	elif [ -z "$(json get gateway)" ]; then
-		param='on_start'
+		serviceStartTrigger='on_start'
 		unset reloadedIface
 	elif [ -n "$reloadedIface" ]; then
-		param='on_iface_reload'
+		serviceStartTrigger='on_iface_reload'
 	else
-		param='on_reload'
+		serviceStartTrigger='on_reload'
 	fi
 
-	case $param in
+	case $serviceStartTrigger in
 		on_iface_reload)
 			output 1 "Reloading Interface: $reloadedIface "
 			config_load 'network'; config_foreach interface_process 'interface' 'create' "$reloadedIface";
@@ -1062,6 +1060,12 @@ start_service() {
 	json_close_array
 	procd_close_data
 	procd_close_instance
+	json set 'gateway' "$gatewaySummary"
+	json set 'error' "$errorSummary"
+	json set 'warning' "$warningSummary"
+	if [ "$strictMode" -ne 0 ] && str_contains "$gatewaySummary" '0.0.0.0'; then
+		json set 'mode' 'strict'
+	fi
 }
 
 json() {
@@ -1103,12 +1107,6 @@ json() {
 }
 
 service_started() {
-	json set 'gateway' "$gatewaySummary"
-	json set 'error' "$errorSummary"
-	json set 'warning' "$warningSummary"
-	if [ "$strictMode" -ne 0 ] && str_contains "$gatewaySummary" '0.0.0.0'; then
-		json set 'mode' 'strict'
-	fi
 	[ -n "$gatewaySummary" ] && output "$serviceName started with gateways:\\n${gatewaySummary}"
 	[ -n "$errorSummary" ] && output "${errorSummary}"
 	[ -n "$warningSummary" ] && output "${warningSummary}"
@@ -1171,7 +1169,9 @@ service_triggers() {
 		done
 	procd_close_trigger
 
-	output 3 "$serviceName monitoring interfaces: $ifSupported"; output_okn;
+	if [ "$serviceStartTrigger" = 'on_start' ]; then
+		output 3 "$serviceName monitoring interfaces: $ifSupported"; output_okn;
+	fi
 }
 
 status_service() { support "$@"; }
