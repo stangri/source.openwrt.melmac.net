@@ -992,29 +992,25 @@ start_service() {
 	is_wan_up || return 1
 
 	iptables -t 'mangle' --list 'VPR_PREROUTING' >/dev/null 2>&1 || unset reloadedIface
-	[ -n "$(tmpfs get status)" ] || unset reloadedIface
-
-	if [ -s "$dnsmasqFile" ]; then
-		dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
-		rm -f "$dnsmasqFile"
-	fi
-
-	for i in xt_set ip_set ip_set_hash_ip; do
-		modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
-	done
-
-	if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then
-		errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
-	fi
+	[ -n "$(tmpfs get gateway)" ] || unset reloadedIface
 
 	if [ -z "$reloadedIface" ]; then
+		if [ -s "$dnsmasqFile" ]; then
+			dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+			rm -f "$dnsmasqFile"
+		fi
+		for i in xt_set ip_set ip_set_hash_ip; do
+			modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
+		done
+		if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then
+			errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
+		fi
+
 		for i in $usedChainsList; do
 			ipt -t mangle -N "VPR_${i}"
 			ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
 		done
-	fi
 
-	if [ -z "$reloadedIface" ]; then
 		output 1 'Processing Interfaces '
 		config_load 'network'; config_foreach process_interface 'interface' 'create';
 		process_tor_interface 'tor' 'destroy'; is_tor_running && process_tor_interface 'tor' 'create';
@@ -1032,16 +1028,15 @@ start_service() {
 			config_load "$packageName"; config_foreach process_user_file 'include';
 			output 1 '\n'
 		fi
+		if [ -s "$dnsmasqFile" ]; then
+			dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+		fi
+		[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
 	else
 		output 1 "Reloading Interface: $reloadedIface "
 		config_load 'network'; config_foreach process_interface 'interface' 'create' "$reloadedIface";
 		output 1 '\n'
 	fi
-
-	if [ -s "$dnsmasqFile" ]; then
-		dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
-	fi
-	[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
 
 	if [ -z "$gatewaySummary" ]; then
 		errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway!\\n"
