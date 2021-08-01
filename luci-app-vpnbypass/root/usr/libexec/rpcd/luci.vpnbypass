@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copyright 2021 Stan Grishin (stangri@melmac.net)
-# shellcheck disable=SC1091,SC2039
+# shellcheck disable=SC1091,SC2039,SC3043
 
 # TechRef: https://openwrt.org/docs/techref/rpcd
 
