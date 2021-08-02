@@ -875,7 +875,7 @@ start_service() {
 	elif [ "$action" = 'restart' ] || [ "$1" = 'restart' ]; then
 		action='restart'
 	elif [ -s "$outputFile" ] && [ "$status" = "statusSuccess" ] && [ -z "$error" ]; then
-		showstatus
+		status_service
 		exit 0
 	else
 		action='download'
@@ -994,12 +994,12 @@ start_service() {
 		jsonOps del message
 		jsonOps set status "statusSuccess"
 		jsonOps set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${targetDNS})"
-		showstatus
+		status_service
 	else
 		output 0 "$__FAIL__\\n";
 		jsonOps set status "statusFail"
 		jsonOps add error "errorOhSnap"
-		showstatus
+		status_service
 	fi
 }
 
