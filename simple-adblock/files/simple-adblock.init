@@ -1024,7 +1024,8 @@ killcache() {
 
 status_service() {
 	local c url status message error stats
-	load_package_config
+	config_load "$packageName"
+	config_get verbosity 'config' 'verbosity' '2'
 	status="$(jsonOps get status)"
 	message="$(jsonOps get message)"
 	error="$(jsonOps get error)"
