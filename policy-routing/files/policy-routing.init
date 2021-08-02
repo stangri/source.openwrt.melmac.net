@@ -44,9 +44,9 @@ readonly _WARNING_='\033[0;33mWARNING\033[0m'
 
 gatewaySummary=''; errorSummary=''; warningSummary='';
 serviceEnabled=''; verbosity=''; strictMode=''; 
-wanTableID=''; wanMark=''; fwMask=''; 
+wanTableID=''; wanMark=''; wanPriority=''; fwMask=''; 
 ipv6Enabled=''; srcIpset=''; destIpset=''; resolverIpset=''; dnsmasqIpsetSupported='';
-wanIface4=''; wanIface6=''; ifaceMark=''; ifaceTableID='';
+wanIface4=''; wanIface6=''; ifaceMark=''; ifaceTableID=''; ifacePriority='';
 ifAll=''; ifSupported=''; ignoredIfaces=''; supportedIfaces=''; icmpIface='';
 wanGW4=''; wanGW6=''; bootTimeout=''; insertOption='';
 webuiChainColumn=''; webuiShowIgnore='';
@@ -211,6 +211,7 @@ load_package_config() {
 	config_get verbosity                'config' 'verbosity' '2'
 	config_get wanTableID               'config' 'wan_tid' '201'
 	config_get wanMark                  'config' 'wan_mark' '0x010000'
+	config_get wanPriority              'config' 'wan_ip_rules_priority' '30000'
 	config_get fwMask                   'config' 'fw_mask' '0xff0000'
 	config_get icmpIface                'config' 'icmp_interface'
 	config_get ignoredIfaces            'config' 'ignored_interface'
@@ -664,7 +665,8 @@ table_destroy() {
 }
 
 table_create() {
-	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" dscp s=0 i ipv4_error=0 ipv6_error=1
+	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" priority="$8"
+	local dscp s=0 i ipv4_error=0 ipv6_error=1
 
 	if [ -z "$tid" ] || [ -z "$mark" ] || [ -z "$iface" ]; then
 		return 1
@@ -689,8 +691,9 @@ table_create() {
 		done << EOF
 $(ip -4 route list table main)
 EOF
-		[ -n "$(ip rule list fwmark "${mark}/${fwMask}" table "$tid")" ] || \
-			ip rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv4_error=1
+		if [ -z "$(ip rule list fwmark "${mark}/${fwMask}" table "$tid")" ]; then
+			ip rule add fwmark "${mark}/${fwMask}" table "$tid" priority "$priority" || ipv4_error=1
+		fi
 		ipt -t mangle -N "PR_MARK${mark}" || ipv4_error=1
 		ipt -t mangle -A "PR_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
 		ipt -t mangle -A "PR_MARK${mark}" -j RETURN || ipv4_error=1
@@ -793,7 +796,8 @@ interface_process() {
 	[ -z "$dev6" ] && dev6="$dev"
 
 	[ -z "$ifaceTableID" ] && ifaceTableID="$wanTableID"
-	[ -z "$ifaceMark" ] && ifaceMark="$(printf '0x%x' "$wanMark")";
+	[ -z "$ifaceMark" ] && ifaceMark="$(printf '0x%x' "$wanMark")"
+	[ -z "$ifacePriority" ] && ifacePriority="$wanPriority"
 
 	case "$action" in
 		enumerate)
@@ -827,7 +831,7 @@ interface_process() {
 			if [ -z "$reloadedIface" ]; then
 				output 2 "Creating table '$displayText' "
 				is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
-				if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then
+				if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"; then
 					gatewaySummary="${gatewaySummary}${displayText}\\n"
 					output_ok
 				else
@@ -862,6 +866,7 @@ interface_process() {
 	esac
 	ifaceTableID="$((ifaceTableID + 1))"
 	ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))"
+	ifacePriority="$((ifacePriority - 1))"
 	return $s
 }
 
