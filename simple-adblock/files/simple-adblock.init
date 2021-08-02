@@ -17,7 +17,7 @@ if type extra_command 1>/dev/null 2>&1; then
 	extra_command 'version' 'Show version information'
 else
 # shellcheck disable=SC2034
-	EXTRA_COMMANDS='check dl killcache sizes show version'
+	EXTRA_COMMANDS='check dl killcache sizes status_service version'
 # shellcheck disable=SC2034
 	EXTRA_HELP='	check	Checks if specified domain is found in current block-list
 	dl	Force-downloads all enabled block-list
