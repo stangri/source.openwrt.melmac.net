@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=0.9.1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
@@ -36,15 +36,21 @@ define Build/Compile
 endef
 
 define Package/pbr/install
-	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config $(1)/etc/
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/firewall $(1)/etc/hotplug.d/iface
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_DIR) $(1)/usr/share/pbr
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/firewall
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_BIN) ./files/pbr.init $(1)/etc/init.d/pbr
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
 	$(INSTALL_CONF) ./files/pbr.config $(1)/etc/config/pbr
+	$(INSTALL_BIN) ./files/pbr.defaults $(1)/etc/uci-defaults/99-pbr
+	$(INSTALL_DATA) ./files/pbr.firewall.include $(1)/usr/share/pbr/pbr.firewall.include
 	$(INSTALL_DATA) ./files/pbr.hotplug.firewall $(1)/etc/hotplug.d/firewall/70-pbr
 	$(INSTALL_DATA) ./files/pbr.hotplug.iface $(1)/etc/hotplug.d/iface/70-pbr
-	$(INSTALL_DATA) ./files/pbr.user.aws $(1)/etc/pbr.user.aws
-	$(INSTALL_DATA) ./files/pbr.user.netflix $(1)/etc/pbr.user.netflix
+	$(INSTALL_DATA) ./files/pbr.user.aws $(1)/usr/share/pbr/pbr.user.aws
+	$(INSTALL_DATA) ./files/pbr.user.netflix $(1)/usr/share/pbr/pbr.user.netflix
 endef
 
 define Package/pbr/postinst

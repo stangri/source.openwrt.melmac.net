@@ -1,0 +1,13 @@
+#!/bin/sh
+
+uci -q batch <<-EOT
+	delete firewall.pbr
+	set firewall.pbr=include
+	set firewall.pbr.type=script
+	set firewall.pbr.path=/usr/share/pbr/pbr.firewall.include
+	set firewall.pbr.family=any
+	set firewall.pbr.reload=1
+	commit firewall
+EOT
+
+exit 0

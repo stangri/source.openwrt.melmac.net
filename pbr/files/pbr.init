@@ -435,7 +435,7 @@ insert_policy() {
 	mark=$(eval echo "\$mark_${iface//-/_}")
 
 	if [ "$ipv6Enabled" -eq 0 ] && { is_ipv6 "$laddr" || is_ipv6 "$raddr"; }; then
-		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$comment' as IPv6 support is disabled\\n"
+		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$name' as IPv6 support is disabled\\n"
 		return 1
 	fi
 
@@ -586,7 +586,7 @@ policy_process() {
 		uid="$1"
 		proto="$(str_to_lower "$proto")"
 		[ "$proto" = 'auto' ] && unset proto
-		output 2 "Routing '$comment' via $iface "
+		output 2 "Routing '$name' via $iface "
 		if [ -z "${laddr}${lport}${raddr}${rport}" ]; then
 			errorSummary="${errorSummary}${_ERROR_}: Policy '$name' has no source/destination parameters\\n"
 			output_fail; return 1;
