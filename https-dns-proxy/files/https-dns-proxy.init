@@ -9,10 +9,11 @@ START=80
 USE_PROCD=1
 
 if type extra_command 1>/dev/null 2>&1; then
+	extra_command 'hotplug_reload' 'Reload on hotplug event'
 	extra_command 'version' 'Show version information'
 else
 # shellcheck disable=SC2034
-	EXTRA_COMMANDS='version'
+	EXTRA_COMMANDS='hotplug_reload version'
 fi
 
 readonly PROG=/usr/sbin/https-dns-proxy
@@ -152,7 +153,7 @@ start_instance() {
 is_force_dns_active() { iptables-save | grep -q -w -- '--dport 53'; }
 
 start_service() {
-	local p=5053 c
+	local p=5053 c arg="$1"
 	config_load 'https-dns-proxy'
 	config_get dnsmasqConfig	'config' 'update_dnsmasq_config' '*'
 	config_get_bool forceDNS	'config' 'force_dns' '1'
@@ -160,7 +161,7 @@ start_service() {
 	dhcp_backup 'create'
 	config_load 'https-dns-proxy'
 	config_foreach start_instance 'https-dns-proxy'
-	if [ -n "$(uci -q changes dhcp)" ]; then
+	if [ -n "$(uci -q changes dhcp)" ] || [ "$arg" = 'on_hotplug' ] ; then
 		uci -q commit dhcp
 		[ -x /etc/init.d/dnsmasq ] && /etc/init.d/dnsmasq restart >/dev/null 2>&1
 	fi
@@ -180,6 +181,7 @@ service_triggers() {
 	procd_add_config_trigger "config.change" "https-dns-proxy" /etc/init.d/https-dns-proxy reload
 }
 
+hotplug_reload() { start_service 'on_hotplug'; service_triggers; }
 service_started() { procd_set_config_changed firewall; }
 service_stopped() { procd_set_config_changed firewall; }
 
