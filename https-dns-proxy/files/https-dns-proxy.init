@@ -178,7 +178,7 @@ stop_service() {
 }
 
 service_triggers() { procd_add_config_trigger "config.change" "https-dns-proxy" /etc/init.d/https-dns-proxy reload; }
-hotplug_reload() { start_service 'on_hotplug'; service_triggers; }
+hotplug_reload() { rc_procd start_service 'on_hotplug'; service_triggers; }
 service_started() { procd_set_config_changed firewall; }
 service_stopped() { procd_set_config_changed firewall; }
 
