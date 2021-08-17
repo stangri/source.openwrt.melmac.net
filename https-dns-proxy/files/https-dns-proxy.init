@@ -185,6 +185,8 @@ hotplug_reload() { start_service 'on_hotplug'; service_triggers; }
 service_started() { procd_set_config_changed firewall; }
 service_stopped() { procd_set_config_changed firewall; }
 
+hotplug_reload() { rc_procd start_service 'on_hotplug' && rc_procd service_triggers; }
+
 dnsmasq_add_doh_server() {
 	local cfg="$1" address="$2" port="$3"
 	case $address in
