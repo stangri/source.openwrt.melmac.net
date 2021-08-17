@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "$ACTION" = 'ifup' ] && [ "$INTERFACE" = 'wan' ]; then
+if [ "$ACTION" = 'ifup' ] && [ "$INTERFACE" = 'wan' ] && /etc/init.d/https-dns-proxy enabled; then
 	logger -t "https-dns-proxy" "Reloading https-dns-proxy due to $ACTION of $INTERFACE"
 	/etc/init.d/https-dns-proxy hotplug_reload
 fi
