@@ -33,6 +33,12 @@ It receives regular (UDP) DNS requests and issues them via DoH.
 Please see https://docs.openwrt.melmac.net/https-dns-proxy/ for more information.
 endef
 
+TARGET_CFLAGS += $(FPIC)
+TARGET_LDFLAGS += $(FPIC)
+MAKE_FLAGS += \
+	CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
+	LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS)"
+
 define Package/https-dns-proxy/conffiles
 /etc/config/https-dns-proxy
 endef
