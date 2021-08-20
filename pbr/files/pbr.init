@@ -267,13 +267,13 @@ load_package_config() {
 			srcIpset=0
 		fi
 	fi
-	if ! ipset help hash:net >/dev/null 2>&1; then
+	if ! ipset help hash:ip >/dev/null 2>&1; then
 		if [ "$destIpset" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
 			destIpset=0
 		fi
 		if [ "$srcIpset" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
 			srcIpset=0
 		fi
 	fi
