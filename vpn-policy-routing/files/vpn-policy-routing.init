@@ -243,17 +243,17 @@ load_package_config() {
 			dnsmasqIpsetSupported='0'
 		fi
 	fi
-	if ! ipset help hash:net >/dev/null 2>&1; then
+	if ! ipset help hash:ip >/dev/null 2>&1; then
 		if [ "$dnsmasqIpsetSupported" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: DNSMASQ ipsets are supported, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			errorSummary="${errorSummary}${_ERROR_}: DNSMASQ ipsets are supported, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
 			dnsmasqIpsetSupported='0'
 		fi
 		if [ "$destIpset" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
 			destIpset=0
 		fi
 		if [ "$srcIpset" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
 			srcIpset=0
 		fi
 	fi
@@ -708,10 +708,10 @@ EOF
 			ipt -t mangle -I VPR_PREROUTING -m dscp --dscp "${dscp}" -g "VPR_MARK${mark}" || s=1
 		fi
 		if [ -n "$ipsetSupported" ] && { [ "$dnsmasqIpsetSupported" -ne 0 ] || [ "$destIpset" -ne 0 ]; }; then
-			ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}" || s=1
+			ips 'create' "${iface}" 'hash:ip comment' && ips 'flush' "${iface}" || s=1
 		fi
 		if [ -n "$ipsetSupported" ] && [ "$srcIpset" -ne 0 ]; then
-			ips 'create' "${iface}_ip" 'hash:net comment' && ips 'flush' "${iface}_ip" || s=1
+			ips 'create' "${iface}_ip" 'hash:ip comment' && ips 'flush' "${iface}_ip" || s=1
 			ips 'create' "${iface}_mac" 'hash:mac comment' && ips 'flush' "${iface}_mac" || s=1
 		fi
 		if [ "$iface" = "$icmpIface" ]; then
@@ -861,7 +861,7 @@ process_tor_interface() {
 				ipt -t nat -N "VPR_${i}"
 				ipt -t nat "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
 			done
-			if ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}"; then
+			if ips 'create' "${iface}" 'hash:ip comment' && ips 'flush' "${iface}"; then
 				for i in $usedChainsList; do
 					ipt -t nat -I "VPR_${i}" -p udp -m udp --dport 53 -m set --match-set "${iface}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
 					ipt -t nat -I "VPR_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${iface}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-TCP" || s=1
