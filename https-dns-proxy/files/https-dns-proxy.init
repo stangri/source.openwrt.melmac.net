@@ -47,6 +47,7 @@ output_ok() { output "$_OK_"; }
 output_okn() { output "${_OK_}\\n"; }
 output_fail() { output "$_FAIL_"; }
 output_failn() { output "${_FAIL_}\\n"; }
+uci_ali() { [ -n "$1" ] && [ -n "$2" ] && ! str_contains "$(uci -q get "$1")" "$2" && uci -q add_list "${1}=${2}"; }
 
 dnsmasq_restart() { [ -x /etc/init.d/dnsmasq ] && /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
 
@@ -237,9 +238,7 @@ dnsmasq_add_doh_server() {
 		0.0.0.0|::ffff:0.0.0.0) address='127.0.0.1';;
 		::) address='::1';;
 	esac
-	if ! str_contains "$(uci -q get "dhcp.${cfg}.server")" "${address}#${port}"; then
-		uci -q add_list "dhcp.${cfg}.server=${address}#${port}"
-	fi
+	uci_ali "dhcp.${cfg}.server" "${address}#${port}"
 }
 
 dnsmasq_create_server_backup() {
