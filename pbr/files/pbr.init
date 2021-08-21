@@ -856,9 +856,9 @@ interface_process() {
 		create_default_ipset)
 			if [ -z "$reloadedIface" ] || [ "$iface" = "$reloadedIface" ]; then
 				if ips 'create_default' "$iface"; then
-					if ! iptables-save | grep -q -- "-A PBR_PREROUTING -m set --match-set pbr_${iface}_dst_ip src"; then
-						ipt -t mangle -A PBR_PREROUTING -m set --match-set "pbr_${iface}_dst_ip" src -g "PBR_MARK${ifaceMark}" || failFlag=1
-						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A PBR_PREROUTING -m set --match-set "pbr_${iface}6_dst_ip" src -g "PBR_MARK${ifaceMark}" || failFlag=1; fi
+					if ! iptables-save | grep -q -- "-A PBR_PREROUTING -m set --match-set pbr_${iface}_dst_ip dst"; then
+						ipt -t mangle -A PBR_PREROUTING -m set --match-set "pbr_${iface}_dst_ip" dst -g "PBR_MARK${ifaceMark}" || failFlag=1
+						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A PBR_PREROUTING -m set --match-set "pbr_${iface}6_dst_ip" dst -g "PBR_MARK${ifaceMark}" || failFlag=1; fi
 					fi
 				fi
 			fi
