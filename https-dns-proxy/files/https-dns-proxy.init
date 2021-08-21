@@ -217,13 +217,13 @@ stop_service() {
 }
 
 on_hotplug() { 
-	rc_procd stop_service 'on_hotplug'
+	procd_kill "$packageName"
 	rc_procd start_service 'on_hotplug'
 	service_started
 }
 
 on_reload() {
-	rc_procd stop_service 'on_reload'
+	procd_kill "$packageName"
 	rc_procd start_service 'on_reload'
 	service_started
 }
