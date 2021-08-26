@@ -3,7 +3,7 @@
 # Credits to https://forum.openwrt.org/u/dscpl for api.hackertarget.com code.
 # Credits to https://github.com/kkeker and https://github.com/tophirsch for api.bgpview.io code.
 
-TARGET_IPSET='pbr_wan_dst_ip'
+TARGET_IPSET='pbr_wan_dst_net'
 TARGET_ASN='2906'
 TARGET_FNAME="/var/pbr_tmp_AS${TARGET_ASN}"
 #DB_SOURCE='ipinfo.io'
@@ -11,6 +11,8 @@ TARGET_FNAME="/var/pbr_tmp_AS${TARGET_ASN}"
 DB_SOURCE='api.bgpview.io'
 
 _ret=1
+
+ipset list "$TARGET_IPSET" >/dev/null 2>&1 || return 1
 
 if [ ! -s "$TARGET_FNAME" ]; then
 	if [ "$DB_SOURCE" = "ipinfo.io" ]; then

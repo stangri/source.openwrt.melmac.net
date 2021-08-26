@@ -11,7 +11,7 @@ START=94
 # shellcheck disable=SC2034
 USE_PROCD=1
 
-if type extra_command 1>/dev/null 2>&1; then
+if type extra_command >/dev/null 2>&1; then
 	extra_command 'support' "Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
 		Use '-p' option to automatically upload data under VPR paste.ee account
@@ -43,9 +43,10 @@ readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
 
 gatewaySummary=''; errorSummary=''; warningSummary='';
-serviceEnabled=''; verbosity=''; strictMode=''; 
+serviceEnabled=''; verbosity=''; strictMode=''; ipv6Enabled=''; 
 wanTableID=''; wanMark=''; wanPriority=''; fwMask=''; 
-ipv6Enabled=''; srcIpset=''; destIpset=''; resolverIpset=''; dnsmasqIpsetSupported='';
+destIpset=''; srcIpset=''; resolverIpset=''; userIpset='0';
+destIpsetSupported='0'; srcIpsetSupported='0'; resolverIpsetSupported='0';  userIpsetSupported='0';
 wanIface4=''; wanIface6=''; ifaceMark=''; ifaceTableID=''; ifacePriority='';
 ifAll=''; ifSupported=''; ignoredIfaces=''; supportedIfaces=''; icmpIface='';
 wanGW4=''; wanGW6=''; bootTimeout=''; insertOption='';
@@ -119,6 +120,7 @@ pbr_get_gateway6() {
 	fi
 	eval "$1"='$gw'
 }
+is_ipset_type_supported() { ipset help hash:"$1" >/dev/null 2>&1; }
 is_l2tp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "l2tp" ]; }
 is_oc() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:11}" = "openconnect" ]; }
 is_ovpn() { local dev i; for i in ifname device; do [ -z "$dev" ] && dev="$(uci -q get "network.${1}.${i}")"; done; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
@@ -202,11 +204,11 @@ load_package_config() {
 	[ "$configLoaded" -eq 0 ] || return 0
 
 	config_load "$packageName"
-	config_get_bool serviceEnabled      'config' 'enabled' 0
-	config_get_bool strictMode          'config' 'strict_enforcement' 1
-	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' 0
-	config_get_bool destIpset           'config' 'dest_ipset' 0
-	config_get_bool srcIpset            'config' 'src_ipset' 0
+	config_get_bool serviceEnabled      'config' 'enabled' '0'
+	config_get_bool strictMode          'config' 'strict_enforcement' '1'
+	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' '0'
+	config_get_bool destIpset           'config' 'dest_ipset' '0'
+	config_get_bool srcIpset            'config' 'src_ipset' '0'
 	config_get resolverIpset            'config' 'resolver_ipset' 'dnsmasq.ipset'
 	config_get verbosity                'config' 'verbosity' '2'
 	config_get wanTableID               'config' 'wan_tid' '201'
@@ -242,46 +244,49 @@ load_package_config() {
 		append|-a|-A|*) insertOption='-A';;
 	esac
 
-	if [ "$resolverIpset" = 'dnsmasq.ipset' ]; then
-		dnsmasqIpsetSupported='1'
-	else
-		dnsmasqIpsetSupported='0'
+	case $resolverIpset in
+		none) : ;;
+		dnsmasq.ipset|*)
+			if ! dnsmasq -v 2>/dev/null | grep -q 'no-ipset' && dnsmasq -v 2>/dev/null | grep -q 'ipset'; then
+				resolverIpsetSupported='1'
+			fi
+		;;
+	esac
+
+	if is_ipset_type_supported 'ip' && is_ipset_type_supported 'net' && \
+		is_ipset_type_supported 'mac'; then
+			destIpsetSupported='1'
+			srcIpsetSupported='1'
+			userIpsetSupported='1'
+	elif is_ipset_type_supported 'ip' && is_ipset_type_supported 'net'; then
+			destIpsetSupported='1'
+			userIpsetSupported='1'
+	elif is_ipset_type_supported 'ip' && is_ipset_type_supported 'mac'; then
+			srcIpsetSupported='1'
+	elif is_ipset_type_supported 'ip'; then
+			destIpsetSupported='1'
 	fi
-	if dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'; then
-		if [ "$dnsmasqIpsetSupported" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Resolver ipset support (dnsmasq.ipset) is enabled in $packageName, but DNSMASQ ipsets are not supported on this system!\\n"
-			dnsmasqIpsetSupported='0'
-		fi
+
+	if [ "$resolverIpset" != 'none' ] && [ "$resolverIpsetSupported" -ne 1 ]; then
+			errorSummary="${errorSummary}${_ERROR_}: Resolver ipset support (${resolverIpset}) is enabled in $packageName, but resolver ipsets are not supported on this system!\\n"
+		resolverIpset='none'
 	fi
-	if ! ipset help hash:ip >/dev/null 2>&1; then
-		if [ "$dnsmasqIpsetSupported" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: DNSMASQ ipsets are supported, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
-			dnsmasqIpsetSupported='0'
-		fi
-		if [ "$destIpset" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
-			destIpset=0
-		fi
-		if [ "$srcIpset" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
-			srcIpset=0
-		fi
+
+	if [ "$destIpset" -ne 0 ] && [ "$destIpsetSupported" -ne 1 ]; then
+		errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
+		destIpset='0'
 	fi
-	if ! ipset help hash:ip >/dev/null 2>&1; then
-		if [ "$destIpset" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
-			destIpset=0
-		fi
-		if [ "$srcIpset" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
-			srcIpset=0
-		fi
+
+	if [ "$srcIpset" -ne 0 ] && [ "$srcIpsetSupported" -ne 1 ]; then
+		errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' or 'hash:mac' type!\\n"
+		srcIpset='0'
 	fi
-	if ! ipset help hash:mac >/dev/null 2>&1; then
-		if [ "$srcIpset" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:mac' type!\\n"
-			srcIpset=0
-		fi
+
+	is_config_enabled 'include' && userIpset='1'
+
+	if [ "$userIpset" -ne 0 ] && [ "$userIpsetSupported" -ne 1 ]; then
+		errorSummary="${errorSummary}${_ERROR_}: User scripts are enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' or 'hash:net' type!\\n"
+		userIpset='0'
 	fi
 
 	configLoaded='1'
@@ -359,55 +364,81 @@ ips() {
 		ipset6="pbr_${iface}6_${target}_${type}_${uid}"
 	fi
 
-	if [ "$dnsmasqIpsetSupported" -eq 0 ] && \
-		[ "$destIpset" -eq 0 ] && [ "$srcIpset" -eq 0 ]; then
+	if [ "$destIpset" -eq 0 ] && [ "$srcIpset" -eq 0 ] && \
+		 [ "$resolverIpsetSupported" -eq 0 ] && [ "$userIpsetSupported" -eq 0 ]; then
 		return 1
 	fi
 
 	case "$command" in
-		add_dnsmasq)
-			[ "$resolverIpset" = "dnsmasq.ipset" ] || return 1
-			if [ "$dnsmasqIpsetSupported" -eq 0 ]; then
-				warningSummary="${warningSummary}${_WARNING_}: The 'resolver_ipset' is set to 'dnsmasq.ipset', but DNSMASQ ipsets are not supported on this system!\\n"
-				failFlag=1
-			elif [ "$ipv6Enabled" -ne 0 ]; then
-				echo "ipset=/${param}/${ipset},${ipset6} # $comment" >> "$dnsmasqFile" || failFlag=1
-			else
-				echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlag=1
-			fi
-			;;
+		add_resolver)
+			[ "$resolverIpsetSupported" -eq 0 ] && return 1
+			case "$resolverIpset" in
+				dnsmasq.ipset)
+					if [ "$ipv6Enabled" -ne 0 ]; then
+						echo "ipset=/${param}/${ipset},${ipset6} # $comment" >> "$dnsmasqFile" || failFlag=1
+					else
+						echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlag=1
+					fi
+				;;
+				*) return 1;;
+			esac
+		;;
 		add)
 			[ "$destIpset" -eq 0 ] && [ "$target" = 'dst' ] && return 1
 			[ "$srcIpset" -eq 0 ] && [ "$target" = 'src' ] && return 1
+			ipset -q -! "$command" "$ipset" $param comment "$comment" 2>/dev/null || failFlag=1
 			if [ "$ipv6Enabled" -ne 0 ] && [ "$type" != "mac" ]; then
 				ipset -q -! "$command" "$ipset6" $param comment "$comment" 2>/dev/null || failFlag=1
 			fi
-			ipset -q -! "$command" "$ipset" $param comment "$comment" 2>/dev/null || failFlag=1
-			;;
-		create|create_default)
+		;;
+		create)
 			param="hash:$type comment"
 			[ "$destIpset" -eq 0 ] && [ "$target" = 'dst' ] && return 1
 			[ "$srcIpset" -eq 0 ] && [ "$target" = 'src' ] && return 1
+			ipset -q -! create "$ipset" $param 2>/dev/null || failFlag=1
 			if [ "$ipv6Enabled" -ne 0 ] && [ "$type" != "mac" ]; then
 				ipset -q -! create "$ipset6" $param family inet6 2>/dev/null || failFlag=1
 			fi
-			ipset -q -! create "$ipset" $param 2>/dev/null || failFlag=1
-			;;
-		create_dnsmasq)
-			param="hash:$type comment"
-			[ "$dnsmasqIpsetSupported" -eq 0 ] && [ "$target" = 'dst' ] && return 1
-			[ "$target" = 'src' ] && return 1
-			if [ "$ipv6Enabled" -ne 0 ] && [ "$type" != "mac" ]; then
-				ipset -q -! create "$ipset6" $param family inet6 2>/dev/null || failFlag=1
-			fi
-			ipset -q -! create "$ipset" $param 2>/dev/null || failFlag=1
-			;;
+		;;
+		create_default)
+			[ "$userIpsetSupported" -eq 0 ] && return 1
+			for type in 'ip' 'net'; do
+				param="hash:$type comment"
+				ipset="pbr_${iface}_${target}_${type}"
+				ipset6="pbr_${iface}6_${target}_${type}"
+				ipset -q -! create "$ipset" $param 2>/dev/null || failFlag=1
+				if [ "$ipv6Enabled" -ne 0 ]; then
+					ipset -q -! create "$ipset6" $param family inet6 2>/dev/null || failFlag=1
+				fi
+			done
+		;;
+		create_resolver)
+			[ "$resolverIpsetSupported" -eq 0 ] && return 1
+			case "$resolverIpset" in
+				dnsmasq.ipset)
+					param="hash:$type comment"
+					ipset -q -! create "$ipset" $param 2>/dev/null || failFlag=1
+					if [ "$ipv6Enabled" -ne 0 ]; then
+						ipset -q -! create "$ipset6" $param family inet6 2>/dev/null || failFlag=1
+					fi
+				;;
+				*) return 1;;
+			esac
+		;;
+		delete_default)
+			for type in 'ip' 'net'; do
+				ipset="pbr_${iface}_${target}_${type}"
+				ipset6="pbr_${iface}6_${target}_${type}"
+				ipset -q -! flush "$ipset" 2>/dev/null
+				ipset -q -! flush "$ipset6" family inet6 2>/dev/null
+			done
+		;;
 		destroy|flush)
-			ipset -q -! "$command" "$ipset6" 2>/dev/null || failFlag=1
-			ipset -q -! "$command" "$ipset" 2>/dev/null || failFlag=1
-			;;
+			ipset -q -! "$command" "$ipset" 2>/dev/null
+			ipset -q -! "$command" "$ipset6" 2>/dev/null
+		;;
 	esac
-	return $failFlag
+	return "$failFlag"
 }
 
 insert_tor_policy() {
@@ -515,7 +546,6 @@ insert_policy() {
 			param="$param -m multiport $negation --sport ${value//-/:}"
 		fi
 
-
 		if [ -n "$raddr" ]; then 
 			if [ "${raddr:0:1}" = "!" ]; then
 				negation='!'; value="${raddr:1}"
@@ -532,8 +562,8 @@ insert_policy() {
 				fi
 			elif is_domain "$value"; then
 				local target='dst' type='ip'
-				if ips 'create_dnsmasq' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
-					ips 'add_dnsmasq' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
+				if ips 'create_resolver' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
+					ips 'add_resolver' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
 					param="$param -m set $negation --match-set pbr_${iface}_${target}_${type}_${uid} $target"
 				elif ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
@@ -778,6 +808,13 @@ EOF
 	return $s
 }
 
+interface_process_prepare() {
+	config_load 'network'
+	ifaceTableID="$wanTableID"
+	ifaceMark="$(printf '0x%x' "$wanMark")"
+	ifacePriority="$wanPriority"
+}
+
 interface_process() {
 	local gw4 gw6 dev dev6 s=0 dscp iface="$1" action="$2" reloadedIface="$3" displayText
 
@@ -813,6 +850,7 @@ interface_process() {
 			[ "$ipv6Enabled" -ne 0 ] && displayText="${displayText}/${gw6:-::/0}"
 			is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
 			gatewaySummary="${gatewaySummary}${displayText}\\n"
+			ips 'delete_default' "$iface"
 			;;
 		destroy)
 			table_destroy "${ifaceTableID}" "${iface}" "${ifaceMark}"
@@ -852,6 +890,7 @@ interface_process() {
 				is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
 				gatewaySummary="${gatewaySummary}${displayText}\\n"
 			fi
+			ips 'delete_default' "$iface"
 			;;
 		create_default_ipset)
 			if [ -z "$reloadedIface" ] || [ "$iface" = "$reloadedIface" ]; then
@@ -859,6 +898,10 @@ interface_process() {
 					if ! iptables-save | grep -q -- "-A PBR_PREROUTING -m set --match-set pbr_${iface}_dst_ip dst"; then
 						ipt -t mangle -A PBR_PREROUTING -m set --match-set "pbr_${iface}_dst_ip" dst -g "PBR_MARK${ifaceMark}" || failFlag=1
 						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A PBR_PREROUTING -m set --match-set "pbr_${iface}6_dst_ip" dst -g "PBR_MARK${ifaceMark}" || failFlag=1; fi
+					fi
+					if ! iptables-save | grep -q -- "-A PBR_PREROUTING -m set --match-set pbr_${iface}_dst_net dst"; then
+						ipt -t mangle -A PBR_PREROUTING -m set --match-set "pbr_${iface}_dst_net" dst -g "PBR_MARK${ifaceMark}" || failFlag=1
+						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A PBR_PREROUTING -m set --match-set "pbr_${iface}6_dst_net" dst -g "PBR_MARK${ifaceMark}" || failFlag=1; fi
 					fi
 				fi
 			fi
@@ -977,7 +1020,7 @@ start_service() {
 	case $serviceStartTrigger in
 		on_iface_reload)
 			output 1 "Reloading Interface: $reloadedIface "
-			config_load 'network'; config_foreach interface_process 'interface' 'create' "$reloadedIface";
+			interface_process_prepare; config_foreach interface_process 'interface' 'create' "$reloadedIface";
 			output 1 '\n'
 			;;
 		on_reload)
@@ -989,7 +1032,7 @@ start_service() {
 				ipt -t mangle -N "PBR_${i}"
 				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "PBR_${i}"
 			done
-			config_load 'network'; config_foreach interface_process 'interface' 'enumerate';
+			interface_process_prepare; config_foreach interface_process 'interface' 'enumerate';
 			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'enumerate';
 			if is_config_enabled 'policy'; then
 				output 1 'Processing Policies '
@@ -997,7 +1040,7 @@ start_service() {
 				output 1 '\n'
 			fi
 			if is_config_enabled 'include'; then
-				config_load 'network'; config_foreach interface_process 'interface' 'create_default_ipset';
+				interface_process_prepare; config_foreach interface_process 'interface' 'create_default_ipset';
 				output 1 'Processing User File(s) '
 				config_load "$packageName"; config_foreach user_file_process 'include';
 				output 1 '\n'
@@ -1023,7 +1066,7 @@ start_service() {
 				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "PBR_${i}"
 			done
 			output 1 'Processing Interfaces '
-			config_load 'network'; config_foreach interface_process 'interface' 'create';
+			interface_process_prepare; config_foreach interface_process 'interface' 'create';
 			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'create';
 			ip route flush cache
 			output 1 '\n'
@@ -1033,7 +1076,7 @@ start_service() {
 				output 1 '\n'
 			fi
 			if is_config_enabled 'include'; then
-				config_load 'network'; config_foreach interface_process 'interface' 'create_default_ipset';
+				interface_process_prepare; config_foreach interface_process 'interface' 'create_default_ipset';
 				output 1 'Processing User File(s) '
 				config_load "$packageName"; config_foreach user_file_process 'include';
 				output 1 '\n'
@@ -1165,7 +1208,7 @@ service_triggers() {
 
 	procd_open_trigger
 		procd_add_reload_trigger 'openvpn'
-		if type procd_add_service_trigger 1>/dev/null 2>&1; then
+		if type procd_add_service_trigger >/dev/null 2>&1; then
 			procd_add_service_trigger "service.restart" "firewall" /etc/init.d/${packageName} reload
 		fi
 		procd_add_config_trigger "config.change" "${packageName}" /etc/init.d/${packageName} reload
@@ -1239,7 +1282,7 @@ support() {
 		for j in Mangle NAT; do
 			if [ -z "$set_d" ]; then
 				for i in $usedChainsList; do
-					if iptables -v -t "$(str_to_lower $j)" -S "PBR_${i}" 1>/dev/null 2>&1; then
+					if iptables -v -t "$(str_to_lower $j)" -S "PBR_${i}" >/dev/null 2>&1; then
 						echo "$_SEPARATOR_"
 						echo "$j IP Table: $i"
 						iptables -v -t "$(str_to_lower $j)" -S "PBR_${i}"
@@ -1262,7 +1305,7 @@ support() {
 			fi
 			i=0; ifaceMark="$wanMark";
 			while [ $i -lt $tableCount ]; do
-				if iptables -v -t "$(str_to_lower $j)" -S "PBR_MARK${ifaceMark}" 1>/dev/null 2>&1; then
+				if iptables -v -t "$(str_to_lower $j)" -S "PBR_MARK${ifaceMark}" >/dev/null 2>&1; then
 					echo "$_SEPARATOR_"
 					echo "$j IP Table MARK Chain: PBR_MARK${ifaceMark}"
 					iptables -v -t "$(str_to_lower $j)" -S "PBR_MARK${ifaceMark}"
