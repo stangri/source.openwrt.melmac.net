@@ -660,8 +660,9 @@ table_create() {
 		return 1
 	fi
 
-	sed -i "/$iface/d" /etc/iproute2/rt_tables
-	ip route flush table "$tid" >/dev/null 2>&1
+#	sed -i "/$iface/d" /etc/iproute2/rt_tables
+#	ip route flush table "$tid" >/dev/null 2>&1
+	table_destroy "$tid" "$iface" "$mark"
 
 	if [ -n "$gw4" ] || [ "$strictMode" -ne 0 ]; then
 		echo "$tid $iface" >> /etc/iproute2/rt_tables
