@@ -9,12 +9,10 @@ START=80
 USE_PROCD=1
 
 if type extra_command 1>/dev/null 2>&1; then
-	extra_command 'on_hotplug' 'Quick-restart on hotplug event'
-	extra_command 'on_reload' 'Quick-restart on reload event'
 	extra_command 'version' 'Show version information'
 else
 # shellcheck disable=SC2034
-	EXTRA_COMMANDS='on_hotplug on_reload version'
+	EXTRA_COMMANDS='version'
 fi
 
 readonly packageName='https-dns-proxy'
@@ -49,7 +47,7 @@ output_fail() { output "$_FAIL_"; }
 output_failn() { output "${_FAIL_}\\n"; }
 uci_ali() { [ -n "$1" ] && [ -n "$2" ] && ! str_contains "$(uci -q get "$1")" "$2" && uci -q add_list "${1}=${2}"; }
 
-dnsmasq_restart() { [ -x /etc/init.d/dnsmasq ] && /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
+dnsmasq_restart() { [ -x /etc/init.d/dnsmasq ] || return 0; /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
 
 version() { echo "$PKG_VERSION"; }
 
@@ -136,7 +134,7 @@ start_instance() {
 		json_add_array firewall
 		for p in $forceDNSPorts; do
 			if netstat -tuln | grep 'LISTEN' | grep ":${p}" >/dev/null 2>&1 || [ "$p" = '53' ]; then
-				json_add_object ""
+				json_add_object ''
 				json_add_string type redirect
 				json_add_string target DNAT
 				json_add_string src lan
@@ -146,7 +144,7 @@ start_instance() {
 				json_add_boolean reflection 0
 				json_close_object
 			else
-				json_add_object ""
+				json_add_object ''
 				json_add_string type rule
 				json_add_string src lan
 				json_add_string dest '*'
@@ -184,8 +182,6 @@ start_instance() {
 	fi
 }
 
-is_force_dns_active() { iptables-save | grep -q -w -- '--dport 53'; }
-
 start_service() {
 	local port=5053
 	output "Starting $serviceName "
@@ -204,31 +200,20 @@ start_service() {
 }
 
 stop_service() {
-	[ -n "$1" ] && return 0
+	local s=0
 	output "Stopping $serviceName "
 	config_load "$packageName"
 	config_get dnsmasqConfig 'config' 'update_dnsmasq_config' '*'
 	dhcp_backup 'restore'
 	if [ -n "$(uci -q changes dhcp)" ]; then
 		uci -q commit dhcp
-		dnsmasq_restart
+		dnsmasq_restart || s=1
 	fi
-	output_okn
+# shellcheck disable=SC2015
+	[ "$s" -eq 0 ] && output_okn || output_failn
 }
 
-on_hotplug() { 
-	procd_kill "$packageName"
-	rc_procd start_service 'on_hotplug'
-	service_started
-}
-
-on_reload() {
-	procd_kill "$packageName"
-	rc_procd start_service 'on_reload'
-	service_started
-}
-
-service_triggers() { procd_add_config_trigger "config.change" "$packageName" /etc/init.d/https-dns-proxy 'on_reload'; }
+service_triggers() { procd_add_config_trigger "config.change" "$packageName" "/etc/init.d/${packageName}" restart; }
 service_started() { procd_set_config_changed firewall; }
 service_stopped() { procd_set_config_changed firewall; }
 
