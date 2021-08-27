@@ -45,13 +45,13 @@ define Package/pbr/install
 	$(INSTALL_BIN) ./files/pbr.init $(1)/etc/init.d/pbr
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
 	$(INSTALL_CONF) ./files/pbr.config $(1)/etc/config/pbr
-	$(INSTALL_BIN) ./files/pbr.defaults $(1)/etc/uci-defaults/99-pbr
-	$(INSTALL_DATA) ./files/pbr.firewall.include $(1)/usr/share/pbr/pbr.firewall.include
-	$(INSTALL_DATA) ./files/pbr.hotplug.firewall $(1)/etc/hotplug.d/firewall/70-pbr
 	$(INSTALL_DATA) ./files/pbr.hotplug.iface $(1)/etc/hotplug.d/iface/70-pbr
 	$(INSTALL_DATA) ./files/pbr.user.aws $(1)/usr/share/pbr/pbr.user.aws
 	$(INSTALL_DATA) ./files/pbr.user.netflix $(1)/usr/share/pbr/pbr.user.netflix
 endef
+#	$(INSTALL_BIN) ./files/pbr.defaults $(1)/etc/uci-defaults/99-pbr
+#	$(INSTALL_DATA) ./files/pbr.firewall.include $(1)/usr/share/pbr/pbr.firewall.include
+#	$(INSTALL_DATA) ./files/pbr.hotplug.firewall $(1)/etc/hotplug.d/firewall/70-pbr
 
 define Package/pbr/postinst
 	#!/bin/sh
