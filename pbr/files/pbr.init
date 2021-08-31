@@ -32,6 +32,8 @@ fi
 
 readonly packageName='pbr'
 readonly serviceName="$packageName $PKG_VERSION"
+readonly packageIpsPrefix='pbr'
+readonly packageIptPrefix='PBR'
 readonly jsonFile="/var/run/${packageName}.json"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
 readonly sharedMemoryOutput="/dev/shm/$packageName-output"
@@ -49,7 +51,7 @@ destIpset=''; srcIpset=''; resolverIpset=''; userIpset='0';
 destIpsetSupported='0'; srcIpsetSupported='0'; resolverIpsetSupported='0';  userIpsetSupported='0';
 wanIface4=''; wanIface6=''; ifaceMark=''; ifaceTableID=''; ifacePriority='';
 ifAll=''; ifSupported=''; ignoredIfaces=''; supportedIfaces=''; icmpIface='';
-wanGW4=''; wanGW6=''; bootTimeout=''; insertOption='';
+wanGW4=''; wanGW6=''; bootTimeout=''; insertOption=''; secureReload='';
 webuiChainColumn=''; webuiShowIgnore='';
 procdReloadDelay=''; serviceStartTrigger='';
 processPolicyError=''; processPolicyWarning='';
@@ -152,8 +154,6 @@ is_ipv6_global() { [ "${1:0:4}" = "2001" ]; }
 is_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
 is_domain() { str_contains "$1" '[a-zA-Z]'; }
 is_phys_dev() { [ "${1:0:1}" = "@" ] && ip l show | grep -E -q "^\\d+\\W+${1:1}"; }
-is_turris() { /bin/ubus -S call system board | /bin/grep 'Turris' | /bin/grep -q '15.05'; }
-is_chaos_calmer() { ubus -S call system board | grep -q 'Chaos Calmer'; }
 dnsmasq_kill() { killall -q -s HUP dnsmasq; }
 dnsmasq_restart() { output 3 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
 is_default_dev() { [ "$1" = "$(ip -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
@@ -189,6 +189,38 @@ append_chains_targets() {
 }
 # shellcheck disable=SC2016
 resolveip_to_ipt() { resolveip "$1" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d'; }
+insert_lock() {
+	local s=0 lan_subnet wan_device
+	[ "$secureReload" -ne 0 ] || return 0
+	output 3 'Activating Secure Reload '
+	network_get_subnet lan_subnet "lan"
+	network_get_physdev wan_device "wan"
+	iptables -N "${packageIptPrefix}_KILLSWITCH" >/dev/null 2>&1 || s=1
+	iptables -A "${packageIptPrefix}_KILLSWITCH" -s "$lan_subnet" -o "$wan_device" -j REJECT >/dev/null 2>&1 || s=1
+	iptables -I FORWARD -j "${packageIptPrefix}_KILLSWITCH" >/dev/null 2>&1 || s=1
+	if [ "$s" -eq 0 ]; then
+		output_okn
+	else
+		output_failn
+	fi
+}
+
+remove_lock() {
+	local s=0
+	if [ "$secureReload" -ne 0 ]; then
+		output 3 'Deactivating Secure Reload '
+	fi
+	iptables -D FORWARD -j "${packageIptPrefix}_KILLSWITCH" >/dev/null 2>&1 || s=1
+	iptables -F "${packageIptPrefix}_KILLSWITCH" >/dev/null 2>&1 || s=1
+	iptables -X "${packageIptPrefix}_KILLSWITCH" >/dev/null 2>&1 || s=1
+	if [ "$secureReload" -ne 0 ]; then
+		if [ "$s" -eq 0 ]; then
+			output_okn
+		else
+			output_failn
+		fi
+	fi
+}
 
 check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
 
@@ -209,6 +241,7 @@ load_package_config() {
 	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' '0'
 	config_get_bool destIpset           'config' 'dest_ipset' '0'
 	config_get_bool srcIpset            'config' 'src_ipset' '0'
+	config_get_bool secureReload        'config' 'secure_reload' '0'
 	config_get resolverIpset            'config' 'resolver_ipset' 'dnsmasq.ipset'
 	config_get verbosity                'config' 'verbosity' '2'
 	config_get wanTableID               'config' 'wan_tid' '201'
@@ -357,11 +390,11 @@ ips() {
 	local ipset ipset6
 	local failFlag=0 mark
 	if [ -z "$uid" ]; then
-		ipset="pbr_${iface}_${target}_${type}"
-		ipset6="pbr_${iface}6_${target}_${type}"
+		ipset="${packageIpsPrefix}_${iface}_${target}_${type}"
+		ipset6="${packageIpsPrefix}_${iface}6_${target}_${type}"
 	else
-		ipset="pbr_${iface}_${target}_${type}_${uid}"
-		ipset6="pbr_${iface}6_${target}_${type}_${uid}"
+		ipset="${packageIpsPrefix}_${iface}_${target}_${type}_${uid}"
+		ipset6="${packageIpsPrefix}_${iface}6_${target}_${type}_${uid}"
 	fi
 
 	if [ "$destIpset" -eq 0 ] && [ "$srcIpset" -eq 0 ] && \
@@ -404,8 +437,8 @@ ips() {
 			[ "$userIpsetSupported" -eq 0 ] && return 1
 			for type in 'ip' 'net'; do
 				param="hash:$type comment"
-				ipset="pbr_${iface}_${target}_${type}"
-				ipset6="pbr_${iface}6_${target}_${type}"
+				ipset="${packageIpsPrefix}_${iface}_${target}_${type}"
+				ipset6="${packageIpsPrefix}_${iface}6_${target}_${type}"
 				ipset -q -! create "$ipset" $param 2>/dev/null || failFlag=1
 				if [ "$ipv6Enabled" -ne 0 ]; then
 					ipset -q -! create "$ipset6" $param family inet6 2>/dev/null || failFlag=1
@@ -427,8 +460,8 @@ ips() {
 		;;
 		delete_default)
 			for type in 'ip' 'net'; do
-				ipset="pbr_${iface}_${target}_${type}"
-				ipset6="pbr_${iface}6_${target}_${type}"
+				ipset="${packageIpsPrefix}_${iface}_${target}_${type}"
+				ipset6="${packageIpsPrefix}_${iface}6_${target}_${type}"
 				ipset -q -! flush "$ipset" 2>/dev/null
 				ipset -q -! flush "$ipset6" family inet6 2>/dev/null
 			done
@@ -471,7 +504,7 @@ insert_policy() {
 	fi
 
 	if [ -n "$mark" ]; then
-		dest="-g PBR_MARK${mark}"
+		dest="-g ${packageIptPrefix}_MARK${mark}"
 	elif [ "$iface" = "ignore" ]; then
 		dest="-j RETURN"
 	else
@@ -494,12 +527,12 @@ insert_policy() {
 
 	for i in $proto; do
 		if [ "$i" = 'all' ]; then
-			param="-t mangle ${ipInsertOption} PBR_${chain} $dest"
+			param="-t mangle ${ipInsertOption} ${packageIptPrefix}_${chain} $dest"
 		elif ! is_supported_protocol "$i"; then
 			processPolicyError="${processPolicyError}${_ERROR_}: Unknown protocol '$i' in policy '$name'\\n"
 			return 1
 		else
-			param="-t mangle ${ipInsertOption} PBR_${chain} $dest -p $i"
+			param="-t mangle ${ipInsertOption} ${packageIptPrefix}_${chain} $dest -p $i"
 		fi
 
 		if [ -n "$laddr" ]; then
@@ -514,7 +547,7 @@ insert_policy() {
 				local target='src' type='net'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $laddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $laddr" "$value"; then
-					param="$param -m set $negation --match-set pbr_${iface}_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${packageIpsPrefix}_${iface}_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -s $value"
 				fi
@@ -522,7 +555,7 @@ insert_policy() {
 				local target='src' type='mac'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $laddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $laddr" "$value"; then
-					param="$param -m set $negation --match-set pbr_${iface}_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${packageIpsPrefix}_${iface}_${target}_${type}_${uid} $target"
 				else
 					param="$param -m mac $negation --mac-source $value"
 				fi
@@ -530,7 +563,7 @@ insert_policy() {
 				local target='src' type='ip'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $laddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $laddr" "$value"; then
-					param="$param -m set $negation --match-set pbr_${iface}_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${packageIpsPrefix}_${iface}_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -s $(resolveip_to_ipt "$value")"
 				fi
@@ -556,7 +589,7 @@ insert_policy() {
 				local target='dst' type='net'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
-					param="$param -m set $negation --match-set pbr_${iface}_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${packageIpsPrefix}_${iface}_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -d $value"
 				fi
@@ -564,10 +597,10 @@ insert_policy() {
 				local target='dst' type='ip'
 				if ips 'create_resolver' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add_resolver' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
-					param="$param -m set $negation --match-set pbr_${iface}_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${packageIpsPrefix}_${iface}_${target}_${type}_${uid} $target"
 				elif ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
-					param="$param -m set $negation --match-set pbr_${iface}_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${packageIpsPrefix}_${iface}_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -d $(resolveip_to_ipt "$value")"
 				fi
@@ -575,7 +608,7 @@ insert_policy() {
 				local target='dst' type='ip'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
-					param="$param -m set $negation --match-set pbr_${iface}_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${packageIpsPrefix}_${iface}_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -d $value"
 				fi
@@ -682,11 +715,11 @@ policy_destroy_ipsets() {
 table_destroy() {
 	local tid="$1" iface="$2" mark="$3"
 	if [ -n "$tid" ] && [ -n "$iface" ] && [ -n "$mark" ]; then
-		ipt -t mangle -F "PBR_MARK${mark}"
-		ipt -t mangle -X "PBR_MARK${mark}"
+		ipt -t mangle -F "${packageIptPrefix}_MARK${mark}"
+		ipt -t mangle -X "${packageIptPrefix}_MARK${mark}"
 		ip rule del fwmark "$mark/$fwMask" table "$tid" >/dev/null 2>&1
 		ip route flush table "$tid" >/dev/null 2>&1
-		ips 'flush' "pbr_${iface}_dst_ip"; ips 'destroy' "pbr_${iface}_dst_ip";
+		ips 'flush' "${packageIpsPrefix}_${iface}_dst_ip"; ips 'destroy' "${packageIpsPrefix}_${iface}_dst_ip";
 		sed -i "/$iface/d" /etc/iproute2/rt_tables
 		return 0
 	else
@@ -724,9 +757,9 @@ EOF
 		if [ -z "$(ip rule list fwmark "${mark}/${fwMask}" table "$tid")" ]; then
 			ip rule add fwmark "${mark}/${fwMask}" table "$tid" priority "$priority" || ipv4_error=1
 		fi
-		ipt -t mangle -N "PBR_MARK${mark}" || ipv4_error=1
-		ipt -t mangle -A "PBR_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
-		ipt -t mangle -A "PBR_MARK${mark}" -j RETURN || ipv4_error=1
+		ipt -t mangle -N "${packageIptPrefix}_MARK${mark}" || ipv4_error=1
+		ipt -t mangle -A "${packageIptPrefix}_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
+		ipt -t mangle -A "${packageIptPrefix}_MARK${mark}" -j RETURN || ipv4_error=1
 	fi
 
 	if [ "$ipv6Enabled" -ne 0 ]; then
@@ -748,10 +781,10 @@ EOF
 	if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
 		dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
 		if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
-			ipt -t mangle -I PBR_PREROUTING -m dscp --dscp "${dscp}" -g "PBR_MARK${mark}" || s=1
+			ipt -t mangle -I "${packageIptPrefix}_PREROUTING" -m dscp --dscp "${dscp}" -g "${packageIptPrefix}_MARK${mark}" || s=1
 		fi
 		if [ "$iface" = "$icmpIface" ]; then
-			ipt -t mangle -I PBR_OUTPUT -p icmp -g "PBR_MARK${mark}" || s=1
+			ipt -t mangle -I "${packageIptPrefix}_OUTPUT" -p icmp -g "${packageIptPrefix}_MARK${mark}" || s=1
 		fi
 	else
 		s=1
@@ -796,10 +829,10 @@ EOF
 	if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
 		dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
 		if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
-			ipt -t mangle -I PBR_PREROUTING -m dscp --dscp "${dscp}" -g "PBR_MARK${mark}" || s=1
+			ipt -t mangle -I "${packageIptPrefix}_PREROUTING" -m dscp --dscp "${dscp}" -g "${packageIptPrefix}_MARK${mark}" || s=1
 		fi
 		if [ "$iface" = "$icmpIface" ]; then
-			ipt -t mangle -I PBR_OUTPUT -p icmp -g "PBR_MARK${mark}" || s=1
+			ipt -t mangle -I "${packageIptPrefix}_OUTPUT" -p icmp -g "${packageIptPrefix}_MARK${mark}" || s=1
 		fi
 	else
 		s=1
@@ -895,13 +928,13 @@ interface_process() {
 		create_default_ipset)
 			if [ -z "$reloadedIface" ] || [ "$iface" = "$reloadedIface" ]; then
 				if ips 'create_default' "$iface"; then
-					if ! iptables-save | grep -q -- "-A PBR_PREROUTING -m set --match-set pbr_${iface}_dst_ip dst"; then
-						ipt -t mangle -A PBR_PREROUTING -m set --match-set "pbr_${iface}_dst_ip" dst -g "PBR_MARK${ifaceMark}" || failFlag=1
-						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A PBR_PREROUTING -m set --match-set "pbr_${iface}6_dst_ip" dst -g "PBR_MARK${ifaceMark}" || failFlag=1; fi
+					if ! iptables-save | grep -q -- "-A ${packageIptPrefix}_PREROUTING -m set --match-set ${packageIpsPrefix}_${iface}_dst_ip dst"; then
+						ipt -t mangle -A "${packageIptPrefix}_PREROUTING" -m set --match-set "${packageIpsPrefix}_${iface}_dst_ip" dst -g "${packageIptPrefix}_MARK${ifaceMark}" || failFlag=1
+						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A "${packageIptPrefix}_PREROUTING" -m set --match-set "${packageIpsPrefix}_${iface}6_dst_ip" dst -g "${packageIptPrefix}_MARK${ifaceMark}" || failFlag=1; fi
 					fi
-					if ! iptables-save | grep -q -- "-A PBR_PREROUTING -m set --match-set pbr_${iface}_dst_net dst"; then
-						ipt -t mangle -A PBR_PREROUTING -m set --match-set "pbr_${iface}_dst_net" dst -g "PBR_MARK${ifaceMark}" || failFlag=1
-						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A PBR_PREROUTING -m set --match-set "pbr_${iface}6_dst_net" dst -g "PBR_MARK${ifaceMark}" || failFlag=1; fi
+					if ! iptables-save | grep -q -- "-A ${packageIptPrefix}_PREROUTING -m set --match-set ${packageIpsPrefix}_${iface}_dst_net dst"; then
+						ipt -t mangle -A "${packageIptPrefix}_PREROUTING" -m set --match-set "${packageIpsPrefix}_${iface}_dst_net" dst -g "${packageIptPrefix}_MARK${ifaceMark}" || failFlag=1
+						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A "${packageIptPrefix}_PREROUTING" -m set --match-set "${packageIpsPrefix}_${iface}6_dst_net" dst -g "${packageIptPrefix}_MARK${ifaceMark}" || failFlag=1; fi
 					fi
 				fi
 			fi
@@ -922,8 +955,8 @@ interface_process_tor() {
 			;;
 		destroy)
 			for i in PREROUTING FORWARD INPUT OUTPUT; do
-				ipt -t nat -D "${i}" -m mark --mark "0x0/${fwMask}" -j "PBR_${i}"
-				ipt -t nat -F "PBR_${i}"; ipt -t nat -X "PBR_${i}";
+				ipt -t nat -D "${i}" -m mark --mark "0x0/${fwMask}" -j "${packageIptPrefix}_${i}"
+				ipt -t nat -F "${packageIptPrefix}_${i}"; ipt -t nat -X "${packageIptPrefix}_${i}";
 			done
 			;;
 		create)
@@ -932,17 +965,17 @@ interface_process_tor() {
 			transPort="$(grep -m1 TransPort /etc/tor/torrc | awk -F: '{print $2}')"
 			dnsPort="${dnsPort:-9053}"; transPort="${transPort:-9040}"; 
 			for i in $usedChainsList; do
-				ipt -t nat -N "PBR_${i}"
-				ipt -t nat "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "PBR_${i}"
+				ipt -t nat -N "${packageIptPrefix}_${i}"
+				ipt -t nat "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "${packageIptPrefix}_${i}"
 			done
 			if ips 'create' "$iface" 'dst' 'net' && ips 'flush' "$iface" 'dst' 'net'; then
-				ipset="pbr_${iface}_dst_net"
+				ipset="${packageIpsPrefix}_${iface}_dst_net"
 				for i in $usedChainsList; do
-					ipt -t nat -I "PBR_${i}" -p udp -m udp --dport 53 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
-					ipt -t nat -I "PBR_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-TCP" || s=1
-					ipt -t nat -I "PBR_${i}" -p udp -m udp --dport 80 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-UDP" || s=1
-					ipt -t nat -I "PBR_${i}" -p tcp -m tcp --dport 443 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTPS-TCP" || s=1
-					ipt -t nat -I "PBR_${i}" -p udp -m udp --dport 443 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTPS-UDP" || s=1
+					ipt -t nat -I "${packageIptPrefix}_${i}" -p udp -m udp --dport 53 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
+					ipt -t nat -I "${packageIptPrefix}_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-TCP" || s=1
+					ipt -t nat -I "${packageIptPrefix}_${i}" -p udp -m udp --dport 80 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-UDP" || s=1
+					ipt -t nat -I "${packageIptPrefix}_${i}" -p tcp -m tcp --dport 443 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTPS-TCP" || s=1
+					ipt -t nat -I "${packageIptPrefix}_${i}" -p udp -m udp --dport 443 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTPS-UDP" || s=1
 				done
 			else
 				s=1
@@ -1005,7 +1038,7 @@ start_service() {
 	if [ -n "$(json get error)" ] || [ -n "$(json get warning)" ]; then
 		serviceStartTrigger='on_start'
 		unset reloadedIface
-	elif ! iptables -t 'mangle' --list 'PBR_PREROUTING' >/dev/null 2>&1; then
+	elif ! iptables -t 'mangle' --list "${packageIptPrefix}_PREROUTING" >/dev/null 2>&1; then
 		serviceStartTrigger='on_start'
 		unset reloadedIface
 	elif [ -z "$(json get gateway)" ]; then
@@ -1017,6 +1050,7 @@ start_service() {
 		serviceStartTrigger='on_reload'
 	fi
 
+	insert_lock
 	case $serviceStartTrigger in
 		on_iface_reload)
 			output 1 "Reloading Interface: $reloadedIface "
@@ -1029,8 +1063,8 @@ start_service() {
 				rm -f "$dnsmasqFile"
 			fi
 			for i in $usedChainsList; do
-				ipt -t mangle -N "PBR_${i}"
-				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "PBR_${i}"
+				ipt -t mangle -N "${packageIptPrefix}_${i}"
+				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "${packageIptPrefix}_${i}"
 			done
 			interface_process_prepare; config_foreach interface_process 'interface' 'enumerate';
 			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'enumerate';
@@ -1058,12 +1092,12 @@ start_service() {
 			for i in xt_set ip_set ip_set_hash_ip; do
 				modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
 			done
-			if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then
+			if [ "$modprobeStatus" -gt 0 ]; then
 				errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
 			fi
 			for i in $usedChainsList; do
-				ipt -t mangle -N "PBR_${i}"
-				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "PBR_${i}"
+				ipt -t mangle -N "${packageIptPrefix}_${i}"
+				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "${packageIptPrefix}_${i}"
 			done
 			output 1 'Processing Interfaces '
 			interface_process_prepare; config_foreach interface_process 'interface' 'create';
@@ -1087,6 +1121,7 @@ start_service() {
 			[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
 			;;
 	esac
+	remove_lock
 
 	if [ -z "$gatewaySummary" ]; then
 		errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway!\\n"
@@ -1169,11 +1204,11 @@ service_started() {
 
 stop_service() {
 	local i
-	iptables -t mangle -L | grep -q PBR_PREROUTING || return 0
+	iptables -t mangle -L | grep -q "${packageIptPrefix}_PREROUTING" || return 0
 	load_package_config
 	for i in PREROUTING FORWARD INPUT OUTPUT; do
-		ipt -t mangle -D "${i}" -m mark --mark "0x0/${fwMask}" -j "PBR_${i}"
-		ipt -t mangle -F "PBR_${i}"; ipt -t mangle -X "PBR_${i}";
+		ipt -t mangle -D "${i}" -m mark --mark "0x0/${fwMask}" -j "${packageIptPrefix}_${i}"
+		ipt -t mangle -F "${packageIptPrefix}_${i}"; ipt -t mangle -X "${packageIptPrefix}_${i}";
 	done
 	config_load 'network'; config_foreach interface_process 'interface' 'destroy';
 	interface_process_tor 'tor' 'destroy'
@@ -1282,14 +1317,14 @@ support() {
 		for j in Mangle NAT; do
 			if [ -z "$set_d" ]; then
 				for i in $usedChainsList; do
-					if iptables -v -t "$(str_to_lower $j)" -S "PBR_${i}" >/dev/null 2>&1; then
+					if iptables -v -t "$(str_to_lower $j)" -S "${packageIptPrefix}_${i}" >/dev/null 2>&1; then
 						echo "$_SEPARATOR_"
 						echo "$j IP Table: $i"
-						iptables -v -t "$(str_to_lower $j)" -S "PBR_${i}"
+						iptables -v -t "$(str_to_lower $j)" -S "${packageIptPrefix}_${i}"
 						if [ "$ipv6Enabled" -ne 0 ]; then
 							echo "$_SEPARATOR_"
 							echo "$j IPv6 Table: $i"
-							ip6tables -v -t "$(str_to_lower $j)" -S "PBR_${i}"
+							ip6tables -v -t "$(str_to_lower $j)" -S "${packageIptPrefix}_${i}"
 						fi
 					fi
 				done
@@ -1305,10 +1340,10 @@ support() {
 			fi
 			i=0; ifaceMark="$wanMark";
 			while [ $i -lt $tableCount ]; do
-				if iptables -v -t "$(str_to_lower $j)" -S "PBR_MARK${ifaceMark}" >/dev/null 2>&1; then
+				if iptables -v -t "$(str_to_lower $j)" -S "${packageIptPrefix}_MARK${ifaceMark}" >/dev/null 2>&1; then
 					echo "$_SEPARATOR_"
-					echo "$j IP Table MARK Chain: PBR_MARK${ifaceMark}"
-					iptables -v -t "$(str_to_lower $j)" -S "PBR_MARK${ifaceMark}"
+					echo "$j IP Table MARK Chain: ${packageIptPrefix}_MARK${ifaceMark}"
+					iptables -v -t "$(str_to_lower $j)" -S "${packageIptPrefix}_MARK${ifaceMark}"
 					ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))";
 				fi
 				i=$((i + 1))
