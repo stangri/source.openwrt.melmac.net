@@ -640,12 +640,17 @@ table_destroy() {
 	if [ -n "$tid" ] && [ -n "$iface" ] && [ -n "$mark" ]; then
 		ipt -t mangle -F "VPR_MARK${mark}"
 		ipt -t mangle -X "VPR_MARK${mark}"
-		ip rule del fwmark "$mark/$fwMask" table "$tid" >/dev/null 2>&1
-		ip route flush table "$tid" >/dev/null 2>&1
+		ip -4 rule del fwmark "$mark/$fwMask" table "$tid" >/dev/null 2>&1
+		ip -6 rule del fwmark "$mark/$fwMask" table "$tid" >/dev/null 2>&1
+	 	ip -4 rule del table "$tid" >/dev/null 2>&1
+		ip -6 rule del table "$tid" >/dev/null 2>&1
+		ip -4 route flush table "$tid";
+		ip -6 route flush table "$tid";
 		ips 'flush' "${iface}"; ips 'destroy' "${iface}";
 		ips 'flush' "${iface}_ip"; ips 'destroy' "${iface}_ip";
 		ips 'flush' "${iface}_mac"; ips 'destroy' "${iface}_mac";
-		ip route flush cache
+		ip -4 route flush cache
+		ip -6 route flush cache
 		sed -i "/$iface/d" /etc/iproute2/rt_tables
 		return 0
 	else
@@ -660,8 +665,6 @@ table_create() {
 		return 1
 	fi
 
-#	sed -i "/$iface/d" /etc/iproute2/rt_tables
-#	ip route flush table "$tid" >/dev/null 2>&1
 	table_destroy "$tid" "$iface" "$mark"
 
 	if [ -n "$gw4" ] || [ "$strictMode" -ne 0 ]; then
@@ -680,11 +683,9 @@ table_create() {
 		done << EOF
 $(ip -4 route list $mainTableListing table main)
 EOF
-		[ -n "$(ip rule list fwmark "${mark}/${fwMask}" table "$tid")" ] || \
-			ip rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv4_error=1
-		ipt -t mangle -N "VPR_MARK${mark}" || ipv4_error=1
-		ipt -t mangle -A "VPR_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
-		ipt -t mangle -A "VPR_MARK${mark}" -j RETURN || ipv4_error=1
+		ip -4 route flush cache || ipv4_error=1
+		[ -n "$(ip -4 rule list fwmark "${mark}/${fwMask}" table "$tid")" ] || \
+			ip -4 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv4_error=1
 	fi
 
 	if [ "$ipv6Enabled" -ne 0 ]; then
@@ -699,11 +700,18 @@ EOF
 				done << EOF
 $(ip -6 route list $mainTableListing table main | grep " dev $dev6 ")
 EOF
+			ip -6 route flush cache || ipv6_error=1
+			[ -n "$(ip -6 rule list fwmark "${mark}/${fwMask}" table "$tid")" ] || \
+				ip -6 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv6_error=1
+			ip -6 route flush cache || ipv4_error=1
 			fi
 		fi
 	fi
 
 	if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
+		ipt -t mangle -N "VPR_MARK${mark}" || ipv4_error=1
+		ipt -t mangle -A "VPR_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
+		ipt -t mangle -A "VPR_MARK${mark}" -j RETURN || ipv4_error=1
 		dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
 		if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
 			ipt -t mangle -I VPR_PREROUTING -m dscp --dscp "${dscp}" -g "VPR_MARK${mark}" || s=1
@@ -1019,7 +1027,6 @@ start_service() {
 		output 1 '\n'
 		if is_config_enabled 'policy'; then
 			output 1 'Processing Policies '
-#			config_load 'network'; config_foreach process_interface 'interface' 'flush_ipsets';
 			config_load "$packageName"; config_foreach process_policy 'policy' "$reloadedIface";
 			output 1 '\n'
 		fi
