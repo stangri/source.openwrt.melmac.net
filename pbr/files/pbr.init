@@ -125,7 +125,7 @@ pbr_get_gateway6() {
 is_ipset_type_supported() { ipset help hash:"$1" >/dev/null 2>&1; }
 is_l2tp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "l2tp" ]; }
 is_oc() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:11}" = "openconnect" ]; }
-is_ovpn() { local dev i; for i in ifname device; do [ -z "$dev" ] && dev="$(uci -q get "network.${1}.${i}")"; done; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
+is_ovpn() { local dev; network_get_device dev "$1"; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
 is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "pptp" ]; }
 is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
 is_tor_running() { 
@@ -157,15 +157,7 @@ is_phys_dev() { [ "${1:0:1}" = "@" ] && ip l show | grep -E -q "^\\d+\\W+${1:1}"
 dnsmasq_kill() { killall -q -s HUP dnsmasq; }
 dnsmasq_restart() { output 3 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
 is_default_dev() { [ "$1" = "$(ip -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
-is_supported_iface_dev() {
-	local n
-	for n in $ifSupported; do 
-		if [ "$1" = "$(uci -q get "network.${n}.ifname" || echo "$n")" ] || \
-			[ "$1" = "$(uci -q get "network.${n}.device" || echo "$n")" ] || \
-			[ "$1" = "$(uci -q get "network.${n}.proto")-${n}" ] ; then return 0; fi
-	done
-	return 1
-}
+is_supported_iface_dev() { local n dev; for n in $ifSupported; do network_get_device dev "$n"; [ "$1" = "$dev" ] && return 0; done; return 1; }
 is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
 append_chains_targets() {
 	local chain iface name enabled
@@ -856,12 +848,8 @@ interface_process() {
 	[ $((ifaceMark)) -gt $((fwMask)) ] && return 1
 
 	network_get_device dev "$iface"
-	[ -z "$dev" ] && config_get dev "$iface" 'ifname'
-	[ -z "$dev" ] && config_get dev "$iface" 'device'
 	if is_wan "$iface" && [ -n "$wanIface6" ]; then
 		network_get_device dev6 "$wanIface6"
-		[ -z "$dev6" ] && config_get dev6 "$wanIface6" 'ifname'
-		[ -z "$dev6" ] && config_get dev6 "$wanIface6" 'device'
 	fi
 	[ -z "$dev6" ] && dev6="$dev"
 
@@ -1266,12 +1254,10 @@ support() {
 	json_load "$(ubus call system board)"; json_select release; json_get_var dist distribution; json_get_var vers version
 	if [ -n "$wanIface4" ]; then
 		network_get_gateway wanGW4 "$wanIface4"
-		[ -z "$dev" ] && dev="$(uci -q get network."${wanIface4}".ifname)"
-		[ -z "$dev" ] && dev="$(uci -q get network."${wanIface4}".device)"
+		network_get_device dev "$wanIface4"
 	fi
 	if [ -n "$wanIface6" ]; then
-		[ -z "$dev6" ] && dev6="$(uci -q get network."${wanIface6}".ifname)"
-		[ -z "$dev6" ] && dev6="$(uci -q get network."${wanIface6}".device)"
+		network_get_device dev6 "$wanIface6"
 		wanGW6=$(ip -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
 		[ "$wanGW6" = "default" ] && wanGW6=$(ip -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
 	fi
