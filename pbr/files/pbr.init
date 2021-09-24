@@ -12,7 +12,7 @@ START=94
 USE_PROCD=1
 
 if type extra_command >/dev/null 2>&1; then
-	extra_command 'support' "Generates output required to troubleshoot routing issues
+	extra_command 'status' "Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
 		Use '-p' option to automatically upload data under VPR paste.ee account
 			WARNING: while paste.ee uploads are unlisted, they are still publicly available
@@ -21,9 +21,9 @@ if type extra_command >/dev/null 2>&1; then
 	extra_command 'reload_interface' 'Reload specific interface only'
 else
 # shellcheck disable=SC2034
-	EXTRA_COMMANDS='reload_interface support version'
+	EXTRA_COMMANDS='reload_interface status version'
 # shellcheck disable=SC2034
-	EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
+	EXTRA_HELP="	status	Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
 		Use '-p' option to automatically upload data under VPR paste.ee account
 			WARNING: while paste.ee uploads are unlisted, they are still publicly available
@@ -1245,8 +1245,7 @@ service_triggers() {
 	fi
 }
 
-status_service() { support "$@"; }
-support() {
+status_service() {
 	local dist vers out id s param status set_d set_p tableCount i=0 dev dev6 j
 	readonly _SEPARATOR_='============================================================'
 	is_enabled
