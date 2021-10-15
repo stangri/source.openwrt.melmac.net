@@ -213,7 +213,17 @@ stop_service() {
 	[ "$s" -eq 0 ] && output_okn || output_failn
 }
 
-service_triggers() { procd_add_config_trigger "config.change" "$packageName" "/etc/init.d/${packageName}" restart; }
+# shellcheck disable=SC1091
+service_triggers() { 
+	local iface
+	. /lib/functions/network.sh
+	network_find_wan iface
+	if [ -n "$iface" ]; then
+		procd_add_interface_trigger "interface.*" "$iface" "/etc/init.d/${packageName}" restart
+	fi
+	procd_add_config_trigger "config.change" "$packageName" "/etc/init.d/${packageName}" restart
+}
+
 service_started() { procd_set_config_changed firewall; }
 service_stopped() { procd_set_config_changed firewall; }
 
