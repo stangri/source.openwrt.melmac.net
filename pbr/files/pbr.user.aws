@@ -13,8 +13,11 @@ if [ ! -s "$TARGET_FNAME" ]; then
 	uclient-fetch --no-check-certificate -qO- "$TARGET_URL" 2>/dev/null | grep "ip_prefix" | sed 's/^.*\"ip_prefix\": \"//; s/\",//' > "$TARGET_FNAME"
 fi
 if [ -s "$TARGET_FNAME" ]; then
-	awk -v ipset="$TARGET_IPSET" '{print "add " ipset " " $1}' "$TARGET_FNAME" | ipset -q -! restore && _ret=0
+	if awk -v ipset="$TARGET_IPSET" '{print "add " ipset " " $1}' "$TARGET_FNAME" | ipset restore -!; then
+		_ret=0
+	fi
 fi
+
 rm -f "$TARGET_FNAME"
 
 return $_ret
