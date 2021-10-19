@@ -21,7 +21,7 @@ if type extra_command 1>/dev/null 2>&1; then
 	extra_command 'reload_interface' 'Reload specific interface only'
 else
 # shellcheck disable=SC2034
-	EXTRA_COMMANDS='reload_interface support version'
+	EXTRA_COMMANDS='support version'
 # shellcheck disable=SC2034
 	EXTRA_HELP="	support	Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
@@ -50,8 +50,8 @@ ipv6Enabled=''; srcIpset=''; destIpset=''; resolverIpset='';
 wanIface4=''; wanIface6=''; ifaceMark=''; ifaceTableID='';
 ifAll=''; ifSupported=''; ignoredIfaces=''; supportedIfaces=''; icmpIface='';
 wanGW4=''; wanGW6=''; bootTimeout=''; insertOption='';
-webuiChainColumn=''; webuiShowIgnore=''; dnsmasqIpsetSupported='0';
-procdReloadDelay=''; mainTableListing='';
+webuiChainColumn=''; webuiShowIgnore=''; dnsmasqIpsetSupported='';
+procdReloadDelay='';
 usedChainsList='PREROUTING'
 ipsetSupported='true'
 configLoaded='false'
@@ -73,7 +73,7 @@ output() {
 # Can take a single parameter (text) to be output at any verbosity
 # Or target verbosity level and text to be output at specifc verbosity
 	local msg memmsg logmsg
-	if [ "$#" -ne 1 ]; then
+	if [ $# -ne 1 ]; then
 		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; else return 0; fi
 	fi
 	[ -t 1 ] && printf "%b" "$1"
@@ -158,7 +158,6 @@ dnsmasq_kill() { killall -q -s HUP dnsmasq; }
 dnsmasq_restart() { output 3 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
 is_default_dev() { [ "$1" = "$(ip -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
 is_supported_iface_dev() {
-	local n
 	for n in $ifSupported; do 
 		if [ "$1" = "$(uci -q get "network.${n}.ifname" || echo "$n")" ] || \
 			[ "$1" = "$(uci -q get "network.${n}.device" || echo "$n")" ] || \
@@ -166,7 +165,7 @@ is_supported_iface_dev() {
 	done
 	return 1
 }
-is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
+is_supported_protocol () { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
 append_chains_targets() {
 	local chain iface name
 	config_get name "$1" 'name' 'blank'
@@ -195,7 +194,6 @@ load_package_config() {
 	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' 0
 	config_get_bool srcIpset            'config' 'src_ipset' 0
 	config_get_bool destIpset           'config' 'dest_ipset' 0
-	config_get_bool mainTableListing    'config' 'quick_table_create' 0
 	config_get resolverIpset            'config' 'resolver_ipset' 'dnsmasq.ipset'
 	config_get verbosity                'config' 'verbosity' '2'
 	config_get wanTableID               'config' 'wan_tid' '201'
@@ -221,12 +219,6 @@ load_package_config() {
 	mkdir -p "${jsonFile%/*}"
 	mkdir -p "${dnsmasqFile%/*}"
 
-	if [ "$mainTableListing" -ne 0 ]; then
-		mainTableListing='default'
-	else
-		mainTableListing=''
-	fi
-
 	if [ -n "$icmpIface" ] && ! str_contains_word "$usedChainsList" 'OUTPUT'; then
 		usedChainsList="$usedChainsList OUTPUT"
 	fi
@@ -236,24 +228,25 @@ load_package_config() {
 		append|-a|-A|*) insertOption='-A';;
 	esac
 
-	[ "$resolverIpset" = 'dnsmasq.ipset' ] && dnsmasqIpsetSupported='1'
+	[ "$resolverIpset" = 'dnsmasq.ipset' ] && dnsmasqIpsetSupported='true'
 	if dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'; then
-		if [ "$dnsmasqIpsetSupported" -ne 0 ]; then
+		unset dnsmasqIpsetSupported
+		if [ -n "$dnsmasqIpsetSupported" ]; then
 			errorSummary="${errorSummary}${_ERROR_}: Resolver ipset support (dnsmasq.ipset) is enabled in $packageName, but DNSMASQ ipsets are not supported on this system!\\n"
-			dnsmasqIpsetSupported='0'
 		fi
 	fi
-	if ! ipset help hash:ip >/dev/null 2>&1; then
-		if [ "$dnsmasqIpsetSupported" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: DNSMASQ ipsets are supported, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
-			dnsmasqIpsetSupported='0'
+	if ! ipset help hash:net >/dev/null 2>&1; then
+		unset ipsetSupported
+		if [ -n "$dnsmasqIpsetSupported" ]; then
+			errorSummary="${errorSummary}${_ERROR_}: DNSMASQ ipsets are supported, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+			unset dnsmasqIpsetSupported
 		fi
 		if [ "$destIpset" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
+			errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
 			destIpset=0
 		fi
 		if [ "$srcIpset" -ne 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
+			errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
 			srcIpset=0
 		fi
 	fi
@@ -338,7 +331,7 @@ ipt() {
 
 # shellcheck disable=SC2086
 ips() {
-	local command="$1" ipset="${2//-/_}" param="$3" comment="$4" appendix failFlag=0 mark
+	local command="$1" ipset="${2//-/_}" param="$3" comment="$4" appendix failFlag=0
 	if str_contains "$ipset" '_ip'; then
 		ipset="${ipset//_ip}"; appendix='_ip';
 	elif str_contains "$ipset" '_mac'; then
@@ -348,7 +341,7 @@ ips() {
 	case "$command" in
 		add_dnsmasq)
 			[ "$resolverIpset" = "dnsmasq.ipset" ] || return 1
-			if [ "$dnsmasqIpsetSupported" -eq 0 ]; then
+			if [ -z "$dnsmasqIpsetSupported" ]; then
 				warningSummary="${warningSummary}${_WARNING_}: The 'resolver_ipset' is set to 'dnsmasq.ipset', but DNSMASQ ipsets are not supported on this system!\\n"
 				failFlag=1
 			elif [ "$ipv6Enabled" -ne 0 ]; then
@@ -356,52 +349,20 @@ ips() {
 			else
 				echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlag=1
 			fi
-			[ "$failFlag" -eq 0 ] && ips 'create_ipt' "${ipset}${appendix}"
 			;;
 		add)
 			if [ -z "$appendix" ] && [ "$destIpset" -eq 0 ]; then return 1; fi
 			if [ -n "$appendix" ] && [ "$srcIpset" -eq 0 ]; then return 1; fi
 			if [ "$ipv6Enabled" -ne 0 ] && [ "$appendix" != "_mac" ]; then
-				ipset -q -! "$command" "${ipset}6${appendix}" $param comment "$comment" || failFlag=1
+				ipset -q -! $command "${ipset}6${appendix}" $param comment "$comment" || failFlag=1
 			fi
-			ipset -q -! "$command" "${ipset}${appendix}" $param comment "$comment" || failFlag=1
-			[ "$failFlag" -eq 0 ] && ips 'create_ipt' "${ipset}${appendix}"
+			ipset -q -! $command "${ipset}${appendix}" $param comment "$comment" || failFlag=1
 			;;
 		create)
 			if [ "$ipv6Enabled" -ne 0 ] && [ "$appendix" != "_mac" ]; then
 				ipset -q -! "$command" "${ipset}6${appendix}" $param family inet6 || failFlag=1
 			fi
 			ipset -q -! "$command" "${ipset}${appendix}" $param || failFlag=1
-			;;
-		create_ipt)
-			mark=$(eval echo "\$mark_${ipset//-/_}")
-			case $appendix in
-				_ip)
-					if [ -n "$ipsetSupported" ] && [ "$srcIpset" -ne 0 ]; then
-						if ! iptables-save | grep -q -- "-A VPR_PREROUTING -m set --match-set ${ipset}_ip src"; then
-							ipt -t mangle -A VPR_PREROUTING -m set --match-set "${ipset}_ip" src -g "VPR_MARK${mark}" || failFlag=1
-							if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A VPR_PREROUTING -m set --match-set "${ipset}6_ip" src -g "VPR_MARK${mark}" || failFlag=1; fi
-						fi
-					fi
-					;;
-				_mac)
-					if [ -n "$ipsetSupported" ] && [ "$srcIpset" -ne 0 ]; then
-						if ! iptables-save | grep -q -- "-A VPR_PREROUTING -m set --match-set ${ipset}_mac src"; then
-							ipt -t mangle -A VPR_PREROUTING -m set --match-set "${ipset}_mac" src -g "VPR_MARK${mark}" || s=1
-						fi
-					fi
-					;;
-				*)
-					if [ -n "$ipsetSupported" ] && { [ "$dnsmasqIpsetSupported" -ne 0 ] || [ "$destIpset" -ne 0 ]; }; then
-						if ! iptables-save | grep -q -- "-A VPR_PREROUTING -m set --match-set $ipset dst"; then
-							for i in $usedChainsList; do
-								ipt -t mangle -A VPR_${i} -m set --match-set "${ipset}" dst -g "VPR_MARK${mark}" || failFlag=1
-								if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_${i} -m set --match-set "${iface}6" dst -g "VPR_MARK${mark}" || failFlag=1; fi
-							done
-						fi
-					fi
-					;;
-			esac
 			;;
 		destroy|flush)
 			ipset -q -! "$command" "${ipset}6${appendix}" 2>/dev/null || failFlag=1
@@ -520,7 +481,7 @@ insert_policy() {
 	return 0
 }
 
-r_process_policy() {
+r_process_policy(){
 	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto="$7" chain="$8" resolved_laddr resolved_raddr i ipsFailFlag
 	if str_contains "$laddr" '[ ;\{\}]'; then
 		for i in $(str_extras_to_space "$laddr"); do [ -n "$i" ] && r_process_policy "$comment" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain"; done
@@ -584,7 +545,7 @@ r_process_policy() {
 	fi
 }
 
-process_policy() {
+process_policy(){
 	local name comment iface laddr lport raddr rport param mark processPolicyError processPolicyWarning proto chain enabled
 	config_get comment "$1" 'comment'
 	config_get name    "$1" 'name' 'blank'
@@ -635,17 +596,17 @@ process_policy() {
 	fi
 }
 
-table_destroy() {
+table_destroy(){
 	local tid="$1" iface="$2" mark="$3"
 	if [ -n "$tid" ] && [ -n "$iface" ] && [ -n "$mark" ]; then
 		ipt -t mangle -F "VPR_MARK${mark}"
 		ipt -t mangle -X "VPR_MARK${mark}"
-		ip -4 rule del fwmark "$mark/$fwMask" table "$tid" >/dev/null 2>&1
-		ip -6 rule del fwmark "$mark/$fwMask" table "$tid" >/dev/null 2>&1
+		ip -4 rule del fwmark "$mark" table "$tid" >/dev/null 2>&1
+		ip -6 rule del fwmark "$mark" table "$tid" >/dev/null 2>&1
 	 	ip -4 rule del table "$tid" >/dev/null 2>&1
 		ip -6 rule del table "$tid" >/dev/null 2>&1
-		ip -4 route flush table "$tid";
-		ip -6 route flush table "$tid";
+		ip -4 route flush table "$tid" >/dev/null 2>&1
+		ip -6 route flush table "$tid" >/dev/null 2>&1
 		ips 'flush' "${iface}"; ips 'destroy' "${iface}";
 		ips 'flush' "${iface}_ip"; ips 'destroy' "${iface}_ip";
 		ips 'flush' "${iface}_mac"; ips 'destroy' "${iface}_mac";
@@ -658,7 +619,8 @@ table_destroy() {
 	fi
 }
 
-table_create() {
+# shellcheck disable=SC2086
+table_create(){
 	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" match="$8" dscp s=0 i ipv4_error=0 ipv6_error=1
 
 	if [ -z "$tid" ] || [ -z "$mark" ] || [ -z "$iface" ]; then
@@ -668,24 +630,24 @@ table_create() {
 	table_destroy "$tid" "$iface" "$mark"
 
 	if [ -n "$gw4" ] || [ "$strictMode" -ne 0 ]; then
-		echo "$tid $iface" >> /etc/iproute2/rt_tables
+		echo "$tid" "$iface" >> /etc/iproute2/rt_tables
 		if [ -z "$gw4" ]; then
 			ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 		else
 			ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 		fi
-# shellcheck disable=SC2086
-		while read -r i; do
+#		ip -4 route list table main | grep -v 'br-lan' | while read -r i; do
+		ip -4 route list table main | while read -r i; do
 			idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
 			if ! is_supported_iface_dev "$idev"; then
 				ip -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
 			fi
-		done << EOF
-$(ip -4 route list $mainTableListing table main)
-EOF
+		done
 		ip -4 route flush cache || ipv4_error=1
-		[ -n "$(ip -4 rule list fwmark "${mark}/${fwMask}" table "$tid")" ] || \
-			ip -4 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv4_error=1
+		ip -4 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv4_error=1
+		ipt -t mangle -N "VPR_MARK${mark}" || ipv4_error=1
+		ipt -t mangle -A "VPR_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
+		ipt -t mangle -A "VPR_MARK${mark}" -j RETURN || ipv4_error=1
 	fi
 
 	if [ "$ipv6Enabled" -ne 0 ]; then
@@ -694,34 +656,42 @@ EOF
 			if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 				ip -6 route add unreachable default table "$tid" || ipv6_error=1
 			else
-# shellcheck disable=SC2086
-				while read -r i; do
+				ip -6 route list table main | grep " dev $dev6 " | while read -r i; do
 					ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
-				done << EOF
-$(ip -6 route list $mainTableListing table main | grep " dev $dev6 ")
-EOF
-			ip -6 route flush cache || ipv6_error=1
-			[ -n "$(ip -6 rule list fwmark "${mark}/${fwMask}" table "$tid")" ] || \
-				ip -6 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv6_error=1
-			ip -6 route flush cache || ipv4_error=1
+				done
 			fi
+			ip -6 route flush cache || ipv6_error=1
+			ip -6 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv6_error=1
 		fi
 	fi
 
-	if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
-		ipt -t mangle -N "VPR_MARK${mark}" || ipv4_error=1
-		ipt -t mangle -A "VPR_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
-		ipt -t mangle -A "VPR_MARK${mark}" -j RETURN || ipv4_error=1
+	if [ $ipv4_error -eq 0 ] || [ $ipv6_error -eq 0 ]; then
 		dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
 		if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
 			ipt -t mangle -I VPR_PREROUTING -m dscp --dscp "${dscp}" -g "VPR_MARK${mark}" || s=1
 		fi
-		if [ -n "$ipsetSupported" ] && { [ "$dnsmasqIpsetSupported" -ne 0 ] || [ "$destIpset" -ne 0 ]; }; then
-			ips 'create' "${iface}" 'hash:ip comment' && ips 'flush' "${iface}" || s=1
+		if [ -n "$ipsetSupported" ] && { [ -n "$dnsmasqIpsetSupported" ] || [ "$destIpset" -ne 0 ]; }; then
+			if ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}"; then
+				for i in $usedChainsList; do
+					ipt -t mangle -I VPR_${i} -m set --match-set "${iface}" dst -g "VPR_MARK${mark}" || s=1
+					if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_${i} -m set --match-set "${iface}6" dst -g "VPR_MARK${mark}" || s=1; fi
+				done
+			else
+				s=1
+			fi
 		fi
 		if [ -n "$ipsetSupported" ] && [ "$srcIpset" -ne 0 ]; then
-			ips 'create' "${iface}_ip" 'hash:ip comment' && ips 'flush' "${iface}_ip" || s=1
-			ips 'create' "${iface}_mac" 'hash:mac comment' && ips 'flush' "${iface}_mac" || s=1
+			if ips 'create' "${iface}_ip" 'hash:net comment' && ips 'flush' "${iface}_ip"; then
+				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_ip" src -g "VPR_MARK${mark}" || s=1
+				if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}6_ip" src -g "VPR_MARK${mark}" || s=1; fi
+			else
+				s=1
+			fi
+			if ips 'create' "${iface}_mac" 'hash:mac comment' && ips 'flush' "${iface}_mac"; then
+				ipt -t mangle -I VPR_PREROUTING -m set --match-set "${iface}_mac" src -g "VPR_MARK${mark}" || s=1
+			else
+				s=1
+			fi
 		fi
 		if [ "$iface" = "$icmpIface" ]; then
 			ipt -t mangle -I VPR_OUTPUT -p icmp -g "VPR_MARK${mark}" || s=1
@@ -747,6 +717,9 @@ table_reload() {
 		else
 			ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 		fi
+		ip -4 route flush cache || ipv4_error=1
+		ip -4 rule del fwmark "${mark}/${fwMask}" table "$tid" >/dev/null 2>&1
+		ip -4 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv4_error=1
 	fi
 
 	if [ "$ipv6Enabled" -ne 0 ]; then
@@ -756,17 +729,17 @@ table_reload() {
 			if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 				ip -6 route add unreachable default table "$tid" || ipv6_error=1
 			else
-				while read -r i; do
-# shellcheck disable=SC2086
-					ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
-				done << EOF
-$(ip -6 route list default table main | grep " dev $dev6 ")
-EOF
+				ip -6 route list table main | grep " dev $dev6 " | while read -r i; do
+					ip -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+				done
 			fi
+			ip -6 route flush cache || ipv6_error=1
+			ip -6 rule del fwmark "${mark}/${fwMask}" table "$tid" >/dev/null 2>&1
+			ip -6 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv6_error=1
 		fi
 	fi
 
-	if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
+	if [ $ipv4_error -eq 0 ] || [ $ipv6_error -eq 0 ]; then
 		dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
 		if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
 			ipt -t mangle -I VPR_PREROUTING -m dscp --dscp "${dscp}" -g "VPR_MARK${mark}" || s=1
@@ -781,7 +754,7 @@ EOF
 	return $s
 }
 
-process_interface() {
+process_interface(){
 	local gw4 gw6 dev dev6 s=0 dscp iface="$1" action="$2" match="$3" displayText
 
 	is_supported_interface "$iface" || return 0
@@ -798,17 +771,19 @@ process_interface() {
 	fi
 	[ -z "$dev6" ] && dev6="$dev"
 
-	[ -z "$ifaceTableID" ] && ifaceTableID="$wanTableID"
-	[ -z "$ifaceMark" ] && ifaceMark="$(printf '0x%x' "$wanMark")";
+	[ -z "$ifaceTableID" ] && ifaceTableID="$wanTableID"; [ -z "$ifaceMark" ] && ifaceMark="$wanMark";
 
 	case "$action" in
 		destroy)
 			table_destroy "${ifaceTableID}" "${iface}" "${ifaceMark}"
-			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))";
+			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
 			;;
 		create)
 			eval "mark_${iface//-/_}"='$ifaceMark'
 			eval "tid_${iface//-/_}"='$ifaceTableID'
+			if [ -z "$match" ]; then
+				table_destroy "$ifaceTableID" "$iface"
+			fi
 			vpr_get_gateway gw4 "$iface" "$dev"
 			vpr_get_gateway6 gw6 "$iface" "$dev6"
 			if [ "$iface" = "$dev" ]; then
@@ -841,18 +816,13 @@ process_interface() {
 				is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
 				gatewaySummary="${gatewaySummary}${displayText}\\n"
 			fi
-			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))";
-			;;
-		create_ipset_rules)
-			if [ -z "$match" ] || [ "$iface" = "$match" ]; then
-				ips 'create_ipt' "$iface"
-			fi
+			ifaceTableID="$((ifaceTableID + 1))"; ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
 			;;
 	esac
 	return $s
 }
 
-process_tor_interface() {
+process_tor_interface(){
 	local s=0 iface="$1" action="$2" displayText
 	case "$action" in
 		destroy)
@@ -870,7 +840,7 @@ process_tor_interface() {
 				ipt -t nat -N "VPR_${i}"
 				ipt -t nat "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
 			done
-			if ips 'create' "${iface}" 'hash:ip comment' && ips 'flush' "${iface}"; then
+			if ips 'create' "${iface}" 'hash:net comment' && ips 'flush' "${iface}"; then
 				for i in $usedChainsList; do
 					ipt -t nat -I "VPR_${i}" -p udp -m udp --dport 53 -m set --match-set "${iface}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
 					ipt -t nat -I "VPR_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${iface}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-TCP" || s=1
@@ -882,7 +852,7 @@ process_tor_interface() {
 				s=1
 			fi
 			displayText="${iface}/53->${dnsPort}/80,443->${transPort}"
-			if [ "$s" -eq 0 ]; then
+			if [ "$s" -eq "0" ]; then
 				gatewaySummary="${gatewaySummary}${displayText}\\n"
 				output_ok
 			else
@@ -894,7 +864,7 @@ process_tor_interface() {
 	return $s
 }
 
-convert_config() {
+convert_config(){
 	local i src_ipset dest_ipset resolver_ipset
 	[ -s "/etc/config/${packageName}" ] || return 0
 	grep -q "ignored_interfaces" "/etc/config/${packageName}" && sed -i 's/ignored_interfaces/ignored_interface/g' "/etc/config/${packageName}"
@@ -952,8 +922,8 @@ convert_config() {
 	done
 }
 
-check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
-is_config_enabled() {
+check_config(){ local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
+is_config_enabled(){
 	local cfg="$1" _cfg_enabled=1
 	[ -n "$1" ] || return 1
 	config_load "$packageName"
@@ -961,7 +931,7 @@ is_config_enabled() {
 	return "$_cfg_enabled"
 }
 
-process_user_file() {
+process_user_file(){
 	local path enabled shellBin="${SHELL:-/bin/ash}"
 	config_get_bool enabled "$1" 'enabled' 1
 	config_get      path    "$1" 'path'
@@ -1001,29 +971,32 @@ start_service() {
 	is_wan_up || return 1
 
 	iptables -t 'mangle' --list 'VPR_PREROUTING' >/dev/null 2>&1 || unset reloadedIface
-	[ -n "$(tmpfs get gateway)" ] || unset reloadedIface
+	[ -n "$(tmpfs get status)" ] || unset reloadedIface
+
+	if [ -s "$dnsmasqFile" ]; then
+		dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+		rm -f "$dnsmasqFile"
+	fi
+
+	for i in xt_set ip_set ip_set_hash_ip; do
+		modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
+	done
+
+	if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then
+		errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
+	fi
 
 	if [ -z "$reloadedIface" ]; then
-		if [ -s "$dnsmasqFile" ]; then
-			dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
-			rm -f "$dnsmasqFile"
-		fi
-		for i in xt_set ip_set ip_set_hash_ip; do
-			modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
-		done
-		if [ "$modprobeStatus" -gt 0 ] && ! is_chaos_calmer; then
-			errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
-		fi
-
 		for i in $usedChainsList; do
 			ipt -t mangle -N "VPR_${i}"
 			ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "VPR_${i}"
 		done
+	fi
 
+	if [ -z "$reloadedIface" ]; then
 		output 1 'Processing Interfaces '
 		config_load 'network'; config_foreach process_interface 'interface' 'create';
 		process_tor_interface 'tor' 'destroy'; is_tor_running && process_tor_interface 'tor' 'create';
-		ip route flush cache
 		output 1 '\n'
 		if is_config_enabled 'policy'; then
 			output 1 'Processing Policies '
@@ -1031,20 +1004,20 @@ start_service() {
 			output 1 '\n'
 		fi
 		if is_config_enabled 'include'; then
-			config_load 'network'; config_foreach process_interface 'interface' 'create_ipset_rules';
 			output 1 'Processing User File(s) '
 			config_load "$packageName"; config_foreach process_user_file 'include';
 			output 1 '\n'
 		fi
-		if [ -s "$dnsmasqFile" ]; then
-			dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
-		fi
-		[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
 	else
 		output 1 "Reloading Interface: $reloadedIface "
 		config_load 'network'; config_foreach process_interface 'interface' 'create' "$reloadedIface";
 		output 1 '\n'
 	fi
+
+	if [ -s "$dnsmasqFile" ]; then
+		dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+	fi
+	[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
 
 	if [ -z "$gatewaySummary" ]; then
 		errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway!\\n"
@@ -1263,7 +1236,7 @@ support() {
 					echo "$_SEPARATOR_"
 					echo "$j IP Table MARK Chain: VPR_MARK${ifaceMark}"
 					iptables -v -t "$(str_to_lower $j)" -S "VPR_MARK${ifaceMark}"
-					ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))";
+					ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
 				fi
 				i=$((i + 1))
 			done
