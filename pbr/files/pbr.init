@@ -709,7 +709,8 @@ table_destroy() {
 	if [ -n "$tid" ] && [ -n "$iface" ] && [ -n "$mark" ]; then
 		ipt -t mangle -F "${packageIptPrefix}_MARK${mark}"
 		ipt -t mangle -X "${packageIptPrefix}_MARK${mark}"
-		ip rule del fwmark "$mark/$fwMask" table "$tid" >/dev/null 2>&1
+#		ip rule del fwmark "$mark/$fwMask" table "$tid" >/dev/null 2>&1
+		ip rule del fwmark "$mark" table "$tid" >/dev/null 2>&1
 		ip route flush table "$tid" >/dev/null 2>&1
 		ips 'flush' "${packageIpsPrefix}_${iface}_dst_ip"; ips 'destroy' "${packageIpsPrefix}_${iface}_dst_ip";
 		sed -i "/$iface/d" /etc/iproute2/rt_tables
@@ -836,7 +837,7 @@ EOF
 interface_process_prepare() {
 	config_load 'network'
 	ifaceTableID="$wanTableID"
-	ifaceMark="$(printf '0x%x' "$wanMark")"
+	ifaceMark="$(printf '0x%06x' "$wanMark")"
 	ifacePriority="$wanPriority"
 }
 
@@ -854,7 +855,7 @@ interface_process() {
 	[ -z "$dev6" ] && dev6="$dev"
 
 	[ -z "$ifaceTableID" ] && ifaceTableID="$wanTableID"
-	[ -z "$ifaceMark" ] && ifaceMark="$(printf '0x%x' "$wanMark")"
+	[ -z "$ifaceMark" ] && ifaceMark="$(printf '0x%06x' "$wanMark")"
 	[ -z "$ifacePriority" ] && ifacePriority="$wanPriority"
 
 	case "$action" in
@@ -929,7 +930,7 @@ interface_process() {
 			;;
 	esac
 	ifaceTableID="$((ifaceTableID + 1))"
-	ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))"
+	ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))"
 	ifacePriority="$((ifacePriority - 1))"
 	return $s
 }
@@ -1329,7 +1330,7 @@ status_service() {
 					echo "$_SEPARATOR_"
 					echo "$j IP Table MARK Chain: ${packageIptPrefix}_MARK${ifaceMark}"
 					iptables -v -t "$(str_to_lower $j)" -S "${packageIptPrefix}_MARK${ifaceMark}"
-					ifaceMark="$(printf '0x%x' $((ifaceMark + wanMark)))";
+					ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
 				fi
 				i=$((i + 1))
 			done
