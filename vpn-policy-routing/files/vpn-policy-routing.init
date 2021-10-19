@@ -971,7 +971,7 @@ start_service() {
 	is_wan_up || return 1
 
 	iptables -t 'mangle' --list 'VPR_PREROUTING' >/dev/null 2>&1 || unset reloadedIface
-	[ -n "$(tmpfs get status)" ] || unset reloadedIface
+	[ -n "$(tmpfs get gateway)" ] || unset reloadedIface
 
 	if [ -s "$dnsmasqFile" ]; then
 		dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
