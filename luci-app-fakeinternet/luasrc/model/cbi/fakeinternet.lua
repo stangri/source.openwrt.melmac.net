@@ -1,4 +1,4 @@
--- Copyright 2016-2018 Stan Grishin <stangri@melmac.net>
+-- Copyright 2016-2018 Stan Grishin <stangri@melmac.ca>
 -- Licensed to the public under the Apache License 2.0.
 
 local packageName = "fakeinternet"

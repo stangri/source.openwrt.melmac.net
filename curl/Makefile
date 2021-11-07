@@ -77,7 +77,7 @@ define Package/curl/Default
   SECTION:=net
   CATEGORY:=Network
   URL:=http://curl.se/
-  MAINTAINER:=Stan Grishin <stangri@melmac.net>
+  MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 endef
 
 define Package/curl

@@ -1,4 +1,4 @@
-# Copyright 2017-2018 Stan Grishin (stangri@melmac.net)
+# Copyright 2017-2018 Stan Grishin (stangri@melmac.ca)
 # This is free software, licensed under the GNU General Public License v3.
 
 include $(TOPDIR)/rules.mk
@@ -7,7 +7,7 @@ PKG_NAME:=wireshark-helper
 PKG_VERSION:=0.0.1
 PKG_RELEASE:=5
 PKG_LICENSE:=GPL-3.0-or-later
-PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
+PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
 include $(INCLUDE_DIR)/package.mk
 
