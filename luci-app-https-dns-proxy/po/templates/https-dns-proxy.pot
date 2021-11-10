@@ -113,7 +113,7 @@ msgstr ""
 msgid "Digitale Gesellschaft"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/view/https-dns-proxy/buttons.htm:57
+#: applications/luci-app-https-dns-proxy/luasrc/view/https-dns-proxy/buttons.htm:33
 msgid "Disable"
 msgstr ""
 
@@ -121,7 +121,7 @@ msgstr ""
 msgid "Do not update configs"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/view/https-dns-proxy/buttons.htm:54
+#: applications/luci-app-https-dns-proxy/luasrc/view/https-dns-proxy/buttons.htm:30
 msgid "Enable"
 msgstr ""
 
@@ -240,7 +240,7 @@ msgstr ""
 msgid "Quad 9 (Unsecured)"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/view/https-dns-proxy/buttons.htm:44
+#: applications/luci-app-https-dns-proxy/luasrc/view/https-dns-proxy/buttons.htm:20
 msgid "Reload"
 msgstr ""
 
@@ -260,11 +260,11 @@ msgstr ""
 msgid "Service Status [%s %s]"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/view/https-dns-proxy/buttons.htm:41
+#: applications/luci-app-https-dns-proxy/luasrc/view/https-dns-proxy/buttons.htm:16
 msgid "Start"
 msgstr ""
 
-#: applications/luci-app-https-dns-proxy/luasrc/view/https-dns-proxy/buttons.htm:47
+#: applications/luci-app-https-dns-proxy/luasrc/view/https-dns-proxy/buttons.htm:22
 msgid "Stop"
 msgstr ""
 
