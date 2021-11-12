@@ -1,4 +1,4 @@
-# Copyright 2021 Stan Grishin (stangri@melmac.ca)
+# Copyright 2021 Stan Grishin (stangri@melmac.net)
 # This is free software, licensed under the MIT License.
 
 include $(TOPDIR)/rules.mk
@@ -11,7 +11,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/slackhq/nebula/tar.gz/v$(PKG_VERSION)?
 PKG_HASH:=e8d79231f6100a2cd240d6a092d0dcc2bfccadffa83cb40e99b7328f6c75c2ec
 
-PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
+PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
 

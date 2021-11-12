@@ -9,7 +9,7 @@ PKG_SOURCE_URL:=https://github.com/aarond10/https_dns_proxy/
 PKG_SOURCE_DATE:=2021-09-27
 PKG_SOURCE_VERSION:=da2501f542a732167a78f1851a511d9c0abc2fd8
 PKG_MIRROR_HASH:=62c01f896947b9c285eb44dc1cede17ccd4dcb9c97136c99f3fe2e91a09aeaaf
-PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
+PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
 

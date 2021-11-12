@@ -1,4 +1,4 @@
-# Copyright 2017-2018 Stan Grishin (stangri@melmac.ca)
+# Copyright 2017-2018 Stan Grishin (stangri@melmac.net)
 # This is free software, licensed under the GNU General Public License v3.
 
 include $(TOPDIR)/rules.mk
@@ -7,7 +7,7 @@ PKG_NAME:=antminer-monitor
 PKG_VERSION:=0.4.0
 PKG_RELEASE:=6
 PKG_LICENSE:=GPL-3.0
-PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
+PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 
 include $(INCLUDE_DIR)/package.mk
 

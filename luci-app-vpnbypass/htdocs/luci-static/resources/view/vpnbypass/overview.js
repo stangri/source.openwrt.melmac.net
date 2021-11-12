@@ -1,4 +1,4 @@
-// Copyright 2021 Stan Grishin (stangri@melmac.ca)
+// Copyright 2021 Stan Grishin (stangri@melmac.net)
 // Many thanks to [@vsviridov](https://github.com/vsviridov) for help with transition to JS
 
 'use strict';

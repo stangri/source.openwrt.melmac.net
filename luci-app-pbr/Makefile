@@ -1,10 +1,10 @@
-# Copyright 2017-2019 Stan Grishin (stangri@melmac.ca)
+# Copyright 2017-2019 Stan Grishin (stangri@melmac.net)
 # This is free software, licensed under the GNU General Public License v3.
 
 include $(TOPDIR)/rules.mk
 
 PKG_LICENSE:=GPL-3.0-or-later
-PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
+PKG_MAINTAINER:=Stan Grishin <stangri@melmac.net>
 PKG_VERSION:=0.9.2-10
 
 LUCI_TITLE:=Policy Based Routing Service Web UI
