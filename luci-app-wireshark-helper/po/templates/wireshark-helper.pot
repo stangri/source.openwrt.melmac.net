@@ -13,11 +13,11 @@ msgstr ""
 msgid "Configuration"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/view/wireshark-helper/buttons.htm:35
+#: applications/luci-app-wireshark-helper/luasrc/view/wireshark-helper/buttons.htm:57
 msgid "Disable"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/view/wireshark-helper/buttons.htm:32
+#: applications/luci-app-wireshark-helper/luasrc/view/wireshark-helper/buttons.htm:54
 msgid "Enable"
 msgstr ""
 
@@ -37,7 +37,7 @@ msgstr ""
 msgid "Loading"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/view/wireshark-helper/buttons.htm:22
+#: applications/luci-app-wireshark-helper/luasrc/view/wireshark-helper/buttons.htm:44
 msgid "Restart"
 msgstr ""
 
@@ -67,11 +67,11 @@ msgstr ""
 msgid "Service Status [%s %s]"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/view/wireshark-helper/buttons.htm:18
+#: applications/luci-app-wireshark-helper/luasrc/view/wireshark-helper/buttons.htm:41
 msgid "Start"
 msgstr ""
 
-#: applications/luci-app-wireshark-helper/luasrc/view/wireshark-helper/buttons.htm:24
+#: applications/luci-app-wireshark-helper/luasrc/view/wireshark-helper/buttons.htm:47
 msgid "Stop"
 msgstr ""
 

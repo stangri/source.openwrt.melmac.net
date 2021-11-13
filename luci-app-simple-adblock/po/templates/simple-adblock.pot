@@ -115,7 +115,7 @@ msgid "Delay (in seconds) for on-boot start"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:237
-#: applications/luci-app-simple-adblock/luasrc/view/simple-adblock/buttons.htm:38
+#: applications/luci-app-simple-adblock/luasrc/view/simple-adblock/buttons.htm:68
 msgid "Disable"
 msgstr ""
 
@@ -144,7 +144,7 @@ msgid "Downloading"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:238
-#: applications/luci-app-simple-adblock/luasrc/view/simple-adblock/buttons.htm:35
+#: applications/luci-app-simple-adblock/luasrc/view/simple-adblock/buttons.htm:65
 msgid "Enable"
 msgstr ""
 
@@ -165,7 +165,7 @@ msgstr ""
 msgid "Fail"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/luasrc/view/simple-adblock/buttons.htm:25
+#: applications/luci-app-simple-adblock/luasrc/view/simple-adblock/buttons.htm:55
 msgid "Force Re-Download"
 msgstr ""
 
@@ -299,7 +299,7 @@ msgstr ""
 msgid "Some output"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/luasrc/view/simple-adblock/buttons.htm:21
+#: applications/luci-app-simple-adblock/luasrc/view/simple-adblock/buttons.htm:52
 msgid "Start"
 msgstr ""
 
@@ -307,7 +307,7 @@ msgstr ""
 msgid "Starting"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/luasrc/view/simple-adblock/buttons.htm:27
+#: applications/luci-app-simple-adblock/luasrc/view/simple-adblock/buttons.htm:58
 msgid "Stop"
 msgstr ""
 

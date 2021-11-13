@@ -108,7 +108,7 @@ msgstr ""
 msgid "Default ICMP Interface"
 msgstr ""
 
-#: applications/luci-app-vpn-policy-routing/luasrc/view/vpn-policy-routing/buttons.htm:34
+#: applications/luci-app-vpn-policy-routing/luasrc/view/vpn-policy-routing/buttons.htm:59
 msgid "Disable"
 msgstr ""
 
@@ -132,7 +132,7 @@ msgstr ""
 msgid "Do not enforce policies when their gateway is down"
 msgstr ""
 
-#: applications/luci-app-vpn-policy-routing/luasrc/view/vpn-policy-routing/buttons.htm:31
+#: applications/luci-app-vpn-policy-routing/luasrc/view/vpn-policy-routing/buttons.htm:56
 msgid "Enable"
 msgstr ""
 
@@ -231,7 +231,7 @@ msgstr ""
 msgid "Remote ports"
 msgstr ""
 
-#: applications/luci-app-vpn-policy-routing/luasrc/view/vpn-policy-routing/buttons.htm:21
+#: applications/luci-app-vpn-policy-routing/luasrc/view/vpn-policy-routing/buttons.htm:46
 msgid "Restart"
 msgstr ""
 
@@ -328,7 +328,7 @@ msgid ""
 "protocol to a policy."
 msgstr ""
 
-#: applications/luci-app-vpn-policy-routing/luasrc/view/vpn-policy-routing/buttons.htm:17
+#: applications/luci-app-vpn-policy-routing/luasrc/view/vpn-policy-routing/buttons.htm:43
 msgid "Start"
 msgstr ""
 
@@ -342,7 +342,7 @@ msgstr ""
 msgid "Starting (WAN) Table ID number for tables created by the service."
 msgstr ""
 
-#: applications/luci-app-vpn-policy-routing/luasrc/view/vpn-policy-routing/buttons.htm:23
+#: applications/luci-app-vpn-policy-routing/luasrc/view/vpn-policy-routing/buttons.htm:49
 msgid "Stop"
 msgstr ""
 
@@ -370,7 +370,7 @@ msgstr ""
 msgid "Suppress/No output"
 msgstr ""
 
-#: applications/luci-app-vpn-policy-routing/luasrc/view/vpn-policy-routing/status-gateways.htm:13
+#: applications/luci-app-vpn-policy-routing/luasrc/view/vpn-policy-routing/status-gateways.htm:15
 msgid "The %s indicates default gateway. See the %sREADME%s for details."
 msgstr ""
 
