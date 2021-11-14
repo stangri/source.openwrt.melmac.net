@@ -68,14 +68,6 @@ msgstr ""
 msgid "Comment"
 msgstr ""
 
-#: applications/luci-app-vpn-policy-routing/luasrc/model/cbi/vpn-policy-routing.lua:270
-msgid ""
-"Comment, interface and at least one other field are required. Multiple local "
-"and remote addresses/devices/domains and ports can be space separated. "
-"Placeholders below represent just the format/syntax and will not be used if "
-"fields are left blank."
-msgstr ""
-
 #: applications/luci-app-vpn-policy-routing/luasrc/model/cbi/vpn-policy-routing.lua:168
 msgid "Condensed output"
 msgstr ""
@@ -195,6 +187,14 @@ msgstr ""
 
 #: applications/luci-app-vpn-policy-routing/luasrc/model/cbi/vpn-policy-routing.lua:286
 msgid "Name"
+msgstr ""
+
+#: applications/luci-app-vpn-policy-routing/luasrc/model/cbi/vpn-policy-routing.lua:270
+msgid ""
+"Name, interface and at least one other field are required. Multiple local "
+"and remote addresses/devices/domains and ports can be space separated. "
+"Placeholders below represent just the format/syntax and will not be used if "
+"fields are left blank."
 msgstr ""
 
 #: applications/luci-app-vpn-policy-routing/luasrc/model/cbi/vpn-policy-routing.lua:220

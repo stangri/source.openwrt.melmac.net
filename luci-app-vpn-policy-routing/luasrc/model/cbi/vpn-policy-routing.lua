@@ -267,7 +267,7 @@ webui_sorting:value("1", translate("Enabled"))
 webui_sorting.default = "1"
 
 -- Policies
-p = m:section(TypedSection, "policy", translate("Policies"), translate("Comment, interface and at least one other field are required. Multiple local and remote addresses/devices/domains and ports can be space separated. Placeholders below represent just the format/syntax and will not be used if fields are left blank."))
+p = m:section(TypedSection, "policy", translate("Policies"), translate("Name, interface and at least one other field are required. Multiple local and remote addresses/devices/domains and ports can be space separated. Placeholders below represent just the format/syntax and will not be used if fields are left blank."))
 p.template = "cbi/tblsection"
 if uci:get("vpn-policy-routing", "config", "webui_sorting") == "1" then
 	p.sortable  = true

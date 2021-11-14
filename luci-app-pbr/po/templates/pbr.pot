@@ -60,20 +60,8 @@ msgstr ""
 msgid "Boot Time-out"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:326
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:322
 msgid "Chain"
-msgstr ""
-
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:284
-msgid "Comment"
-msgstr ""
-
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:270
-msgid ""
-"Comment, interface and at least one other field are required. Multiple local "
-"and remote addresses/devices/domains and ports can be space separated. "
-"Placeholders below represent just the format/syntax and will not be used if "
-"fields are left blank."
 msgstr ""
 
 #: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:168
@@ -88,7 +76,7 @@ msgstr ""
 msgid "Controls both system log and console output verbosity."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:364
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:360
 msgid "Custom User File Includes"
 msgstr ""
 
@@ -96,11 +84,11 @@ msgstr ""
 msgid "DNSMASQ ipset"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:357
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:353
 msgid "DSCP Tag"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:352
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:348
 msgid "DSCP Tagging"
 msgstr ""
 
@@ -143,7 +131,7 @@ msgstr ""
 #: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:262
 #: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:266
 #: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:279
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:371
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:367
 msgid "Enabled"
 msgstr ""
 
@@ -177,7 +165,7 @@ msgstr ""
 msgid "Insert"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:335
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:331
 msgid "Interface"
 msgstr ""
 
@@ -185,16 +173,24 @@ msgstr ""
 msgid "Loading"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:289
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:285
 msgid "Local addresses / devices"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:296
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:292
 msgid "Local ports"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:286
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:283
 msgid "Name"
+msgstr ""
+
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:270
+msgid ""
+"Name, interface and at least one other field are required. Multiple local "
+"and remote addresses/devices/domains and ports can be space separated. "
+"Placeholders below represent just the format/syntax and will not be used if "
+"fields are left blank."
 msgstr ""
 
 #: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:220
@@ -205,7 +201,7 @@ msgstr ""
 msgid "Output verbosity"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:374
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:370
 msgid "Path"
 msgstr ""
 
@@ -224,15 +220,15 @@ msgstr ""
 msgid "Policy Based Routing"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:312
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:308
 msgid "Protocol"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:301
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:297
 msgid "Remote addresses / domains"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:306
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:302
 msgid "Remote ports"
 msgstr ""
 
@@ -240,7 +236,7 @@ msgstr ""
 msgid "Restart"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:365
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:361
 msgid ""
 "Run the following user files after setting up but before restarting DNSMASQ. "
 "See the %sREADME%s for details."
@@ -287,7 +283,7 @@ msgstr ""
 msgid "Service Warnings"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:353
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:349
 msgid ""
 "Set DSCP tags (in range between 1 and 63) for specific interfaces. See the "
 "%sREADME%s for details."
