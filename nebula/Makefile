@@ -4,12 +4,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nebula
-PKG_VERSION:=1.4.0
+PKG_VERSION:=1.5.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/slackhq/nebula/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=e8d79231f6100a2cd240d6a092d0dcc2bfccadffa83cb40e99b7328f6c75c2ec
+PKG_HASH:=f67684a8eba6da91de3601afc97567fddd0e198973bba950fcf15cded92cdc50
 
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 PKG_LICENSE:=MIT
@@ -18,8 +18,12 @@ PKG_LICENSE_FILES:=LICENSE
 PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
 PKG_USE_MIPS16:=0
+
 GO_PKG:=github.com/slackhq/nebula
-GO_PKG_LDFLAGS_X:=main.Build=$(PKG_VERSION)
+GO_PKG_BUILD_PKG:=github.com/slackhq/nebula
+GO_PKG_LDFLAGS_X:=\
+	github.com/slackhq/nebula/main.Build=$(PKG_VERSION) \
+	main.Build=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 include ../../lang/golang/golang-package.mk
@@ -56,6 +60,10 @@ define Package/nebula-service
   URL:=https://docs.openwrt.melmac.net/nebula/
   DEPENDS:=nebula
   PKGARCH:=all
+endef
+
+define Build/Compile
+  $(call GoPackage/Build/Compile)
 endef
 
 define Package/nebula/description
