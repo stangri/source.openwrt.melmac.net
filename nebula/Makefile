@@ -20,7 +20,9 @@ PKG_BUILD_PARALLEL:=1
 PKG_USE_MIPS16:=0
 
 GO_PKG:=github.com/slackhq/nebula
-GO_PKG_BUILD_PKG:=github.com/slackhq/nebula
+GO_PKG_BUILD_PKG:= \
+	github.com/slackhq/nebula/cmd/nebula \
+	github.com/slackhq/nebula/cmd/nebula-cert
 GO_PKG_LDFLAGS_X:=\
 	github.com/slackhq/nebula/main.Build=$(PKG_VERSION) \
 	main.Build=$(PKG_VERSION)
