@@ -649,16 +649,23 @@ table_create(){
 		ipt -t mangle -A "VPR_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
 		ipt -t mangle -A "VPR_MARK${mark}" -j RETURN || ipv4_error=1
 	fi
-
+	logger -t thelinuxguy "the iface $iface GW6 $gw6 table $tid DEV6 $dev6"
 	if [ "$ipv6Enabled" -ne 0 ]; then
 		ipv6_error=0
 		if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strictMode" -ne 0 ]; then
 			if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 				ip -6 route add unreachable default table "$tid" || ipv6_error=1
 			else
-				ip -6 route list table main | grep " dev $dev6 " | while read -r i; do
-					ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
-				done
+				if ip -6 route list table main | grep " dev $dev6 " >/dev/null 2>&1; then
+					output 2 "IPv6 routes found for '$dev6'. Making a copy."
+					ip -6 route list table main | grep " dev $dev6 " | while read -r i; do
+						ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
+					done
+				else 
+					output 2 "No IPv6 routes found. Adding a default route based on '$dev6' IP address." 
+					ip -6 route add $(ip -6 -o a show $dev6 | awk '{print $4}') dev $dev6 table $tid >/dev/null 2>&1 || ipv6_error=1
+					ip -6 route add default dev $dev6 table "$tid" >/dev/null 2>&1 || ipv6_error=1
+				fi
 			fi
 			ip -6 route flush cache || ipv6_error=1
 			ip -6 rule add fwmark "${mark}/${fwMask}" table "$tid" || ipv6_error=1
