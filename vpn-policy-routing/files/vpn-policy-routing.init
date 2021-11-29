@@ -649,7 +649,7 @@ table_create(){
 		ipt -t mangle -A "VPR_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
 		ipt -t mangle -A "VPR_MARK${mark}" -j RETURN || ipv4_error=1
 	fi
-	logger -t thelinuxguy "the iface $iface GW6 $gw6 table $tid DEV6 $dev6"
+
 	if [ "$ipv6Enabled" -ne 0 ]; then
 		ipv6_error=0
 		if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strictMode" -ne 0 ]; then
