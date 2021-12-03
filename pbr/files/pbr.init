@@ -128,6 +128,7 @@ is_l2tp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}
 is_oc() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:11}" = "openconnect" ]; }
 is_ovpn() { local dev; network_get_device dev "$1"; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
 is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "pptp" ]; }
+is_softether() { local dev; network_get_device dev "$1"; [ "${dev:0:4}" = "vpn_" ]; }
 is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
 is_tor_running() { 
 	local ret=0
@@ -139,7 +140,7 @@ is_tor_running() {
 	if [ "$ret" = "0" ]; then return 1; else return 0; fi
 }
 is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
-is_tunnel() { is_dslite "$1" || is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_tor "$1" || is_wg "$1"; }
+is_tunnel() { is_dslite "$1" || is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_softether "$1" || is_tor "$1" || is_wg "$1"; }
 is_wan() { [ "$1" = "$wanIface4" ] || { [ "${1##wan}" != "$1" ] && [ "${1##wan6}" = "$1" ]; } || [ "${1%%wan}" != "$1" ]; }
 is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ] || [ "${1/#wan6}" != "$1" ] || [ "${1/%wan6}" != "$1" ]; }
 is_ignored_interface() { str_contains_word "$ignoredIfaces" "$1"; }
@@ -761,13 +762,15 @@ EOF
 		if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strictMode" -ne 0 ]; then
 			if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 				ip -6 route add unreachable default table "$tid" || ipv6_error=1
-			else
-# shellcheck disable=SC2086
+			elif ip -6 route list table main | grep -q " dev $dev6 "; then
 				while read -r i; do
-					ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
+					ip -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 				done << EOF
 $(ip -6 route list table main | grep " dev $dev6 ")
 EOF
+			else
+				ip -6 route add "$(ip -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+				ip -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 			fi
 		fi
 	fi
@@ -835,15 +838,16 @@ EOF
 	return $s
 }
 
-interface_process_prepare() {
-	config_load 'network'
-	ifaceTableID="$wanTableID"
-	ifaceMark="$(printf '0x%06x' "$wanMark")"
-	ifacePriority="$wanPriority"
-}
-
 interface_process() {
 	local gw4 gw6 dev dev6 s=0 dscp iface="$1" action="$2" reloadedIface="$3" displayText
+
+	if [ "$iface" = 'all' ] && [ "$action" = 'prepare' ]; then
+		config_load 'network'
+		ifaceTableID="$wanTableID"
+		ifaceMark="$(printf '0x%06x' "$wanMark")"
+		ifacePriority="$wanPriority"
+		return
+	fi
 
 	is_supported_interface "$iface" || return 0
 	is_wan6 "$iface" && return 0
@@ -1044,7 +1048,7 @@ start_service() {
 	case $serviceStartTrigger in
 		on_iface_reload)
 			output 1 "Reloading Interface: $reloadedIface "
-			interface_process_prepare; config_foreach interface_process 'interface' 'create' "$reloadedIface";
+			interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'create' "$reloadedIface";
 			output 1 '\n'
 			;;
 		on_reload)
@@ -1056,7 +1060,7 @@ start_service() {
 				ipt -t mangle -N "${packageIptPrefix}_${i}"
 				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "${packageIptPrefix}_${i}"
 			done
-			interface_process_prepare; config_foreach interface_process 'interface' 'enumerate';
+			interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'enumerate';
 			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'enumerate';
 			if is_config_enabled 'policy'; then
 				output 1 'Processing Policies '
@@ -1064,7 +1068,7 @@ start_service() {
 				output 1 '\n'
 			fi
 			if is_config_enabled 'include'; then
-				interface_process_prepare; config_foreach interface_process 'interface' 'create_default_ipset';
+				interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'create_default_ipset';
 				output 1 'Processing User File(s) '
 				config_load "$packageName"; config_foreach user_file_process 'include';
 				output 1 '\n'
@@ -1090,7 +1094,7 @@ start_service() {
 				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "${packageIptPrefix}_${i}"
 			done
 			output 1 'Processing Interfaces '
-			interface_process_prepare; config_foreach interface_process 'interface' 'create';
+			interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'create';
 			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'create';
 			ip route flush cache
 			output 1 '\n'
@@ -1100,7 +1104,7 @@ start_service() {
 				output 1 '\n'
 			fi
 			if is_config_enabled 'include'; then
-				interface_process_prepare; config_foreach interface_process 'interface' 'create_default_ipset';
+				interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'create_default_ipset';
 				output 1 'Processing User File(s) '
 				config_load "$packageName"; config_foreach user_file_process 'include';
 				output 1 '\n'

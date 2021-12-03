@@ -119,6 +119,7 @@ function is_supported_interface(arg)
 		elseif type(ifname) == "string" then
 			if ifname and ifname:sub(1,3) == "tun" then return true end
 			if ifname and ifname:sub(1,3) == "tap" then return true end
+			if ifname and ifname:sub(1,4) == "vpn_" then return true end
 			if ifname and ifname:sub(1,3) == "tor" then return true end
 			if ifname and fs.access("/sys/devices/virtual/net/" .. ifname .. "/tun_flags") then return true end
 		end

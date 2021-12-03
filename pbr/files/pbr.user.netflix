@@ -37,6 +37,4 @@ if [ -s "$TARGET_FNAME" ]; then
 	fi
 fi
 
-rm -f "$TARGET_FNAME"
-
 return $_ret
