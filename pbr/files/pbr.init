@@ -110,10 +110,10 @@ pbr_get_gateway() {
 	local iface="$2" dev="$3" gw
 	network_get_gateway gw "$iface"
 	if [ -z "$gw" ] || [ "$gw" = '0.0.0.0' ]; then
-		gw="$(ip -4 a list dev "$dev" 2>/dev/null | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
+		gw="$(ubus call "network.interface.${iface}" status | jsonfilter -e "@.route[0].nexthop")"
 	fi
 	if [ -z "$gw" ] || [ "$gw" = '0.0.0.0' ]; then
-		gw="$(ubus call "network.interface.${iface}" status | jsonfilter -e "@.route[0].nexthop")"
+		gw="$(ip -4 a list dev "$dev" 2>/dev/null | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
 	fi
 	eval "$1"='$gw'
 }
