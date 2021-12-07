@@ -112,6 +112,9 @@ pbr_get_gateway() {
 	if [ -z "$gw" ] || [ "$gw" = '0.0.0.0' ]; then
 		gw="$(ip -4 a list dev "$dev" 2>/dev/null | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
 	fi
+	if [ -z "$gw" ] || [ "$gw" = '0.0.0.0' ]; then
+		gw="$(ubus call "network.interface.${iface}" status | jsonfilter -e "@.route[0].nexthop")"
+	fi
 	eval "$1"='$gw'
 }
 pbr_get_gateway6() {
