@@ -109,6 +109,9 @@ vpr_get_gateway() {
 	local iface="$2" dev="$3" gw
 	network_get_gateway gw "$iface"
 	if [ -z "$gw" ] || [ "$gw" = '0.0.0.0' ]; then
+		network_get_gateway gw "$iface" true
+	fi
+	if [ -z "$gw" ] || [ "$gw" = '0.0.0.0' ]; then
 		gw="$(ip -4 a list dev "$dev" 2>/dev/null | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
 	fi
 	eval "$1"='$gw'
@@ -116,6 +119,9 @@ vpr_get_gateway() {
 vpr_get_gateway6() {
 	local iface="$2" dev="$3" gw
 	network_get_gateway6 gw "$iface"
+	if [ -z "$gw" ] || [ "$gw" = '::/0' ] || [ "$gw" = '::0/0' ] || [ "$gw" = '::' ]; then
+		network_get_gateway6 gw "$iface" true
+	fi
 	if [ -z "$gw" ] || [ "$gw" = '::/0' ] || [ "$gw" = '::0/0' ] || [ "$gw" = '::' ]; then
 		gw="$(ip -6 a list dev "$dev" 2>/dev/null | grep inet6 | awk '{print $2}')"
 	fi
