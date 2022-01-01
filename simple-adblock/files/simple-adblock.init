@@ -26,30 +26,30 @@ fi
 
 readonly packageName='simple-adblock'
 readonly serviceName="$packageName $PKG_VERSION"
-readonly addnhostsFile="/var/run/${packageName}.addnhosts"
-readonly addnhostsCache="/var/run/${packageName}.addnhosts.cache"
-readonly addnhostsGzip="/etc/${packageName}.addnhosts.gz"
-readonly addnhostsOutputFilter='s|^|127.0.0.1 |;s|$||'
-readonly addnhostsOutputFilterIPv6='s|^|:: |;s|$||'
-readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
-readonly dnsmasqCache="/var/run/${packageName}.dnsmasq.cache"
-readonly dnsmasqGzip="/etc/${packageName}.dnsmasq.gz"
-readonly dnsmasqOutputFilter='s|^|local=/|;s|$|/|'
-readonly ipsetFile="/var/dnsmasq.d/${packageName}.ipset"
-readonly ipsetCache="/var/run/${packageName}.ipset.cache"
-readonly ipsetGzip="/etc/${packageName}.ipset.gz"
-readonly ipsetOutputFilter='s|^|ipset=/|;s|$|/adb|'
-readonly serversFile="/var/run/${packageName}.servers"
-readonly serversCache="/var/run/${packageName}.servers.cache"
-readonly serversGzip="/etc/${packageName}.servers.gz"
-readonly serversOutputFilter='s|^|server=/|;s|$|/|'
+readonly dnsmasqAddnhostsFile="/var/run/${packageName}/dnsmasq.addnhosts"
+readonly dnsmasqAddnhostsCache="/var/run/${packageName}/dnsmasq.addnhosts.cache"
+readonly dnsmasqAddnhostsGzip="/etc/${packageName}.dnsmasq.addnhosts.gz"
+readonly dnsmasqAddnhostsFilter='s|^|127.0.0.1 |;s|$||'
+readonly dnsmasqAddnhostsFilterIPv6='s|^|:: |;s|$||'
+readonly dnsmasqConfFile="/tmp/dnsmasq.d/${packageName}"
+readonly dnsmasqConfCache="/var/run/${packageName}/dnsmasq.conf.cache"
+readonly dnsmasqConfGzip="/etc/${packageName}.dnsmasq.conf.gz"
+readonly dnsmasqConfFilter='s|^|local=/|;s|$|/|'
+readonly dnsmasqIpsetFile="/tmp/dnsmasq.d/${packageName}.ipset"
+readonly dnsmasqIpsetCache="/var/run/${packageName}/dnsmasq.ipset.cache"
+readonly dnsmasqIpsetGzip="/etc/${packageName}.dnsmasq.ipset.gz"
+readonly dnsmasqIpsetFilter='s|^|ipset=/|;s|$|/adb|'
+readonly dnsmasqServersFile="/var/run/${packageName}/dnsmasq.servers"
+readonly dnsmasqServersCache="/var/run/${packageName}/dnsmasq.servers.cache"
+readonly dnsmasqServersGzip="/etc/${packageName}.dnsmasq.servers.gz"
+readonly dnsmasqServersFilter='s|^|server=/|;s|$|/|'
 readonly unboundFile="/var/lib/unbound/adb_list.${packageName}"
-readonly unboundCache="/var/run/${packageName}.unbound.cache"
+readonly unboundCache="/var/run/${packageName}/unbound.cache"
 readonly unboundGzip="/etc/${packageName}.unbound.gz"
-readonly unboundOutputFilter='s|^|local-zone: "|;s|$|" static|'
+readonly unboundFilter='s|^|local-zone: "|;s|$|" static|'
 readonly A_TMP="/var/${packageName}.hosts.a.tmp"
 readonly B_TMP="/var/${packageName}.hosts.b.tmp"
-readonly jsonFile="/var/run/${packageName}.json"
+readonly jsonFile="/var/run/${packageName}/${packageName}.json"
 readonly sharedMemoryError="/dev/shm/$packageName-error"
 readonly sharedMemoryOutput="/dev/shm/$packageName-output"
 readonly hostsFilter='/localhost/d;/^#/d;/^[^0-9]/d;s/^0\.0\.0\.0.//;s/^127\.0\.0\.1.//;s/[[:space:]]*#.*$//;s/[[:cntrl:]]$//;s/[[:space:]]//g;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
@@ -100,8 +100,10 @@ getErrorText() {
 		errorDNSReload) _ret="failed to reload/restart DNS resolver";;
 		errorDownloadingConfigUpdate) _ret="failed to download Config Update file";;
 		errorDownloadingList) _ret="failed to download";;
-		errorParsingList) _ret="failed to parse";;
 		errorParsingConfigUpdate) _ret="failed to parse Config Update file";;
+		errorParsingList) _ret="failed to parse";;
+		errorNoSSLSupport) _ret="no HTTPS/SSL support on device";;
+		errorCreatingDirectory) _ret="failed to create output/cache/gzip file directory";;
 	esac
 	printf "%b" "$_ret"
 }
@@ -152,6 +154,7 @@ outputFilter=''; outputFilterIPv6=''; outputFile=''; outputGzip=''; outputCache=
 awk='awk';
 
 load_package_config() {
+	local i
 	config_load "$packageName"
 	config_get_bool serviceEnabled        'config' 'enabled' 1
 	config_get_bool forceDNS              'config' 'force_dns' 1
@@ -183,55 +186,55 @@ load_package_config() {
 
 	case "$targetDNS" in
 		dnsmasq.addnhosts)
-			outputFilter="$addnhostsOutputFilter"
-			outputFile="$addnhostsFile"
-			outputCache="$addnhostsCache"
-			outputGzip="$addnhostsGzip"
-			[ "$ipv6Enabled" -gt 0 ] && outputFilterIPv6="$addnhostsOutputFilterIPv6"
-			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
-			rm -f "$ipsetFile" "$ipsetCache" "$ipsetGzip"
-			rm -f "$serversFile" "$serversCache" "$serversGzip"
+			outputFilter="$dnsmasqAddnhostsFilter"
+			outputFile="$dnsmasqAddnhostsFile"
+			outputCache="$dnsmasqAddnhostsCache"
+			outputGzip="$dnsmasqAddnhostsGzip"
+			[ "$ipv6Enabled" -gt 0 ] && outputFilterIPv6="$dnsmasqAddnhostsFilterIPv6"
+			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "$dnsmasqConfGzip"
+			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
+			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			;;
 		dnsmasq.conf)
-			outputFilter="$dnsmasqOutputFilter"
-			outputFile="$dnsmasqFile"
-			outputCache="$dnsmasqCache"
-			outputGzip="$dnsmasqGzip"
-			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
-			rm -f "$ipsetFile" "$ipsetCache" "$ipsetGzip"
-			rm -f "$serversFile" "$serversCache" "$serversGzip"
+			outputFilter="$dnsmasqConfFilter"
+			outputFile="$dnsmasqConfFile"
+			outputCache="$dnsmasqConfCache"
+			outputGzip="$dnsmasqConfGzip"
+			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "$dnsmasqAddnhostsGzip"
+			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
+			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			;;
 		dnsmasq.ipset)
-			outputFilter="$ipsetOutputFilter"
-			outputFile="$ipsetFile"
-			outputCache="$ipsetCache"
-			outputGzip="$ipsetGzip"
-			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
-			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
-			rm -f "$serversFile" "$serversCache" "$serversGzip"
+			outputFilter="$dnsmasqIpsetFilter"
+			outputFile="$dnsmasqIpsetFile"
+			outputCache="$dnsmasqIpsetCache"
+			outputGzip="$dnsmasqIpsetGzip"
+			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "$dnsmasqConfGzip"
+			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "$dnsmasqAddnhostsGzip"
+			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			;;
 		dnsmasq.servers)
-			outputFilter="$serversOutputFilter"
-			outputFile="$serversFile"
-			outputCache="$serversCache"
-			outputGzip="$serversGzip"
-			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
-			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
-			rm -f "$ipsetFile" "$ipsetCache" "$ipsetGzip"
+			outputFilter="$dnsmasqServersFilter"
+			outputFile="$dnsmasqServersFile"
+			outputCache="$dnsmasqServersCache"
+			outputGzip="$dnsmasqServersGzip"
+			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "$dnsmasqConfGzip"
+			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "$dnsmasqAddnhostsGzip"
+			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			;;
 		unbound.adb_list)
-			outputFilter="$unboundOutputFilter"
+			outputFilter="$unboundFilter"
 			outputFile="$unboundFile"
 			outputCache="$unboundCache"
 			outputGzip="$unboundGzip"
-			rm -f "$addnhostsFile" "$addnhostsCache" "$addnhostsGzip"
-			rm -f "$dnsmasqFile" "$dnsmasqCache" "$dnsmasqGzip"
-			rm -f "$ipsetFile" "$ipsetCache" "$ipsetGzip"
-			rm -f "$serversFile" "$serversCache" "$serversGzip"
+			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "$dnsmasqAddnhostsGzip"
+			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "$dnsmasqConfGzip"
+			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
+			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 			;;
 	esac
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
@@ -322,9 +325,13 @@ is_enabled() {
 			;;
 	esac
 
-	[ ! -d "${outputFile%/*}" ] && mkdir -p "${outputFile%/*}"
-	[ ! -d "${outputCache%/*}" ] && mkdir -p "${outputFile%/*}"
-	[ ! -d "${outputGzip%/*}" ] && mkdir -p "${outputFile%/*}"
+	for i in "$outputFile" "$outputCache" "$outputGzip"; do
+		if ! mkdir -p "$(dirname "$i")"; then
+			output "$_ERROR_: Unable to create directory for $i!\\n"
+			jsonOps add error "errorOutputFileCreate"
+		fi
+	done
+
 	cacheOps 'testGzip' && return 0
 	network_flush_cache; network_find_wan wan_if; network_get_gateway wan_gw "$wan_if";
 	[ -n "$wan_gw" ] && return 0
@@ -335,23 +342,23 @@ dnsmasqOps() {
 	local cfg="$1" param="$2"
 	case "$param" in
 		dnsmasq.addnhosts)
-			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$serversFile" ]; then
+			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$dnsmasqServersFile" ]; then
 				uci -q del dhcp."$cfg".serversfile
 			fi
-			if ! uci -q get dhcp."$cfg".addnhosts | grep -q "$addnhostsFile"; then
-				uci add_list dhcp."$cfg".addnhosts="$addnhostsFile"
+			if ! uci -q get dhcp."$cfg".addnhosts | grep -q "$dnsmasqAddnhostsFile"; then
+				uci add_list dhcp."$cfg".addnhosts="$dnsmasqAddnhostsFile"
 			fi
 			;;
 		dnsmasq.conf|dnsmasq.ipset|unbound.adb_list|cleanup)
-			uci -q del_list dhcp."$cfg".addnhosts="$addnhostsFile"
-			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$serversFile" ]; then
+			uci -q del_list dhcp."$cfg".addnhosts="$dnsmasqAddnhostsFile"
+			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$dnsmasqServersFile" ]; then
 				uci -q del dhcp."$cfg".serversfile
 			fi
 			;;
 		dnsmasq.servers)
-			uci -q del_list dhcp."$cfg".addnhosts="$addnhostsFile"
-			if [ "$(uci -q get dhcp."$cfg".serversfile)" != "$serversFile" ]; then
-				uci set dhcp."$cfg".serversfile="$serversFile"
+			uci -q del_list dhcp."$cfg".addnhosts="$dnsmasqAddnhostsFile"
+			if [ "$(uci -q get dhcp."$cfg".serversfile)" != "$dnsmasqServersFile" ]; then
+				uci set dhcp."$cfg".serversfile="$dnsmasqServersFile"
 			fi
 			;;
 	esac
@@ -1010,10 +1017,10 @@ reload_service() { rc_procd start_service 'restart'; }
 dl() { rc_procd start_service 'download'; }
 
 killcache() {
-	rm -f "$addnhostsCache" "$addnhostsGzip"
-	rm -f "$dnsmasqCache" "$dnsmasqGzip"
-	rm -f "$ipsetCache" "$ipsetGzip"
-	rm -f "$serversCache" "$serversGzip"
+	rm -f "$dnsmasqAddnhostsCache" "$dnsmasqAddnhostsGzip"
+	rm -f "$dnsmasqConfCache" "$dnsmasqConfGzip"
+	rm -f "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
+	rm -f "$dnsmasqServersCache" "$dnsmasqServersGzip"
 	rm -f "$unboundCache" "$unboundGzip"
 	config_load 'dhcp'
 	config_foreach dnsmasqOps 'dnsmasq' 'cleanup'

@@ -12,6 +12,8 @@ local nutil = require "nixio.util"
 local http = require "luci.http"
 local dispatcher = require "luci.dispatcher"
 
+local jsonStatusFile = "/var/run/" .. packageName .. "/" .. packageName .. ".json"
+
 function getPackageVersion()
 	local opkgFile = "/usr/lib/opkg/status"
 	local line
@@ -76,24 +78,24 @@ if targetDNS ~= "dnsmasq.addnhosts" and targetDNS ~= "dnsmasq.conf" and
 end
 
 if targetDNS == "dnsmasq.addnhosts" then
-	outputFile="/var/run/" .. packageName .. ".addnhosts"
-	outputCache="/var/run/" .. packageName .. ".addnhosts.cache"
-	outputGzip="/etc/" .. packageName .. ".addnhosts.gz"
+	outputFile="/var/run/" .. packageName .. "/dnsmasq.addnhosts"
+	outputCache="/var/run/" .. packageName .. "/dnsmasq.addnhosts.cache"
+	outputGzip="/etc/" .. packageName .. ".dnsmasq.addnhosts.gz"
 elseif targetDNS == "dnsmasq.conf" then
-	outputFile="/var/dnsmasq.d/" .. packageName .. ""
-	outputCache="/var/run/" .. packageName .. ".dnsmasq.cache"
-	outputGzip="/etc/" .. packageName .. ".dnsmasq.gz"
+	outputFile="/tmp/dnsmasq.d/" .. packageName
+	outputCache="/var/run/" .. packageName .. "/dnsmasq.conf.cache"
+	outputGzip="/etc/" .. packageName .. ".dnsmasq.conf.gz"
 elseif targetDNS == "dnsmasq.ipset" then
-	outputFile="/var/dnsmasq.d/" .. packageName .. ".ipset"
-	outputCache="/var/run/" .. packageName .. ".ipset.cache"
-	outputGzip="/etc/" .. packageName .. ".ipset.gz"
+	outputFile="/tmp/dnsmasq.d/" .. packageName .. ".ipset"
+	outputCache="/var/run/" .. packageName .. "/dnsmasq.ipset.cache"
+	outputGzip="/etc/" .. packageName .. ".dnsmasq.ipset.gz"
 elseif targetDNS == "dnsmasq.servers" then
-	outputFile="/var/run/" .. packageName .. ".servers"
-	outputCache="/var/run/" .. packageName .. ".servers.cache"
-	outputGzip="/etc/" .. packageName .. ".servers.gz"
+	outputFile="/var/run/" .. packageName .. "/dnsmasq.servers"
+	outputCache="/var/run/" .. packageName .. "/dnsmasq.servers.cache"
+	outputGzip="/etc/" .. packageName .. ".dnsmasq.servers.gz"
 elseif targetDNS == "unbound.adb_list" then
-	outputFile="/var/lib/unbound/adb_list." .. packageName .. ""
-	outputCache="/var/run/" .. packageName .. ".unbound.cache"
+	outputFile="/var/lib/unbound/adb_list." .. packageName
+	outputCache="/var/run/" .. packageName .. "/unbound.cache"
 	outputGzip="/etc/" .. packageName .. ".unbound.gz"
 end
 
@@ -106,8 +108,8 @@ else
 	tmpfsStatus = "statusStopped"
 end
 
-if fs.access("/var/run/" .. packageName .. ".json") then
-	local f = io.open("/var/run/" .. packageName .. ".json")
+if fs.access(jsonStatusFile) then
+	local f = io.open(jsonStatusFile)
 	local s = f:read("*a")
 	f:close()
 	tmpfs = jsonc.parse(s)
@@ -160,6 +162,7 @@ errorTable["errorDownloadingList"] = translate("failed to download")
 errorTable["errorParsingConfigUpdate"] = translate("failed to parse Config Update file")
 errorTable["errorParsingList"] = translate("failed to parse")
 errorTable["errorNoSSLSupport"] = translate("no HTTPS/SSL support on device")
+errorTable["errorCreatingDirectory"] = translate("failed to create output/cache/gzip file directory")
 
 m = Map("simple-adblock", translate("Simple AdBlock Settings"))
 m.apply_on_parse = true

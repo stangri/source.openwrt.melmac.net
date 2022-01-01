@@ -7,8 +7,9 @@
 	local packageName = "simple-adblock"
 	local serviceRunning, serviceEnabled = false, false;
 	local tmpfs, tmpfsStatus;
-	if nixio.fs.access("/var/run/" .. packageName .. ".json") then
-		tmpfs = luci.jsonc.parse(luci.util.trim(luci.sys.exec("cat /var/run/" .. packageName .. ".json")))
+	local jsonStatusFile = "/var/run/" .. packageName .. "/" .. packageName .. ".json"
+	if nixio.fs.access(jsonStatusFile) then
+		tmpfs = luci.jsonc.parse(luci.util.trim(luci.sys.exec("cat " .. jsonStatusFile)))
 		if tmpfs and tmpfs['data'] and tmpfs['data']['status'] then
 			tmpfsStatus = tmpfs['data']['status']
 		end
