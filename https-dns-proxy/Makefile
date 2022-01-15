@@ -38,7 +38,10 @@ define Package/https-dns-proxy/conffiles
 endef
 
 define Package/https-dns-proxy/install
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d ${1}/etc/config $(1)/etc/hotplug.d/iface
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) ${1}/etc/config
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/https_dns_proxy $(1)/usr/sbin/https-dns-proxy
 	$(INSTALL_BIN) ./files/https-dns-proxy.init $(1)/etc/init.d/https-dns-proxy
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/https-dns-proxy

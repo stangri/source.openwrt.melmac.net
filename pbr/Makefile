@@ -14,6 +14,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/pbr
 	SECTION:=net
 	CATEGORY:=Network
+	SUBMENU:=VPN
 	TITLE:=Policy Based Routing Service
 	URL:=https://docs.openwrt.melmac.net/pbr/
 	DEPENDS:=+jshn +ipset +iptables +resolveip +kmod-ipt-ipset +iptables-mod-ipopt +ip-full

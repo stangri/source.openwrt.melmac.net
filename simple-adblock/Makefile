@@ -38,7 +38,9 @@ define Build/Compile
 endef
 
 define Package/simple-adblock/install
-	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config $(1)/tmp
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_DIR) $(1)/tmp
 	$(INSTALL_BIN) ./files/simple-adblock.init $(1)/etc/init.d/simple-adblock
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/simple-adblock
 	$(INSTALL_CONF) ./files/simple-adblock.conf $(1)/etc/config/simple-adblock

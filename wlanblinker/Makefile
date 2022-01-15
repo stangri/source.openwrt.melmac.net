@@ -36,7 +36,9 @@ define Build/Compile
 endef
 
 define Package/wlanblinker/install
-	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/wlanblinker.init $(1)/etc/init.d/wlanblinker
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/wlanblinker
 	$(INSTALL_CONF) ./files/wlanblinker.config $(1)/etc/config/wlanblinker

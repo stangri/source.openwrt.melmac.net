@@ -47,7 +47,8 @@ define Build/Compile
 endef
 
 define Package/antminer-monitor/install
-	$(INSTALL_DIR) $(1)/etc/init.d $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/antminer-monitor.init $(1)/etc/init.d/antminer-monitor
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/antminer-monitor
 	$(CP) $(PKG_BUILD_DIR)/antminer-monitor-$(PKG_VERSION) $(1)/usr/sbin/antminer-monitor

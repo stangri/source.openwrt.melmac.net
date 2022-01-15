@@ -30,7 +30,8 @@ Please see https://github.com/GothenburgBitFactory/taskserver for more informati
 endef
 
 define Package/taskserver/install
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/doc/taskd
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_DIR) $(1)/usr/share/doc/taskd
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ipkg-install/usr/bin/taskd $(1)/usr/sbin/taskd
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ipkg-install/usr/bin/taskdctl $(1)/usr/sbin/taskdctl
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ipkg-install/usr/share/doc/taskd/NEWS $(1)/usr/share/doc/taskd/NEWS

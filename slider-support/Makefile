@@ -75,7 +75,11 @@ define Build/Compile
 endef
 
 define Package/slider-support/install
-	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config $(1)/etc/hotplug.d/iface $(1)/lib/functions $(1)/etc/rc.button
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_DIR) $(1)/lib/functions
+	$(INSTALL_DIR) $(1)/etc/rc.button
 	$(INSTALL_BIN) ./files/slider-support.init $(1)/etc/init.d/slider-support
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/slider-support
 	$(INSTALL_CONF) ./files/slider-support.config $(1)/etc/config/slider-support
