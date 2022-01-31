@@ -52,7 +52,7 @@ uci_add_list_if_new() {
 		key="${key%=*}"
 	fi
 	[ -n "$key" ] && [ -n "$value" ] || return 1
-	for i in uci -q get "$key"; do
+	for i in $(uci -q get "$key"); do
 		[ "$i" = "$value" ] && return 0
 	done
 	uci -q add_list "${key}=${value}"
