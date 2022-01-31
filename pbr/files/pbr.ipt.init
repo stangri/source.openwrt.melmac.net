@@ -1,0 +1,1424 @@
+#!/bin/sh /etc/rc.common
+# Copyright 2021 Stan Grishin (stangri@melmac.ca)
+# shellcheck disable=SC2039,SC1091,SC2018,SC2019,SC3043,SC3057,SC3060
+PKG_VERSION='dev-test'
+
+# sysctl net.ipv4.conf.default.rp_filter=1
+# sysctl net.ipv4.conf.all.rp_filter=1
+
+# shellcheck disable=SC2034
+START=94
+# shellcheck disable=SC2034
+USE_PROCD=1
+
+if type extra_command >/dev/null 2>&1; then
+	extra_command 'status' "Generates output required to troubleshoot routing issues
+		Use '-d' option for more detailed output
+		Use '-p' option to automatically upload data under VPR paste.ee account
+			WARNING: while paste.ee uploads are unlisted, they are still publicly available
+		List domain names after options to include their lookup in report"
+	extra_command 'version' 'Show version information'
+	extra_command 'reload_interface' 'Reload specific interface only'
+else
+# shellcheck disable=SC2034
+	EXTRA_COMMANDS='reload_interface status version'
+# shellcheck disable=SC2034
+	EXTRA_HELP="	status	Generates output required to troubleshoot routing issues
+		Use '-d' option for more detailed output
+		Use '-p' option to automatically upload data under VPR paste.ee account
+			WARNING: while paste.ee uploads are unlisted, they are still publicly available
+		List domain names after options to include their lookup in report"
+fi
+
+readonly packageName='pbr'
+readonly serviceName="$packageName $PKG_VERSION"
+readonly ipsPrefix='pbr'
+readonly iptPrefix='PBR'
+readonly jsonFile="/var/run/${packageName}.json"
+readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
+readonly sharedMemoryOutput="/dev/shm/$packageName-output"
+readonly _OK_='\033[0;32m\xe2\x9c\x93\033[0m'
+readonly _FAIL_='\033[0;31m\xe2\x9c\x97\033[0m'
+readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
+readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
+readonly _ERROR_='\033[0;31mERROR\033[0m'
+readonly _WARNING_='\033[0;33mWARNING\033[0m'
+
+gatewaySummary=''; errorSummary=''; warningSummary='';
+serviceEnabled=''; verbosity=''; strictMode=''; ipv6Enabled=''; 
+wanTableID=''; wanMark=''; wanPriority=''; fwMask=''; 
+destIpset=''; srcIpset=''; resolverIpset=''; userIpset='0';
+destIpsetSupported='0'; srcIpsetSupported='0'; resolverIpsetSupported='0';  userIpsetSupported='0';
+wanIface4=''; wanIface6=''; ifaceMark=''; ifaceTableID=''; ifacePriority='';
+ifAll=''; ifSupported=''; ignoredIfaces=''; supportedIfaces=''; icmpIface='';
+wanGW4=''; wanGW6=''; bootTimeout=''; insertOption=''; secureReload='';
+webuiChainColumn=''; webuiShowIgnore='';
+procdReloadDelay=''; serviceStartTrigger='';
+processPolicyError=''; processPolicyWarning='';
+usedChainsList='PREROUTING'; configLoaded='0';
+
+version() { echo "$PKG_VERSION"; }
+output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
+output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
+output_fail() { s=1; output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
+output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
+str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
+str_replace() { echo "${1//$2/$3}"; }
+str_contains() { [ -n "$1" ] &&[ -n "$2" ] && [ "${1//$2}" != "$1" ]; }
+str_contains_word() { echo "$1" | grep -q -w "$2"; }
+str_to_lower() { echo "$1" | tr 'A-Z' 'a-z'; }
+str_extras_to_underscore() { echo "$1" | tr '[\. ~`!@#$%^&*()\+/,<>?//;:]' '_'; }
+str_extras_to_space() { echo "$1" | tr ';{}' ' '; }
+
+output() {
+# Can take a single parameter (text) to be output at any verbosity
+# Or target verbosity level and text to be output at specifc verbosity
+	local msg memmsg logmsg
+	if [ "$#" -ne 1 ]; then
+		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; else return 0; fi
+	fi
+	[ -t 1 ] && printf "%b" "$1"
+	msg="${1//$serviceName /service }";
+	if [ "$(printf "%b" "$msg" | wc -l)" -gt 0 ]; then
+		[ -s "$sharedMemoryOutput" ] && memmsg="$(cat "$sharedMemoryOutput")"
+		logmsg="$(printf "%b" "${memmsg}${msg}" | sed 's/\x1b\[[0-9;]*m//g')"
+		logger -t "${packageName:-service}" "$(printf "%b" "$logmsg")"
+		rm -f "$sharedMemoryOutput"
+	else
+		printf "%b" "$msg" >> "$sharedMemoryOutput"
+	fi
+}
+is_present() { command -v "$1" >/dev/null 2>&1; }
+is_installed() { [ -s "/usr/lib/opkg/info/${1}.control" ]; }
+is_variant_installed() { [ "$(echo /usr/lib/opkg/info/"${1}"*.control)" != "/usr/lib/opkg/info/${1}*.control" ]; }
+
+build_ifAll() { ifAll="${ifAll}${1} "; }
+build_ifSupported() { is_supported_interface "$1" && ifSupported="${ifSupported}${1} "; }
+pbr_find_iface() {
+	local iface i param="$2"
+	[ "$param" = 'wan6' ] || param='wan'
+	"network_find_${param}" iface
+	is_tunnel "$iface" && unset iface
+	if [ -z "$iface" ]; then
+		for i in $ifAll; do
+			if "is_${param}" "$i"; then break; else unset i; fi
+		done
+	fi
+	eval "$1"='${iface:-$i}'
+}
+pbr_get_gateway() {
+	local iface="$2" dev="$3" gw
+	network_get_gateway gw "$iface" true
+#	if [ -z "$gw" ] || [ "$gw" = '0.0.0.0' ]; then
+#		gw="$(ubus call "network.interface.${iface}" status | jsonfilter -e "@.route[0].nexthop")"
+#	fi
+	if [ -z "$gw" ] || [ "$gw" = '0.0.0.0' ]; then
+		gw="$(ip -4 a list dev "$dev" 2>/dev/null | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
+	fi
+	eval "$1"='$gw'
+}
+pbr_get_gateway6() {
+	local iface="$2" dev="$3" gw
+	network_get_gateway6 gw "$iface" true
+	if [ -z "$gw" ] || [ "$gw" = '::/0' ] || [ "$gw" = '::0/0' ] || [ "$gw" = '::' ]; then
+		gw="$(ip -6 a list dev "$dev" 2>/dev/null | grep inet6 | awk '{print $2}')"
+	fi
+	eval "$1"='$gw'
+}
+is_ipset_type_supported() { ipset help hash:"$1" >/dev/null 2>&1; }
+is_dslite() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:6}" = "dslite" ]; }
+is_l2tp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "l2tp" ]; }
+is_oc() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:11}" = "openconnect" ]; }
+is_ovpn() { local dev; network_get_device dev "$1"; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
+is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "pptp" ]; }
+is_softether() { local dev; network_get_device dev "$1"; [ "${dev:0:4}" = "vpn_" ]; }
+is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
+is_tor_running() { 
+	local ret=0
+	if [ -s "/etc/tor/torrc" ]; then
+		json_load "$(ubus call service list "{ 'name': 'tor' }")"
+		json_select 'tor'; json_select 'instances'; json_select 'instance1';
+		json_get_var ret 'running'; json_cleanup
+	fi
+	if [ "$ret" = "0" ]; then return 1; else return 0; fi
+}
+is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
+is_tunnel() { is_dslite "$1" || is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_softether "$1" || is_tor "$1" || is_wg "$1"; }
+is_wan() { [ "$1" = "$wanIface4" ] || { [ "${1##wan}" != "$1" ] && [ "${1##wan6}" = "$1" ]; } || [ "${1%%wan}" != "$1" ]; }
+is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ] || [ "${1/#wan6}" != "$1" ] || [ "${1/%wan6}" != "$1" ]; }
+is_ignored_interface() { str_contains_word "$ignoredIfaces" "$1"; }
+is_supported_interface() { str_contains_word "$supportedIfaces" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; }; }
+is_mac_address() { expr "$1" : '[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]$' >/dev/null; }
+is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; }
+is_ipv6() { ! is_mac_address "$1" && str_contains "$1" ":"; }
+is_family_mismatch() { ( is_netmask "${1//!}" && is_ipv6 "${2//!}" ) || ( is_ipv6 "${1//!}" && is_netmask "${2//!}" ); }
+is_ipv6_link_local() { [ "${1:0:4}" = "fe80" ]; }
+is_ipv6_unique_local() { [ "${1:0:2}" = "fc" ] || [ "${1:0:2}" = "fd" ]; }
+is_ipv6_global() { [ "${1:0:4}" = "2001" ]; }
+# is_ipv6_global() { is_ipv6 "$1" && ! is_ipv6_link_local "$1" && ! is_ipv6_link_local "$1"; }
+is_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
+is_domain() { str_contains "$1" '[a-zA-Z]'; }
+is_phys_dev() { [ "${1:0:1}" = "@" ] && ip l show | grep -E -q "^\\d+\\W+${1:1}"; }
+dnsmasq_kill() { killall -q -s HUP dnsmasq; }
+dnsmasq_restart() { output 3 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
+is_default_dev() { [ "$1" = "$(ip -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
+is_supported_iface_dev() { local n dev; for n in $ifSupported; do network_get_device dev "$n"; [ "$1" = "$dev" ] && return 0; done; return 1; }
+is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
+append_chains_targets() {
+	local chain iface name enabled
+	config_get name "$1" 'name' 'blank'
+	config_get chain "$1" 'chain' 'PREROUTING'
+	config_get iface "$1" 'interface'
+	config_get_bool enabled "$1" 'enabled' 1
+	[ "$enabled" -ne 0 ] || return
+	if ! str_contains_word "$usedChainsList" "$chain"; then
+		usedChainsList="$usedChainsList $chain"
+		if [ "$chain" != 'PREROUTING' ] && [ "$webuiChainColumn" != '1' ]; then
+			warningSummary="${warningSummary}$_WARNING_: Chain '$chain' is used by a policy '$name', but a WebUI setting to show chains column (webui_chain_column) is disabled!\\n"
+		fi
+	fi
+	if [ "$iface" = 'ignore' ] && ! str_contains_word "$supportedIfaces" 'ignore'; then
+		supportedIfaces="$supportedIfaces ignore"
+		if [ "$webuiShowIgnore" != '1' ]; then
+			warningSummary="${warningSummary}$_WARNING_: The 'ignore' target is used by a policy '$name', but a WebUI setting to show 'ignore' target (webui_show_ignore_target) is disabled!\\n"
+		fi
+	fi
+}
+# shellcheck disable=SC2016
+resolveip_to_ipt() { resolveip "$1" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d'; }
+insert_lock() {
+	local s=0 lan_subnet wan_device
+	[ "$secureReload" -ne 0 ] || return 0
+	output 3 'Activating Secure Reload '
+	network_get_subnet lan_subnet "lan"
+	network_get_physdev wan_device "wan"
+	iptables -N "${iptPrefix}_KILLSWITCH" >/dev/null 2>&1 || s=1
+	iptables -A "${iptPrefix}_KILLSWITCH" -s "$lan_subnet" -o "$wan_device" -j REJECT >/dev/null 2>&1 || s=1
+	iptables -I FORWARD -j "${iptPrefix}_KILLSWITCH" >/dev/null 2>&1 || s=1
+	if [ "$s" -eq 0 ]; then
+		output_okn
+	else
+		output_failn
+	fi
+}
+
+remove_lock() {
+	local s=0
+	if [ "$secureReload" -ne 0 ]; then
+		output 3 'Deactivating Secure Reload '
+	fi
+	iptables -D FORWARD -j "${iptPrefix}_KILLSWITCH" >/dev/null 2>&1 || s=1
+	iptables -F "${iptPrefix}_KILLSWITCH" >/dev/null 2>&1 || s=1
+	iptables -X "${iptPrefix}_KILLSWITCH" >/dev/null 2>&1 || s=1
+	if [ "$secureReload" -ne 0 ]; then
+		if [ "$s" -eq 0 ]; then
+			output_okn
+		else
+			output_failn
+		fi
+	fi
+}
+
+check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
+
+is_config_enabled() {
+	local cfg="$1" _cfg_enabled=1
+	[ -n "$1" ] || return 1
+	config_load "$packageName"
+	config_foreach check_config "$cfg"
+	return "$_cfg_enabled"
+}
+
+load_package_config() {
+	[ "$configLoaded" -eq 0 ] || return 0
+
+	config_load "$packageName"
+	config_get_bool serviceEnabled      'config' 'enabled' '0'
+	config_get_bool strictMode          'config' 'strict_enforcement' '1'
+	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' '0'
+	config_get_bool destIpset           'config' 'dest_ipset' '0'
+	config_get_bool srcIpset            'config' 'src_ipset' '0'
+	config_get_bool secureReload        'config' 'secure_reload' '0'
+	config_get resolverIpset            'config' 'resolver_ipset' 'dnsmasq.ipset'
+	config_get verbosity                'config' 'verbosity' '2'
+	config_get wanTableID               'config' 'wan_tid' '201'
+	config_get wanMark                  'config' 'wan_mark' '0x010000'
+	config_get wanPriority              'config' 'wan_ip_rules_priority' '30000'
+	config_get fwMask                   'config' 'fw_mask' '0xff0000'
+	config_get icmpIface                'config' 'icmp_interface'
+	config_get ignoredIfaces            'config' 'ignored_interface'
+	config_get supportedIfaces          'config' 'supported_interface'
+	config_get bootTimeout              'config' 'boot_timeout' '30'
+	config_get insertOption             'config' 'iptables_rule_option' 'append'
+	config_get procdReloadDelay         'config' 'procd_reload_delay' '0'
+	config_get_bool webuiChainColumn    'config' 'webui_chain_column' '0'
+	config_get_bool webuiShowIgnore     'config' 'webui_show_ignore_target' '0'
+
+	config_foreach append_chains_targets 'policy'
+
+	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
+		verbosity=2
+	fi
+
+	. /lib/functions/network.sh
+	. /usr/share/libubox/jshn.sh
+	mkdir -p "${jsonFile%/*}"
+	mkdir -p "${dnsmasqFile%/*}"
+
+	if [ -n "$icmpIface" ] && ! str_contains_word "$usedChainsList" 'OUTPUT'; then
+		usedChainsList="$usedChainsList OUTPUT"
+	fi
+
+	case $insertOption in
+		insert|-i|-I) insertOption='-I';;
+		append|-a|-A|*) insertOption='-A';;
+	esac
+
+	case $resolverIpset in
+		none) : ;;
+		dnsmasq.ipset|*)
+			if ! dnsmasq -v 2>/dev/null | grep -q 'no-ipset' && dnsmasq -v 2>/dev/null | grep -q 'ipset'; then
+				resolverIpsetSupported='1'
+			fi
+		;;
+	esac
+
+	if is_ipset_type_supported 'ip' && is_ipset_type_supported 'net' && \
+		is_ipset_type_supported 'mac'; then
+			destIpsetSupported='1'
+			srcIpsetSupported='1'
+			userIpsetSupported='1'
+	elif is_ipset_type_supported 'ip' && is_ipset_type_supported 'net'; then
+			destIpsetSupported='1'
+			userIpsetSupported='1'
+	elif is_ipset_type_supported 'ip' && is_ipset_type_supported 'mac'; then
+			srcIpsetSupported='1'
+	elif is_ipset_type_supported 'ip'; then
+			destIpsetSupported='1'
+	fi
+
+	if [ "$resolverIpset" != 'none' ] && [ "$resolverIpsetSupported" -ne 1 ]; then
+			errorSummary="${errorSummary}${_ERROR_}: Resolver ipset support (${resolverIpset}) is enabled in $packageName, but resolver ipsets are not supported on this system!\\n"
+		resolverIpset='none'
+	fi
+
+	if [ "$destIpset" -ne 0 ] && [ "$destIpsetSupported" -ne 1 ]; then
+		errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
+		destIpset='0'
+	fi
+
+	if [ "$srcIpset" -ne 0 ] && [ "$srcIpsetSupported" -ne 1 ]; then
+		errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' or 'hash:mac' type!\\n"
+		srcIpset='0'
+	fi
+
+	is_config_enabled 'include' && userIpset='1'
+
+	if [ "$userIpset" -ne 0 ] && [ "$userIpsetSupported" -ne 1 ]; then
+		errorSummary="${errorSummary}${_ERROR_}: User scripts are enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' or 'hash:net' type!\\n"
+		userIpset='0'
+	fi
+
+	configLoaded='1'
+}
+
+is_enabled() {
+	load_package_config
+	if [ "$serviceEnabled" -eq 0 ]; then
+		if [ "$1" = 'on_start' ]; then
+			errorSummary="${errorSummary}${_ERROR_}: ${packageName} is currently disabled.\\n"
+			errorSummary="${errorSummary}Enable ${packageName} from WebUI or run the following commands:\\n"
+			errorSummary="${errorSummary}uci set $packageName.config.enabled='1'; uci commit $packageName;\\n"
+		fi
+		return 1
+	fi
+}
+
+load_network() {
+	if [ -z "$ifAll" ]; then
+		config_load 'network'
+		config_foreach build_ifAll 'interface'
+	fi
+	pbr_find_iface wanIface4 'wan'
+	[ "$ipv6Enabled" -ne 0 ] && pbr_find_iface wanIface6 'wan6'
+	[ -n "$wanIface4" ] && network_get_gateway wanGW4 "$wanIface4"
+	[ -n "$wanIface6" ] && network_get_gateway6 wanGW6 "$wanIface6"
+	wanGW="${wanGW4:-$wanGW6}"
+	unset ifSupported
+	config_load 'network'
+	config_foreach build_ifSupported 'interface'
+}
+
+is_wan_up() {
+	local sleepCount='1'
+	load_network
+	while [ -z "$wanGW" ] ; do
+		load_network
+		if [ $((sleepCount)) -gt $((bootTimeout)) ] || [ -n "$wanGW" ]; then break; fi
+		output "$serviceName waiting for wan gateway...\\n"
+		sleep 1
+		network_flush_cache
+		sleepCount=$((sleepCount+1))
+	done
+	if [ -n "$wanGW" ]; then
+		return 0
+	else
+		errorSummary="${errorSummary}${_ERROR_}: ${serviceName} failed to discover WAN gateway!\\n"
+		return 1
+	fi
+}
+
+# shellcheck disable=SC2086
+ipt() {
+	local d failFlagIpv4=1 failFlagIpv6=1
+	for d in "${*//-A/-D}" "${*//-I/-D}" "${*//-N/-F}" "${*//-N/-X}"; do 
+		[ "$d" != "$*" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
+	done
+
+	d="$*"; iptables $d >/dev/null 2>&1 && failFlagIpv4=0;
+	if [ "$ipv6Enabled" -gt 0 ]; then ip6tables $d >/dev/null 2>&1 && failFlagIpv6=0; fi
+
+	[ "$failFlagIpv4" -eq 0 ] || [ "$failFlagIpv6" -eq 0 ]
+}
+
+# shellcheck disable=SC2086
+ips() {
+	local command="$1" iface="$2" target="${3:-dst}" type="${4:-ip}" uid="$5" comment="$6" param="$7"
+	local ipset ipset6
+	local failFlag=0 mark
+	if [ -z "$uid" ]; then
+		ipset="${ipsPrefix}_${iface}_${target}_${type}"
+		ipset6="${ipsPrefix}_${iface}6_${target}_${type}"
+	else
+		ipset="${ipsPrefix}_${iface}_${target}_${type}_${uid}"
+		ipset6="${ipsPrefix}_${iface}6_${target}_${type}_${uid}"
+	fi
+
+	if [ "$destIpset" -eq 0 ] && [ "$srcIpset" -eq 0 ] && \
+		 [ "$resolverIpsetSupported" -eq 0 ] && [ "$userIpsetSupported" -eq 0 ]; then
+		return 1
+	fi
+
+	case "$command" in
+		add_resolver)
+			[ "$resolverIpsetSupported" -eq 0 ] && return 1
+			case "$resolverIpset" in
+				dnsmasq.ipset)
+					if [ "$ipv6Enabled" -ne 0 ]; then
+						echo "ipset=/${param}/${ipset},${ipset6} # $comment" >> "$dnsmasqFile" || failFlag=1
+					else
+						echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlag=1
+					fi
+				;;
+				*) return 1;;
+			esac
+		;;
+		add)
+			[ "$destIpset" -eq 0 ] && [ "$target" = 'dst' ] && return 1
+			[ "$srcIpset" -eq 0 ] && [ "$target" = 'src' ] && return 1
+			ipset -q -! "$command" "$ipset" $param comment "$comment" 2>/dev/null || failFlag=1
+			if [ "$ipv6Enabled" -ne 0 ] && [ "$type" != "mac" ]; then
+				ipset -q -! "$command" "$ipset6" $param comment "$comment" 2>/dev/null || failFlag=1
+			fi
+		;;
+		create)
+			param="hash:$type comment"
+			[ "$destIpset" -eq 0 ] && [ "$target" = 'dst' ] && return 1
+			[ "$srcIpset" -eq 0 ] && [ "$target" = 'src' ] && return 1
+			ipset -q -! create "$ipset" $param 2>/dev/null || failFlag=1
+			if [ "$ipv6Enabled" -ne 0 ] && [ "$type" != "mac" ]; then
+				ipset -q -! create "$ipset6" $param family inet6 2>/dev/null || failFlag=1
+			fi
+		;;
+		create_default)
+			[ "$userIpsetSupported" -eq 0 ] && return 1
+			for type in 'ip' 'net'; do
+				param="hash:$type comment"
+				ipset="${ipsPrefix}_${iface}_${target}_${type}"
+				ipset6="${ipsPrefix}_${iface}6_${target}_${type}"
+				ipset -q -! create "$ipset" $param 2>/dev/null || failFlag=1
+				if [ "$ipv6Enabled" -ne 0 ]; then
+					ipset -q -! create "$ipset6" $param family inet6 2>/dev/null || failFlag=1
+				fi
+			done
+		;;
+		create_resolver)
+			[ "$resolverIpsetSupported" -eq 0 ] && return 1
+			case "$resolverIpset" in
+				dnsmasq.ipset)
+					param="hash:$type comment"
+					ipset -q -! create "$ipset" $param 2>/dev/null || failFlag=1
+					if [ "$ipv6Enabled" -ne 0 ]; then
+						ipset -q -! create "$ipset6" $param family inet6 2>/dev/null || failFlag=1
+					fi
+				;;
+				*) return 1;;
+			esac
+		;;
+		delete_default)
+			for type in 'ip' 'net'; do
+				ipset="${ipsPrefix}_${iface}_${target}_${type}"
+				ipset6="${ipsPrefix}_${iface}6_${target}_${type}"
+				ipset -q -! flush "$ipset" 2>/dev/null
+				ipset -q -! flush "$ipset6" family inet6 2>/dev/null
+			done
+		;;
+		destroy|flush)
+			ipset -q -! "$command" "$ipset" 2>/dev/null
+			ipset -q -! "$command" "$ipset6" 2>/dev/null
+		;;
+	esac
+	return "$failFlag"
+}
+
+insert_tor_policy() {
+	local comment="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6"
+# shellcheck disable=SC2155
+	local proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}" uid="$9"
+	if [ -n "${laddr}${lport}${rport}" ]; then
+		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'src_addr', 'src_port' and 'dest_port' for policy '$comment'\\n"
+	fi
+	if [ -n "$proto" ] && [ "$proto" != "all" ]; then
+		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment'\\n"
+	fi
+	if [ "$chain" != "PREROUTING" ]; then
+		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'chain' or set 'chain' to 'PREROUTING' for policy '$comment'\\n"
+	fi
+	ips 'add' "$iface" 'dst' 'net' '' "${comment}: $raddr" "$raddr" || processPolicyError="${processPolicyError}${_ERROR_}: ips 'add' '$iface' 'dst' 'net' '${comment}: $raddr' '$raddr'\\n"
+	return 0
+}
+
+insert_policy() {
+	local name="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6"
+# shellcheck disable=SC2155
+	local proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}" uid="$9"
+	local mark param i negation value dest ipInsertOption="-A"
+	mark=$(eval echo "\$mark_${iface//-/_}")
+
+	if [ "$ipv6Enabled" -eq 0 ] && { is_ipv6 "$laddr" || is_ipv6 "$raddr"; }; then
+		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$name' as IPv6 support is disabled\\n"
+		return 1
+	fi
+
+	if [ -n "$mark" ]; then
+		dest="-g ${iptPrefix}_MARK${mark}"
+	elif [ "$iface" = "ignore" ]; then
+		dest="-j RETURN"
+	else
+		processPolicyError="${processPolicyError}${_ERROR_}: Unknown fw_mark for ${iface}\\n"
+		return 1
+	fi
+
+	if [ -z "$proto" ]; then
+		if [ -n "$lport" ] || [ -n "$rport" ]; then 
+			proto='tcp udp'
+		else
+			proto='all'
+		fi
+	fi
+
+	if is_family_mismatch "$laddr" "$raddr"; then 
+		processPolicyError="${processPolicyError}${_ERROR_}: Mismatched IP family between '$laddr' and '$raddr' in policy '$name'\\n"
+		return 1
+	fi
+
+	for i in $proto; do
+		if [ "$i" = 'all' ]; then
+			param="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest"
+		elif ! is_supported_protocol "$i"; then
+			processPolicyError="${processPolicyError}${_ERROR_}: Unknown protocol '$i' in policy '$name'\\n"
+			return 1
+		else
+			param="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest -p $i"
+		fi
+
+		if [ -n "$laddr" ]; then
+			if [ "${laddr:0:1}" = "!" ]; then
+				negation='!'; value="${laddr:1}"
+			else
+				unset negation; value="$laddr";
+			fi
+			if is_phys_dev "$value"; then
+				param="$param $negation -m physdev --physdev-in ${value:1}"
+			elif is_netmask "$value"; then
+				local target='src' type='net'
+				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $laddr" && \
+					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $laddr" "$value"; then
+					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+				else
+					param="$param $negation -s $value"
+				fi
+			elif is_mac_address "$value"; then
+				local target='src' type='mac'
+				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $laddr" && \
+					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $laddr" "$value"; then
+					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+				else
+					param="$param -m mac $negation --mac-source $value"
+				fi
+			else
+				local target='src' type='ip'
+				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $laddr" && \
+					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $laddr" "$value"; then
+					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+				else
+					param="$param $negation -s $(resolveip_to_ipt "$value")"
+				fi
+			fi
+		fi
+
+		if [ -n "$lport" ]; then
+			if [ "${lport:0:1}" = "!" ]; then
+				negation='!'; value="${lport:1}"
+			else
+				unset negation; value="$lport";
+			fi
+			param="$param -m multiport $negation --sport ${value//-/:}"
+		fi
+
+		if [ -n "$raddr" ]; then 
+			if [ "${raddr:0:1}" = "!" ]; then
+				negation='!'; value="${raddr:1}"
+			else
+				unset negation; value="$raddr";
+			fi
+			if is_netmask "$value"; then
+				local target='dst' type='net'
+				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
+					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
+					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+				else
+					param="$param $negation -d $value"
+				fi
+			elif is_domain "$value"; then
+				local target='dst' type='ip'
+				if ips 'create_resolver' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
+					ips 'add_resolver' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
+					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+				elif ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
+					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
+					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+				else
+					param="$param $negation -d $(resolveip_to_ipt "$value")"
+				fi
+			else
+				local target='dst' type='ip'
+				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
+					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
+					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+				else
+					param="$param $negation -d $value"
+				fi
+			fi
+		fi
+
+		if [ -n "$rport" ]; then
+			if [ "${rport:0:1}" = "!" ]; then
+				negation='!'; value="${rport:1}"
+			else
+				unset negation; value="$rport";
+			fi
+			param="$param -m multiport $negation --dport ${value//-/:}"
+		fi
+
+		[ -n "$name" ] && param="$param -m comment --comment $(str_extras_to_underscore "$name")"
+
+		ipt "$param" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param\\n"
+	done
+}
+
+policy_process() {
+	local name="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6"
+	local proto="$7" chain="$8" uid="$9"
+	local i j enabled
+
+	if [ -z "$uid" ]; then # we're called from config_foreach, get all variables
+		config_get      name    "$1" 'name' "Policy $1"
+		config_get      iface   "$1" 'interface'
+		config_get      laddr   "$1" 'src_addr'
+		config_get      lport   "$1" 'src_port'
+		config_get      raddr   "$1" 'dest_addr'
+		config_get      rport   "$1" 'dest_port'
+		config_get      proto   "$1" 'proto'
+		config_get      chain   "$1" 'chain' 'PREROUTING'
+		config_get_bool enabled "$1" 'enabled' 1
+		[ "$enabled" -gt 0 ] || return 0
+		uid="$1"
+		proto="$(str_to_lower "$proto")"
+		[ "$proto" = 'auto' ] && unset proto
+		output 2 "Routing '$name' via $iface "
+		if [ -z "${laddr}${lport}${raddr}${rport}" ]; then
+			errorSummary="${errorSummary}${_ERROR_}: Policy '$name' has no source/destination parameters\\n"
+			output_fail; return 1;
+		fi
+		if [ -z "$iface" ]; then
+			errorSummary="${errorSummary}${_ERROR_}: Policy '$name' has no assigned interface\\n"
+			output_fail; return 1;
+		fi
+		if ! is_supported_interface "$iface"; then
+			errorSummary="${errorSummary}${_ERROR_}: Policy '$name' has an unknown interface: '${iface}'\\n"
+			output_fail; return 1;
+		fi
+		lport="${lport//  / }"; lport="${lport// /,}"; lport="${lport//,\!/ !}"; 
+		rport="${rport//  / }"; rport="${rport// /,}"; rport="${rport//,\!/ !}";
+		for i in dst src; do
+			for j in ip net mac; do
+				ips 'flush' "${iface}" "${i}" "${j}" "${uid}"
+			done
+		done
+	fi
+
+	if str_contains "$laddr" '[ ;\{\}]'; then
+		for i in $(str_extras_to_space "$laddr"); do [ -n "$i" ] && policy_process "$name" "$iface" "$i" "$lport" "$raddr" "$rport" "$proto" "$chain" "$uid"; done
+	elif str_contains "$lport" '[ ;\{\}]'; then
+		for i in $(str_extras_to_space "$lport"); do [ -n "$i" ] && policy_process "$name" "$iface" "$laddr" "$i" "$raddr" "$rport" "$proto" "$chain" "$uid"; done
+	elif str_contains "$raddr" '[ ;\{\}]'; then
+		for i in $(str_extras_to_space "$raddr"); do [ -n "$i" ] && policy_process "$name" "$iface" "$laddr" "$lport" "$i" "$rport" "$proto" "$chain" "$uid"; done
+	elif str_contains "$rport" '[ ;\{\}]'; then
+		for i in $(str_extras_to_space "$rport"); do [ -n "$i" ] && policy_process "$name" "$iface" "$laddr" "$lport" "$raddr" "$i" "$proto" "$chain" "$uid"; done
+	else
+		if is_tor "$iface"; then
+			insert_tor_policy "$name" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain" "$uid"
+		else
+			insert_policy "$name" "$iface" "$laddr" "$lport" "$raddr" "$rport" "$proto" "$chain" "$uid"
+		fi
+	fi
+
+	if [ "$uid" = "$1" ] || [ -z "$9" ]; then # finished processing of config_foreach call
+		if [ -n "$processPolicyWarning" ]; then
+			warningSummary="${warningSummary}${processPolicyWarning}\\n"
+			unset processPolicyWarning
+		fi
+		if [ -n "$processPolicyError" ]; then
+			output_fail
+			errorSummary="${errorSummary}${processPolicyError}\\n"
+			unset processPolicyError
+		else
+			output_ok
+		fi
+	fi
+}
+
+policy_destroy_ipsets() {
+	local uid="$1" iface i j
+	config_get iface "$1" 'interface'
+	for i in dst src; do
+		for j in ip net mac; do
+			ips 'destroy' "${iface}" "${i}" "${j}" "${uid}"
+		done
+	done
+}
+
+table_destroy() {
+	local tid="$1" iface="$2" mark="$3"
+	if [ -n "$tid" ] && [ -n "$iface" ] && [ -n "$mark" ]; then
+		ipt -t mangle -F "${iptPrefix}_MARK${mark}"
+		ipt -t mangle -X "${iptPrefix}_MARK${mark}"
+#		ip rule del fwmark "$mark/$fwMask" table "$tid" >/dev/null 2>&1
+		ip rule del fwmark "$mark" table "$tid" >/dev/null 2>&1
+		ip route flush table "$tid" >/dev/null 2>&1
+		ips 'flush' "${ipsPrefix}_${iface}_dst_ip"; ips 'destroy' "${ipsPrefix}_${iface}_dst_ip";
+		sed -i "/$iface/d" /etc/iproute2/rt_tables
+		return 0
+	else
+		return 1
+	fi
+}
+
+table_create() {
+	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" priority="$8"
+	local dscp s=0 i ipv4_error=0 ipv6_error=1
+
+	if [ -z "$tid" ] || [ -z "$mark" ] || [ -z "$iface" ]; then
+		return 1
+	fi
+
+	sed -i "/$iface/d" /etc/iproute2/rt_tables
+	ip route flush table "$tid" >/dev/null 2>&1
+
+	if [ -n "$gw4" ] || [ "$strictMode" -ne 0 ]; then
+		echo "$tid $iface" >> /etc/iproute2/rt_tables
+		if [ -z "$gw4" ]; then
+			ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
+		else
+			ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+		fi
+# shellcheck disable=SC2086
+		while read -r i; do
+			idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
+			if ! is_supported_iface_dev "$idev"; then
+				ip -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
+			fi
+		done << EOF
+$(ip -4 route list table main)
+EOF
+		if [ -z "$(ip rule list fwmark "${mark}/${fwMask}" table "$tid")" ]; then
+			ip rule add fwmark "${mark}/${fwMask}" table "$tid" priority "$priority" || ipv4_error=1
+		fi
+		ipt -t mangle -N "${iptPrefix}_MARK${mark}" || ipv4_error=1
+		ipt -t mangle -A "${iptPrefix}_MARK${mark}" -j MARK --set-xmark "${mark}/${fwMask}" || ipv4_error=1
+		ipt -t mangle -A "${iptPrefix}_MARK${mark}" -j RETURN || ipv4_error=1
+	fi
+
+	if [ "$ipv6Enabled" -ne 0 ]; then
+		ipv6_error=0
+		if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strictMode" -ne 0 ]; then
+			if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
+				ip -6 route add unreachable default table "$tid" || ipv6_error=1
+			elif ip -6 route list table main | grep -q " dev $dev6 "; then
+				while read -r i; do
+					ip -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+				done << EOF
+$(ip -6 route list table main | grep " dev $dev6 ")
+EOF
+			else
+				ip -6 route add "$(ip -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+				ip -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+			fi
+		fi
+	fi
+
+	if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
+		dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
+		if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
+			ipt -t mangle -I "${iptPrefix}_PREROUTING" -m dscp --dscp "${dscp}" -g "${iptPrefix}_MARK${mark}" || s=1
+		fi
+		if [ "$iface" = "$icmpIface" ]; then
+			ipt -t mangle -I "${iptPrefix}_OUTPUT" -p icmp -g "${iptPrefix}_MARK${mark}" || s=1
+		fi
+	else
+		s=1
+	fi
+
+	return $s
+}
+
+table_reload() {
+	local tid="$1" mark="$2" iface="$3" gw4="$4" dev="$5" gw6="$6" dev6="$7" dscp s=0 i ipv4_error=0 ipv6_error=1
+
+	if [ -z "$tid" ] || [ -z "$mark" ] || [ -z "$iface" ]; then
+		return 1
+	fi
+
+	ip -4 route del default table "$tid" >/dev/null 2>&1
+	if [ -n "$gw4" ] || [ "$strictMode" -ne 0 ]; then
+		if [ -z "$gw4" ]; then
+			ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
+		else
+			ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+		fi
+	fi
+
+	if [ "$ipv6Enabled" -ne 0 ]; then
+		ip -6 route del default table "$tid" >/dev/null 2>&1
+		ipv6_error=0
+		if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strictMode" -ne 0 ]; then
+			if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
+				ip -6 route add unreachable default table "$tid" || ipv6_error=1
+			else
+				while read -r i; do
+# shellcheck disable=SC2086
+					ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
+				done << EOF
+$(ip -6 route list default table main | grep " dev $dev6 ")
+EOF
+			fi
+		fi
+	fi
+
+	if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
+		dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
+		if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
+			ipt -t mangle -I "${iptPrefix}_PREROUTING" -m dscp --dscp "${dscp}" -g "${iptPrefix}_MARK${mark}" || s=1
+		fi
+		if [ "$iface" = "$icmpIface" ]; then
+			ipt -t mangle -I "${iptPrefix}_OUTPUT" -p icmp -g "${iptPrefix}_MARK${mark}" || s=1
+		fi
+	else
+		s=1
+	fi
+
+	return $s
+}
+
+interface_process() {
+	local gw4 gw6 dev dev6 s=0 dscp iface="$1" action="$2" reloadedIface="$3" displayText
+
+	if [ "$iface" = 'all' ] && [ "$action" = 'prepare' ]; then
+		config_load 'network'
+		ifaceTableID="$wanTableID"
+		ifaceMark="$(printf '0x%06x' "$wanMark")"
+		ifacePriority="$wanPriority"
+		return
+	fi
+
+	is_supported_interface "$iface" || return 0
+	is_wan6 "$iface" && return 0
+	[ $((ifaceMark)) -gt $((fwMask)) ] && return 1
+
+	network_get_device dev "$iface"
+	if is_wan "$iface" && [ -n "$wanIface6" ]; then
+		network_get_device dev6 "$wanIface6"
+	fi
+	[ -z "$dev6" ] && dev6="$dev"
+
+	[ -z "$ifaceTableID" ] && ifaceTableID="$wanTableID"
+	[ -z "$ifaceMark" ] && ifaceMark="$(printf '0x%06x' "$wanMark")"
+	[ -z "$ifacePriority" ] && ifacePriority="$wanPriority"
+
+	case "$action" in
+		enumerate)
+			eval "mark_${iface//-/_}"='$ifaceMark'
+			eval "tid_${iface//-/_}"='$ifaceTableID'
+			pbr_get_gateway gw4 "$iface" "$dev"
+			pbr_get_gateway6 gw6 "$iface" "$dev6"
+			if [ "$iface" = "$dev" ]; then
+				displayText="${iface}/${gw4:-0.0.0.0}"
+			else
+				displayText="${iface}/${dev}/${gw4:-0.0.0.0}"
+			fi
+			[ "$ipv6Enabled" -ne 0 ] && displayText="${displayText}/${gw6:-::/0}"
+			is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
+			gatewaySummary="${gatewaySummary}${displayText}\\n"
+			ips 'delete_default' "$iface"
+			;;
+		destroy)
+			table_destroy "${ifaceTableID}" "${iface}" "${ifaceMark}"
+			;;
+		create)
+			eval "mark_${iface//-/_}"='$ifaceMark'
+			eval "tid_${iface//-/_}"='$ifaceTableID'
+			pbr_get_gateway gw4 "$iface" "$dev"
+			pbr_get_gateway6 gw6 "$iface" "$dev6"
+			if [ "$iface" = "$dev" ]; then
+				displayText="${iface}/${gw4:-0.0.0.0}"
+			else
+				displayText="${iface}/${dev}/${gw4:-0.0.0.0}"
+			fi
+			[ "$ipv6Enabled" -ne 0 ] && displayText="${displayText}/${gw6:-::/0}"
+			if [ -z "$reloadedIface" ]; then
+				output 2 "Creating table '$displayText' "
+				is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
+				if table_create "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"; then
+					gatewaySummary="${gatewaySummary}${displayText}\\n"
+					output_ok
+				else
+					errorSummary="${errorSummary}${_ERROR_}: Failed to set up '$displayText'\\n"
+					output_fail
+				fi
+			elif [ "$iface" = "$reloadedIface" ]; then
+				output 2 "Reloading table '$displayText' "
+				is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
+				if table_reload "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then
+					gatewaySummary="${gatewaySummary}${displayText}\\n"
+					output_ok
+				else
+					errorSummary="${errorSummary}${_ERROR_}: Failed to reload '$displayText'\\n"
+					output_fail
+				fi
+			else
+				is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
+				gatewaySummary="${gatewaySummary}${displayText}\\n"
+			fi
+			ips 'delete_default' "$iface"
+			;;
+		create_default_ipset)
+			if [ -z "$reloadedIface" ] || [ "$iface" = "$reloadedIface" ]; then
+				if ips 'create_default' "$iface"; then
+					if ! iptables-save | grep -q -- "-A ${iptPrefix}_PREROUTING -m set --match-set ${ipsPrefix}_${iface}_dst_ip dst"; then
+						ipt -t mangle -A "${iptPrefix}_PREROUTING" -m set --match-set "${ipsPrefix}_${iface}_dst_ip" dst -g "${iptPrefix}_MARK${ifaceMark}" || failFlag=1
+						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A "${iptPrefix}_PREROUTING" -m set --match-set "${ipsPrefix}_${iface}6_dst_ip" dst -g "${iptPrefix}_MARK${ifaceMark}" || failFlag=1; fi
+					fi
+					if ! iptables-save | grep -q -- "-A ${iptPrefix}_PREROUTING -m set --match-set ${ipsPrefix}_${iface}_dst_net dst"; then
+						ipt -t mangle -A "${iptPrefix}_PREROUTING" -m set --match-set "${ipsPrefix}_${iface}_dst_net" dst -g "${iptPrefix}_MARK${ifaceMark}" || failFlag=1
+						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A "${iptPrefix}_PREROUTING" -m set --match-set "${ipsPrefix}_${iface}6_dst_net" dst -g "${iptPrefix}_MARK${ifaceMark}" || failFlag=1; fi
+					fi
+				fi
+			fi
+			;;
+	esac
+	ifaceTableID="$((ifaceTableID + 1))"
+	ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))"
+	ifacePriority="$((ifacePriority - 1))"
+	return $s
+}
+
+interface_process_tor() {
+	local s=0 iface="$1" action="$2" displayText ipset
+	case "$action" in
+		enumerate)
+			displayText="${iface}/53->${dnsPort}/80,443->${transPort}"
+			gatewaySummary="${gatewaySummary}${displayText}\\n"
+			;;
+		destroy)
+			for i in PREROUTING FORWARD INPUT OUTPUT; do
+				ipt -t nat -D "${i}" -m mark --mark "0x0/${fwMask}" -j "${iptPrefix}_${i}"
+				ipt -t nat -F "${iptPrefix}_${i}"; ipt -t nat -X "${iptPrefix}_${i}";
+			done
+			;;
+		create)
+			output 2 "Creating TOR redirects "
+			dnsPort="$(grep -m1 DNSPort /etc/tor/torrc | awk -F: '{print $2}')"
+			transPort="$(grep -m1 TransPort /etc/tor/torrc | awk -F: '{print $2}')"
+			dnsPort="${dnsPort:-9053}"; transPort="${transPort:-9040}"; 
+			for i in $usedChainsList; do
+				ipt -t nat -N "${iptPrefix}_${i}"
+				ipt -t nat "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "${iptPrefix}_${i}"
+			done
+			if ips 'create' "$iface" 'dst' 'net' && ips 'flush' "$iface" 'dst' 'net'; then
+				ipset="${ipsPrefix}_${iface}_dst_net"
+				for i in $usedChainsList; do
+					ipt -t nat -I "${iptPrefix}_${i}" -p udp -m udp --dport 53 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
+					ipt -t nat -I "${iptPrefix}_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-TCP" || s=1
+					ipt -t nat -I "${iptPrefix}_${i}" -p udp -m udp --dport 80 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-UDP" || s=1
+					ipt -t nat -I "${iptPrefix}_${i}" -p tcp -m tcp --dport 443 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTPS-TCP" || s=1
+					ipt -t nat -I "${iptPrefix}_${i}" -p udp -m udp --dport 443 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTPS-UDP" || s=1
+				done
+			else
+				s=1
+			fi
+			displayText="${iface}/53->${dnsPort}/80,443->${transPort}"
+			if [ "$s" -eq 0 ]; then
+				gatewaySummary="${gatewaySummary}${displayText}\\n"
+				output_ok
+			else
+				errorSummary="${errorSummary}${_ERROR_}: Failed to set up '$displayText'\\n"
+				output_fail
+			fi
+			;;
+	esac
+	return $s
+}
+
+user_file_process() {
+	local path enabled shellBin="${SHELL:-/bin/ash}"
+	config_get_bool enabled "$1" 'enabled' 1
+	config_get      path    "$1" 'path'
+	[ "$enabled" -gt 0 ] || return 0
+	if [ ! -s "$path" ]; then
+		errorSummary="${errorSummary}${_ERROR_}: Custom user file '$path' not found or empty!\\n"
+		output_fail
+		return 1
+	fi
+	if ! $shellBin -n "$path"; then
+		errorSummary="${errorSummary}${_ERROR_}: Syntax error in custom user file '$path'!\\n"
+		output_fail
+		return 1
+	fi
+	output 2 "Running $path "
+# shellcheck disable=SC1090
+	if ! . "$path"; then
+		errorSummary="${errorSummary}${_ERROR_}: Error running custom user file '$path'!\\n"
+		if grep -q -w 'curl' "$path" && ! is_present 'curl'; then
+			errorSummary="${errorSummary}${_ERROR_}: Use of 'curl' is detected in custom user file '$path', but 'curl' isn't installed!\\n"
+			errorSummary="${errorSummary}${_ERROR_}: If 'curl' is needed, install it with 'opkg update; opkg install curl;' command in CLI.\\n"
+		fi
+		output_fail
+		return 1
+	else
+		output_ok
+		return 0
+	fi
+}
+
+boot() { rc_procd start_service && rc_procd service_triggers; }
+
+start_service() {
+	local dnsmasqStoredHash dnsmasqNewHash i modprobeStatus=0 reloadedIface="$1"
+	is_enabled 'on_start' || return 1
+	is_wan_up || return 1
+
+	if [ -n "$reloadedIface" ] && ! is_supported_interface "$reloadedIface"; then
+		return 0
+	fi
+
+	if [ -n "$(json get error)" ] || [ -n "$(json get warning)" ]; then
+		serviceStartTrigger='on_start'
+		unset reloadedIface
+	elif ! iptables -t 'mangle' --list "${iptPrefix}_PREROUTING" >/dev/null 2>&1; then
+		serviceStartTrigger='on_start'
+		unset reloadedIface
+	elif [ -z "$(json get gateway)" ]; then
+		serviceStartTrigger='on_start'
+		unset reloadedIface
+	elif [ -n "$reloadedIface" ]; then
+		serviceStartTrigger='on_iface_reload'
+	else
+		serviceStartTrigger='on_reload'
+	fi
+
+	insert_lock
+	case $serviceStartTrigger in
+		on_iface_reload)
+			output 1 "Reloading Interface: $reloadedIface "
+			interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'create' "$reloadedIface";
+			output 1 '\n'
+			;;
+		on_reload)
+			if [ -s "$dnsmasqFile" ]; then
+				dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+				rm -f "$dnsmasqFile"
+			fi
+			for i in $usedChainsList; do
+				ipt -t mangle -N "${iptPrefix}_${i}"
+				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "${iptPrefix}_${i}"
+			done
+			interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'enumerate';
+			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'enumerate';
+			if is_config_enabled 'policy'; then
+				output 1 'Processing Policies '
+				config_load "$packageName"; config_foreach policy_process 'policy';
+				output 1 '\n'
+			fi
+			if is_config_enabled 'include'; then
+				interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'create_default_ipset';
+				output 1 'Processing User File(s) '
+				config_load "$packageName"; config_foreach user_file_process 'include';
+				output 1 '\n'
+			fi
+			if [ -s "$dnsmasqFile" ]; then
+				dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+			fi
+			[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
+			;;
+		on_start|*)
+			if [ -s "$dnsmasqFile" ]; then
+				dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+				rm -f "$dnsmasqFile"
+			fi
+			for i in xt_set ip_set ip_set_hash_ip; do
+				modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
+			done
+			if [ "$modprobeStatus" -gt 0 ]; then
+				errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
+			fi
+			for i in $usedChainsList; do
+				ipt -t mangle -N "${iptPrefix}_${i}"
+				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "${iptPrefix}_${i}"
+			done
+			output 1 'Processing Interfaces '
+			interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'create';
+			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'create';
+			ip route flush cache
+			output 1 '\n'
+			if is_config_enabled 'policy'; then
+				output 1 'Processing Policies '
+				config_load "$packageName"; config_foreach policy_process 'policy';
+				output 1 '\n'
+			fi
+			if is_config_enabled 'include'; then
+				interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'create_default_ipset';
+				output 1 'Processing User File(s) '
+				config_load "$packageName"; config_foreach user_file_process 'include';
+				output 1 '\n'
+			fi
+			if [ -s "$dnsmasqFile" ]; then
+				dnsmasqNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+			fi
+			[ "$dnsmasqNewHash" != "$dnsmasqStoredHash" ] && dnsmasq_restart
+			;;
+	esac
+	remove_lock
+
+	if [ -z "$gatewaySummary" ]; then
+		errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway!\\n"
+	fi
+	procd_open_instance "main"
+	procd_set_param command /bin/true
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_open_data
+	json_add_array 'status'
+	json_add_object ''
+	[ -n "$gatewaySummary" ] && json_add_string gateway "$gatewaySummary"
+	[ -n "$errorSummary" ] && json_add_string error "$errorSummary"
+	[ -n "$warningSummary" ] && json_add_string warning "$warningSummary"
+	if [ "$strictMode" -ne 0 ] && str_contains "$gatewaySummary" '0.0.0.0'; then
+		json_add_string mode "strict"
+	fi
+	json_close_object
+	json_close_array
+	procd_close_data
+	procd_close_instance
+	json set 'gateway' "$gatewaySummary"
+	json set 'error' "$errorSummary"
+	json set 'warning' "$warningSummary"
+	if [ "$strictMode" -ne 0 ] && str_contains "$gatewaySummary" '0.0.0.0'; then
+		json set 'mode' 'strict'
+	fi
+}
+
+json() {
+	local action="$1" param="$2" value="$3"
+# shellcheck disable=SC2034
+	local gateway error warning mode i
+	if [ -s "$jsonFile" ]; then
+		json_load_file "$jsonFile" 2>/dev/null
+		json_select 'status' 2>/dev/null
+		for i in gateway error warning mode; do
+			json_get_var $i "$i" 2>/dev/null
+		done
+	fi
+	case "$action" in
+		get)
+			printf "%b" "$(eval echo "\$$param")"; return;;
+		add)
+			eval "$param"='$(eval echo "\$$param")${value}';;
+		del)
+			case "$param" in
+				all)
+					unset gateway error warning mode;;
+				*)
+					unset "$param";;
+			esac
+			;;
+		set)
+			eval "$param"='$value';;
+	esac
+	json_init
+	json_add_object 'status'
+	json_add_string version "$PKG_VERSION"
+	for i in gateway error warning mode; do
+		json_add_string "$i" "$(eval echo "\$$i")"
+	done 
+	json_close_object
+	json_dump > "$jsonFile"
+	sync
+}
+
+service_started() {
+	[ -n "$gatewaySummary" ] && output "$serviceName started with gateways:\\n${gatewaySummary}"
+	[ -n "$errorSummary" ] && output "${errorSummary}"
+	[ -n "$warningSummary" ] && output "${warningSummary}"
+	if [ -n "$errorSummary" ]; then
+		return 2
+	elif [ -n "$warningSummary" ]; then
+		return 1
+	else
+		return 0
+	fi
+}
+
+stop_service() {
+	local i
+	iptables -t mangle -L | grep -q "${iptPrefix}_PREROUTING" || return 0
+	load_package_config
+	for i in PREROUTING FORWARD INPUT OUTPUT; do
+		ipt -t mangle -D "${i}" -m mark --mark "0x0/${fwMask}" -j "${iptPrefix}_${i}"
+		ipt -t mangle -F "${iptPrefix}_${i}"; ipt -t mangle -X "${iptPrefix}_${i}";
+	done
+	config_load 'network'; config_foreach interface_process 'interface' 'destroy';
+	interface_process_tor 'tor' 'destroy'
+	ip route flush cache
+	config_load "$packageName"; config_foreach policy_destroy_ipsets 'policy';
+	unset ifaceTableID; unset ifaceMark;
+	if [ -s "$dnsmasqFile" ]; then
+		rm -f "$dnsmasqFile"
+		dnsmasq_restart
+	fi
+	if [ "$serviceEnabled" -ne 0 ]; then
+		output "$serviceName stopped "; output_okn;
+	fi
+}
+
+reload_interface() { rc_procd start_service "$1"; }
+
+service_triggers() {
+	local n
+	is_enabled || return 1
+
+	if [ "$procdReloadDelay" -gt 0 ] && [ "$procdReloadDelay" -lt 100 ]; then
+# shellcheck disable=SC2034
+		PROCD_RELOAD_DELAY=$(( procdReloadDelay * 1000 ))
+	fi
+
+	procd_open_validate
+		validate_config
+		validate_policy
+		validate_include
+	procd_close_validate
+
+	procd_open_trigger
+		procd_add_reload_trigger 'openvpn'
+		if type procd_add_service_trigger >/dev/null 2>&1; then
+			procd_add_service_trigger "service.restart" "firewall" /etc/init.d/${packageName} reload
+		fi
+		procd_add_config_trigger "config.change" "${packageName}" /etc/init.d/${packageName} reload
+		for n in $ifSupported; do 
+			procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload_interface "$n"
+		done
+	procd_close_trigger
+
+	if [ "$serviceStartTrigger" = 'on_start' ]; then
+		output 3 "$serviceName monitoring interfaces: ${ifSupported}\\n"
+	fi
+}
+
+status_service() {
+	local dist vers out id s param status set_d set_p tableCount i=0 dev dev6 j
+	readonly _SEPARATOR_='============================================================'
+	is_enabled
+
+	json_load "$(ubus call system board)"; json_select release; json_get_var dist distribution; json_get_var vers version
+	if [ -n "$wanIface4" ]; then
+		network_get_gateway wanGW4 "$wanIface4"
+		network_get_device dev "$wanIface4"
+	fi
+	if [ -n "$wanIface6" ]; then
+		network_get_device dev6 "$wanIface6"
+		wanGW6=$(ip -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
+		[ "$wanGW6" = "default" ] && wanGW6=$(ip -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
+	fi
+	while [ "${1:0:1}" = "-" ]; do param="${1//-/}"; eval "set_$param=1"; shift; done
+	[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
+	status="$serviceName running on $dist $vers."
+	[ -n "$wanIface4" ] && status="$status WAN (IPv4): ${wanIface4}/${dev}/${wanGW4:-0.0.0.0}."
+	[ -n "$wanIface6" ] && status="$status WAN (IPv6): ${wanIface6}/${dev6}/${wanGW6:-::/0}."
+	{
+		echo "$status"
+		echo "$_SEPARATOR_"
+		dnsmasq --version 2>/dev/null | sed '/^$/,$d'
+		if [ -n "$1" ]; then
+			echo "$_SEPARATOR_"
+			echo "Resolving domains"
+			for i in $1; do
+				echo "$i: $(resolveip "$i" | tr '\n' ' ')"
+			done
+		fi
+
+		echo "$_SEPARATOR_"
+		echo "Routes/IP Rules"
+		tableCount=$(ip rule list | grep -c 'fwmark') || tableCount=0
+		if [ -n "$set_d" ]; then route; else route | grep '^default'; fi
+		if [ -n "$set_d" ]; then ip rule list; fi
+		i=0; while [ $i -lt $tableCount ]; do 
+			echo ""
+			echo "IPv4 Table $((wanTableID + i)): $(ip -4 route show table $((wanTableID + i)))"
+			echo "IPv4 Table $((wanTableID + i)) Rules:"
+			ip -4 rule list table "$((wanTableID + i))"
+			i=$((i + 1))
+		done
+
+		if [ "$ipv6Enabled" -ne 0 ]; then
+			i=0; while [ $i -lt $tableCount ]; do
+				ip -6 route show table $((wanTableID + i)) | while read -r param; do
+					echo "IPv6 Table $((wanTableID + i)): $param"
+				done
+				i=$((i + 1))
+			done
+		fi
+
+		for j in Mangle NAT; do
+			if [ -z "$set_d" ]; then
+				for i in $usedChainsList; do
+					if iptables -v -t "$(str_to_lower $j)" -S "${iptPrefix}_${i}" >/dev/null 2>&1; then
+						echo "$_SEPARATOR_"
+						echo "$j IP Table: $i"
+						iptables -v -t "$(str_to_lower $j)" -S "${iptPrefix}_${i}"
+						if [ "$ipv6Enabled" -ne 0 ]; then
+							echo "$_SEPARATOR_"
+							echo "$j IPv6 Table: $i"
+							ip6tables -v -t "$(str_to_lower $j)" -S "${iptPrefix}_${i}"
+						fi
+					fi
+				done
+			else
+				echo "$_SEPARATOR_"
+				echo "$j IP Table"
+				iptables -L -t "$(str_to_lower $j)"
+				if [ "$ipv6Enabled" -ne 0 ]; then
+					echo "$_SEPARATOR_"
+					echo "$j IPv6 Table"
+					ip6tables -L -t "$(str_to_lower $j)"
+				fi
+			fi
+			i=0; ifaceMark="$wanMark";
+			while [ $i -lt $tableCount ]; do
+				if iptables -v -t "$(str_to_lower $j)" -S "${iptPrefix}_MARK${ifaceMark}" >/dev/null 2>&1; then
+					echo "$_SEPARATOR_"
+					echo "$j IP Table MARK Chain: ${iptPrefix}_MARK${ifaceMark}"
+					iptables -v -t "$(str_to_lower $j)" -S "${iptPrefix}_MARK${ifaceMark}"
+					ifaceMark="$(printf '0x%06x' $((ifaceMark + wanMark)))";
+				fi
+				i=$((i + 1))
+			done
+		done
+
+		echo "$_SEPARATOR_"
+		echo "Current ipsets"
+		ipset save
+		if [ -s "$dnsmasqFile" ]; then
+			echo "$_SEPARATOR_"
+			echo "DNSMASQ ipsets"
+			cat "$dnsmasqFile"
+		fi
+		echo "$_SEPARATOR_"
+	} | tee -a /var/${packageName}-support
+	if [ -n "$set_p" ]; then
+		printf "%b" "Pasting to paste.ee... "
+		if is_present 'curl' && is_variant_installed 'libopenssl' && is_installed 'ca-bundle'; then
+			json_init; json_add_string "description" "${packageName}-support"
+			json_add_array "sections"; json_add_object '0'
+			json_add_string "name" "$(uci -q get system.@system[0].hostname)"
+			json_add_string "contents" "$(cat /var/${packageName}-support)"
+			json_close_object; json_close_array; payload=$(json_dump)
+			out=$(curl -s -k "https://api.paste.ee/v1/pastes" -X "POST" -H "Content-Type: application/json" -H "X-Auth-Token:uVOJt6pNqjcEWu7qiuUuuxWQafpHhwMvNEBviRV2B" -d "$payload")
+			json_load "$out"; json_get_var id id; json_get_var s success
+			[ "$s" = "1" ] && printf "%b" "https://paste.ee/p/$id $__OK__\\n" || printf "%b" "$__FAIL__\\n"
+			[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
+		else
+			printf "%b" "$__FAIL__\\n"
+			printf "%b" "$_ERROR_: curl, libopenssl or ca-bundle were not found!\\nRun 'opkg update; opkg install curl libopenssl ca-bundle' to install them.\\n"
+		fi
+	else
+		printf "%b" "Your support details have been logged to '/var/${packageName}-support'. $__OK__\\n"
+	fi
+}
+
+# shellcheck disable=SC2120
+validate_config() {
+	uci_validate_section "${packageName}" config "${1}" \
+		'enabled:bool:0' \
+		'strict_enforcement:bool:1' \
+		'ipv6_enabled:bool:0' \
+		'src_ipset:bool:0' \
+		'dest_ipset:bool:0' \
+		'resolver_ipset::or("", "none", "dnsmasq.ipset")' \
+		'verbosity:range(0,2):1' \
+		'wan_tid:integer:201' \
+		'wan_fw_mark:hex(8)' \
+		'fw_mask:hex(8)' \
+		'icmp_interface:string' \
+		'ignored_interface:list(string)' \
+		'supported_interface:list(string)' \
+		'boot_timeout:integer:30' \
+		'iptables_rule_option:or("", "append", "insert")' \
+		'procd_reload_delay:integer:0' \
+		'webui_enable_column:bool:0' \
+		'webui_protocol_column:bool:0' \
+		'webui_supported_protocol:list(string)' \
+		'webui_chain_column:bool:0' \
+		'webui_sorting:bool:1' \
+		'webui_show_ignore_target:bool:0'
+}
+
+# shellcheck disable=SC2120
+validate_policy() {
+	uci_validate_section "${packageName}" policy "${1}" \
+		'name:string' \
+		'enabled:bool:0' \
+		'interface:network' \
+		'proto:or(string)' \
+		'chain:or("", "PREROUTING", "FORWARD", "INPUT", "OUTPUT")' \
+		'src_addr:list(neg(or(host,network,macaddr)))' \
+		'src_port:list(neg(or(portrange, string)))' \
+		'dest_addr:list(neg(host))' \
+		'dest_port:list(neg(or(portrange, string)))'
+}
+
+# shellcheck disable=SC2120
+validate_include() {
+	uci_validate_section "${packageName}" include "${1}" \
+		'path:string' \
+		'enabled:bool:0'
+}
