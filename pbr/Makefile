@@ -1,11 +1,11 @@
-# Copyright 2017-2018 Stan Grishin (stangri@melmac.ca)
+# Copyright 2017-2022 Stan Grishin (stangri@melmac.ca)
 # This is free software, licensed under the GNU General Public License v3.
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=0.9.4
-PKG_RELEASE:=6
+PKG_RELEASE:=8
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -66,8 +66,8 @@ define Package/pbr/install
 	$(INSTALL_DATA) ./files/pbr.user.netflix $(1)/usr/share/pbr/pbr.user.netflix
 	$(INSTALL_DATA) ./files/pbr.firewall.include $(1)/usr/share/pbr/pbr.firewall.include
 	$(INSTALL_DATA) ./files/pbr.hotplug.firewall $(1)/etc/hotplug.d/firewall/70-pbr
+	$(INSTALL_BIN) ./files/pbr.defaults $(1)/etc/uci-defaults/90-pbr
 endef
-#	$(INSTALL_BIN) ./files/pbr.defaults $(1)/etc/uci-defaults/90-pbr
 #Package/pbr-ipt/install = $(Package/pbr/install,$(1),pbr.init)
 #Package/pbr-netifd/install = $(Package/pbr/install,$(1),pbr.netifd.init)
 

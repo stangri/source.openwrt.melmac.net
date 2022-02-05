@@ -1,2 +1,3 @@
 #!/bin/sh
+logger -t "pbr" "Reloading pbr via firewall include"
 /etc/init.d/pbr reload
