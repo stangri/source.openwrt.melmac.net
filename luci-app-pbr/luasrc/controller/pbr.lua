@@ -1,9 +1,7 @@
 module("luci.controller.pbr", package.seeall)
 function index()
 	if nixio.fs.access("/etc/config/pbr") then
-		e = entry({"admin", "services", "pbr"}, cbi("pbr"), _("Policy Based Routing"))
-		e.acl_depends = { "luci-app-pbr" }
-		e.leaf = true
+		entry({"admin", "services", "pbr"}, cbi("pbr"), _("Policy Based Routing")).acl_depends = { "luci-app-pbr" }
 		entry({"admin", "services", "pbr", "action"}, call("pbr_action"), nil).leaf = true
 	end
 end
