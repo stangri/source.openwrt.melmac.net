@@ -288,7 +288,7 @@ if laPlaceholder then
 	la.placeholder = laPlaceholder
 end
 la.rmempty = true
-la.datatype    = 'list(neg(or(host,network,macaddr,string)))'
+la.datatype    = 'list(neg(or(host,network,macaddr,string,cidr)))'
 
 lp = p:option(Value, "src_port", translate("Local ports"))
 lp.datatype    = 'list(neg(or(portrange, string)))'
@@ -296,7 +296,7 @@ lp.placeholder = "0-65535"
 lp.rmempty = true
 
 ra = p:option(Value, "dest_addr", translate("Remote addresses / domains"))
-ra.datatype    = 'list(neg(host))'
+ra.datatype    = 'list(neg(or(host,cidr)))'
 ra.placeholder = "0.0.0.0/0"
 ra.rmempty = true
 
