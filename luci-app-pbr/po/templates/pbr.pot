@@ -96,7 +96,7 @@ msgstr ""
 msgid "Default ICMP Interface"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/view/pbr/buttons.htm:59
+#: applications/luci-app-pbr/luasrc/view/pbr/buttons.htm:58
 msgid "Disable"
 msgstr ""
 
@@ -120,7 +120,7 @@ msgstr ""
 msgid "Do not enforce policies when their gateway is down"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/view/pbr/buttons.htm:56
+#: applications/luci-app-pbr/luasrc/view/pbr/buttons.htm:55
 msgid "Enable"
 msgstr ""
 
@@ -232,7 +232,7 @@ msgstr ""
 msgid "Remote ports"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/view/pbr/buttons.htm:46
+#: applications/luci-app-pbr/luasrc/view/pbr/buttons.htm:45
 msgid "Restart"
 msgstr ""
 
@@ -329,7 +329,7 @@ msgid ""
 "protocol to a policy."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/view/pbr/buttons.htm:43
+#: applications/luci-app-pbr/luasrc/view/pbr/buttons.htm:42
 msgid "Start"
 msgstr ""
 
@@ -343,7 +343,7 @@ msgstr ""
 msgid "Starting (WAN) Table ID number for tables created by the service."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/view/pbr/buttons.htm:49
+#: applications/luci-app-pbr/luasrc/view/pbr/buttons.htm:48
 msgid "Stop"
 msgstr ""
 
