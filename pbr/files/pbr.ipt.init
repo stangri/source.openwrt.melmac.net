@@ -492,7 +492,7 @@ insert_policy() {
 	local name="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6"
 # shellcheck disable=SC2155
 	local proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}" uid="$9"
-	local mark param i negation value dest ipInsertOption="-A"
+	local mark param param6 i negation value dest ipInsertOption="-A"
 	mark=$(eval echo "\$mark_${iface//-/_}")
 
 	if [ "$ipv6Enabled" -eq 0 ] && { is_ipv6 "$laddr" || is_ipv6 "$raddr"; }; then
@@ -525,11 +525,13 @@ insert_policy() {
 	for i in $proto; do
 		if [ "$i" = 'all' ]; then
 			param="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest"
+			param6="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest"
 		elif ! is_supported_protocol "$i"; then
 			processPolicyError="${processPolicyError}${_ERROR_}: Unknown protocol '$i' in policy '$name'\\n"
 			return 1
 		else
 			param="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest -p $i"
+			param6="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest -p $i"
 		fi
 
 		if [ -n "$laddr" ]; then
@@ -540,29 +542,36 @@ insert_policy() {
 			fi
 			if is_phys_dev "$value"; then
 				param="$param $negation -m physdev --physdev-in ${value:1}"
+				param6="$param6 $negation -m physdev --physdev-in ${value:1}"
 			elif is_netmask "$value"; then
 				local target='src' type='net'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $laddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $laddr" "$value"; then
 					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -s $value"
+					param6="$param6 $negation -s $value"
 				fi
 			elif is_mac_address "$value"; then
 				local target='src' type='mac'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $laddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $laddr" "$value"; then
 					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
 					param="$param -m mac $negation --mac-source $value"
+					param6="$param6 -m mac $negation --mac-source $value"
 				fi
 			else
 				local target='src' type='ip'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $laddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $laddr" "$value"; then
 					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -s $(resolveip_to_ipt "$value")"
+					param6="$param6 $negation -s $(resolveip_to_ipt "$value")"
 				fi
 			fi
 		fi
@@ -574,6 +583,7 @@ insert_policy() {
 				unset negation; value="$lport";
 			fi
 			param="$param -m multiport $negation --sport ${value//-/:}"
+			param6="$param6 -m multiport $negation --sport ${value//-/:}"
 		fi
 
 		if [ -n "$raddr" ]; then 
@@ -587,27 +597,34 @@ insert_policy() {
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
 					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -d $value"
+					param6="$param6 $negation -d $value"
 				fi
 			elif is_domain "$value"; then
 				local target='dst' type='ip'
 				if ips 'create_resolver' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add_resolver' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
 					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				elif ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
 					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -d $(resolveip_to_ipt "$value")"
+					param6="$param6 $negation -d $(resolveip_to_ipt "$value")"
 				fi
 			else
 				local target='dst' type='ip'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
 					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -d $value"
+					param6="$param6 $negation -d $value"
 				fi
 			fi
 		fi
@@ -619,11 +636,16 @@ insert_policy() {
 				unset negation; value="$rport";
 			fi
 			param="$param -m multiport $negation --dport ${value//-/:}"
+			param6="$param6 -m multiport $negation --dport ${value//-/:}"
 		fi
 
 		[ -n "$name" ] && param="$param -m comment --comment $(str_extras_to_underscore "$name")"
 
-		ipt "$param" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param\\n"
+		if [ "$param" = "$param6" ]; then
+			ipt "$param" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param\\n"
+		else
+			ipt "$param" || ipt "$param6" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param\\n${processPolicyError}${_ERROR_}: ip6tables $param6\\n"
+		fi
 	done
 }
 
