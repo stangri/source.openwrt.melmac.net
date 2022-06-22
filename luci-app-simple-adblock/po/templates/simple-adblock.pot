@@ -25,7 +25,7 @@ msgstr ""
 msgid "Advanced Configuration"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:342
+#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:341
 msgid "Allowed Domain URLs"
 msgstr ""
 
@@ -50,15 +50,15 @@ msgstr ""
 msgid "Basic Configuration"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:352
+#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:349
 msgid "Blocked Domain URLs"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:347
+#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:345
 msgid "Blocked Domains"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:357
+#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:353
 msgid "Blocked Hosts URLs"
 msgstr ""
 
@@ -203,7 +203,7 @@ msgstr ""
 msgid "Individual domains to be allowed."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:347
+#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:345
 msgid "Individual domains to be blocked."
 msgstr ""
 
@@ -339,15 +339,15 @@ msgstr ""
 msgid "Task"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:342
+#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:341
 msgid "URLs to lists of domains to be allowed."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:352
+#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:349
 msgid "URLs to lists of domains to be blocked."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:357
+#: applications/luci-app-simple-adblock/luasrc/model/cbi/simple-adblock.lua:353
 msgid "URLs to lists of hosts to be blocked."
 msgstr ""
 

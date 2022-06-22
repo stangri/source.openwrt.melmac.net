@@ -336,26 +336,21 @@ s2 = m:section(NamedSection, "config", "simple-adblock", translate("Allowed and 
 -- Allowed Domains
 d1 = s2:option(DynamicList, "allowed_domain", translate("Allowed Domains"), translate("Individual domains to be allowed."))
 d1.addremove = false
-d1.optional = false
 
 -- Allowed Domains URLs
 d2 = s2:option(DynamicList, "allowed_domains_url", translate("Allowed Domain URLs"), translate("URLs to lists of domains to be allowed."))
 d2.addremove = false
-d2.optional = false
 
 -- Blocked Domains
 d3 = s2:option(DynamicList, "blocked_domain", translate("Blocked Domains"), translate("Individual domains to be blocked."))
 d3.addremove = false
-d3.optional = false
 
 -- Blocked Domains URLs
 d4 = s2:option(DynamicList, "blocked_domains_url", translate("Blocked Domain URLs"), translate("URLs to lists of domains to be blocked."))
 d4.addremove = false
-d4.optional = false
 
 -- Blocked Hosts URLs
 d5 = s2:option(DynamicList, "blocked_hosts_url", translate("Blocked Hosts URLs"), translate("URLs to lists of hosts to be blocked."))
 d5.addremove = false
-d5.optional = false
 
 return m
