@@ -1112,6 +1112,9 @@ allow() {
 				done
 				output 2 "Committing changes to config... "
 				if [ -n "$(uci changes "$packageName")" ] && uci -q commit "$packageName"; then
+					allowed_domains="$(uci -q get "$packageName.config.allowed_domain")"
+					jsonOps set triggers
+					jsonOps set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${targetDNS})"
 					output_ok; 
 					if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
 						output 2 "Flushing adb ipset... "
@@ -1137,6 +1140,9 @@ allow() {
 				done
 				output 2 "Committing changes to config... "
 				if [ -n "$(uci changes "$packageName")" ] && uci -q commit "$packageName"; then
+					allowed_domains="$(uci -q get "$packageName.config.allowed_domain")"
+					jsonOps set triggers
+					jsonOps set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${targetDNS})"
 					output_ok; 
 					output 2 "Restarting Unbound... "
 					if unbound_restart; then output_okn; else output_failn; fi
