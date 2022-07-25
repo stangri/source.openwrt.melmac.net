@@ -10,6 +10,7 @@ USE_PROCD=1
 LC_ALL=C
 
 if type extra_command 1>/dev/null 2>&1; then
+	extra_command 'allow' 'Allows domain(s) in current block-list and config'
 	extra_command 'check' 'Checks if specified domain is found in current block-list'
 	extra_command 'dl' 'Force-downloads all enabled block-list'
 	extra_command 'killcache' 'Delete all cached files'
@@ -17,9 +18,10 @@ if type extra_command 1>/dev/null 2>&1; then
 	extra_command 'version' 'Show version information'
 else
 # shellcheck disable=SC2034
-	EXTRA_COMMANDS='check dl killcache sizes status_service version'
+	EXTRA_COMMANDS='allow check dl killcache sizes status_service version'
 # shellcheck disable=SC2034
-	EXTRA_HELP='	check	Checks if specified domain is found in current block-list
+	EXTRA_HELP='	allow	Allows domain(s) in current block-list and config
+	check	Checks if specified domain is found in current block-list
 	dl	Force-downloads all enabled block-list
 	sizes	Displays the file-sizes of enabled block-lists'
 fi
@@ -1085,6 +1087,64 @@ service_triggers() {
 	procd_add_reload_interface_trigger 'wan'
 	procd_add_interface_trigger 'interface.*.up' 'wan' /etc/init.d/${packageName} reload
 	procd_close_trigger
+}
+
+allow() {
+	load_package_config
+	local c string="$1"
+	if [ ! -s "$outputFile" ]; then
+		echo "No block-list ('$outputFile') found."
+	elif [ -z "$string" ]; then
+		echo "Usage: /etc/init.d/${packageName} allow domain(s)"
+	else
+		case "$targetDNS" in
+			dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.servers)
+				output 1 "Allowing domain(s) and restarting DNSMASQ... "
+				output 2 "Allowing domain(s)... \\n"
+				for c in $string; do 
+					output 2 "  $c "
+					if sed -i "/${string}/d" "$outputFile" && \
+						uci -q add_list "${packageName}.config.allowed_domain=${string}"; then
+							output_ok
+					else
+						output_fail
+					fi
+				done
+				output 2 "Committing changes to config... "
+				if [ -n "$(uci changes "$packageName")" ] && uci -q commit "$packageName"; then
+					output_ok; 
+					if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
+						output 2 "Flushing adb ipset... "
+						if command -v ipset && ipset flush adb; then output_ok; else output_fail; fi
+					fi
+					output 2 "Restarting DNSMASQ... "
+					if dnsmasq_restart; then output_okn; else output_failn; fi
+				else 
+					output_fail; 
+				fi
+				;;
+			unbound.adb_list)
+				output 1 "Allowing domain(s) and restarting Unbound... "
+				output 2 "Allowing domain(s)... \\n"
+				for c in $string; do 
+					output 2 "  $c "
+					if sed -i "/${string}/d" "$outputFile" && \
+						uci -q add_list "${packageName}.config.allowed_domain=${string}"; then
+							output_ok
+					else
+						output_fail
+					fi
+				done
+				output 2 "Committing changes to config... "
+				if [ -n "$(uci changes "$packageName")" ] && uci -q commit "$packageName"; then
+					output_ok; 
+					output 2 "Restarting Unbound... "
+					if unbound_restart; then output_okn; else output_failn; fi
+				else 
+					output_fail; 
+				fi
+		esac
+	fi
 }
 
 check() {
