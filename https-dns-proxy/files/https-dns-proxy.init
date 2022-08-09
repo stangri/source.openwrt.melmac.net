@@ -261,6 +261,9 @@ dnsmasq_doh_server() {
 			for i in $TUPLES; do
 				uci -q del_list "dhcp.${cfg}.server=${i}"
 			done
+			for i in $canaryDomains; do
+				uci -q del_list "dhcp.${cfg}.server=/${i}/"
+			done
 		;;
 	esac
 }
