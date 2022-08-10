@@ -1277,8 +1277,8 @@ _netifd_process() {
 					/etc/iproute2/rt_tables
 		;;
 		remove|uninstall)
-			uci delete "network.${iface}.ip4table"
-			uci delete "network.${iface}.ip6table"
+			uci -q delete "network.${iface}.ip4table"
+			uci -q delete "network.${iface}.ip6table"
 			sed -i "/${netifdTablePrefix}_${iface%6}/d" /etc/iproute2/rt_tables
 		;;
 	esac

@@ -4,7 +4,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
-PKG_VERSION:=0.9.5
+PKG_VERSION:=0.9.6
 PKG_RELEASE:=1
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
@@ -54,32 +54,32 @@ define Build/Compile
 endef
 
 define Package/pbr/install
-	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DIR) $(1)/usr/share/pbr
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/firewall
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
-	$(INSTALL_CONF) ./files/pbr.config $(1)/etc/config/pbr
-	$(INSTALL_DATA) ./files/pbr.hotplug.iface $(1)/etc/hotplug.d/iface/70-pbr
-	$(INSTALL_DATA) ./files/pbr.user.aws $(1)/usr/share/pbr/pbr.user.aws
-	$(INSTALL_DATA) ./files/pbr.user.netflix $(1)/usr/share/pbr/pbr.user.netflix
-	$(INSTALL_DATA) ./files/pbr.firewall.include $(1)/usr/share/pbr/pbr.firewall.include
-	$(INSTALL_DATA) ./files/pbr.hotplug.firewall $(1)/etc/hotplug.d/firewall/70-pbr
-	$(INSTALL_BIN) ./files/pbr.defaults $(1)/etc/uci-defaults/90-pbr
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_DIR) $(1)/usr/share/pbr
+	$(INSTALL_CONF) ./files/etc/config/pbr $(1)/etc/config/pbr
+	$(INSTALL_DATA) ./files/etc/hotplug.d/iface/70-pbr $(1)/etc/hotplug.d/iface/70-pbr
+	$(INSTALL_DATA) ./files/etc/hotplug.d/firewall/70-pbr $(1)/etc/hotplug.d/firewall/70-pbr
+	$(INSTALL_BIN)  ./files/etc/uci-defaults/90-pbr $(1)/etc/uci-defaults/90-pbr
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.aws $(1)/usr/share/pbr/pbr.user.aws
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.netflix $(1)/usr/share/pbr/pbr.user.netflix
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.firewall.include $(1)/usr/share/pbr/pbr.firewall.include
 endef
 #Package/pbr-ipt/install = $(Package/pbr/install,$(1),pbr.init)
 #Package/pbr-netifd/install = $(Package/pbr/install,$(1),pbr.netifd.init)
 
 define Package/pbr-ipt/install
 $(call Package/pbr/install,$(1),pbr.ipt.init)
-	$(INSTALL_BIN) ./files/pbr.ipt.init $(1)/etc/init.d/pbr
+	$(INSTALL_BIN) ./files/etc/init.d/pbr.ipt.init $(1)/etc/init.d/pbr
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
 endef
 
 define Package/pbr-netifd/install
 $(call Package/pbr/install,$(1),pbr.netifd.init)
-	$(INSTALL_BIN) ./files/pbr.netifd.init $(1)/etc/init.d/pbr
+	$(INSTALL_BIN) ./files/etc/init.d/pbr.netifd.init $(1)/etc/init.d/pbr
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
 endef
 
