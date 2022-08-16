@@ -32,7 +32,7 @@ fi
 
 readonly packageName='pbr'
 readonly serviceName="$packageName $PKG_VERSION"
-readonly ipsPrefix='pbr'
+readonly setPrefix='pbr'
 readonly iptPrefix='PBR'
 readonly jsonFile="/var/run/${packageName}.json"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
@@ -43,12 +43,14 @@ readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
 readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
+# shellcheck disable=SC2155
+readonly nft="$(command -v nft)"
 
 gatewaySummary=''; errorSummary=''; warningSummary='';
 serviceEnabled=''; verbosity=''; strictMode=''; ipv6Enabled=''; 
 wanTableID=''; wanMark=''; wanPriority=''; fwMask=''; 
-destIpset=''; srcIpset=''; resolverIpset=''; userIpset='0';
-destIpsetSupported='0'; srcIpsetSupported='0'; resolverIpsetSupported='0';  userIpsetSupported='0';
+destSet=''; srcSet=''; resolverSet=''; userIpset='0';
+destSetSupported='0'; srcSetSupported='0'; resolverSetSupported='0';  userSetSupported='0';
 wanIface4=''; wanIface6=''; ifaceMark=''; ifaceTableID=''; ifacePriority='';
 ifAll=''; ifSupported=''; ignoredIfaces=''; supportedIfaces=''; icmpIface='';
 wanGW4=''; wanGW6=''; bootTimeout=''; insertOption=''; secureReload='';
@@ -186,6 +188,8 @@ append_chains_targets() {
 }
 # shellcheck disable=SC2016
 resolveip_to_ipt() { resolveip "$1" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d'; }
+
+# TODO: fix secure load
 insert_lock() {
 	local s=0 lan_subnet wan_device
 	[ "$secureReload" -ne 0 ] || return 0
@@ -236,10 +240,10 @@ load_package_config() {
 	config_get_bool serviceEnabled      'config' 'enabled' '0'
 	config_get_bool strictMode          'config' 'strict_enforcement' '1'
 	config_get_bool ipv6Enabled         'config' 'ipv6_enabled' '0'
-	config_get_bool destIpset           'config' 'dest_ipset' '0'
-	config_get_bool srcIpset            'config' 'src_ipset' '0'
+	config_get_bool destSet             'config' 'dest_set' '0'
+	config_get_bool srcSet              'config' 'src_set' '0'
 	config_get_bool secureReload        'config' 'secure_reload' '0'
-	config_get resolverIpset            'config' 'resolver_ipset' 'dnsmasq.ipset'
+	config_get resolverSet              'config' 'resolver_set' 'dnsmasq.nftset'
 	config_get verbosity                'config' 'verbosity' '2'
 	config_get wanTableID               'config' 'wan_tid' '201'
 	config_get wanMark                  'config' 'wan_mark' '0x010000'
@@ -260,6 +264,12 @@ load_package_config() {
 		verbosity=2
 	fi
 
+	if [ ! -x "$nft" ]; then
+		errorSummary="${errorSummary}${_ERROR_}: This version of $packageName supports only nftables, but nft binary cannot be found!\\n"
+		serviceEnabled=0
+		return
+	fi
+
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
 	mkdir -p "${jsonFile%/*}"
@@ -269,52 +279,39 @@ load_package_config() {
 		usedChainsList="$usedChainsList OUTPUT"
 	fi
 
+	# TODO: rework/delete insert option
 	case $insertOption in
 		insert|-i|-I) insertOption='-I';;
 		append|-a|-A|*) insertOption='-A';;
 	esac
 
-	case $resolverIpset in
+	case $resolverSet in
 		none) : ;;
-		dnsmasq.ipset|*)
-			if ! dnsmasq -v 2>/dev/null | grep -q 'no-ipset' && dnsmasq -v 2>/dev/null | grep -q 'ipset'; then
-				resolverIpsetSupported='1'
+		dnsmasq.nftset|*)
+			if ! dnsmasq -v 2>/dev/null | grep -q 'no-nftset' && dnsmasq -v 2>/dev/null | grep -q 'nftset'; then
+				resolverSetSupported='1'
 			fi
 		;;
 	esac
 
-	if is_ipset_type_supported 'ip' && is_ipset_type_supported 'net' && \
-		is_ipset_type_supported 'mac'; then
-			destIpsetSupported='1'
-			srcIpsetSupported='1'
-			userIpsetSupported='1'
-	elif is_ipset_type_supported 'ip' && is_ipset_type_supported 'net'; then
-			destIpsetSupported='1'
-			userIpsetSupported='1'
-	elif is_ipset_type_supported 'ip' && is_ipset_type_supported 'mac'; then
-			srcIpsetSupported='1'
-	elif is_ipset_type_supported 'ip'; then
-			destIpsetSupported='1'
+	if [ "$resolverSet" != 'none' ] && [ "$resolverSetSupported" -ne 1 ]; then
+			errorSummary="${errorSummary}${_ERROR_}: Resolver nft set support (${resolverSet}) is enabled in $packageName, but resolver nft sets are not supported on this system!\\n"
+		resolverSet='none'
 	fi
 
-	if [ "$resolverIpset" != 'none' ] && [ "$resolverIpsetSupported" -ne 1 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Resolver ipset support (${resolverIpset}) is enabled in $packageName, but resolver ipsets are not supported on this system!\\n"
-		resolverIpset='none'
-	fi
-
-	if [ "$destIpset" -ne 0 ] && [ "$destIpsetSupported" -ne 1 ]; then
+	if [ "$destSet" -ne 0 ] && [ "$destSetSupported" -ne 1 ]; then
 		errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
-		destIpset='0'
+		destSet='0'
 	fi
 
-	if [ "$srcIpset" -ne 0 ] && [ "$srcIpsetSupported" -ne 1 ]; then
+	if [ "$srcSet" -ne 0 ] && [ "$srcSetSupported" -ne 1 ]; then
 		errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' or 'hash:mac' type!\\n"
-		srcIpset='0'
+		srcSet='0'
 	fi
 
 	is_config_enabled 'include' && userIpset='1'
 
-	if [ "$userIpset" -ne 0 ] && [ "$userIpsetSupported" -ne 1 ]; then
+	if [ "$userIpset" -ne 0 ] && [ "$userSetSupported" -ne 1 ]; then
 		errorSummary="${errorSummary}${_ERROR_}: User scripts are enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' or 'hash:net' type!\\n"
 		userIpset='0'
 	fi
@@ -381,91 +378,89 @@ ipt() {
 	[ "$failFlagIpv4" -eq 0 ] || [ "$failFlagIpv6" -eq 0 ]
 }
 
-# shellcheck disable=SC2086
-ips() {
+nftset() {
 	local command="$1" iface="$2" target="${3:-dst}" type="${4:-ip}" uid="$5" comment="$6" param="$7"
-	local ipset ipset6
-	local failFlag=0 mark
+	local nftset nftset6
+	local failFlag=0 mark i
 	if [ -z "$uid" ]; then
-		ipset="${ipsPrefix}_${iface}_${target}_${type}"
-		ipset6="${ipsPrefix}_${iface}6_${target}_${type}"
+		nftset="${setPrefix}_${iface}_${target}_${type}"
+		nftset6="${setPrefix}_${iface}6_${target}_${type}"
 	else
-		ipset="${ipsPrefix}_${iface}_${target}_${type}_${uid}"
-		ipset6="${ipsPrefix}_${iface}6_${target}_${type}_${uid}"
+		nftset="${setPrefix}_${iface}_${target}_${type}_${uid}"
+		nftset6="${setPrefix}_${iface}6_${target}_${type}_${uid}"
 	fi
 
-	if [ "$destIpset" -eq 0 ] && [ "$srcIpset" -eq 0 ] && \
-		 [ "$resolverIpsetSupported" -eq 0 ] && [ "$userIpsetSupported" -eq 0 ]; then
+	if [ "$destSet" -eq 0 ] && [ "$srcSet" -eq 0 ] && \
+		 [ "$resolverSetSupported" -eq 0 ] && [ "$userSetSupported" -eq 0 ]; then
 		return 1
 	fi
 
 	case "$command" in
+		add)
+			"$nft" add element inet "$iface" "$nftset"  "{ $param }" 2>/dev/null || failFlag=1
+			if [ "$ipv6Enabled" -ne 0 ] && [ "$type" != "mac" ]; then
+				"$nft" add element inet "$iface" "$nftset6"  "{ $param }" 2>/dev/null || failFlag=1
+			fi
+		;;
 		add_resolver)
-			[ "$resolverIpsetSupported" -eq 0 ] && return 1
-			case "$resolverIpset" in
-				dnsmasq.ipset)
+			[ "$resolverSetSupported" -eq 0 ] && return 1
+			case "$resolverSet" in
+				dnsmasq.nftset)
 					if [ "$ipv6Enabled" -ne 0 ]; then
-						echo "ipset=/${param}/${ipset},${ipset6} # $comment" >> "$dnsmasqFile" || failFlag=1
+						echo "nftset=/${param}/${nftset},${nftset6} # $comment" >> "$dnsmasqFile" || failFlag=1
 					else
-						echo "ipset=/${param}/${ipset} # $comment" >> "$dnsmasqFile" || failFlag=1
+						echo "nftset=/${param}/${nftset} # $comment" >> "$dnsmasqFile" || failFlag=1
 					fi
 				;;
 				*) return 1;;
 			esac
-		;;
-		add)
-			[ "$destIpset" -eq 0 ] && [ "$target" = 'dst' ] && return 1
-			[ "$srcIpset" -eq 0 ] && [ "$target" = 'src' ] && return 1
-			ipset -q -! "$command" "$ipset" $param comment "$comment" 2>/dev/null || failFlag=1
-			if [ "$ipv6Enabled" -ne 0 ] && [ "$type" != "mac" ]; then
-				ipset -q -! "$command" "$ipset6" $param comment "$comment" 2>/dev/null || failFlag=1
-			fi
 		;;
 		create)
-			param="hash:$type comment"
-			[ "$destIpset" -eq 0 ] && [ "$target" = 'dst' ] && return 1
-			[ "$srcIpset" -eq 0 ] && [ "$target" = 'src' ] && return 1
-			ipset -q -! create "$ipset" $param 2>/dev/null || failFlag=1
-			if [ "$ipv6Enabled" -ne 0 ] && [ "$type" != "mac" ]; then
-				ipset -q -! create "$ipset6" $param family inet6 2>/dev/null || failFlag=1
-			fi
+			case "$type" in
+				ip|net)
+					# TODO: change iface to a table which will be deleted on stop
+					"$nft" add set inet "$iface" "$nftset" "{ type ipv4_addr; flags interval; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
+					if [ "$ipv6Enabled" -ne 0 ]; then
+						"$nft" add set inet "$iface" "$nftset6" "{ type ipv6_addr; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
+					fi
+					;;
+				mac)
+					# TODO: interval flag for ether_addr research
+					"$nft" add set inet "$iface" "$nftset" "{ type ether_addr; flags interval; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
+					;;
+				esac
 		;;
 		create_default)
-			[ "$userIpsetSupported" -eq 0 ] && return 1
-			for type in 'ip' 'net'; do
-				param="hash:$type comment"
-				ipset="${ipsPrefix}_${iface}_${target}_${type}"
-				ipset6="${ipsPrefix}_${iface}6_${target}_${type}"
-				ipset -q -! create "$ipset" $param 2>/dev/null || failFlag=1
-				if [ "$ipv6Enabled" -ne 0 ]; then
-					ipset -q -! create "$ipset6" $param family inet6 2>/dev/null || failFlag=1
-				fi
-			done
+			# TODO: change iface to a table which will be deleted on stop
+			[ "$userSetSupported" -eq 0 ] && return 1
+			"$nft" add set inet "$iface" "$nftset" "{ type ipv4_addr; flags interval; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
+			if [ "$ipv6Enabled" -ne 0 ]; then
+				"$nft" add set inet "$iface" "$nftset6" "{ type ipv6_addr; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
+			fi
 		;;
 		create_resolver)
-			[ "$resolverIpsetSupported" -eq 0 ] && return 1
-			case "$resolverIpset" in
-				dnsmasq.ipset)
-					param="hash:$type comment"
-					ipset -q -! create "$ipset" $param 2>/dev/null || failFlag=1
+			[ "$resolverSetSupported" -eq 0 ] && return 1
+			case "$resolverSet" in
+				dnsmasq.nftset)
+					"$nft" add set inet "$iface" "$nftset" "{ type ipv4_addr; flags interval; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
 					if [ "$ipv6Enabled" -ne 0 ]; then
-						ipset -q -! create "$ipset6" $param family inet6 2>/dev/null || failFlag=1
+						"$nft" add set inet "$iface" "$nftset6" "{ type ipv6_addr; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
 					fi
 				;;
 				*) return 1;;
 			esac
 		;;
-		delete_default)
-			for type in 'ip' 'net'; do
-				ipset="${ipsPrefix}_${iface}_${target}_${type}"
-				ipset6="${ipsPrefix}_${iface}6_${target}_${type}"
-				ipset -q -! flush "$ipset" 2>/dev/null
-				ipset -q -! flush "$ipset6" family inet6 2>/dev/null
-			done
+		delete|destroy)
+			"$nft" delete set inet "$iface" "$nftset" 2>/dev/null
+			"$nft" delete set inet "$iface" "$nftset6" 2>/dev/null
 		;;
-		destroy|flush)
-			ipset -q -! "$command" "$ipset" 2>/dev/null
-			ipset -q -! "$command" "$ipset6" 2>/dev/null
+		delete_default)
+			"$nft" delete set inet "$iface" "$nftset" 2>/dev/null
+			"$nft" delete set inet "$iface" "$nftset6" 2>/dev/null
+		;;
+		flush)
+			"$nft" flush set inet "$iface" "$nftset" 2>/dev/null
+			"$nft" flush set inet "$iface" "$nftset6" 2>/dev/null
 		;;
 	esac
 	return "$failFlag"
@@ -547,8 +542,8 @@ insert_policy() {
 				local target='src' type='net'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $laddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $laddr" "$value"; then
-					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
-					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${setPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${setPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -s $value"
 					param6="$param6 $negation -s $value"
@@ -557,8 +552,8 @@ insert_policy() {
 				local target='src' type='mac'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $laddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $laddr" "$value"; then
-					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
-					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${setPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${setPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
 					param="$param -m mac $negation --mac-source $value"
 					param6="$param6 -m mac $negation --mac-source $value"
@@ -567,8 +562,8 @@ insert_policy() {
 				local target='src' type='ip'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $laddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $laddr" "$value"; then
-					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
-					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${setPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${setPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -s $(resolveip_to_ipt "$value")"
 					param6="$param6 $negation -s $(resolveip_to_ipt "$value")"
@@ -596,8 +591,8 @@ insert_policy() {
 				local target='dst' type='net'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
-					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
-					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${setPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${setPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -d $value"
 					param6="$param6 $negation -d $value"
@@ -606,12 +601,12 @@ insert_policy() {
 				local target='dst' type='ip'
 				if ips 'create_resolver' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add_resolver' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
-					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
-					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${setPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${setPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				elif ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
-					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
-					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${setPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${setPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -d $(resolveip_to_ipt "$value")"
 					param6="$param6 $negation -d $(resolveip_to_ipt "$value")"
@@ -620,8 +615,8 @@ insert_policy() {
 				local target='dst' type='ip'
 				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
 					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
-					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
-					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
+					param="$param -m set $negation --match-set ${setPrefix}_${iface}_${target}_${type}_${uid} $target"
+					param6="$param6 -m set $negation --match-set ${setPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
 					param="$param $negation -d $value"
 					param6="$param6 $negation -d $value"
@@ -739,7 +734,7 @@ table_destroy() {
 #		ip rule del fwmark "$mark/$fwMask" table "$tid" >/dev/null 2>&1
 		ip rule del fwmark "$mark" table "$tid" >/dev/null 2>&1
 		ip route flush table "$tid" >/dev/null 2>&1
-		ips 'flush' "${ipsPrefix}_${iface}_dst_ip"; ips 'destroy' "${ipsPrefix}_${iface}_dst_ip";
+		ips 'flush' "${setPrefix}_${iface}_dst_ip"; ips 'destroy' "${setPrefix}_${iface}_dst_ip";
 		sed -i "/$iface/d" /etc/iproute2/rt_tables
 		return 0
 	else
@@ -947,13 +942,13 @@ interface_process() {
 		create_default_ipset)
 			if [ -z "$reloadedIface" ] || [ "$iface" = "$reloadedIface" ]; then
 				if ips 'create_default' "$iface"; then
-					if ! iptables-save | grep -q -- "-A ${iptPrefix}_PREROUTING -m set --match-set ${ipsPrefix}_${iface}_dst_ip dst"; then
-						ipt -t mangle -A "${iptPrefix}_PREROUTING" -m set --match-set "${ipsPrefix}_${iface}_dst_ip" dst -g "${iptPrefix}_MARK${ifaceMark}" || failFlag=1
-						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A "${iptPrefix}_PREROUTING" -m set --match-set "${ipsPrefix}_${iface}6_dst_ip" dst -g "${iptPrefix}_MARK${ifaceMark}" || failFlag=1; fi
+					if ! iptables-save | grep -q -- "-A ${iptPrefix}_PREROUTING -m set --match-set ${setPrefix}_${iface}_dst_ip dst"; then
+						ipt -t mangle -A "${iptPrefix}_PREROUTING" -m set --match-set "${setPrefix}_${iface}_dst_ip" dst -g "${iptPrefix}_MARK${ifaceMark}" || failFlag=1
+						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A "${iptPrefix}_PREROUTING" -m set --match-set "${setPrefix}_${iface}6_dst_ip" dst -g "${iptPrefix}_MARK${ifaceMark}" || failFlag=1; fi
 					fi
-					if ! iptables-save | grep -q -- "-A ${iptPrefix}_PREROUTING -m set --match-set ${ipsPrefix}_${iface}_dst_net dst"; then
-						ipt -t mangle -A "${iptPrefix}_PREROUTING" -m set --match-set "${ipsPrefix}_${iface}_dst_net" dst -g "${iptPrefix}_MARK${ifaceMark}" || failFlag=1
-						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A "${iptPrefix}_PREROUTING" -m set --match-set "${ipsPrefix}_${iface}6_dst_net" dst -g "${iptPrefix}_MARK${ifaceMark}" || failFlag=1; fi
+					if ! iptables-save | grep -q -- "-A ${iptPrefix}_PREROUTING -m set --match-set ${setPrefix}_${iface}_dst_net dst"; then
+						ipt -t mangle -A "${iptPrefix}_PREROUTING" -m set --match-set "${setPrefix}_${iface}_dst_net" dst -g "${iptPrefix}_MARK${ifaceMark}" || failFlag=1
+						if [ "$ipv6Enabled" -ne 0 ]; then ipt -t mangle -A "${iptPrefix}_PREROUTING" -m set --match-set "${setPrefix}_${iface}6_dst_net" dst -g "${iptPrefix}_MARK${ifaceMark}" || failFlag=1; fi
 					fi
 				fi
 			fi
@@ -988,7 +983,7 @@ interface_process_tor() {
 				ipt -t nat "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "${iptPrefix}_${i}"
 			done
 			if ips 'create' "$iface" 'dst' 'net' && ips 'flush' "$iface" 'dst' 'net'; then
-				ipset="${ipsPrefix}_${iface}_dst_net"
+				ipset="${setPrefix}_${iface}_dst_net"
 				for i in $usedChainsList; do
 					ipt -t nat -I "${iptPrefix}_${i}" -p udp -m udp --dport 53 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
 					ipt -t nat -I "${iptPrefix}_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${ipset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-TCP" || s=1

@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# Copyright 2021-2022 Stan Grishin (stangri@melmac.ca)
+# Copyright 2020-2022 Stan Grishin (stangri@melmac.ca)
 # shellcheck disable=SC2039,SC1091,SC2018,SC2019,SC3043,SC3057,SC3060
 PKG_VERSION='dev-test'
 
@@ -12,7 +12,6 @@ START=94
 USE_PROCD=1
 
 if type extra_command >/dev/null 2>&1; then
-	extra_command 'netifd' "Installs/uninstalls netifd support"
 	extra_command 'status' "Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
 		Use '-p' option to automatically upload data under VPR paste.ee account
@@ -24,20 +23,17 @@ else
 # shellcheck disable=SC2034
 	EXTRA_COMMANDS='reload_interface status version'
 # shellcheck disable=SC2034
-	EXTRA_HELP="	netifd	Installs/uninstalls netifd support
-	status	Generates output required to troubleshoot routing issues
+	EXTRA_HELP="	status	Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
 		Use '-p' option to automatically upload data under VPR paste.ee account
 			WARNING: while paste.ee uploads are unlisted, they are still publicly available
-		List domain names after options to include their lookup in report
-	version	Show version information"
+		List domain names after options to include their lookup in report"
 fi
 
 readonly packageName='pbr'
 readonly serviceName="$packageName $PKG_VERSION"
 readonly ipsPrefix='pbr'
 readonly iptPrefix='PBR'
-readonly netifdTablePrefix='pbr'
 readonly jsonFile="/var/run/${packageName}.json"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
 readonly sharedMemoryOutput="/dev/shm/$packageName-output"
@@ -1248,56 +1244,6 @@ stop_service() {
 }
 
 reload_interface() { rc_procd start_service "$1"; }
-
-is_netifd_table_enabled() { _netifd_process "$1" 'check'; }
-
-_netifd_process() {
-	local iface="$1" param="$2" proto
-	config_get proto "$iface" proto 'none'
-	case "$iface" in
-		loopback) return 0;;
-	esac
-	case "$proto" in
-		gre*|vti*|vxlan|xfrm|relay) return 0;;
-#		none) add route ;;
-	esac
-	case "$param" in
-		check|verify)
-			[ "$(uci -q get "network.${iface}.ip4table")" = "${netifdTablePrefix}_${iface%6}" ] && \
-				[ "$(uci -q get "network.${iface}.ip6table")" = "${netifdTablePrefix}_${iface%6}" ]
-			return "$?"
-		;;
-		install|setup)
-			[ "$(uci -q get "network.${iface}.ip4table")" = "${netifdTablePrefix}_${iface%6}" ] && \
-				uci -q set "network.${iface}.ip4table=${netifdTablePrefix}_${iface%6}"
-			[ "$(uci -q get "network.${iface}.ip6table")" = "${netifdTablePrefix}_${iface%6}" ] && \
-				uci -q set "network.${iface}.ip6table=${netifdTablePrefix}_${iface%6}"
-			grep -qEe "^[0-9]+\s+${netifdTablePrefix}_${iface%6}$" /etc/iproute2/rt_tables || \
-				sed -ie "\$a $(($(sort -r -n /etc/iproute2/rt_tables | grep -oEm 1 "^[0-9]+")+1))\t${netifdTablePrefix}_${iface%6}" \
-					/etc/iproute2/rt_tables
-		;;
-		remove|uninstall)
-			uci -q delete "network.${iface}.ip4table"
-			uci -q delete "network.${iface}.ip6table"
-			sed -i "/${netifdTablePrefix}_${iface%6}/d" /etc/iproute2/rt_tables
-		;;
-	esac
-}
-
-netifd() {
-	local param="$1"
-	case "$param" in
-		install|setup|remove|uninstall)
-			load_package_config
-			config_load network
-			config_foreach _netifd_process interface "$param"
-			if [ -n "$(uci changes network)" ]; then
-				uci commit network
-				/etc/init.d/network restart
-			fi
-		;;
-	esac
-}
 
 service_triggers() {
 	local n

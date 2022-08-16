@@ -23,9 +23,14 @@ define Package/pbr/default
 	PKGARCH:=all
 endef
 
-define Package/pbr-ipt
+define Package/pbr-iptables
 $(call Package/pbr/default)
 	TITLE+= with iptables/ipset support
+endef
+
+define Package/pbr-nftables
+$(call Package/pbr/default)
+	TITLE+= with nftables/nft set support
 endef
 
 define Package/pbr-netifd
@@ -37,14 +42,16 @@ define Package/pbr/description
 This service enables policy-based routing for WAN interfaces and various VPN tunnels.
 endef
 
-Package/pbr-ipt/description = $(Package/pbr/description)
+Package/pbr-iptables/description = $(Package/pbr/description)
+Package/pbr-nftables/description = $(Package/pbr/description)
 Package/pbr-netifd/description = $(Package/pbr/description)
 
 define Package/pbr/conffiles
 /etc/config/pbr
 endef
 
-Package/pbr-ipt/conffiles = $(Package/pbr/conffiles)
+Package/pbr-iptables/conffiles = $(Package/pbr/conffiles)
+Package/pbr-nftables/conffiles = $(Package/pbr/conffiles)
 Package/pbr-netifd/conffiles = $(Package/pbr/conffiles)
 
 define Build/Configure
@@ -68,12 +75,18 @@ define Package/pbr/install
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.netflix $(1)/usr/share/pbr/pbr.user.netflix
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.firewall.include $(1)/usr/share/pbr/pbr.firewall.include
 endef
-#Package/pbr-ipt/install = $(Package/pbr/install,$(1),pbr.init)
+#Package/pbr-iptables/install = $(Package/pbr/install,$(1),pbr.init)
 #Package/pbr-netifd/install = $(Package/pbr/install,$(1),pbr.netifd.init)
 
-define Package/pbr-ipt/install
-$(call Package/pbr/install,$(1),pbr.ipt.init)
-	$(INSTALL_BIN) ./files/etc/init.d/pbr.ipt.init $(1)/etc/init.d/pbr
+define Package/pbr-iptables/install
+$(call Package/pbr/install,$(1),pbr.iptables.init)
+	$(INSTALL_BIN) ./files/etc/init.d/pbr.iptables.init $(1)/etc/init.d/pbr
+	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
+endef
+
+define Package/pbr-nftables/install
+$(call Package/pbr/install,$(1),pbr.nftables.init)
+	$(INSTALL_BIN) ./files/etc/init.d/pbr.nftables.init $(1)/etc/init.d/pbr
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
 endef
 
@@ -83,7 +96,7 @@ $(call Package/pbr/install,$(1),pbr.netifd.init)
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
 endef
 
-define Package/pbr-ipt/postinst
+define Package/pbr-iptables/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -93,7 +106,29 @@ define Package/pbr-ipt/postinst
 	exit 0
 endef
 
-define Package/pbr-ipt/prerm
+define Package/pbr-iptables/prerm
+	#!/bin/sh
+	# check if we are on real system
+	if [ -z "$${IPKG_INSTROOT}" ]; then
+		echo "Stopping pbr service... "
+		/etc/init.d/pbr stop || true
+		echo -n "Removing rc.d symlink for pbr... "
+		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
+	fi
+	exit 0
+endef
+
+define Package/pbr-nftables/postinst
+	#!/bin/sh
+	# check if we are on real system
+	if [ -z "$${IPKG_INSTROOT}" ]; then
+		echo -n "Installing rc.d symlink for pbr... "
+		/etc/init.d/pbr enable && echo "OK" || echo "FAIL"
+	fi
+	exit 0
+endef
+
+define Package/pbr-nftables/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -135,5 +170,6 @@ define Package/pbr-netifd/prerm
 	exit 0
 endef
 
-$(eval $(call BuildPackage,pbr-ipt))
+$(eval $(call BuildPackage,pbr-iptables))
+$(eval $(call BuildPackage,pbr-nftables))
 $(eval $(call BuildPackage,pbr-netifd))
