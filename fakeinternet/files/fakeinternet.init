@@ -243,17 +243,14 @@ start_service() {
 	logger -t "$serviceName" "Service started (${ip})."
 }
 
-service_started() {
-	procd_set_config_changed firewall
-}
+service_started() { procd_set_config_changed firewall; }
+service_stopped() { procd_set_config_changed firewall; }
 
 stop_service() {
 	load_package_config
 	dns_forward 'stop'
 	if is_chaos_calmer; then
 		fw3_setup 'stop'
-	else
-		procd_set_config_changed firewall
 	fi
 	logger -t "$serviceName" "Service stopped."
 }
