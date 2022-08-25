@@ -1,12 +1,12 @@
-# Copyright 2017-2018 Stan Grishin (stangri@melmac.ca)
+# Copyright 2017-2022 Stan Grishin (stangri@melmac.ca)
 # TLD optimization written by Dirk Brenken (dev@brenken.org)
 # This is free software, licensed under the GNU General Public License v3.
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=simple-adblock
-PKG_VERSION:=1.8.8
-PKG_RELEASE:=4
+PKG_VERSION:=1.9.0
+PKG_RELEASE:=1
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 PKG_LICENSE:=GPL-3.0-or-later
 

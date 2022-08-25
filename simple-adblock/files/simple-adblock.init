@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# Copyright 2017-2020 Stan Grishin (stangri@melmac.ca)
+# Copyright 2017-2022 Stan Grishin (stangri@melmac.ca)
 # shellcheck disable=SC2039,SC1091,SC2016,SC3043,SC3057,SC3060
 PKG_VERSION='dev-test'
 
@@ -41,6 +41,10 @@ readonly dnsmasqIpsetFile="/tmp/dnsmasq.d/${packageName}.ipset"
 readonly dnsmasqIpsetCache="/var/run/${packageName}/dnsmasq.ipset.cache"
 readonly dnsmasqIpsetGzip="/etc/${packageName}.dnsmasq.ipset.gz"
 readonly dnsmasqIpsetFilter='s|^|ipset=/|;s|$|/adb|'
+readonly dnsmasqNftsetFile="/tmp/dnsmasq.d/${packageName}.nftset"
+readonly dnsmasqNftsetCache="/var/run/${packageName}/dnsmasq.nftset.cache"
+readonly dnsmasqNftsetGzip="/etc/${packageName}.dnsmasq.nftset.gz"
+readonly dnsmasqNftsetFilter='s|^|nftset=/|;s|$|/adb|'
 readonly dnsmasqServersFile="/var/run/${packageName}/dnsmasq.servers"
 readonly dnsmasqServersCache="/var/run/${packageName}/dnsmasq.servers.cache"
 readonly dnsmasqServersGzip="/etc/${packageName}.dnsmasq.servers.gz"
@@ -62,6 +66,57 @@ readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
 readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
+
+serviceEnabled=
+forceDNS=
+forceDNSPorts=
+parallelDL=
+debug=
+compressedCache=
+ipv6Enabled=
+configUpdateEnabled=
+configUpdateURL=
+bootDelay=
+dlTimeout=
+curlRetry=
+verbosity=
+led=
+targetDNS=
+dnsInstance=
+allowed_domains=
+allowed_domains_urls=
+blocked_domains=
+blocked_domains_urls=
+blocked_hosts_urls=
+dl_command=
+dl_flag=
+isSSLSupported=
+allowIDN=
+outputFilter=
+outputFilterIPv6=
+outputFile=
+outputGzip=
+outputCache=
+awk='awk'
+
+uci_add_list_if_new() {
+	local PACKAGE="$1"
+	local CONFIG="$2"
+	local OPTION="$3"
+	local VALUE="$4"
+	local i
+	[ -n "$PACKAGE" ] && [ -n "$CONFIG" ] && [ -n "$OPTION" ] && [ -n "$VALUE" ] || return 1
+	for i in $(uci_get "$PACKAGE" "$CONFIG" "$OPTION"); do
+		[ "$i" = "$VALUE" ] && return 0
+	done
+	uci_add_list "$PACKAGE" "$CONFIG" "$OPTION" "$VALUE"
+}
+uci_changes() {
+	local PACKAGE="$1"
+	local CONFIG="$2"
+	local OPTION="$3"
+	/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} changes "$PACKAGE${CONFIG:+.$CONFIG}${OPTION:+.$OPTION}"
+}
 
 version() { echo "$PKG_VERSION"; }
 
@@ -146,16 +201,6 @@ output() {
 	fi
 }
 
-serviceEnabled=''; forceDNS=''; forceDNSPorts=''; parallelDL=''; debug='';
-compressedCache=''; ipv6Enabled=''; configUpdateEnabled=''; configUpdateURL='';
-bootDelay=''; dlTimeout=''; curlRetry=''; verbosity=''; led='';
-targetDNS=''; dnsInstance=''; 
-allowed_domains=''; allowed_domains_urls='';
-blocked_domains=''; blocked_domains_urls=''; blocked_hosts_urls='';
-dl_command=''; dl_flag=''; isSSLSupported=''; allowIDN='';
-outputFilter=''; outputFilterIPv6=''; outputFile=''; outputGzip=''; outputCache='';
-awk='awk';
-
 load_package_config() {
 	local i
 	config_load "$packageName"
@@ -183,7 +228,7 @@ load_package_config() {
 
 	if [ "$targetDNS" != 'dnsmasq.addnhosts' ] && [ "$targetDNS" != 'dnsmasq.conf' ] && \
 		 [ "$targetDNS" != 'dnsmasq.servers' ] && [ "$targetDNS" != 'unbound.adb_list' ] && \
-		 [ "$targetDNS" != 'dnsmasq.ipset' ] ; then
+		 [ "$targetDNS" != 'dnsmasq.ipset' ] && [ "$targetDNS" != 'dnsmasq.nftset' ] ; then
 		targetDNS='dnsmasq.servers'
 	fi
 
@@ -196,6 +241,7 @@ load_package_config() {
 			[ "$ipv6Enabled" -gt 0 ] && outputFilterIPv6="$dnsmasqAddnhostsFilterIPv6"
 			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "$dnsmasqConfGzip"
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
+			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "$dnsmasqNftsetGzip"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			;;
@@ -206,6 +252,7 @@ load_package_config() {
 			outputGzip="$dnsmasqConfGzip"
 			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "$dnsmasqAddnhostsGzip"
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
+			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "$dnsmasqNftsetGzip"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			;;
@@ -214,8 +261,20 @@ load_package_config() {
 			outputFile="$dnsmasqIpsetFile"
 			outputCache="$dnsmasqIpsetCache"
 			outputGzip="$dnsmasqIpsetGzip"
-			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "$dnsmasqConfGzip"
 			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "$dnsmasqAddnhostsGzip"
+			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "$dnsmasqConfGzip"
+			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "$dnsmasqNftsetGzip"
+			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
+			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
+			;;
+		dnsmasq.nftset)
+			outputFilter="$dnsmasqNftsetFilter"
+			outputFile="$dnsmasqNftsetFile"
+			outputCache="$dnsmasqNftsetCache"
+			outputGzip="$dnsmasqNftsetGzip"
+			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "$dnsmasqAddnhostsGzip"
+			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "$dnsmasqConfGzip"
+			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			;;
@@ -224,9 +283,10 @@ load_package_config() {
 			outputFile="$dnsmasqServersFile"
 			outputCache="$dnsmasqServersCache"
 			outputGzip="$dnsmasqServersGzip"
-			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "$dnsmasqConfGzip"
 			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "$dnsmasqAddnhostsGzip"
+			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "$dnsmasqConfGzip"
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
+			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "$dnsmasqNftsetGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			;;
 		unbound.adb_list)
@@ -237,6 +297,7 @@ load_package_config() {
 			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "$dnsmasqAddnhostsGzip"
 			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "$dnsmasqConfGzip"
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
+			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "$dnsmasqNftsetGzip"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 			;;
 	esac
@@ -283,7 +344,8 @@ load_package_config() {
 }
 
 is_enabled() {
-	wan_if=''; wan_gw='';
+	wan_if=
+	wan_gw=
 	load_package_config
 
 	if [ "$debug" -ne 0 ]; then
@@ -304,7 +366,7 @@ is_enabled() {
 	fi
 
 	case $targetDNS in
-		dnsmasq.addnhosts | dnsmasq.conf | dnsmasq.ipset | dnsmasq.servers)
+		dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
 			if dnsmasq -v 2>/dev/null | grep -q 'no-IDN' || ! dnsmasq -v 2>/dev/null | grep -q -w 'IDN'; then
 				allowIDN=0
 			else
@@ -318,11 +380,21 @@ is_enabled() {
 	case $targetDNS in
 		dnsmasq.ipset)
 			if dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'; then
-				output "$_ERROR_: DNSMASQ ipset support is enabled in $packageName, but DNSMASQ is either not installed or installed DNSMASQ does not support ipsets!\\n"
+				output "$_ERROR_: DNSMASQ ipset support is enabled in $packageName, but DNSMASQ is either not installed or installed DNSMASQ does not support ipset!\\n"
 				targetDNS='dnsmasq.servers'
 			fi
 			if ! ipset help hash:net >/dev/null 2>&1; then
 				output "$_ERROR_: DNSMASQ ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+				targetDNS='dnsmasq.servers'
+			fi
+			;;
+		dnsmasq.nftset)
+			if dnsmasq -v 2>/dev/null | grep -q 'no-nftset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'nftset'; then
+				output "$_ERROR_: DNSMASQ nftset support is enabled in $packageName, but DNSMASQ is either not installed or installed DNSMASQ does not support nftset!\\n"
+				targetDNS='dnsmasq.servers'
+			fi
+			if [ -z "$(command -v nft)" ]; then
+				output "$_ERROR_: DNSMASQ nftset support is enabled in $packageName, but nft is not installed!\\n"
 				targetDNS='dnsmasq.servers'
 			fi
 			;;
@@ -345,23 +417,21 @@ dnsmasqOps() {
 	local cfg="$1" param="$2"
 	case "$param" in
 		dnsmasq.addnhosts)
-			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$dnsmasqServersFile" ]; then
-				uci -q del dhcp."$cfg".serversfile
+			if [ "$(uci_get 'dhcp' "$cfg" 'serversfile')" = "$dnsmasqServersFile" ]; then
+				uci_remove 'dhcp' "$cfg" 'serversfile'
 			fi
-			if ! uci -q get dhcp."$cfg".addnhosts | grep -q "$dnsmasqAddnhostsFile"; then
-				uci add_list dhcp."$cfg".addnhosts="$dnsmasqAddnhostsFile"
-			fi
+			uci_add_list_if_new 'dhcp' "$cfg" 'addnhosts' "$dnsmasqAddnhostsFile"
 			;;
-		dnsmasq.conf|dnsmasq.ipset|unbound.adb_list|cleanup)
-			uci -q del_list dhcp."$cfg".addnhosts="$dnsmasqAddnhostsFile"
-			if [ "$(uci -q get dhcp."$cfg".serversfile)" = "$dnsmasqServersFile" ]; then
-				uci -q del dhcp."$cfg".serversfile
+		dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|unbound.adb_list|cleanup)
+			uci_remove_list 'dhcp' "$cfg" 'addnhosts' "$dnsmasqAddnhostsFile"
+			if [ "$(uci_get 'dhcp' "$cfg" 'serversfile')" = "$dnsmasqServersFile" ]; then
+				uci_remove 'dhcp' "$cfg" 'serversfile'
 			fi
 			;;
 		dnsmasq.servers)
-			uci -q del_list dhcp."$cfg".addnhosts="$dnsmasqAddnhostsFile"
-			if [ "$(uci -q get dhcp."$cfg".serversfile)" != "$dnsmasqServersFile" ]; then
-				uci set dhcp."$cfg".serversfile="$dnsmasqServersFile"
+			uci_remove_list 'dhcp' "$cfg" 'addnhosts' "$dnsmasqAddnhostsFile"
+			if [ "$(uci_get 'dhcp' "$cfg" 'serversfile')" != "$dnsmasqServersFile" ]; then
+				uci_set 'dhcp' "$cfg" 'serversfile' "$dnsmasqServersFile"
 			fi
 			;;
 	esac
@@ -392,7 +462,7 @@ dnsOps() {
 					param=dnsmasq_hup
 					output_text='Reloading DNSMASQ'
 					;;
-				dnsmasq.conf|dnsmasq.ipset)
+				dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset)
 					param=dnsmasq_restart
 					output_text='Restarting DNSMASQ'
 					;;
@@ -402,8 +472,8 @@ dnsOps() {
 					;;
 			esac
 
-			if [ -n "$(uci changes dhcp)" ]; then
-				uci commit dhcp
+			if [ -n "$(uci_changes dhcp)" ]; then
+				uci_commit dhcp
 				if [ "$param" = 'unbound_restart' ]; then
 					param='dnsmasq_restart; unbound_restart;'
 					output_text='Restarting Unbound/DNSMASQ'
@@ -429,18 +499,18 @@ dnsOps() {
 			;;
 		on_stop)
 			case "$targetDNS" in
-				dnsmasq.addnhosts | dnsmasq.servers)
+				dnsmasq.addnhosts|dnsmasq.servers)
 					param=dnsmasq_hup
 					;;
-				dnsmasq.conf | dnsmasq.ipset)
+				dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset)
 					param=dnsmasq_restart
 					;;
 				unbound.adb_list)
 					param=unbound_restart
 					;;
 			esac
-			if [ -n "$(uci changes dhcp)" ]; then 
-				uci -q commit dhcp
+			if [ -n "$(uci_changes dhcp)" ]; then 
+				uci_commit dhcp
 				if [ "$param" = 'unbound_restart' ]; then
 					param='dnsmasq_restart; unbound_restart;'
 				else
@@ -452,7 +522,7 @@ dnsOps() {
 			;;
 		quiet)
 			case "$targetDNS" in
-				dnsmasq.addnhosts | dnsmasq.conf | dnsmasq.ipset | dnsmasq.servers)
+				dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
 					param=dnsmasq_restart
 					;;
 				unbound.adb_list)
@@ -728,6 +798,7 @@ $(cat $A_TMP)"
 
 	if [ "$targetDNS" = 'dnsmasq.conf' ] || \
 		 [ "$targetDNS" = 'dnsmasq.ipset' ] || \
+		 [ "$targetDNS" = 'dnsmasq.nftset' ] || \
 		 [ "$targetDNS" = 'dnsmasq.servers' ] || \
 		 [ "$targetDNS" = 'unbound.adb_list' ]; then
 		# TLD optimization written by Dirk Brenken (dev@brenken.org)
@@ -811,6 +882,10 @@ $(cat $A_TMP)"
 		dnsmasq.ipset)
 			output 2 'Creating DNSMASQ ipset file '
 			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ ipset file"
+			;;
+		dnsmasq.nftset)
+			output 2 'Creating DNSMASQ nftset file '
+			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ nftset file"
 			;;
 		dnsmasq.servers)
 			output 2 'Creating DNSMASQ servers file '
@@ -1023,11 +1098,12 @@ killcache() {
 	rm -f "$dnsmasqAddnhostsCache" "$dnsmasqAddnhostsGzip"
 	rm -f "$dnsmasqConfCache" "$dnsmasqConfGzip"
 	rm -f "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
+	rm -f "$dnsmasqNftsetCache" "$dnsmasqNftsetGzip"
 	rm -f "$dnsmasqServersCache" "$dnsmasqServersGzip"
 	rm -f "$unboundCache" "$unboundGzip"
 	config_load 'dhcp'
 	config_foreach dnsmasqOps 'dnsmasq' 'cleanup'
-	uci -q commit 'dhcp'
+	uci_commit 'dhcp'
 	return 0
 }
 
@@ -1099,21 +1175,21 @@ allow() {
 		echo "Usage: /etc/init.d/${packageName} allow domain(s)"
 	else
 		case "$targetDNS" in
-			dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.servers)
+			dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
 				output 1 "Allowing domain(s) and restarting DNSMASQ... "
 				output 2 "Allowing domain(s)... \\n"
 				for c in $string; do 
 					output 2 "  $c "
 					if sed -i "/${string}/d" "$outputFile" && \
-						uci -q add_list "${packageName}.config.allowed_domain=${string}"; then
+						uci_add_list "${packageName}" 'config' 'allowed_domain' "$string"; then
 							output_ok
 					else
 						output_fail
 					fi
 				done
 				output 2 "Committing changes to config... "
-				if [ -n "$(uci changes "$packageName")" ] && uci -q commit "$packageName"; then
-					allowed_domains="$(uci -q get "$packageName.config.allowed_domain")"
+				if [ -n "$(uci_changes "$packageName")" ] && uci_commit "$packageName"; then
+					allowed_domains="$(uci_get_list "$packageName" 'config' 'allowed_domain')"
 					jsonOps set triggers
 					jsonOps set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${targetDNS})"
 					output_ok; 
@@ -1133,15 +1209,15 @@ allow() {
 				for c in $string; do 
 					output 2 "  $c "
 					if sed -i "/${string}/d" "$outputFile" && \
-						uci -q add_list "${packageName}.config.allowed_domain=${string}"; then
+						uci_add_list "$packageName" 'config' 'allowed_domain' "$string"; then
 							output_ok
 					else
 						output_fail
 					fi
 				done
 				output 2 "Committing changes to config... "
-				if [ -n "$(uci changes "$packageName")" ] && uci -q commit "$packageName"; then
-					allowed_domains="$(uci -q get "$packageName.config.allowed_domain")"
+				if [ -n "$(uci_changes "$packageName")" ] && uci_commit "$packageName"; then
+					allowed_domains="$(uci_get_list "$packageName" 'config' 'allowed_domain')"
 					jsonOps set triggers
 					jsonOps set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${targetDNS})"
 					output_ok; 
@@ -1177,6 +1253,8 @@ check() {
 						grep "$string" "$outputFile" | sed 's|local=/||;s|/$||;';;
 					dnsmasq.ipset)
 						grep "$string" "$outputFile" | sed 's|ipset=/||;s|/adb$||;';;
+					dnsmasq.nftset)
+						grep "$string" "$outputFile" | sed 's|nftset=/||;s|/adb$||;';;
 					dnsmasq.servers)
 						grep "$string" "$outputFile" | sed 's|server=/||;s|/$||;';;
 					unbound.adb_list)
