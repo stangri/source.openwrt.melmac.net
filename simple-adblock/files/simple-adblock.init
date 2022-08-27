@@ -397,11 +397,11 @@ is_enabled() {
 		;;
 		dnsmasq.nftset)
 			if dnsmasq -v 2>/dev/null | grep -q 'no-nftset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'nftset'; then
-				output "$_ERROR_: DNSMASQ nftset support is enabled in $packageName, but DNSMASQ is either not installed or installed DNSMASQ does not support nftset!\\n"
+				output "$_ERROR_: DNSMASQ nft sets support is enabled in $packageName, but DNSMASQ is either not installed or installed DNSMASQ does not support nft sets!\\n"
 				targetDNS='dnsmasq.servers'
 			fi
 			if [ -z "$(command -v nft)" ]; then
-				output "$_ERROR_: DNSMASQ nftset support is enabled in $packageName, but nft is not installed!\\n"
+				output "$_ERROR_: DNSMASQ nft sets support is enabled in $packageName, but nft is not installed!\\n"
 				targetDNS='dnsmasq.servers'
 			fi
 		;;
@@ -892,8 +892,8 @@ $(cat $A_TMP)"
 			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ ipset file"
 		;;
 		dnsmasq.nftset)
-			output 2 'Creating DNSMASQ nftset file '
-			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ nftset file"
+			output 2 'Creating DNSMASQ nft set file '
+			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ nft set file"
 		;;
 		dnsmasq.servers)
 			output 2 'Creating DNSMASQ servers file '
@@ -1038,13 +1038,14 @@ start_service() {
 			json_add_string proto "tcp udp"
 			json_add_string target REJECT
 			json_close_object
-			json_add_object ""
 			if [ "$ipv6Enabled" -ne 0 ]; then
 				json_add_object ""
 				json_add_string type ipset
 				json_add_string name adb6
+				json_add_string family 6
 				json_add_string match dest_net
 				json_close_object
+				json_add_object ""
 				json_add_string type rule
 				json_add_string ipset adb6
 				json_add_string src lan
@@ -1186,16 +1187,10 @@ stop_service() {
 		output "Stopping $serviceName... "
 		cacheOps 'create'
 		if dnsOps 'on_stop'; then
-			case "$targetDNS" in
-				dnsmasq.ipset)
-					ipset -q -! flush adb >/dev/null 2>&1
-					ipset -q -! destroy adb >/dev/null 2>&1
-				;;
-				dnsmasq.nftset)
-					nft delete set inet fw4 adb4 >/dev/null 2>&1
-					nft delete set inet fw4 adb6 >/dev/null 2>&1
-				;;
-			esac
+			ipset -q -! flush adb >/dev/null 2>&1
+			ipset -q -! destroy adb >/dev/null 2>&1
+			nft delete set inet fw4 adb4 >/dev/null 2>&1
+			nft delete set inet fw4 adb6 >/dev/null 2>&1
 			led_off "$led"
 			output 0 "$__OK__\\n"; output_okn;
 			jsonOps set status "statusStopped"
@@ -1257,7 +1252,7 @@ allow() {
 						if ipset flush adb 1>/dev/null 2>&1; then output_ok; else output_fail; fi
 					fi
 					if [ "$targetDNS" = 'dnsmasq.nftset' ]; then
-						output 2 "Flushing adb nftset "
+						output 2 "Flushing adb nft sets "
 						nft flush set inet fw4 adb6 1>/dev/null 2>&1
 						if nft flush set inet fw4 adb4 1>/dev/null 2>&1; then output_ok; else output_fail; fi
 					fi
