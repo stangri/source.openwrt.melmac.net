@@ -1028,6 +1028,7 @@ start_service() {
 			json_add_object ""
 			json_add_string type ipset
 			json_add_string name adb4
+			json_add_string family 4
 			json_add_string match dest_net
 			json_close_object
 			json_add_object ""
