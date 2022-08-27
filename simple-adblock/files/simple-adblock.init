@@ -44,7 +44,8 @@ readonly dnsmasqIpsetFilter='s|^|ipset=/|;s|$|/adb|'
 readonly dnsmasqNftsetFile="/tmp/dnsmasq.d/${packageName}.nftset"
 readonly dnsmasqNftsetCache="/var/run/${packageName}/dnsmasq.nftset.cache"
 readonly dnsmasqNftsetGzip="/etc/${packageName}.dnsmasq.nftset.gz"
-readonly dnsmasqNftsetFilter='s|^|nftset=/|;s|$|/adb|'
+readonly dnsmasqNftsetFilter='s|^|nftset=/|;s|$|/4#inet#fw4#adb4|'
+readonly dnsmasqNftsetFilterIPv6='s|^|nftset=/|;s|$|/4#inet#fw4#adb4,6#inet#fw4#adb6|'
 readonly dnsmasqServersFile="/var/run/${packageName}/dnsmasq.servers"
 readonly dnsmasqServersCache="/var/run/${packageName}/dnsmasq.servers.cache"
 readonly dnsmasqServersGzip="/etc/${packageName}.dnsmasq.servers.gz"
@@ -238,13 +239,15 @@ load_package_config() {
 			outputFile="$dnsmasqAddnhostsFile"
 			outputCache="$dnsmasqAddnhostsCache"
 			outputGzip="$dnsmasqAddnhostsGzip"
-			[ "$ipv6Enabled" -gt 0 ] && outputFilterIPv6="$dnsmasqAddnhostsFilterIPv6"
+			if [ "$ipv6Enabled" -ne 0 ]; then
+				outputFilterIPv6="$dnsmasqAddnhostsFilterIPv6"
+			fi
 			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "$dnsmasqConfGzip"
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "$dnsmasqNftsetGzip"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
-			;;
+		;;
 		dnsmasq.conf)
 			outputFilter="$dnsmasqConfFilter"
 			outputFile="$dnsmasqConfFile"
@@ -255,7 +258,7 @@ load_package_config() {
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "$dnsmasqNftsetGzip"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
-			;;
+		;;
 		dnsmasq.ipset)
 			outputFilter="$dnsmasqIpsetFilter"
 			outputFile="$dnsmasqIpsetFile"
@@ -266,9 +269,13 @@ load_package_config() {
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "$dnsmasqNftsetGzip"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
-			;;
+		;;
 		dnsmasq.nftset)
-			outputFilter="$dnsmasqNftsetFilter"
+			if [ "$ipv6Enabled" -ne 0 ]; then
+				outputFilter="$dnsmasqNftsetFilterIPv6"
+			else
+				outputFilter="$dnsmasqNftsetFilter"
+			fi
 			outputFile="$dnsmasqNftsetFile"
 			outputCache="$dnsmasqNftsetCache"
 			outputGzip="$dnsmasqNftsetGzip"
@@ -277,7 +284,7 @@ load_package_config() {
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
-			;;
+		;;
 		dnsmasq.servers)
 			outputFilter="$dnsmasqServersFilter"
 			outputFile="$dnsmasqServersFile"
@@ -288,7 +295,7 @@ load_package_config() {
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "$dnsmasqNftsetGzip"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
-			;;
+		;;
 		unbound.adb_list)
 			outputFilter="$unboundFilter"
 			outputFile="$unboundFile"
@@ -299,7 +306,7 @@ load_package_config() {
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "$dnsmasqIpsetGzip"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "$dnsmasqNftsetGzip"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
-			;;
+		;;
 	esac
 	if [ -z "${verbosity##*[!0-9]*}" ] || [ "$verbosity" -lt 0 ] || [ "$verbosity" -gt 2 ]; then
 		verbosity=1
@@ -360,7 +367,7 @@ is_enabled() {
 				output "$packageName is currently disabled.\\n"
 				output "Run the following commands before starting service again:\\n"
 				output "uci set ${packageName}.config.enabled='1'; uci commit $packageName;\\n"
-				;;
+			;;
 		esac
 		return 1
 	fi
@@ -372,7 +379,7 @@ is_enabled() {
 			else
 				allowIDN=1
 			fi
-			;;
+		;;
 		unbound.adb_list)
 			allowIDN=1;;
 	esac
@@ -387,7 +394,7 @@ is_enabled() {
 				output "$_ERROR_: DNSMASQ ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
 				targetDNS='dnsmasq.servers'
 			fi
-			;;
+		;;
 		dnsmasq.nftset)
 			if dnsmasq -v 2>/dev/null | grep -q 'no-nftset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'nftset'; then
 				output "$_ERROR_: DNSMASQ nftset support is enabled in $packageName, but DNSMASQ is either not installed or installed DNSMASQ does not support nftset!\\n"
@@ -397,7 +404,7 @@ is_enabled() {
 				output "$_ERROR_: DNSMASQ nftset support is enabled in $packageName, but nft is not installed!\\n"
 				targetDNS='dnsmasq.servers'
 			fi
-			;;
+		;;
 	esac
 
 	for i in "$outputFile" "$outputCache" "$outputGzip"; do
@@ -421,19 +428,19 @@ dnsmasqOps() {
 				uci_remove 'dhcp' "$cfg" 'serversfile'
 			fi
 			uci_add_list_if_new 'dhcp' "$cfg" 'addnhosts' "$dnsmasqAddnhostsFile"
-			;;
+		;;
 		dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|unbound.adb_list|cleanup)
 			uci_remove_list 'dhcp' "$cfg" 'addnhosts' "$dnsmasqAddnhostsFile"
 			if [ "$(uci_get 'dhcp' "$cfg" 'serversfile')" = "$dnsmasqServersFile" ]; then
 				uci_remove 'dhcp' "$cfg" 'serversfile'
 			fi
-			;;
+		;;
 		dnsmasq.servers)
 			uci_remove_list 'dhcp' "$cfg" 'addnhosts' "$dnsmasqAddnhostsFile"
 			if [ "$(uci_get 'dhcp' "$cfg" 'serversfile')" != "$dnsmasqServersFile" ]; then
 				uci_set 'dhcp' "$cfg" 'serversfile' "$dnsmasqServersFile"
 			fi
-			;;
+		;;
 	esac
 }
 
@@ -461,15 +468,15 @@ dnsOps() {
 				dnsmasq.addnhosts|dnsmasq.servers)
 					param=dnsmasq_hup
 					output_text='Reloading DNSMASQ'
-					;;
+				;;
 				dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset)
 					param=dnsmasq_restart
 					output_text='Restarting DNSMASQ'
-					;;
+				;;
 				unbound.adb_list)
 					param=unbound_restart
 					output_text='Restarting Unbound'
-					;;
+				;;
 			esac
 
 			if [ -n "$(uci_changes dhcp)" ]; then
@@ -496,18 +503,18 @@ dnsOps() {
 				output "$_ERROR_: $(getErrorText 'errorDNSReload')!\\n"
 				return 1
 			fi
-			;;
+		;;
 		on_stop)
 			case "$targetDNS" in
 				dnsmasq.addnhosts|dnsmasq.servers)
 					param=dnsmasq_hup
-					;;
+				;;
 				dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset)
 					param=dnsmasq_restart
-					;;
+				;;
 				unbound.adb_list)
 					param=unbound_restart
-					;;
+				;;
 			esac
 			if [ -n "$(uci_changes dhcp)" ]; then 
 				uci_commit dhcp
@@ -519,19 +526,19 @@ dnsOps() {
 			fi
 			eval "$param"
 			return $?
-			;;
+		;;
 		quiet)
 			case "$targetDNS" in
 				dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
 					param=dnsmasq_restart
-					;;
+				;;
 				unbound.adb_list)
 					param=unbound_restart
-					;;
+				;;
 			esac
 			eval "$param"
 			return $?
-			;;
+		;;
 	esac
 }
 
@@ -565,13 +572,13 @@ jsonOps() {
 				*)
 					printf "%b" "$(eval echo "\$$param")"; return;;
 			esac
-			;;
+		;;
 		add)
 			if [ -n "$(eval echo "\$$param")" ]; then
 				value="$(eval echo "\$$param") ${value}"
 			fi
 				eval "$param"='${value}'
-			;;
+		;;
 		del)
 			case "$param" in
 				all)
@@ -581,17 +588,17 @@ jsonOps() {
 				*)
 					unset "$param";;
 			esac
-			;;
+		;;
 		set)
 			case "$param" in
 				triggers) 
 					reload="$parallelDL $debug $dlTimeout $allowed_domains $blocked_domains $allowed_domains_urls $blocked_domains_urls $blocked_hosts_urls $targetDNS $configUpdateEnabled $configUpdateURL"
 					restart="$compressedCache $forceDNS $led $forceDNSPorts"
-					;;
+				;;
 				*)
 					eval "$param"='$value';;
 			esac
-			;;
+		;;
 	esac
 	json_init
 	json_add_object 'data'
@@ -613,20 +620,21 @@ cacheOps() {
 		create|backup)
 			[ -s "$outputFile" ] && { mv -f "$outputFile" "$outputCache"; true > "$outputFile"; } >/dev/null 2>/dev/null
 			return $?
-			;;
+		;;
 		restore|use)
 			[ -s "$outputCache" ] && mv "$outputCache" "$outputFile" >/dev/null 2>/dev/null
 			return $?
-			;;
+		;;
 		test)
 			[ -s "$outputCache" ]
 			return $?
-			;;
+		;;
 		testGzip)
 			[ -s "$outputGzip" ] && gzip -t -c "$outputGzip"
 			return $?
-			;;
+		;;
 		createGzip)
+			rm -f "$outputGzip" >/dev/null 2>/dev/null
 			R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
 			if gzip < "$outputFile" > "$R_TMP"; then
 				if mv "$R_TMP" "$outputGzip"; then
@@ -639,11 +647,11 @@ cacheOps() {
 			else
 				return 1
 			fi
-			;;
+		;;
 		expand|unpack|expandGzip|unpackGzip)
 			[ -s "$outputGzip" ] && gzip -dc < "$outputGzip" > "$outputCache"
 			return $?
-			;;
+		;;
 	esac
 }
 
@@ -723,7 +731,7 @@ download_lists() {
 
 	rm -f "$A_TMP" "$B_TMP" "$outputFile" "$outputCache" "$outputGzip"
 	if [ "$($awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
-		output 3 'Low free memory, restarting resolver... '
+		output 3 'Low free memory, restarting resolver '
 		if dnsOps 'quiet'; then
 			output_okn
 		else 
@@ -866,7 +874,7 @@ $(cat $A_TMP)"
 					output_failn
 					jsonOps add error "errorDataFileFormatting"
 				fi
-				;;
+			;;
 		esac
 	fi
 
@@ -874,28 +882,29 @@ $(cat $A_TMP)"
 		dnsmasq.addnhosts)
 			output 2 'Creating DNSMASQ addnhosts file '
 			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ addnhosts file"
-			;;
+		;;
 		dnsmasq.conf)
 			output 2 'Creating DNSMASQ config file '
 			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ config file"
-			;;
+		;;
 		dnsmasq.ipset)
 			output 2 'Creating DNSMASQ ipset file '
 			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ ipset file"
-			;;
+		;;
 		dnsmasq.nftset)
 			output 2 'Creating DNSMASQ nftset file '
 			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ nftset file"
-			;;
+		;;
 		dnsmasq.servers)
 			output 2 'Creating DNSMASQ servers file '
 			jsonOps set message "$(getStatusText "statusProcessing"): creating DNSMASQ servers file"
-			;;
+		;;
 		unbound.adb_list)
 			output 2 'Creating Unbound adb_list file '
 			jsonOps set message "$(getStatusText "statusProcessing"): creating Unbound adb_list file"
-			;;
+		;;
 	esac
+
 	if mv "$A_TMP" "$outputFile"; then
 		output_ok
 	else
@@ -998,22 +1007,54 @@ start_service() {
 			fi
 		done
 	fi
-	if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
-		json_add_object ""
-		json_add_string type ipset
-		json_add_string name adb
-		json_add_string match dest_net
-		json_add_string storage hash
-		json_close_object
-		json_add_object ""
-		json_add_string type rule
-		json_add_string ipset adb
-		json_add_string src lan
-		json_add_string dest "*"
-		json_add_string proto "tcp udp"
-		json_add_string target REJECT
-		json_close_object
-	fi
+	case "$targetDNS" in
+		dnsmasq.ipset)
+			json_add_object ""
+			json_add_string type ipset
+			json_add_string name adb
+			json_add_string match dest_net
+			json_add_string storage hash
+			json_close_object
+			json_add_object ""
+			json_add_string type rule
+			json_add_string ipset adb
+			json_add_string src lan
+			json_add_string dest "*"
+			json_add_string proto "tcp udp"
+			json_add_string target REJECT
+			json_close_object
+		;;
+		dnsmasq.nftset)
+			json_add_object ""
+			json_add_string type ipset
+			json_add_string name adb4
+			json_add_string match dest_net
+			json_close_object
+			json_add_object ""
+			json_add_string type rule
+			json_add_string ipset adb4
+			json_add_string src lan
+			json_add_string dest "*"
+			json_add_string proto "tcp udp"
+			json_add_string target REJECT
+			json_close_object
+			json_add_object ""
+			if [ "$ipv6Enabled" -ne 0 ]; then
+				json_add_object ""
+				json_add_string type ipset
+				json_add_string name adb6
+				json_add_string match dest_net
+				json_close_object
+				json_add_string type rule
+				json_add_string ipset adb6
+				json_add_string src lan
+				json_add_string dest "*"
+				json_add_string proto "tcp udp"
+				json_add_string target REJECT
+				json_close_object
+			fi
+		;;
+	esac
 	json_close_array
 	procd_close_data
 	procd_close_instance
@@ -1145,6 +1186,16 @@ stop_service() {
 		output "Stopping $serviceName... "
 		cacheOps 'create'
 		if dnsOps 'on_stop'; then
+			case "$targetDNS" in
+				dnsmasq.ipset)
+					ipset -q -! flush adb >/dev/null 2>&1
+					ipset -q -! destroy adb >/dev/null 2>&1
+				;;
+				dnsmasq.nftset)
+					nft delete set inet fw4 adb4 >/dev/null 2>&1
+					nft delete set inet fw4 adb6 >/dev/null 2>&1
+				;;
+			esac
 			led_off "$led"
 			output 0 "$__OK__\\n"; output_okn;
 			jsonOps set status "statusStopped"
@@ -1176,56 +1227,78 @@ allow() {
 	else
 		case "$targetDNS" in
 			dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
-				output 1 "Allowing domain(s) and restarting DNSMASQ... "
-				output 2 "Allowing domain(s)... \\n"
+				output 1 "Allowing domain(s) and restarting DNSMASQ "
+				output 2 "Allowing domain(s) \\n"
 				for c in $string; do 
 					output 2 "  $c "
 					if sed -i "/${string}/d" "$outputFile" && \
-						uci_add_list "${packageName}" 'config' 'allowed_domain' "$string"; then
+						uci_add_list_if_new "${packageName}" 'config' 'allowed_domain' "$string"; then
 							output_ok
 					else
 						output_fail
 					fi
 				done
-				output 2 "Committing changes to config... "
+				if [ "$compressedCache" -gt 0 ]; then
+					output 2 'Creating compressed cache '
+					if cacheOps 'createGzip'; then
+						output_ok
+					else
+						output_failn
+					fi
+				fi
+				output 2 "Committing changes to config "
 				if [ -n "$(uci_changes "$packageName")" ] && uci_commit "$packageName"; then
-					allowed_domains="$(uci_get_list "$packageName" 'config' 'allowed_domain')"
+					allowed_domains="$(uci_get "$packageName" 'config' 'allowed_domain')"
 					jsonOps set triggers
 					jsonOps set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${targetDNS})"
 					output_ok; 
 					if [ "$targetDNS" = 'dnsmasq.ipset' ]; then
-						output 2 "Flushing adb ipset... "
-						if command -v ipset && ipset flush adb; then output_ok; else output_fail; fi
+						output 2 "Flushing adb ipset "
+						if ipset flush adb 1>/dev/null 2>&1; then output_ok; else output_fail; fi
 					fi
-					output 2 "Restarting DNSMASQ... "
+					if [ "$targetDNS" = 'dnsmasq.nftset' ]; then
+						output 2 "Flushing adb nftset "
+						nft flush set inet fw4 adb6 1>/dev/null 2>&1
+						if nft flush set inet fw4 adb4 1>/dev/null 2>&1; then output_ok; else output_fail; fi
+					fi
+					output 2 "Restarting DNSMASQ "
 					if dnsmasq_restart; then output_okn; else output_failn; fi
 				else 
 					output_fail; 
 				fi
-				;;
+			;;
 			unbound.adb_list)
-				output 1 "Allowing domain(s) and restarting Unbound... "
-				output 2 "Allowing domain(s)... \\n"
+				output 1 "Allowing domain(s) and restarting Unbound "
+				output 2 "Allowing domain(s) \\n"
 				for c in $string; do 
 					output 2 "  $c "
 					if sed -i "/${string}/d" "$outputFile" && \
-						uci_add_list "$packageName" 'config' 'allowed_domain' "$string"; then
+						uci_add_list_if_new "$packageName" 'config' 'allowed_domain' "$string"; then
 							output_ok
 					else
 						output_fail
 					fi
 				done
-				output 2 "Committing changes to config... "
+				if [ "$compressedCache" -gt 0 ]; then
+					output 2 'Creating compressed cache '
+					if cacheOps 'createGzip'; then
+						output_ok
+					else
+						output_failn
+					fi
+				fi
+				output 2 "Committing changes to config "
 				if [ -n "$(uci_changes "$packageName")" ] && uci_commit "$packageName"; then
-					allowed_domains="$(uci_get_list "$packageName" 'config' 'allowed_domain')"
+					allowed_domains="$(uci_get "$packageName" 'config' 'allowed_domain')"
 					jsonOps set triggers
 					jsonOps set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${targetDNS})"
 					output_ok; 
-					output 2 "Restarting Unbound... "
+					output 2 "Restarting Unbound "
 					if unbound_restart; then output_okn; else output_failn; fi
 				else 
 					output_fail; 
 				fi
+			;;
 		esac
 	fi
 }
@@ -1254,7 +1327,7 @@ check() {
 					dnsmasq.ipset)
 						grep "$string" "$outputFile" | sed 's|ipset=/||;s|/adb$||;';;
 					dnsmasq.nftset)
-						grep "$string" "$outputFile" | sed 's|nftset=/||;s|/adb$||;';;
+						grep "$string" "$outputFile" | sed 's|nftset=/||;s|/4#inet#adb#adb4||;';;
 					dnsmasq.servers)
 						grep "$string" "$outputFile" | sed 's|server=/||;s|/$||;';;
 					unbound.adb_list)
