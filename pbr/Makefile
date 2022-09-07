@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=0.9.6
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -71,8 +71,6 @@ define Package/pbr/install
 	$(INSTALL_DATA) ./files/etc/hotplug.d/iface/70-pbr $(1)/etc/hotplug.d/iface/70-pbr
 	$(INSTALL_DATA) ./files/etc/hotplug.d/firewall/70-pbr $(1)/etc/hotplug.d/firewall/70-pbr
 	$(INSTALL_BIN)  ./files/etc/uci-defaults/90-pbr $(1)/etc/uci-defaults/90-pbr
-	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.aws $(1)/usr/share/pbr/pbr.user.aws
-	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.netflix $(1)/usr/share/pbr/pbr.user.netflix
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.firewall.include $(1)/usr/share/pbr/pbr.firewall.include
 endef
 #Package/pbr-iptables/install = $(Package/pbr/install,$(1),pbr.init)
@@ -82,18 +80,24 @@ define Package/pbr-iptables/install
 $(call Package/pbr/install,$(1),pbr.iptables.init)
 	$(INSTALL_BIN) ./files/etc/init.d/pbr.iptables.init $(1)/etc/init.d/pbr
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.aws $(1)/usr/share/pbr/pbr.user.aws
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.netflix $(1)/usr/share/pbr/pbr.user.netflix
 endef
 
 define Package/pbr-nftables/install
 $(call Package/pbr/install,$(1),pbr.nftables.init)
 	$(INSTALL_BIN) ./files/etc/init.d/pbr.nftables.init $(1)/etc/init.d/pbr
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.nftables.aws $(1)/usr/share/pbr/pbr.user.aws
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.nftables.netflix $(1)/usr/share/pbr/pbr.user.netflix
 endef
 
 define Package/pbr-netifd/install
 $(call Package/pbr/install,$(1),pbr.netifd.init)
 	$(INSTALL_BIN) ./files/etc/init.d/pbr.netifd.init $(1)/etc/init.d/pbr
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.aws $(1)/usr/share/pbr/pbr.user.aws
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.netflix $(1)/usr/share/pbr/pbr.user.netflix
 endef
 
 define Package/pbr-iptables/postinst

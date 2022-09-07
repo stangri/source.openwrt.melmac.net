@@ -166,6 +166,7 @@ dnsmasq_restart() { output 3 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq resta
 is_default_dev() { [ "$1" = "$(ip -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
 is_supported_iface_dev() { local n dev; for n in $ifSupported; do network_get_device dev "$n"; [ "$1" = "$dev" ] && return 0; done; return 1; }
 is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
+is_service_running() { nft list table inet fw4 | grep -q "${iptPrefix}_prerouting" >/dev/null 2>&1; }
 append_chains_targets() {
 	local chain iface name enabled
 	config_get name "$1" 'name' 'blank'
@@ -377,6 +378,8 @@ ipt() {
 
 	[ "$failFlagIpv4" -eq 0 ] || [ "$failFlagIpv6" -eq 0 ]
 }
+
+nft() { "$nft" "$@" >/dev/null 2>&1; }
 
 nftset() {
 	local command="$1" iface="$2" target="${3:-dst}" type="${4:-ip}" uid="$5" comment="$6" param="$7"
@@ -634,7 +637,10 @@ insert_policy() {
 			param6="$param6 -m multiport $negation --dport ${value//-/:}"
 		fi
 
-		[ -n "$name" ] && param="$param -m comment --comment $(str_extras_to_underscore "$name")"
+		if [ -n "$name" ]; then
+			param="$param -m comment --comment $(str_extras_to_underscore "$name")"
+			param6="$param6 -m comment --comment $(str_extras_to_underscore "$name")"
+		fi
 
 		if [ "$param" = "$param6" ]; then
 			ipt "$param" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param\\n"
@@ -716,7 +722,7 @@ policy_process() {
 	fi
 }
 
-policy_destroy_ipsets() {
+policy_destroy_sets() {
 	local uid="$1" iface i j
 	config_get iface "$1" 'interface'
 	for i in dst src; do
@@ -792,6 +798,9 @@ EOF
 				ip -6 route add "$(ip -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 				ip -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 			fi
+		fi
+		if [ -z "$(ip -6 rule list fwmark "${mark}/${fwMask}" table "$tid")" ]; then
+			ip -6 rule add fwmark "${mark}/${fwMask}" table "$tid" priority "$priority" || ipv6_error=1
 		fi
 	fi
 
@@ -926,7 +935,7 @@ interface_process() {
 			elif [ "$iface" = "$reloadedIface" ]; then
 				output 2 "Reloading table '$displayText' "
 				is_default_dev "$dev" && displayText="${displayText} ${__OK__}"
-				if table_reload "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6"; then
+				if table_reload "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"; then
 					gatewaySummary="${gatewaySummary}${displayText}\\n"
 					output_ok
 				else
@@ -1052,7 +1061,7 @@ start_service() {
 	if [ -n "$(json get error)" ] || [ -n "$(json get warning)" ]; then
 		serviceStartTrigger='on_start'
 		unset reloadedIface
-	elif ! iptables -t 'mangle' --list "${iptPrefix}_PREROUTING" >/dev/null 2>&1; then
+	elif ! is_service_running; then
 		serviceStartTrigger='on_start'
 		unset reloadedIface
 	elif [ -z "$(json get gateway)" ]; then
@@ -1068,7 +1077,8 @@ start_service() {
 	case $serviceStartTrigger in
 		on_iface_reload)
 			output 1 "Reloading Interface: $reloadedIface "
-			interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'create' "$reloadedIface";
+			interface_process 'all' 'prepare'
+			config_foreach interface_process 'interface' 'create' "$reloadedIface"
 			output 1 '\n'
 			;;
 		on_reload)
@@ -1076,10 +1086,10 @@ start_service() {
 				dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
 				rm -f "$dnsmasqFile"
 			fi
-			for i in $usedChainsList; do
-				ipt -t mangle -N "${iptPrefix}_${i}"
-				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "${iptPrefix}_${i}"
-			done
+			nft add chain inet fw4 "${iptPrefix}_forward" '{ type filter hook forward priority 0; policy accept; }'
+			nft add chain inet fw4 "${iptPrefix}_input" '{ type filter hook input priority 0; policy accept; }'
+			nft add chain inet fw4 "${iptPrefix}_output" '{ type route hook output priority 0; policy accept; }'
+			nft add chain inet fw4 "${iptPrefix}_prerouting" '{ type filter hook prerouting priority 0; policy accept; }'
 			interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'enumerate';
 			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'enumerate';
 			if is_config_enabled 'policy'; then
@@ -1103,19 +1113,22 @@ start_service() {
 				dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
 				rm -f "$dnsmasqFile"
 			fi
-			for i in xt_set ip_set ip_set_hash_ip; do
-				modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
-			done
-			if [ "$modprobeStatus" -gt 0 ]; then
-				errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
-			fi
-			for i in $usedChainsList; do
-				ipt -t mangle -N "${iptPrefix}_${i}"
-				ipt -t mangle "$insertOption" "$i" -m mark --mark "0x0/${fwMask}" -j "${iptPrefix}_${i}"
-			done
+#			for i in xt_set ip_set ip_set_hash_ip; do
+#				modprobe "$i" >/dev/null 2>/dev/null || modprobeStatus=$((modprobeStatus + 1))
+#			done
+#			if [ "$modprobeStatus" -gt 0 ]; then
+#				errorSummary="${errorSummary}${_ERROR_}: Failed to load kernel modules\\n"
+#			fi
+
+			nft add chain inet fw4 "${iptPrefix}_forward" '{ type filter hook forward priority 0; policy accept; }'
+			nft add chain inet fw4 "${iptPrefix}_input" '{ type filter hook input priority 0; policy accept; }'
+			nft add chain inet fw4 "${iptPrefix}_output" '{ type route hook output priority 0; policy accept; }'
+			nft add chain inet fw4 "${iptPrefix}_prerouting" '{ type filter hook prerouting priority 0; policy accept; }'
 			output 1 'Processing Interfaces '
-			interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'create';
-			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'create';
+			interface_process 'all' 'prepare'
+			config_foreach interface_process 'interface' 'create'
+			interface_process_tor 'tor' 'destroy'
+			is_tor_running && interface_process_tor 'tor' 'create'
 			ip route flush cache
 			output 1 '\n'
 			if is_config_enabled 'policy'; then
@@ -1218,16 +1231,17 @@ service_started() {
 
 stop_service() {
 	local i
-	iptables -t mangle -L | grep -q "${iptPrefix}_PREROUTING" || return 0
-	load_package_config
-	for i in PREROUTING FORWARD INPUT OUTPUT; do
-		ipt -t mangle -D "${i}" -m mark --mark "0x0/${fwMask}" -j "${iptPrefix}_${i}"
-		ipt -t mangle -F "${iptPrefix}_${i}"; ipt -t mangle -X "${iptPrefix}_${i}";
+	is_service_running || return 0
+	for i in forward input output prerouting; do
+		nft delete chain inet fw4 "${iptPrefix}_${i}"
 	done
-	config_load 'network'; config_foreach interface_process 'interface' 'destroy';
+	load_package_config
+	config_load 'network'
+	config_foreach interface_process 'interface' 'destroy'
 	interface_process_tor 'tor' 'destroy'
+	config_load "$packageName"
+	config_foreach policy_destroy_sets 'policy'
 	ip route flush cache
-	config_load "$packageName"; config_foreach policy_destroy_ipsets 'policy';
 	unset ifaceTableID; unset ifaceMark;
 	if [ -s "$dnsmasqFile" ]; then
 		rm -f "$dnsmasqFile"
@@ -1398,9 +1412,9 @@ validate_config() {
 		'enabled:bool:0' \
 		'strict_enforcement:bool:1' \
 		'ipv6_enabled:bool:0' \
-		'src_ipset:bool:0' \
-		'dest_ipset:bool:0' \
-		'resolver_ipset::or("", "none", "dnsmasq.ipset")' \
+		'src_set:bool:0' \
+		'dest_set:bool:0' \
+		'resolver_ipset::or("", "none", "dnsmasq.ipset", "dnsmasq.nftset")' \
 		'verbosity:range(0,2):1' \
 		'wan_tid:integer:201' \
 		'wan_fw_mark:hex(8)' \

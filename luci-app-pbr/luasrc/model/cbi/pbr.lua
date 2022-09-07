@@ -25,6 +25,18 @@ function getPackageVersion()
 	return ""
 end
 
+function getPackageName()
+	local opkgFile = "/usr/lib/opkg/status"
+	local line
+	local flag = false
+	for line in io.lines(opkgFile) do
+		if line:find("Package: " .. packageName:gsub("%-", "%%%-")) then
+			return line:match('^Package: (.*)') or ""
+		end
+	end
+	return ""
+end
+
 local ubusStatus = util.ubus("service", "list", { name = packageName })
 if ubusStatus and ubusStatus[packageName] and 
 	 ubusStatus[packageName]["instances"] and 
@@ -46,6 +58,7 @@ end
 
 local serviceRunning, statusText = false, nil
 local packageVersion = getPackageVersion()
+local packageFlavor = getPackageName() or packageName
 if packageVersion == "" then
 	statusText = translatef("%s is not installed or not found", packageName)
 end 
@@ -132,7 +145,7 @@ end
 
 m = Map("pbr", translate("Policy Based Routing"))
 
-h = m:section(NamedSection, "config", packageName, translatef("Service Status [%s %s]", packageName, packageVersion))
+h = m:section(NamedSection, "config", packageName, translatef("Service Status [%s %s]", packageFlavor, packageVersion))
 status = h:option(DummyValue, "_dummy", translate("Service Status"))
 status.template = "pbr/status"
 status.value = statusText
@@ -176,11 +189,12 @@ se:value("0", translate("Do not enforce policies when their gateway is down"))
 se:value("1", translate("Strictly enforce policies when their gateway is down"))
 se.default = 1
 
-resolver_ipset = config:taboption("basic", ListValue, "resolver_ipset", translate("Use resolver's ipset for domains"),
+resolver_set = config:taboption("basic", ListValue, "resolver_set", translate("Use resolver set support for domains"),
 	translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>"))
-resolver_ipset:value("none", translate("Disabled"))
-resolver_ipset:value("dnsmasq.ipset", translate("DNSMASQ ipset"))
-resolver_ipset.default = "dnsmasq.ipset"
+resolver_set:value("none", translate("Disabled"))
+resolver_set:value("dnsmasq.ipset", translate("DNSMASQ ipset"))
+resolver_set:value("dnsmasq.nftset", translate("DNSMASQ nft set"))
+resolver_set.default = "dnsmasq.ipset"
 
 ipv6 = config:taboption("basic", ListValue, "ipv6_enabled", translate("IPv6 Support"))
 ipv6:value("0", translate("Disabled"))
@@ -200,17 +214,17 @@ timeout = config:taboption("advanced", Value, "boot_timeout", translate("Boot Ti
 timeout.optional = false
 timeout.rmempty = true
 
-dest_ipset = config:taboption("advanced", ListValue, "dest_ipset", translate("The ipset option for remote policies"),
+dest_set = config:taboption("advanced", ListValue, "dest_set", translate("Use sets for remote policies"),
 	translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>"))
-dest_ipset:value("0", translate("Disabled"))
-dest_ipset:value("1", translate("Use ipset command"))
-dest_ipset.default = "0"
+dest_set:value("0", translate("Disabled"))
+dest_set:value("1", translate("Use supported set command"))
+dest_set.default = "0"
 
-src_ipset = config:taboption("advanced", ListValue, "src_ipset", translate("The ipset option for local policies"),
+src_set = config:taboption("advanced", ListValue, "src_set", translate("Use sets for local policies"),
 	translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>"))
-src_ipset:value("0", translate("Disabled"))
-src_ipset:value("1", translate("Use ipset command"))
-src_ipset.default = "0"
+src_set:value("0", translate("Disabled"))
+src_set:value("1", translate("Use supported set command"))
+src_set.default = "0"
 
 insert = config:taboption("advanced", ListValue, "iptables_rule_option", translate("IPTables rule option"), translate("Select Append for -A and Insert for -I."))
 insert:value("append", translate("Append"))

@@ -382,6 +382,18 @@ ipt() {
 }
 
 # shellcheck disable=SC2086
+ipt6() {
+	local d
+	[ "$ipv6Enabled" -gt 0 ] || return 0
+	for d in "${*//-A/-D}" "${*//-I/-D}" "${*//-N/-F}" "${*//-N/-X}"; do 
+		[ "$d" != "$*" ] && ip6tables $d >/dev/null 2>&1
+	done
+
+	d="$*"
+	ip6tables $d >/dev/null 2>&1
+}
+
+# shellcheck disable=SC2086
 ips() {
 	local command="$1" iface="$2" target="${3:-dst}" type="${4:-ip}" uid="$5" comment="$6" param="$7"
 	local ipset ipset6
@@ -639,12 +651,16 @@ insert_policy() {
 			param6="$param6 -m multiport $negation --dport ${value//-/:}"
 		fi
 
-		[ -n "$name" ] && param="$param -m comment --comment $(str_extras_to_underscore "$name")"
+		if [ -n "$name" ]; then
+			param="$param -m comment --comment $(str_extras_to_underscore "$name")"
+			param6="$param6 -m comment --comment $(str_extras_to_underscore "$name")"
+		fi
 
 		if [ "$param" = "$param6" ]; then
 			ipt "$param" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param\\n"
 		else
-			ipt "$param" || ipt "$param6" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param\\n${processPolicyError}${_ERROR_}: ip6tables $param6\\n"
+			ipt "$param" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param\\n"
+			ipt6 "$param6" || processPolicyError="${processPolicyError}${_ERROR_}: ip6tables $param6\\n"
 		fi
 	done
 }
@@ -797,6 +813,9 @@ EOF
 				ip -6 route add "$(ip -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 				ip -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 			fi
+		fi
+		if [ -z "$(ip -6 rule list fwmark "${mark}/${fwMask}" table "$tid")" ]; then
+			ip -6 rule add fwmark "${mark}/${fwMask}" table "$tid" priority "$priority" || ipv6_error=1
 		fi
 	fi
 
