@@ -37,6 +37,51 @@ function getPackageName()
 	return ""
 end
 
+function checkDnsmasq() return fs.access("/usr/sbin/dnsmasq") end
+function checkUnbound() return fs.access("/usr/sbin/unbound") end
+
+function checkIpset() 
+	if fs.access("/usr/sbin/ipset") and sys.call("/usr/sbin/ipset help hash:net >/dev/null 2>&1") == 0 then
+		return true
+	else
+		return false
+	end
+end
+
+function checkNftset() 
+	if sys.call("command -v nft") == 0 then
+		return true
+	else
+		return false
+	end
+end
+
+function checkDnsmasqIpset()
+	if checkDnsmasq() then
+		local o = util.trim(util.exec("/usr/sbin/dnsmasq -v 2>/dev/null"))
+		if not o:match("no%-ipset") and o:match("ipset") and checkIpset() then
+			return true
+		else
+			return false
+		end
+	else
+		return false
+	end
+end
+
+function checkDnsmasqNftset()
+	if checkDnsmasq() then
+		local o = util.trim(util.exec("/usr/sbin/dnsmasq -v 2>/dev/null"))
+		if not o:match("no%-nftset") and o:match("nftset") and checkNftset() then
+			return true
+		else
+			return false
+		end
+	else
+		return false
+	end
+end
+
 local ubusStatus = util.ubus("service", "list", { name = packageName })
 if ubusStatus and ubusStatus[packageName] and 
 	 ubusStatus[packageName]["instances"] and 
@@ -189,12 +234,32 @@ se:value("0", translate("Do not enforce policies when their gateway is down"))
 se:value("1", translate("Strictly enforce policies when their gateway is down"))
 se.default = 1
 
-resolver_set = config:taboption("basic", ListValue, "resolver_set", translate("Use resolver set support for domains"),
-	translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>"))
+local resolver_set_descr = translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>")
+if not checkDnsmasq() then
+	resolver_set_descr = resolver_set_descr .. "<br />" .. translatef("Please note that %s is not supported on this system.", "<i>dnsmasq.ipset</i>")
+	resolver_set_descr = resolver_set_descr .. "<br />" .. translatef("Please note that %s is not supported on this system.", "<i>dnsmasq.nftset</i>")
+else
+	if not checkDnsmasqIpset() then 
+		resolver_set_descr = resolver_set_descr .. "<br />" .. translatef("Please note that %s is not supported on this system.", "<i>dnsmasq.ipset</i>")
+	end
+	if not checkDnsmasqNftset() then 
+		resolver_set_descr = resolver_set_descr .. "<br />" .. translatef("Please note that %s is not supported on this system.", "<i>dnsmasq.nftset</i>")
+	end
+end
+resolver_set = config:taboption("basic", ListValue, "resolver_set", translate("Use resolver set support for domains"), resolver_set_descr)
 resolver_set:value("none", translate("Disabled"))
-resolver_set:value("dnsmasq.ipset", translate("DNSMASQ ipset"))
-resolver_set:value("dnsmasq.nftset", translate("DNSMASQ nft set"))
-resolver_set.default = "dnsmasq.ipset"
+if checkDnsmasq() then
+	if checkDnsmasqIpset() then
+		resolver_set:value("dnsmasq.ipset", translate("DNSMASQ Ipset"))
+		resolver_set.default = "dnsmasq.ipset"
+	end
+	if checkDnsmasqNftset() then
+		resolver_set:value("dnsmasq.nftset", translate("DNSMASQ Nft Set"))
+		resolver_set.default = "dnsmasq.nftset"
+	end
+else
+	resolver_set.default = "none"
+end
 
 ipv6 = config:taboption("basic", ListValue, "ipv6_enabled", translate("IPv6 Support"))
 ipv6:value("0", translate("Disabled"))
