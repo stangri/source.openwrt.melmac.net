@@ -421,7 +421,7 @@ nftset() {
 					# TODO: change iface to a table which will be deleted on stop
 					"$nft" add set inet "$iface" "$nftset" "{ type ipv4_addr; flags interval; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
 					if [ "$ipv6Enabled" -ne 0 ]; then
-						"$nft" add set inet "$iface" "$nftset6" "{ type ipv6_addr; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
+						"$nft" add set inet "$iface" "$nftset6" "{ type ipv6_addr; flags interval; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
 					fi
 					;;
 				mac)
@@ -435,7 +435,7 @@ nftset() {
 			[ "$userSetSupported" -eq 0 ] && return 1
 			"$nft" add set inet "$iface" "$nftset" "{ type ipv4_addr; flags interval; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
 			if [ "$ipv6Enabled" -ne 0 ]; then
-				"$nft" add set inet "$iface" "$nftset6" "{ type ipv6_addr; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
+				"$nft" add set inet "$iface" "$nftset6" "{ type ipv6_addr; flags interval; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
 			fi
 		;;
 		create_resolver)
@@ -444,7 +444,7 @@ nftset() {
 				dnsmasq.nftset)
 					"$nft" add set inet "$iface" "$nftset" "{ type ipv4_addr; flags interval; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
 					if [ "$ipv6Enabled" -ne 0 ]; then
-						"$nft" add set inet "$iface" "$nftset6" "{ type ipv6_addr; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
+						"$nft" add set inet "$iface" "$nftset6" "{ type ipv6_addr; flags interval; comment \"$comment\" ;}" 2>/dev/null || failFlag=1
 					fi
 				;;
 				*) return 1;;
