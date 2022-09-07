@@ -319,10 +319,10 @@ if checkDnsmasq() then
 	dns:value("dnsmasq.addnhosts", translate("DNSMASQ Additional Hosts"))
 	dns:value("dnsmasq.conf", translate("DNSMASQ Config"))
 	if checkDnsmasqIpset() then
-		dns:value("dnsmasq.ipset", translate("DNSMASQ IP Set"))
+		dns:value("dnsmasq.ipset", translate("DNSMASQ Ipset"))
 	end
 	if checkDnsmasqNftset() then
-		dns:value("dnsmasq.nftset", translate("DNSMASQ NFT Set"))
+		dns:value("dnsmasq.nftset", translate("DNSMASQ Nft Set"))
 	end
 	dns:value("dnsmasq.servers", translate("DNSMASQ Servers File"))
 end
