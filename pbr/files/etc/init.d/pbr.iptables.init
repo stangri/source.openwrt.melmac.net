@@ -250,7 +250,7 @@ load_package_config() {
 	config_get ignoredIfaces            'config' 'ignored_interface'
 	config_get supportedIfaces          'config' 'supported_interface'
 	config_get bootTimeout              'config' 'boot_timeout' '30'
-	config_get insertOption             'config' 'iptables_rule_option' 'append'
+	config_get insertOption             'config' 'rule_create_option' 'add'
 	config_get procdReloadDelay         'config' 'procd_reload_delay' '0'
 	config_get_bool webuiChainColumn    'config' 'webui_chain_column' '0'
 	config_get_bool webuiShowIgnore     'config' 'webui_show_ignore_target' '0'
@@ -272,7 +272,7 @@ load_package_config() {
 
 	case $insertOption in
 		insert|-i|-I) insertOption='-I';;
-		append|-a|-A|*) insertOption='-A';;
+		add|-a|-A|*) insertOption='-A';;
 	esac
 
 	case $resolverSet in
@@ -1434,7 +1434,7 @@ validate_config() {
 		'ipv6_enabled:bool:0' \
 		'src_ipset:bool:0' \
 		'dest_ipset:bool:0' \
-		'resolver_ipset::or("", "none", "dnsmasq.ipset")' \
+		'resolver_set::or("", "none", "dnsmasq.ipset", "dnsmasq.nftset")' \
 		'verbosity:range(0,2):1' \
 		'wan_tid:integer:201' \
 		'wan_fw_mark:hex(8)' \
@@ -1443,7 +1443,7 @@ validate_config() {
 		'ignored_interface:list(string)' \
 		'supported_interface:list(string)' \
 		'boot_timeout:integer:30' \
-		'iptables_rule_option:or("", "append", "insert")' \
+		'rule_create_option:or("", "add", "insert")' \
 		'procd_reload_delay:integer:0' \
 		'webui_enable_column:bool:0' \
 		'webui_protocol_column:bool:0' \

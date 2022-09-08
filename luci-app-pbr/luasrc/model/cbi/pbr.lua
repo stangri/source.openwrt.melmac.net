@@ -279,22 +279,10 @@ timeout = config:taboption("advanced", Value, "boot_timeout", translate("Boot Ti
 timeout.optional = false
 timeout.rmempty = true
 
-dest_set = config:taboption("advanced", ListValue, "dest_set", translate("Use sets for remote policies"),
-	translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>"))
-dest_set:value("0", translate("Disabled"))
-dest_set:value("1", translate("Use supported set command"))
-dest_set.default = "0"
-
-src_set = config:taboption("advanced", ListValue, "src_set", translate("Use sets for local policies"),
-	translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>"))
-src_set:value("0", translate("Disabled"))
-src_set:value("1", translate("Use supported set command"))
-src_set.default = "0"
-
-insert = config:taboption("advanced", ListValue, "iptables_rule_option", translate("IPTables rule option"), translate("Select Append for -A and Insert for -I."))
-insert:value("append", translate("Append"))
+insert = config:taboption("advanced", ListValue, "rule_create_option", translate("IPTables rule option"), translate("Select Append for -A and Insert for -I."))
+insert:value("add", translate("Add"))
 insert:value("insert", translate("Insert"))
-insert.default = "append"
+insert.default = "add"
 
 icmp = config:taboption("advanced", ListValue, "icmp_interface", translate("Default ICMP Interface"), translate("Force the ICMP protocol interface."))
 icmp:value("", translate("No Change"))
