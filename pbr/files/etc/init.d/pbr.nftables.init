@@ -298,7 +298,7 @@ load_package_config() {
 	esac
 
 	if [ "$resolverSet" != 'none' ] && [ "$resolverSetSupported" -ne 1 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Resolver set support (${resolverSet}) is enabled in $packageName, but resolver nft sets are not supported on this system!\\n"
+			errorSummary="${errorSummary}${_ERROR_}: Resolver set support (${resolverSet}) is enabled in $packageName, but this resolver set is not supported on this system!\\n"
 		resolverSet='none'
 	fi
 
@@ -688,11 +688,14 @@ policy_process() {
 }
 
 policy_destroy_sets() {
-	local uid="$1" iface
+	local uid="$1" enabled iface
+	config_get_bool enabled  "$1" 'enabled' 1
 	config_get iface "$1" 'interface'
+	[ "$enabled" -gt 0 ] || return 0
 	nftset 'destroy' "${iface}" "dst" "ip" "${uid}"
 	nftset 'destroy' "${iface}" "src" "ip" "${uid}"
 	nftset 'destroy' "${iface}" "src" "mac" "${uid}"
+	output_ok
 }
 
 interface_routing() {
@@ -937,6 +940,7 @@ interface_process() {
 			;;
 		destroy)
 			interface_routing 'destroy' "${ifaceTableID}" "${ifaceMark}" "${iface}"
+			output_ok
 			;;
 		create)
 			eval "mark_${iface//-/_}"='$ifaceMark'
@@ -994,6 +998,7 @@ interface_process_tor() {
 				ipt -t nat -D "${i}" -m mark --mark "0x0/${fwMask}" -j "${chainPrefix}_${i}"
 				ipt -t nat -F "${chainPrefix}_${i}"; ipt -t nat -X "${chainPrefix}_${i}";
 			done
+			output_ok
 			;;
 		create)
 			output 2 "Creating TOR redirects "
@@ -1247,15 +1252,19 @@ service_started() {
 stop_service() {
 	local i
 	is_service_running || return 0
+	load_package_config
 	for i in forward input output prerouting; do
 		nft delete chain inet "$nftTable" "${chainPrefix}_${i}"
 	done
-	load_package_config
+	output "Resetting Interfaces "
 	config_load 'network'
 	config_foreach interface_process 'interface' 'destroy'
 #	interface_process_tor 'tor' 'destroy'
+	output "\\n"
+	output "Resetting Policies "
 	config_load "$packageName"
 	config_foreach policy_destroy_sets 'policy'
+	output "\\n"
 	ip route flush cache
 	unset ifaceTableID; unset ifaceMark;
 	if [ -s "$dnsmasqFile" ]; then

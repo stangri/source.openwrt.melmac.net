@@ -164,6 +164,7 @@ dnsmasq_restart() { output 3 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq resta
 is_default_dev() { [ "$1" = "$(ip -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
 is_supported_iface_dev() { local n dev; for n in $ifSupported; do network_get_device dev "$n"; [ "$1" = "$dev" ] && return 0; done; return 1; }
 is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
+is_service_running() { iptables -t mangle -L | grep -q "${iptPrefix}_PREROUTING" >/dev/null 2>&1; }
 append_chains_targets() {
 	local chain iface name enabled
 	config_get name "$1" 'name' 'blank'
@@ -738,13 +739,16 @@ policy_process() {
 }
 
 policy_destroy_ipsets() {
-	local uid="$1" iface i j
+	local uid="$1" enabled iface
+	config_get_bool enabled  "$1" 'enabled' 1
 	config_get iface "$1" 'interface'
+	[ "$enabled" -gt 0 ] || return 0
 	for i in dst src; do
 		for j in ip net mac; do
 			ips 'destroy' "${iface}" "${i}" "${j}" "${uid}"
 		done
 	done
+	output_ok
 }
 
 table_destroy() {
@@ -925,6 +929,7 @@ interface_process() {
 			;;
 		destroy)
 			table_destroy "${ifaceTableID}" "${iface}" "${ifaceMark}"
+			output_ok
 			;;
 		create)
 			eval "mark_${iface//-/_}"='$ifaceMark'
@@ -996,6 +1001,7 @@ interface_process_tor() {
 				ipt -t nat -D "${i}" -m mark --mark "0x0/${fwMask}" -j "${iptPrefix}_${i}"
 				ipt -t nat -F "${iptPrefix}_${i}"; ipt -t nat -X "${iptPrefix}_${i}";
 			done
+			output_ok
 			;;
 		create)
 			output 2 "Creating TOR redirects "
@@ -1242,16 +1248,20 @@ service_started() {
 
 stop_service() {
 	local i
-	iptables -t mangle -L | grep -q "${iptPrefix}_PREROUTING" || return 0
+	is_service_running || return 0
 	load_package_config
 	for i in PREROUTING FORWARD INPUT OUTPUT; do
 		ipt -t mangle -D "${i}" -m mark --mark "0x0/${fwMask}" -j "${iptPrefix}_${i}"
 		ipt -t mangle -F "${iptPrefix}_${i}"; ipt -t mangle -X "${iptPrefix}_${i}";
 	done
+	output "Resetting Interfaces "
 	config_load 'network'; config_foreach interface_process 'interface' 'destroy';
 	interface_process_tor 'tor' 'destroy'
-	ip route flush cache
+	output "\\n"
+	output "Resetting Policies "
 	config_load "$packageName"; config_foreach policy_destroy_ipsets 'policy';
+	output "\\n"
+	ip route flush cache
 	unset ifaceTableID; unset ifaceMark;
 	if [ -s "$dnsmasqFile" ]; then
 		rm -f "$dnsmasqFile"
