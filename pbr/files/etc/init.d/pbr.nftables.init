@@ -734,9 +734,9 @@ EOF
 				nft flush chain inet "$nftTable" "${chainPrefix}_mark_${mark}"
 				nft delete chain inet "$nftTable" "${chainPrefix}_mark_${mark}"
 				nft add chain inet "$nftTable" "${chainPrefix}_mark_${mark}" || ipv4_error=1 
-				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} counter" || ipv4_error=1
+#				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} counter" || ipv4_error=1
 #				how to indicate fwmask?
-				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} mark set and ${fwMaskXor} xor ${mark}" || ipv4_error=1
+				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} counter mark set mark and ${fwMaskXor} xor ${mark}" || ipv4_error=1
 				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} return" || ipv4_error=1
 			fi
 			if [ -n "$ipv6Enabled" ]; then
@@ -861,9 +861,9 @@ EOF
 				nft flush chain inet "$nftTable" "${chainPrefix}_mark_${mark}"
 				nft delete chain inet "$nftTable" "${chainPrefix}_mark_${mark}"
 				nft add chain inet "$nftTable" "${chainPrefix}_mark_${mark}" || ipv4_error=1 
-				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} counter" || ipv4_error=1
+#				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} counter" || ipv4_error=1
 #				how to indicate fwmask?
-				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} mark set and ${fwMaskXor} xor ${mark}" || ipv4_error=1
+				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} counter mark set mark and ${fwMaskXor} xor ${mark}" || ipv4_error=1
 				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} return" || ipv4_error=1
 			fi
 			if [ -n "$ipv6Enabled" ]; then
