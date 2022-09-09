@@ -49,7 +49,7 @@ readonly chainPrefix='pbr'
 
 gatewaySummary=''; errorSummary=''; warningSummary='';
 serviceEnabled=''; verbosity=''; strictMode=''; ipv6Enabled=''; 
-wanTableID=''; wanMark=''; wanPriority=''; fwMask=''; 
+wanTableID=''; wanMark=''; wanPriority=''; fwMask=''; fwMaskXor='';
 resolverSet=''; resolverSetSupported='0';
 wanIface4=''; wanIface6=''; ifaceMark=''; ifaceTableID=''; ifacePriority='';
 ifAll=''; ifSupported=''; ignoredIfaces=''; supportedIfaces=''; icmpIface='';
@@ -266,6 +266,9 @@ load_package_config() {
 	fi
 
 	[ "$ipv6Enabled" -gt 0 ] || unset ipv6Enabled
+
+	fwMaskXor="$(printf '%#x' "$((fwMask ^ 0xffffffff))")"
+	fwMaskXor="${fwMaskXor:-0xff00ffff}"
 
 	if [ ! -x "$nft" ]; then
 		errorSummary="${errorSummary}${_ERROR_}: This version of $packageName supports only nftables, but nft binary cannot be found!\\n"
@@ -733,7 +736,7 @@ EOF
 				nft add chain inet "$nftTable" "${chainPrefix}_mark_${mark}" || ipv4_error=1 
 				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} counter" || ipv4_error=1
 #				how to indicate fwmask?
-				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} mark set ${mark}" || ipv4_error=1
+				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} mark set and ${fwMaskXor} xor ${mark}" || ipv4_error=1
 				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} return" || ipv4_error=1
 			fi
 			if [ -n "$ipv6Enabled" ]; then
@@ -860,7 +863,7 @@ EOF
 				nft add chain inet "$nftTable" "${chainPrefix}_mark_${mark}" || ipv4_error=1 
 				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} counter" || ipv4_error=1
 #				how to indicate fwmask?
-				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} mark set ${mark}" || ipv4_error=1
+				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} mark set and ${fwMaskXor} xor ${mark}" || ipv4_error=1
 				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} return" || ipv4_error=1
 			fi
 			if [ -n "$ipv6Enabled" ]; then
