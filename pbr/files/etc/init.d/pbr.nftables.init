@@ -189,19 +189,16 @@ append_chains_targets() {
 # shellcheck disable=SC2016
 resolveip_to_nftset() { resolveip "$1" "$2" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d' | tr '\n' ' '; }
 # shellcheck disable=SC3037
-#ports_to_nftset() { echo -ne "$value" | tr ',' ' '; }
 ports_to_nftset() { echo -ne "$value"; }
 
-# TODO: fix secure load
 insert_lock() {
 	local s=0 lan_subnet wan_device
 	[ "$secureReload" -ne 0 ] || return 0
 	output 3 'Activating Secure Reload '
-	network_get_subnet lan_subnet "lan"
-	network_get_physdev wan_device "wan"
-	iptables -N "${chainPrefix}_killswitch" >/dev/null 2>&1 || s=1
-	iptables -A "${chainPrefix}_killswitch" -s "$lan_subnet" -o "$wan_device" -j REJECT >/dev/null 2>&1 || s=1
-	iptables -I FORWARD -j "${chainPrefix}_killswitch" >/dev/null 2>&1 || s=1
+	network_get_subnet lan_subnet 'lan'
+	network_get_physdev wan_device 'wan'
+	nft add chain inet "$nftTable" "${chainPrefix}_killswitch" '{ type filter hook forward priority 0; policy accept; }' || s=1
+	nft add rule inet "$nftTable" "${chainPrefix}_killswitch" oifname "$wan_device" ip saddr "$lan_subnet" counter reject || s=1
 	if [ "$s" -eq 0 ]; then
 		output_okn
 	else
@@ -214,9 +211,8 @@ remove_lock() {
 	if [ "$secureReload" -ne 0 ]; then
 		output 3 'Deactivating Secure Reload '
 	fi
-	iptables -D FORWARD -j "${chainPrefix}_killswitch" >/dev/null 2>&1 || s=1
-	iptables -F "${chainPrefix}_killswitch" >/dev/null 2>&1 || s=1
-	iptables -X "${chainPrefix}_killswitch" >/dev/null 2>&1 || s=1
+	nft flush chain inet "$nftTable" "${chainPrefix}_killswitch" || s=1
+	nft delete chain inet "$nftTable" "${chainPrefix}_killswitch" || s=1
 	if [ "$secureReload" -ne 0 ]; then
 		if [ "$s" -eq 0 ]; then
 			output_okn
@@ -600,13 +596,8 @@ policy_routing() {
 		param6="$param6 $proto dport $negation {$(ports_to_nftset "$value")}"
 	fi
 
-#		if [ -n "$name" ]; then
-#			param="$param -m comment --comment $(str_extras_to_underscore "$name")"
-#			param6="$param6 -m comment --comment $(str_extras_to_underscore "$name")"
-#		fi
-
-	param4="$nftInsertOption rule inet $nftTable $param4 $dest"
-	param6="$nftInsertOption rule inet $nftTable $param6 $dest"
+	param4="$nftInsertOption rule inet $nftTable $param4 $dest comment \"$name\""
+	param6="$nftInsertOption rule inet $nftTable $param6 $dest comment \"$name\""
 
 	if [ -z "$ipv6Enabled" ]; then
 		nft "$param4" || processPolicyError="${processPolicyError}${_ERROR_}: nft $param4\\n"
@@ -734,8 +725,6 @@ EOF
 				nft flush chain inet "$nftTable" "${chainPrefix}_mark_${mark}"
 				nft delete chain inet "$nftTable" "${chainPrefix}_mark_${mark}"
 				nft add chain inet "$nftTable" "${chainPrefix}_mark_${mark}" || ipv4_error=1 
-#				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} counter" || ipv4_error=1
-#				how to indicate fwmask?
 				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} counter mark set mark and ${fwMaskXor} xor ${mark}" || ipv4_error=1
 				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} return" || ipv4_error=1
 			fi
@@ -825,7 +814,7 @@ EOF
 						ip -6 route add unreachable default table "$tid" || ipv6_error=1
 					else
 						while read -r i; do
-		# shellcheck disable=SC2086
+# shellcheck disable=SC2086
 							ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
 						done << EOF
 		$(ip -6 route list default table main | grep " dev $dev6 ")
@@ -861,8 +850,6 @@ EOF
 				nft flush chain inet "$nftTable" "${chainPrefix}_mark_${mark}"
 				nft delete chain inet "$nftTable" "${chainPrefix}_mark_${mark}"
 				nft add chain inet "$nftTable" "${chainPrefix}_mark_${mark}" || ipv4_error=1 
-#				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} counter" || ipv4_error=1
-#				how to indicate fwmask?
 				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} counter mark set mark and ${fwMaskXor} xor ${mark}" || ipv4_error=1
 				nft add rule inet "$nftTable" "${chainPrefix}_mark_${mark} return" || ipv4_error=1
 			fi
@@ -874,7 +861,7 @@ EOF
 						ip -6 route add unreachable default table "$tid" || ipv6_error=1
 					else
 						while read -r i; do
-		# shellcheck disable=SC2086
+# shellcheck disable=SC2086
 							ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
 						done << EOF
 		$(ip -6 route list default table main | grep " dev $dev6 ")
@@ -998,6 +985,7 @@ interface_process_tor() {
 			;;
 		destroy)
 			for i in PREROUTING FORWARD INPUT OUTPUT; do
+				i="$(str_to_lower "$i")"
 				ipt -t nat -D "${i}" -m mark --mark "0x0/${fwMask}" -j "${chainPrefix}_${i}"
 				ipt -t nat -F "${chainPrefix}_${i}"; ipt -t nat -X "${chainPrefix}_${i}";
 			done
@@ -1012,9 +1000,10 @@ interface_process_tor() {
 				ipt -t nat -N "${chainPrefix}_${i}"
 				ipt -t nat "$ruleCreateOption" "$i" -m mark --mark "0x0/${fwMask}" -j "${chainPrefix}_${i}"
 			done
-			if ips 'create' "$iface" 'dst' 'net' && ips 'flush' "$iface" 'dst' 'net'; then
-				nftset="${setPrefix}_${iface}_dst_net"
+			if ips 'create' "$iface" 'dst' 'ip' && ips 'flush' "$iface" 'dst' 'ip'; then
+				nftset="${setPrefix}_${iface}_dst_ip"
 				for i in $usedChainsList; do
+					i="$(str_to_lower "$i")"
 					ipt -t nat -I "${chainPrefix}_${i}" -p udp -m udp --dport 53 -m set --match-set "${nftset}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
 					ipt -t nat -I "${chainPrefix}_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${nftset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-TCP" || s=1
 					ipt -t nat -I "${chainPrefix}_${i}" -p udp -m udp --dport 80 -m set --match-set "${nftset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-UDP" || s=1
