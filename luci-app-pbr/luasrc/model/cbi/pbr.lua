@@ -279,7 +279,7 @@ timeout = config:taboption("advanced", Value, "boot_timeout", translate("Boot Ti
 timeout.optional = false
 timeout.rmempty = true
 
-insert = config:taboption("advanced", ListValue, "rule_create_option", translate("IPTables rule option"), translate("Select Append for -A and Insert for -I."))
+insert = config:taboption("advanced", ListValue, "rule_create_option", translate("Rule Create option"), translate("Select Add for -A/add and Insert for -I/Insert."))
 insert:value("add", translate("Add"))
 insert:value("insert", translate("Insert"))
 insert.default = "add"

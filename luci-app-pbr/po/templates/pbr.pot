@@ -151,10 +151,6 @@ msgstr ""
 msgid "Grant UCI and file access for luci-app-pbr"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:282
-msgid "IPTables rule option"
-msgstr ""
-
 #: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:264
 msgid "IPv6 Support"
 msgstr ""
@@ -243,6 +239,10 @@ msgstr ""
 msgid "Restart"
 msgstr ""
 
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:282
+msgid "Rule Create option"
+msgstr ""
+
 #: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:429
 msgid ""
 "Run the following user files after setting up but before restarting DNSMASQ. "
@@ -258,7 +258,7 @@ msgid "See the %sREADME%s for details."
 msgstr ""
 
 #: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:282
-msgid "Select Append for -A and Insert for -I."
+msgid "Select Add for -A/add and Insert for -I/Insert."
 msgstr ""
 
 #: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:213
