@@ -185,8 +185,8 @@ append_chains_targets() {
 		fi
 	fi
 }
-# shellcheck disable=SC2016
-resolveip_to_ipt() { resolveip "$1" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d'; }
+# shellcheck disable=SC2016,SC2068
+resolveip_to_ipt() { resolveip $@ | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d'; }
 insert_lock() {
 	local s=0 lan_subnet wan_device
 	[ "$secureReload" -ne 0 ] || return 0
@@ -583,8 +583,8 @@ insert_policy() {
 					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
 					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
-					param="$param $negation -s $(resolveip_to_ipt "$value")"
-					param6="$param6 $negation -s $(resolveip_to_ipt "$value")"
+					param="$param $negation -s $(resolveip_to_ipt -4 "$value")"
+					param6="$param6 $negation -s $(resolveip_to_ipt -6 "$value")"
 				fi
 			fi
 		fi
@@ -626,8 +626,8 @@ insert_policy() {
 					param="$param -m set $negation --match-set ${ipsPrefix}_${iface}_${target}_${type}_${uid} $target"
 					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}6_${target}_${type}_${uid} $target"
 				else
-					param="$param $negation -d $(resolveip_to_ipt "$value")"
-					param6="$param6 $negation -d $(resolveip_to_ipt "$value")"
+					param="$param $negation -d $(resolveip_to_ipt -4 "$value")"
+					param6="$param6 $negation -d $(resolveip_to_ipt -6 "$value")"
 				fi
 			else
 				local target='dst' type='ip'

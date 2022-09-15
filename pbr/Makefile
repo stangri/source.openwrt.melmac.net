@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
-PKG_VERSION:=0.9.6
-PKG_RELEASE:=3
+PKG_VERSION:=0.9.7
+PKG_RELEASE:=1
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -18,7 +18,7 @@ define Package/pbr/default
 	PROVIDES:=pbr
 	TITLE:=Policy Based Routing Service
 	URL:=https://docs.openwrt.melmac.net/pbr/
-	DEPENDS:=+jshn +ipset +iptables +resolveip +kmod-ipt-ipset +iptables-mod-ipopt +ip-full
+	DEPENDS:=+jshn +resolveip +ip-full
 	CONFLICTS:=vpnbypass vpn-policy-routing
 	PKGARCH:=all
 endef
@@ -26,11 +26,13 @@ endef
 define Package/pbr-iptables
 $(call Package/pbr/default)
 	TITLE+= with iptables/ipset support
+	DEPENDS+=+ipset +iptables +kmod-ipt-ipset +iptables-mod-ipopt
 endef
 
 define Package/pbr-nftables
 $(call Package/pbr/default)
 	TITLE+= with nftables/nft set support
+	DEPENDS+=+kmod-nft-core +kmod-nft-nat +nftables-json
 endef
 
 define Package/pbr-netifd
@@ -67,35 +69,35 @@ define Package/pbr/install
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DIR) $(1)/usr/share/pbr
-	$(INSTALL_CONF) ./files/etc/config/pbr $(1)/etc/config/pbr
+	$(INSTALL_BIN) ./files/etc/init.d/pbr.init $(1)/etc/init.d/pbr
+	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
 	$(INSTALL_DATA) ./files/etc/hotplug.d/iface/70-pbr $(1)/etc/hotplug.d/iface/70-pbr
 	$(INSTALL_DATA) ./files/etc/hotplug.d/firewall/70-pbr $(1)/etc/hotplug.d/firewall/70-pbr
 	$(INSTALL_BIN)  ./files/etc/uci-defaults/90-pbr $(1)/etc/uci-defaults/90-pbr
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.firewall.include $(1)/usr/share/pbr/pbr.firewall.include
 endef
-#Package/pbr-iptables/install = $(Package/pbr/install,$(1),pbr.init)
-#Package/pbr-netifd/install = $(Package/pbr/install,$(1),pbr.netifd.init)
 
 define Package/pbr-iptables/install
-$(call Package/pbr/install,$(1),pbr.iptables.init)
-	$(INSTALL_BIN) ./files/etc/init.d/pbr.iptables.init $(1)/etc/init.d/pbr
-	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
+$(call Package/pbr/install,$(1))
+	$(INSTALL_CONF) ./files/etc/config/pbr.iptables $(1)/etc/config/pbr
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.aws $(1)/usr/share/pbr/pbr.user.aws
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.netflix $(1)/usr/share/pbr/pbr.user.netflix
 endef
 
 define Package/pbr-nftables/install
-$(call Package/pbr/install,$(1),pbr.nftables.init)
-	$(INSTALL_BIN) ./files/etc/init.d/pbr.nftables.init $(1)/etc/init.d/pbr
-	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
+$(call Package/pbr/install,$(1))
+	$(INSTALL_CONF) ./files/etc/config/pbr.nftables $(1)/etc/config/pbr
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.nftables.aws $(1)/usr/share/pbr/pbr.user.aws
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.nftables.netflix $(1)/usr/share/pbr/pbr.user.netflix
+	$(INSTALL_DIR) $(1)/usr/share/nftables.d
+	$(CP) ./files/usr/share/nftables.d/* $(1)/usr/share/nftables.d/
 endef
 
 define Package/pbr-netifd/install
-$(call Package/pbr/install,$(1),pbr.netifd.init)
+$(call Package/pbr/install,$(1))
 	$(INSTALL_BIN) ./files/etc/init.d/pbr.netifd.init $(1)/etc/init.d/pbr
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
+	$(INSTALL_CONF) ./files/etc/config/pbr.iptables $(1)/etc/config/pbr
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.aws $(1)/usr/share/pbr/pbr.user.aws
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.netflix $(1)/usr/share/pbr/pbr.user.netflix
 endef
@@ -176,4 +178,4 @@ endef
 
 $(eval $(call BuildPackage,pbr-iptables))
 $(eval $(call BuildPackage,pbr-nftables))
-$(eval $(call BuildPackage,pbr-netifd))
+# $(eval $(call BuildPackage,pbr-netifd))
