@@ -73,6 +73,8 @@ readonly ipset="$(command -v ipset)"
 # shellcheck disable=SC2155
 readonly nft="$(command -v nft)"
 
+debug() { local i j; for i in "$@"; do eval "j=\$$i"; echo "${i}: ${j} "; done; }
+
 uci_add_list_if_new() {
 	local PACKAGE="$1"
 	local CONFIG="$2"
@@ -177,23 +179,13 @@ output() {
 	fi
 }
 
-test_vars() {
-		for i in enabled force_dns parallel_downloads debug compressed_cache ipv6_enabled config_update_enabled force_dns_port \
-		boot_delay download_timeout curl_retry verbosity led dns dns_instance \
-		allowed_domain allowed_domains_url blocked_domain blocked_domains_url blocked_hosts_url\
-		config_update_url; do
-		eval "j=\$$i"
-		echo "${i}: ${j} "
-	done
-}
-
 load_environment() {
 	local i j wan_if wan_gw
 	local validation_result="$1"
 
 	if [ "$validation_result" != '0' ]; then
 		output "${_ERROR_}: $packageName config validation failed!\\n"
-		output "Please check if the '$packageConfigFile' file is not corrupt and contains correct values for options.\\n"
+		output "Please check if the '$packageConfigFile' contains correct values for config options.\\n"
 		exit 1
 	fi
 
@@ -213,13 +205,11 @@ load_environment() {
 	case $dns in
 		dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
 			if dnsmasq -v 2>/dev/null | grep -q 'no-IDN' || ! dnsmasq -v 2>/dev/null | grep -q -w 'IDN'; then
-				allowIDN=0
-			else
-				allowIDN=1
+				allow_non_ascii=0
 			fi
 		;;
 		unbound.adb_list)
-			allowIDN=1;;
+			allow_non_ascii=1;;
 	esac
 
 	case $dns in
@@ -381,7 +371,7 @@ dnsmasq() {
 			fi
 			uci_add_list_if_new 'dhcp' "$cfg" 'addnhosts' "$dnsmasqAddnhostsFile"
 		;;
-		dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|unbound.adb_list|cleanup)
+		cleanup|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|unbound.adb_list)
 			uci_remove_list 'dhcp' "$cfg" 'addnhosts' "$dnsmasqAddnhostsFile"
 			if [ "$(uci_get 'dhcp' "$cfg" 'serversfile')" = "$dnsmasqServersFile" ]; then
 				uci_remove 'dhcp' "$cfg" 'serversfile'
@@ -708,7 +698,7 @@ $(cat $A_TMP)"
 	output 1 'Processing downloads '
 	output 2 'Sorting combined list '
 	json set message "$(get_status_text "statusProcessing"): sorting combined list"
-	if [ "$allowIDN" -gt 0 ]; then
+	if [ "$allow_non_ascii" -gt 0 ]; then
 		if sort -u "$B_TMP" > "$A_TMP"; then
 			output_ok
 		else
@@ -1307,9 +1297,10 @@ adb_stop() {
 }
 
 boot() {
+	local boot_delay
 	config_load "$packageName"
 	config_get boot_delay 'config' 'boot_delay' '120'
-	sleep "$boot_delay"
+	sleep "$boot_delay" >/dev/null 2>&1
 	rc_procd start_service 'on_boot' && rc_procd service_triggers
 }
 service_started() { procd_set_config_changed firewall; }
@@ -1324,9 +1315,9 @@ stop_service() { load_validate_config 'config' adb_stop "'$*'"; }
 status_service() { load_validate_config 'config' adb_status "''"; }
 service_triggers() {
 	procd_open_trigger
-	procd_add_config_trigger 'config.change' "${packageName}" /etc/init.d/${packageName} reload
-	procd_add_reload_interface_trigger 'wan'
-	procd_add_interface_trigger 'interface.*.up' 'wan' /etc/init.d/${packageName} reload
+		procd_add_config_trigger 'config.change' "${packageName}" /etc/init.d/${packageName} reload
+		procd_add_reload_interface_trigger 'wan'
+		procd_add_interface_trigger 'interface.*.up' 'wan' /etc/init.d/${packageName} reload
 	procd_close_trigger
 }
 allow() { load_validate_config 'config' adb_allow "'$*'"; }
@@ -1351,7 +1342,6 @@ load_validate_config() {
 	local dl_command
 	local dl_flag
 	local isSSLSupported
-	local allowIDN
 	local outputFilter
 	local outputFilterIPv6
 	local outputFile
@@ -1365,6 +1355,7 @@ load_validate_config() {
 	local debug
 	local compressed_cache
 	local ipv6_enabled
+	local allow_non_ascii
 	local config_update_enabled
 	local config_update_url
 	local boot_delay
@@ -1387,6 +1378,7 @@ load_validate_config() {
 		'debug:bool:0' \
 		'compressed_cache:bool:0' \
 		'ipv6_enabled:bool:0' \
+		'allow_non_ascii:bool:0' \
 		'config_update_enabled:bool:0' \
 		'config_update_url:string:https://cdn.jsdelivr.net/gh/openwrt/packages/net/simple-adblock/files/simple-adblock.conf.update' \
 		'boot_delay:range(0,240):120' \
