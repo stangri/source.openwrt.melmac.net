@@ -265,7 +265,7 @@ ips() {
 	ipset6="${ipsPrefix}${iface:+_$iface}_6${target:+_$target}${type:+_$type}${uid:+_$uid}"
 
 	if [ "${#ipset4}" -gt 31 ]; then 
-		errorSummary="${errorSummary}${_ERROR_}: ipset name '$ipset4' is longer than allowed 31 characters. Shorten the name of relevant interface name!\\n"
+		errorSummary="${errorSummary}${_ERROR_}: ipset name '$ipset4' is longer than allowed 31 characters. Shorten the name of relevant interface!\\n"
 		return 1
 	fi
 
@@ -367,7 +367,7 @@ nftset() {
 	nftset6="${nftPrefix}${iface:+_$iface}_6${target:+_$target}${type:+_$type}${uid:+_$uid}"
 
 	if [ "${#nftset4}" -gt 16 ]; then 
-		errorSummary="${errorSummary}${_ERROR_}: nft set name '$nftset4' is longer than allowed 16 characters. Shorten the name of relevant interface name!\\n"
+		errorSummary="${errorSummary}${_ERROR_}: nft set name '$nftset4' is longer than allowed 16 characters. Shorten the name of relevant interface!\\n"
 		return 1
 	fi
 
