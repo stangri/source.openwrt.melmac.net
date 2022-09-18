@@ -235,13 +235,6 @@ load_environment() {
 		;;
 	esac
 
-	for i in "$outputFile" "$outputCache" "$outputGzip"; do
-		if ! mkdir -p "$(dirname "$i")"; then
-			output "$_ERROR_: Unable to create directory for $i!\\n"
-			json add error "errorOutputFileCreate"
-		fi
-	done
-
 	case "$dns" in
 		dnsmasq.addnhosts)
 			outputFilter="$dnsmasqAddnhostsFilter"
@@ -317,6 +310,13 @@ load_environment() {
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "$dnsmasqServersGzip"
 		;;
 	esac
+
+	for i in "$outputFile" "$outputCache" "$outputGzip"; do
+		if ! mkdir -p "$(dirname "$i")"; then
+			output "$_ERROR_: Unable to create directory for $i!\\n"
+			json add error "errorOutputFileCreate"
+		fi
+	done
 
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
@@ -883,7 +883,7 @@ adb_allow() {
 					output_ok; 
 					if [ "$dns" = 'dnsmasq.ipset' ]; then
 						output 2 "Flushing adb ipset "
-						if ipset flush adb; then output_ok; else output_fail; fi
+						if ipset -q -! flush adb; then output_ok; else output_fail; fi
 					fi
 					if [ "$dns" = 'dnsmasq.nftset' ]; then
 						output 2 "Flushing adb nft sets "
