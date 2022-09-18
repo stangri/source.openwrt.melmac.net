@@ -129,7 +129,7 @@ output() {
 is_present() { command -v "$1" >/dev/null 2>&1; }
 is_installed() { [ -s "/usr/lib/opkg/info/${1}.control" ]; }
 is_variant_installed() { [ "$(echo /usr/lib/opkg/info/"${1}"*.control)" != "/usr/lib/opkg/info/${1}*.control" ]; }
-is_nft() { [ -x "$nft" ] && [ "$resolver_set" = 'dnsmasq.nftset' ]; }
+is_nft() { [ -x "$nft" ] && [ "$resolver_set" != 'dnsmasq.ipset' ]; }
 build_ifacesAll() { ifacesAll="${ifacesAll}${1} "; }
 build_ifacesSupported() { is_supported_interface "$1" && ifacesSupported="${ifacesSupported}${1} "; }
 pbr_find_iface() {
