@@ -523,7 +523,7 @@ insert_lock() {
 remove_lock() {
 	local s=0
 	if [ "$secure_reload" -ne 0 ]; then
-		output 3 'Deactivating Secure Reload '
+		output 3 'Deactivating Traffic Killswitch '
 	fi
 	if is_nft; then
 		nft flush chain inet "$nftTable" "${nftPrefix}_killswitch" || s=1
