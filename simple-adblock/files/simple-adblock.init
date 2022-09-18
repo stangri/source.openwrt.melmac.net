@@ -408,7 +408,7 @@ dns() {
 
 			case "$dns" in
 				dnsmasq.addnhosts|dnsmasq.servers)
-					param=dnsmasq_hup
+					param=dnsmasq_restart
 					output_text='Reloading dnsmasq'
 				;;
 				dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset)
@@ -449,7 +449,7 @@ dns() {
 		on_stop)
 			case "$dns" in
 				dnsmasq.addnhosts|dnsmasq.servers)
-					param=dnsmasq_hup
+					param=dnsmasq_restart
 				;;
 				dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset)
 					param=dnsmasq_restart
