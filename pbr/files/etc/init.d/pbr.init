@@ -129,7 +129,7 @@ output() {
 is_present() { command -v "$1" >/dev/null 2>&1; }
 is_installed() { [ -s "/usr/lib/opkg/info/${1}.control" ]; }
 is_variant_installed() { [ "$(echo /usr/lib/opkg/info/"${1}"*.control)" != "/usr/lib/opkg/info/${1}*.control" ]; }
-is_nft() { [ -x "$nft" ] && [ "$resolver_set" != 'dnsmasq.ipset' ]; }
+is_nft() { [ -x "$nft" ] && [ "$resolver_set" != 'dnsmasq.ipset' ] && "$nft" list chains inet | grep -q "${nftPrefix}_prerouting"; }
 build_ifacesAll() { ifacesAll="${ifacesAll}${1} "; }
 build_ifacesSupported() { is_supported_interface "$1" && ifacesSupported="${ifacesSupported}${1} "; }
 pbr_find_iface() {
@@ -222,7 +222,7 @@ ports_to_nftset() { echo -ne "$value"; }
 get_mark_ipt_chains() { iptables-save | grep ":${iptPrefix}_MARK_" | awk '{ print $1 }' | sed 's/://'; }
 get_mark_nft_chains() { "$nft" list table inet "$nftTable" | grep chain | grep "${nftPrefix}_mark_" | awk '{ print $2 }'; }
 get_ipsets() { ipset list | grep "${ipsPrefix}_" | awk '{ print $2 }'; }
-get_nftsets() { "$nft" list table inet "$nftTable" | grep set | grep "${nftPrefix}_" | awk '{ print $2 }'; }
+get_nft_sets() { "$nft" list table inet "$nftTable" | grep 'set' | grep "${nftPrefix}_" | awk '{ print $2 }'; }
 # shellcheck disable=SC2086
 ipt() {
 	local d failFlagIpv4=1 failFlagIpv6=1
@@ -366,8 +366,8 @@ nftset() {
 	nftset4="${nftPrefix}${iface:+_$iface}_4${target:+_$target}${type:+_$type}${uid:+_$uid}"
 	nftset6="${nftPrefix}${iface:+_$iface}_6${target:+_$target}${type:+_$type}${uid:+_$uid}"
 
-	if [ "${#nftset4}" -gt 16 ]; then 
-		errorSummary="${errorSummary}${_ERROR_}: nft set name '$nftset4' is longer than allowed 16 characters. Shorten the name of relevant interface!\\n"
+	if [ "${#nftset4}" -gt 255 ]; then 
+		errorSummary="${errorSummary}${_ERROR_}: nft set name '$nftset4' is longer than allowed 255 characters. Shorten the name of relevant interface!\\n"
 		return 1
 	fi
 
@@ -472,7 +472,7 @@ chains_sets_cleanup() {
 		for i in forward input output prerouting postrouting; do
 			nft flush chain inet "$nftTable" "${nftPrefix}_${i}"
 		done
-		for i in $(get_nftsets); do
+		for i in $(get_nft_sets); do
 			nft flush set inet "$nftTable" "$i"
 			nft delete set inet "$nftTable" "$i"
 		done
@@ -1478,7 +1478,6 @@ interface_process_tor_iptables() {
 				ipt -t nat -D "${i}" -m mark --mark "0x0/${fw_mask}" -j "${nftPrefix}_${i}"
 				ipt -t nat -F "${nftPrefix}_${i}"; ipt -t nat -X "${nftPrefix}_${i}";
 			done
-			output_ok
 			;;
 		create)
 			output 2 "Creating TOR redirects "
@@ -1789,13 +1788,40 @@ service_triggers() {
 }
 
 status_service() {
-	local dist vers out id s param status set_d set_p tableCount i=0 dev dev6 j
-	readonly _SEPARATOR_='============================================================'
-
 	if is_nft; then
-		"$nft" list table inet "$nftTable" #TODO: filter out pbr_ entries
-		return 0
+		status_service_nft "$@"
+	else
+		status_service_iptables "$@"
 	fi
+}
+
+status_service_nft() {
+	local i
+	readonly _SEPARATOR_='============================================================'
+	echo "$_SEPARATOR_"
+	echo "$packageName chains - policies"
+	for i in forward input output prerouting postrouting; do
+		"$nft" list table inet fw4 | sed -n "/chain ${nftPrefix}_${i} {/,/}/p"
+	done
+	echo "$_SEPARATOR_"
+	echo "$packageName chains - marking"
+	for i in $(get_mark_nft_chains); do
+		"$nft" list table inet fw4 | sed -n "/chain ${i} {/,/}/p"
+	done
+	echo "$_SEPARATOR_"
+	echo "$packageName nft sets"
+	for i in $(get_nft_sets); do
+		"$nft" list table inet fw4 | sed -n "/set ${i} {/,/}/p"
+	done
+	if [ -s "$dnsmasqFile" ]; then
+		echo "$_SEPARATOR_"
+		echo "dnsmasq nft sets"
+		cat "$dnsmasqFile"
+	fi
+}
+
+status_service_iptables() {
+	local dist vers out id s param status set_d set_p tableCount i=0 dev dev6 j
 
 	load_environment 'on_status'
 	json_load "$(ubus call system board)"; json_select release; json_get_var dist distribution; json_get_var vers version
