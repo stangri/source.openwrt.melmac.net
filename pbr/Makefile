@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=0.9.7
-PKG_RELEASE:=9
+PKG_RELEASE:=11
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -74,20 +74,18 @@ define Package/pbr/install
 	$(INSTALL_DATA) ./files/etc/hotplug.d/iface/70-pbr $(1)/etc/hotplug.d/iface/70-pbr
 	$(INSTALL_BIN)  ./files/etc/uci-defaults/90-pbr $(1)/etc/uci-defaults/90-pbr
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.firewall.include $(1)/usr/share/pbr/pbr.firewall.include
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.aws $(1)/usr/share/pbr/pbr.user.aws
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.netflix $(1)/usr/share/pbr/pbr.user.netflix
 endef
 
 define Package/pbr-iptables/install
 $(call Package/pbr/install,$(1))
 	$(INSTALL_CONF) ./files/etc/config/pbr.iptables $(1)/etc/config/pbr
-	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.aws $(1)/usr/share/pbr/pbr.user.aws
-	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.netflix $(1)/usr/share/pbr/pbr.user.netflix
 endef
 
 define Package/pbr-nftables/install
 $(call Package/pbr/install,$(1))
 	$(INSTALL_CONF) ./files/etc/config/pbr.nftables $(1)/etc/config/pbr
-	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.nftables.aws $(1)/usr/share/pbr/pbr.user.aws
-	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.nftables.netflix $(1)/usr/share/pbr/pbr.user.netflix
 	$(INSTALL_DIR) $(1)/usr/share/nftables.d
 	$(CP) ./files/usr/share/nftables.d/* $(1)/usr/share/nftables.d/
 endef
@@ -96,8 +94,6 @@ define Package/pbr-netifd/install
 $(call Package/pbr/install,$(1))
 	$(INSTALL_CONF) ./files/etc/config/pbr.iptables $(1)/etc/config/pbr
 	$(INSTALL_DATA) ./files/etc/hotplug.d/firewall/70-pbr $(1)/etc/hotplug.d/firewall/70-pbr
-	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.aws $(1)/usr/share/pbr/pbr.user.aws
-	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.netflix $(1)/usr/share/pbr/pbr.user.netflix
 endef
 
 define Package/pbr-iptables/postinst
