@@ -4,6 +4,7 @@
 # Credits to https://github.com/kkeker and https://github.com/tophirsch for api.bgpview.io code.
 
 TARGET_SET='pbr_wan_4_dst_ip'
+TARGET_IPSET='pbr_wan_4_dst_net'
 TARGET_TABLE='inet fw4'
 TARGET_ASN='2906'
 TARGET_FNAME="/var/pbr_tmp_AS${TARGET_ASN}"
@@ -13,7 +14,7 @@ DB_SOURCE='api.bgpview.io'
 [ -z "$nft" ] && nft="$(command -v nft)"
 _ret=1
 
-if ipset -q list "$TARGET_SET" >/dev/null 2>&1; then
+if ipset -q list "$TARGET_IPSET" >/dev/null 2>&1; then
 	if [ ! -s "$TARGET_FNAME" ]; then
 		if [ "$DB_SOURCE" = "ipinfo.io" ]; then
 			TARGET_URL="https://ipinfo.io/AS${TARGET_ASN}"
@@ -29,11 +30,11 @@ if ipset -q list "$TARGET_SET" >/dev/null 2>&1; then
 		fi
 	fi
 	if [ -s "$TARGET_FNAME" ]; then
-		if awk -v ipset="$TARGET_SET" '{print "add " ipset " " $1}' "$TARGET_FNAME" | ipset restore -!; then
+		if awk -v ipset="$TARGET_IPSET" '{print "add " ipset " " $1}' "$TARGET_FNAME" | ipset restore -!; then
 			_ret=0
 		fi
 	fi
-elif "$nft" list set "$TARGET_TABLE" "$TARGET_SET" >/dev/null 2>&1; then
+elif [ -n "$nft" ] && [ -x "$nft" ] && "$nft" list set "$TARGET_TABLE" "$TARGET_SET" >/dev/null 2>&1; then
 	if [ ! -s "$TARGET_FNAME" ]; then
 		if [ "$DB_SOURCE" = "ipinfo.io" ]; then
 			TARGET_URL="https://ipinfo.io/AS${TARGET_ASN}"

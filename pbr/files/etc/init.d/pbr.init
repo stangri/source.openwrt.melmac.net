@@ -67,12 +67,12 @@ verbosity=
 wan_ip_rules_priority=
 wan_mark=
 wan_tid=
-webui_enable_column=
+#webui_enable_column=
 webui_chain_column=
 webui_show_ignore_target=
-webui_sorting=
-webui_protocol_column=
-webui_supported_protocol=
+#webui_sorting=
+#webui_protocol_column=
+#webui_supported_protocol=
 
 # run-time
 gatewaySummary=
@@ -561,11 +561,11 @@ load_package_config() {
 	config_get      wan_mark                 'config' 'wan_mark' '0x010000'
 	config_get      wan_tid                  'config' 'wan_tid' '201'
 	config_get_bool webui_chain_column       'config' 'webui_chain_column' '0'
-	config_get_bool webui_enable_column      'config' 'webui_enable_column' '0'
-	config_get_bool webui_protocol_column    'config' 'webui_protocol_column' '0'
 	config_get_bool webui_show_ignore_target 'config' 'webui_show_ignore_target' '0'
-	config_get_bool webui_sorting            'config' 'webui_sorting' '1'
-	config_get      webui_supported_protocol 'config' 'webui_supported_protocol'
+#	config_get_bool webui_enable_column      'config' 'webui_enable_column' '0'
+#	config_get_bool webui_protocol_column    'config' 'webui_protocol_column' '0'
+#	config_get_bool webui_sorting            'config' 'webui_sorting' '1'
+#	config_get      webui_supported_protocol 'config' 'webui_supported_protocol'
 	[ -n "$ipv6_enabled" ] && [ "$ipv6_enabled" -eq 0 ] && unset ipv6_enabled
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
@@ -600,11 +600,14 @@ load_environment() {
 			return 1
 		fi
 
+
+
+
 		if is_nft; then
-			if [ ! -x "$nft" ]; then
-				errorSummary="${errorSummary}${_ERROR_}: This version of $packageName supports only nftables, but nft binary cannot be found!\\n"
-				return 1
-			fi
+#			if [ ! -x "$nft" ]; then
+#				errorSummary="${errorSummary}${_ERROR_}: This version of $packageName supports only nftables, but nft binary cannot be found!\\n"
+#				return 1
+#			fi
 			case $resolver_set in
 				none) : ;;
 				dnsmasq.nftset)
@@ -633,37 +636,6 @@ load_environment() {
 					resolver_set='none'
 				;;
 			esac
-			# TODO fix the code below
-#			if is_ipset_type_supported 'ip' && is_ipset_type_supported 'net' && \
-#				is_ipset_type_supported 'mac'; then
-#					destSetSupported='1'
-#					srcSetSupported='1'
-#					userSetSupported='1'
-#			elif is_ipset_type_supported 'ip' && is_ipset_type_supported 'net'; then
-#					destSetSupported='1'
-#					userSetSupported='1'
-#			elif is_ipset_type_supported 'ip' && is_ipset_type_supported 'mac'; then
-#					srcSetSupported='1'
-#			elif is_ipset_type_supported 'ip'; then
-#					destSetSupported='1'
-#			fi
-#			if [ "$resolver_set" != 'none' ] && [ "$resolver_setSupported" -ne 1 ]; then
-#					errorSummary="${errorSummary}${_ERROR_}: Resolver ipset support (${resolver_set}) is enabled in $packageName, but resolver ipsets are not supported on this system!\\n"
-#				resolver_set='none'
-#			fi
-#			if [ "$destSet" -ne 0 ] && [ "$destSetSupported" -ne 1 ]; then
-#				errorSummary="${errorSummary}${_ERROR_}: Destination ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' type!\\n"
-#				destSet='0'
-#			fi
-#			if [ "$srcSet" -ne 0 ] && [ "$srcSetSupported" -ne 1 ]; then
-#				errorSummary="${errorSummary}${_ERROR_}: Source ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' or 'hash:mac' type!\\n"
-#				srcSet='0'
-#			fi
-#			is_config_enabled 'include' && userSet='1'
-#			if [ "$userSet" -ne 0 ] && [ "$userSetSupported" -ne 1 ]; then
-#				errorSummary="${errorSummary}${_ERROR_}: User scripts are enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:ip' or 'hash:net' type!\\n"
-#				userSet='0'
-#			fi
 		fi
 	fi
 	load_network "$param"
@@ -1528,17 +1500,6 @@ user_file_process() {
 		errorSummary="${errorSummary}${_ERROR_}: Syntax error in custom user file '$path'!\\n"
 		output_fail
 		return 1
-	fi
-	if is_nft; then
-		if grep -q -w 'ipset' "$path" && ! is_present 'ipset'; then
-			errorSummary="${errorSummary}${_ERROR_}: Use of 'ipset' is detected in custom user file '$path', but 'ipset' isn't supported in this version!\\n"
-			return 1
-		fi
-	else
-		if grep -q -w 'nft' "$path" && ! is_present 'nft'; then
-			errorSummary="${errorSummary}${_ERROR_}: Use of 'nft' is detected in custom user file '$path', but 'nft' isn't supported in this version!\\n"
-			return 1
-		fi
 	fi
 	output 2 "Running $path "
 # shellcheck disable=SC1090
