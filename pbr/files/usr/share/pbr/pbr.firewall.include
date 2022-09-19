@@ -1,3 +1,5 @@
 #!/bin/sh
-logger -t "pbr" "Reloading pbr via firewall include"
-/etc/init.d/pbr reload
+if [ -x /etc/init.d/pbr ] && /etc/init.d/pbr enabled; then
+	logger -t "pbr" "Reloading pbr due to $ACTION of firewall"
+	/etc/init.d/pbr reload
+fi

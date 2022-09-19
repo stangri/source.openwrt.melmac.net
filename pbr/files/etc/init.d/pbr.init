@@ -1796,8 +1796,31 @@ status_service() {
 }
 
 status_service_nft() {
-	local i
+	local i dev dev6
 	readonly _SEPARATOR_='============================================================'
+
+	load_environment 'on_status'
+	json_load "$(ubus call system board)"; json_select release; json_get_var dist distribution; json_get_var vers version
+	if [ -n "$wanIface4" ]; then
+		network_get_gateway wanGW4 "$wanIface4"
+		network_get_device dev "$wanIface4"
+	fi
+	if [ -n "$wanIface6" ]; then
+		network_get_device dev6 "$wanIface6"
+		wanGW6=$(ip -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
+		[ "$wanGW6" = "default" ] && wanGW6=$(ip -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
+	fi
+	while [ "${1:0:1}" = "-" ]; do param="${1//-/}"; eval "set_$param=1"; shift; done
+	[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
+	status="$serviceName running on $dist $vers."
+	[ -n "$wanIface4" ] && status="$status WAN (IPv4): ${wanIface4}/${dev}/${wanGW4:-0.0.0.0}."
+	[ -n "$wanIface6" ] && status="$status WAN (IPv6): ${wanIface6}/${dev6}/${wanGW6:-::/0}."
+
+	echo "$_SEPARATOR_"
+	echo "$packageName - environment"
+	echo "$status"
+	echo "$_SEPARATOR_"
+	dnsmasq --version 2>/dev/null | sed '/^$/,$d'
 	echo "$_SEPARATOR_"
 	echo "$packageName chains - policies"
 	for i in forward input output prerouting postrouting; do
@@ -1815,7 +1838,7 @@ status_service_nft() {
 	done
 	if [ -s "$dnsmasqFile" ]; then
 		echo "$_SEPARATOR_"
-		echo "dnsmasq nft sets"
+		echo "dnsmasq sets"
 		cat "$dnsmasqFile"
 	fi
 }
@@ -1914,7 +1937,7 @@ status_service_iptables() {
 		ipset save
 		if [ -s "$dnsmasqFile" ]; then
 			echo "$_SEPARATOR_"
-			echo "DNSMASQ ipsets"
+			echo "DNSMASQ sets"
 			cat "$dnsmasqFile"
 		fi
 		echo "$_SEPARATOR_"

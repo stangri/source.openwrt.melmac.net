@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=0.9.7
-PKG_RELEASE:=5
+PKG_RELEASE:=9
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -72,7 +72,6 @@ define Package/pbr/install
 	$(INSTALL_BIN) ./files/etc/init.d/pbr.init $(1)/etc/init.d/pbr
 	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
 	$(INSTALL_DATA) ./files/etc/hotplug.d/iface/70-pbr $(1)/etc/hotplug.d/iface/70-pbr
-	$(INSTALL_DATA) ./files/etc/hotplug.d/firewall/70-pbr $(1)/etc/hotplug.d/firewall/70-pbr
 	$(INSTALL_BIN)  ./files/etc/uci-defaults/90-pbr $(1)/etc/uci-defaults/90-pbr
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.firewall.include $(1)/usr/share/pbr/pbr.firewall.include
 endef
@@ -95,9 +94,8 @@ endef
 
 define Package/pbr-netifd/install
 $(call Package/pbr/install,$(1))
-	$(INSTALL_BIN) ./files/etc/init.d/pbr.netifd.init $(1)/etc/init.d/pbr
-	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
 	$(INSTALL_CONF) ./files/etc/config/pbr.iptables $(1)/etc/config/pbr
+	$(INSTALL_DATA) ./files/etc/hotplug.d/firewall/70-pbr $(1)/etc/hotplug.d/firewall/70-pbr
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.aws $(1)/usr/share/pbr/pbr.user.aws
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.iptables.netflix $(1)/usr/share/pbr/pbr.user.netflix
 endef
@@ -116,6 +114,7 @@ define Package/pbr-iptables/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
+		uci -q delete firewall.pbr || true
 		echo "Stopping pbr service... "
 		/etc/init.d/pbr stop || true
 		echo -n "Removing rc.d symlink for pbr... "
@@ -128,6 +127,9 @@ define Package/pbr-nftables/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
+		chmod -x /etc/init.d/pbr || true
+		fw4 reload || true
+		chmod +x /etc/init.d/pbr || true
 		echo -n "Installing rc.d symlink for pbr... "
 		/etc/init.d/pbr enable && echo "OK" || echo "FAIL"
 	fi
@@ -138,10 +140,20 @@ define Package/pbr-nftables/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
+		uci -q delete firewall.pbr || true
 		echo "Stopping pbr service... "
 		/etc/init.d/pbr stop || true
 		echo -n "Removing rc.d symlink for pbr... "
 		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
+	fi
+	exit 0
+endef
+
+define Package/pbr-nftables/postrm
+	#!/bin/sh
+	# check if we are on real system
+	if [ -z "$${IPKG_INSTROOT}" ]; then
+		fw4 reload || true
 	fi
 	exit 0
 endef
@@ -164,6 +176,7 @@ define Package/pbr-netifd/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
+		uci -q delete firewall.pbr || true
 		echo "Stopping pbr service... "
 		/etc/init.d/pbr stop || true
 	#	echo -n "Removing netifd support for pbr... "
