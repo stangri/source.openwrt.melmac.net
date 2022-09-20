@@ -34,6 +34,8 @@ readonly packageName='pbr'
 readonly serviceName="$packageName $PKG_VERSION"
 readonly packageConfigFile="/etc/config/${packageName}"
 readonly jsonFile="/var/run/${packageName}.json"
+readonly nftTempFile="/var/run/${packageName}.nft"
+readonly nftPermFile="/etc/nftables.d/table-post/30-pbr.nft"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
 readonly sharedMemoryOutput="/dev/shm/$packageName-output"
 readonly _OK_='\033[0;32m\xe2\x9c\x93\033[0m'
@@ -42,6 +44,12 @@ readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
 readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
+# shellcheck disable=SC2155
+readonly iptables="$(command -v iptables)"
+# shellcheck disable=SC2155
+readonly ip6tables="$(command -v ip6tables)"
+# shellcheck disable=SC2155
+readonly ipset="$(command -v ipset)"
 readonly ipsPrefix='pbr'
 readonly iptPrefix='PBR'
 # shellcheck disable=SC2155
@@ -202,8 +210,8 @@ dnsmasq_restart() { output 3 'Restarting DNSMASQ '; if /etc/init.d/dnsmasq resta
 is_default_dev() { [ "$1" = "$(ip -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
 is_supported_iface_dev() { local n dev; for n in $ifacesSupported; do network_get_device dev "$n"; [ "$1" = "$dev" ] && return 0; done; return 1; }
 is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
-is_service_running_iptables() { iptables -t mangle -L | grep -q "${iptPrefix}_PREROUTING" >/dev/null 2>&1; }
-is_service_running_nft() { "$nft" list table inet "$nftTable" | grep -q "${nftPrefix}_prerouting" >/dev/null 2>&1; }
+is_service_running_iptables() { [ -x "$iptables" ] && "$iptables" -t mangle -L | grep -q "${iptPrefix}_PREROUTING" >/dev/null 2>&1; }
+is_service_running_nft() { [ -x "$nft" ] && [ -n "$(get_mark_nft_chains)" ]; }
 is_service_running() { if is_nft; then is_service_running_nft; else is_service_running_iptables; fi; }
 _check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
 is_config_enabled() {
@@ -219,50 +227,60 @@ resolveip_to_ipt() { resolveip "$@" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d'; }
 resolveip_to_nftset() { resolveip "$@" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d' | tr '\n' ' '; }
 # shellcheck disable=SC3037
 ports_to_nftset() { echo -ne "$value"; }
-get_mark_ipt_chains() { iptables-save | grep ":${iptPrefix}_MARK_" | awk '{ print $1 }' | sed 's/://'; }
-get_mark_nft_chains() { "$nft" list table inet "$nftTable" | grep chain | grep "${nftPrefix}_mark_" | awk '{ print $2 }'; }
-get_ipsets() { ipset list | grep "${ipsPrefix}_" | awk '{ print $2 }'; }
-get_nft_sets() { "$nft" list table inet "$nftTable" | grep 'set' | grep "${nftPrefix}_" | awk '{ print $2 }'; }
+get_mark_ipt_chains() { [ -n "$(command -v iptables-save)" ] && iptables-save | grep ":${iptPrefix}_MARK_" | awk '{ print $1 }' | sed 's/://'; }
+get_mark_nft_chains() { [ -x "$nft" ] && "$nft" list table inet "$nftTable" | grep chain | grep "${nftPrefix}_mark_" | awk '{ print $2 }'; }
+get_ipsets() { [ -n "$(command -v ipset)" ] && ipset list | grep "${ipsPrefix}_" | awk '{ print $2 }'; }
+get_nft_sets() { [ -x "$nft" ] && "$nft" list table inet "$nftTable" | grep 'set' | grep "${nftPrefix}_" | awk '{ print $2 }'; }
 # shellcheck disable=SC2086
 ipt() {
 	local d failFlagIpv4=1 failFlagIpv6=1
+	[ -x "$iptables" ] || return 1
 	for d in "${*//-A/-D}" "${*//-I/-D}" "${*//-N/-F}" "${*//-N/-X}"; do 
-		[ "$d" != "$*" ] && { iptables $d >/dev/null 2>&1; ip6tables $d >/dev/null 2>&1; }
+		if [ "$d" != "$*" ]; then
+			"$iptables" $d >/dev/null 2>&1
+			[ -x "$ip6tables" ] && "$ip6tables" $d >/dev/null 2>&1
+		fi
 	done
 
-	d="$*"; iptables $d >/dev/null 2>&1 && failFlagIpv4=0;
-	if [ -n "$ipv6_enabled" ]; then ip6tables $d >/dev/null 2>&1 && failFlagIpv6=0; fi
+	d="$*"; "$iptables" $d >/dev/null 2>&1 && failFlagIpv4=0;
+	if [ -n "$ipv6_enabled" ] && [ -x "$ip6tables" ]; then
+		"$ip6tables" $d >/dev/null 2>&1 && failFlagIpv6=0
+	fi
 
 	[ "$failFlagIpv4" -eq 0 ] || [ "$failFlagIpv6" -eq 0 ]
 }
 # shellcheck disable=SC2086
 ipt4() {
 	local d
+	[ -x "$iptables" ] || return 1
 	for d in "${*//-A/-D}" "${*//-I/-D}" "${*//-N/-F}" "${*//-N/-X}"; do 
-		[ "$d" != "$*" ] && iptables $d >/dev/null 2>&1
+		[ "$d" != "$*" ] && "$iptables" $d >/dev/null 2>&1
 	done
-	d="$*"; iptables $d >/dev/null 2>&1
+	d="$*"; "$iptables" $d >/dev/null 2>&1
 }
 # shellcheck disable=SC2086
 ipt6() {
 	local d
 	[ -n "$ipv6_enabled" ] || return 0
+	[ -x "$ip6tables" ] || return 1
 	for d in "${*//-A/-D}" "${*//-I/-D}" "${*//-N/-F}" "${*//-N/-X}"; do 
-		[ "$d" != "$*" ] && ip6tables $d >/dev/null 2>&1
+		[ "$d" != "$*" ] && "$ip6tables" $d >/dev/null 2>&1
 	done
 	d="$*"
-	ip6tables $d >/dev/null 2>&1
+	"$ip6tables" $d >/dev/null 2>&1
 }
 is_ipset_type_supported() { ipset help hash:"$1" >/dev/null 2>&1; }
 # shellcheck disable=SC2086
-ips4() { ipset "$@" >/dev/null 2>&1; }
-ips6() { if [ -n "$ipv6_enabled" ] && [ -n "$*" ]; then ipset "$@" >/dev/null 2>&1; else return 1; fi }
+ips4() { [ -x "$ipset" ] && "$ipset" "$@" >/dev/null 2>&1; }
+ips6() { [ -x "$ipset" ] && { if [ -n "$ipv6_enabled" ] && [ -n "$*" ]; then "$ipset" "$@" >/dev/null 2>&1; else return 1; fi; }; }
 ips() {
 	local command="$1" iface="$2" target="${3:-dst}" type="${4:-ip}" uid="$5" comment="$6" param="$7" mark="$7"
 	local ipset4 ipset6 i
 	local ipv4_error=1 ipv6_error=1
 	ipset4="${ipsPrefix}${iface:+_$iface}_4${target:+_$target}${type:+_$type}${uid:+_$uid}"
 	ipset6="${ipsPrefix}${iface:+_$iface}_6${target:+_$target}${type:+_$type}${uid:+_$uid}"
+
+	[ -x "$ipset" ] || return 1
 
 	if [ "${#ipset4}" -gt 31 ]; then 
 		errorSummary="${errorSummary}${_ERROR_}: ipset name '$ipset4' is longer than allowed 31 characters. Shorten the name of relevant interface!\\n"
@@ -356,15 +374,20 @@ ips() {
 	return $ipv4_error || $ipv6_error
 }
 
-nft() { "$nft" "$@" >/dev/null 2>&1; }
-nft4() { "$nft" "$@" >/dev/null 2>&1; }
-nft6() { if [ -n "$ipv6_enabled" ] && [ -n "$*" ]; then "$nft" "$@" >/dev/null 2>&1; else return 1; fi }
+nfta() { echo "$@" >> "$nftTempFile"; }
+nfta4() { echo "$@" >> "$nftTempFile"; }
+nfta6() { [ -n "$ipv6_enabled" ] || return 0; echo "$@" >> "$nftTempFile"; }
+nft() { nfta "$@"; [ -x "$nft" ] && "$nft" "$@" >/dev/null 2>&1; }
+nft4() { nfta "$@"; [ -x "$nft" ] && "$nft" "$@" >/dev/null 2>&1; }
+nft6() { nfta "$@"; [ -n "$ipv6_enabled" ] || return 0; [ -x "$nft" ] && [ -n "$*" ] && "$nft" "$@" >/dev/null 2>&1; }
 nftset() {
 	local command="$1" iface="$2" target="${3:-dst}" type="${4:-ip}" uid="$5" comment="$6" param="$7" mark="$7"
-	local nftset4 nftset6 i
+	local nftset4 nftset6 i param4 param6
 	local ipv4_error=1 ipv6_error=1
 	nftset4="${nftPrefix}${iface:+_$iface}_4${target:+_$target}${type:+_$type}${uid:+_$uid}"
 	nftset6="${nftPrefix}${iface:+_$iface}_6${target:+_$target}${type:+_$type}${uid:+_$uid}"
+
+	[ -x "$nft" ] || return 1
 
 	if [ "${#nftset4}" -gt 255 ]; then 
 		errorSummary="${errorSummary}${_ERROR_}: nft set name '$nftset4' is longer than allowed 255 characters. Shorten the name of relevant interface!\\n"
@@ -373,8 +396,15 @@ nftset() {
 
 	case "$command" in
 		add)
-			nft4 add element inet "$nftTable" "$nftset4" "{ $param }" && ipv4_error=0
-			nft6 add element inet "$nftTable" "$nftset6" "{ $param }" && ipv6_error=0
+			if is_domain "$param"; then
+				param4="$(resolveip_to_nftset -4 "$param")"
+				param6="$(resolveip_to_nftset -6 "$param")"
+				nft4 add element inet "$nftTable" "$nftset4" "{ $param4 }" && ipv4_error=0
+				nft6 add element inet "$nftTable" "$nftset6" "{ $param6 }" && ipv6_error=0
+			else
+				nft4 add element inet "$nftTable" "$nftset4" "{ $param }" && ipv4_error=0
+				nft6 add element inet "$nftTable" "$nftset6" "{ $param }" && ipv6_error=0
+			fi
 		;;
 		add_resolver)
 			[ "$resolver_setSupported" -eq 0 ] && return 1
@@ -463,12 +493,13 @@ nftset() {
 			nft flush set inet "$nftTable" "$nftset6" && ipv6_error=0
 		;;
 	esac
+	[ -n "$ipv6_enabled" ] || ipv6_error=1
 	return $ipv4_error || $ipv6_error
 }
 
 chains_sets_cleanup() {
 	local i
-	if is_nft; then 
+#	if is_nft; then 
 		for i in forward input output prerouting postrouting; do
 			nft flush chain inet "$nftTable" "${nftPrefix}_${i}"
 		done
@@ -480,21 +511,21 @@ chains_sets_cleanup() {
 			nft flush chain inet "$nftTable" "$i"
 			nft delete chain inet "$nftTable" "$i"
 		done
-	else
+#	else
 		for i in PREROUTING FORWARD INPUT OUTPUT; do
 			ipt -t mangle -D "${i}" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
 			ipt -t mangle -F "${iptPrefix}_${i}"
 			ipt -t mangle -X "${iptPrefix}_${i}"
 		done
 		for i in $(get_ipsets); do
-			ipset -q -! flush "$i"
-			ipset -q -! destroy "$i"
+			ipset -q -! flush "$i" >/dev/null 2>&1
+			ipset -q -! destroy "$i" >/dev/null 2>&1
 		done
 		for i in $(get_mark_ipt_chains); do
 			ipt -t mangle -F "${iptPrefix}_${i}"
 			ipt -t mangle -X "${iptPrefix}_${i}"
 		done
-	fi
+#	fi
 }
 
 insert_lock() {
@@ -599,9 +630,6 @@ load_environment() {
 			errorSummary="${errorSummary}uci set $packageName.config.enabled='1'; uci commit $packageName;\\n"
 			return 1
 		fi
-
-
-
 
 		if is_nft; then
 #			if [ ! -x "$nft" ]; then
@@ -850,7 +878,7 @@ policy_routing_iptables() {
 			ipt4 "$param4" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param4\\n"
 		else
 			ipt4 "$param4" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param4\\n"
-			ipt6 "$param6" || processPolicyError="${processPolicyError}${_ERROR_}: ip6tables $param6\\n"
+			ipt6 "$param6" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param6\\n"
 		fi
 	done
 }
@@ -860,8 +888,9 @@ policy_routing_nft() {
 	local proto="$(str_to_lower "$7")" chain="$(str_to_lower "$8")" uid="$9"
 	local mark i negation value dest nftInsertOption='add'
 	local ip4Flag='ip' ip6Flag='ip6'
-	local param4="${nftPrefix}_${chain:-prerouting}"
-	local param6="${nftPrefix}_${chain:-prerouting}"
+	local param4 param6
+#	local param4="${nftPrefix}_${chain:-prerouting}"
+#	local param6="${nftPrefix}_${chain:-prerouting}"
 	mark=$(eval echo "\$mark_${iface//-/_}")
 
 	if [ -z "$ipv6_enabled" ] && { is_ipv6 "$src_addr" || is_ipv6 "$dest_addr"; }; then
@@ -895,29 +924,29 @@ policy_routing_nft() {
 			unset negation; value="$src_addr";
 		fi
 		if is_phys_dev "$value"; then
-			param4="$param4 iifname $negation ${value:1}"
-			param6="$param6 iifname $negation ${value:1}"
+			param4="${param4:+$param4 }iifname ${negation:+$negation }${value:1}"
+			param6="${param6:+$param6 }iifname ${negation:+$negation }${value:1}"
 		elif is_mac_address "$value"; then
 			local target='src' type='mac'
 			if nftset 'create' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" && \
 				nftset 'add' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" "$value"; then
-				param4="$param4 ether $negation saddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="$param6 ether $negation saddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				param4="${param4:+$param4 }ether ${negation:+$negation }saddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+				param6="${param6:+$param6 }ether ${negation:+$negation }saddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 		else
-				param4="$param4 ether saddr $negation $value"
-				param6="$param6 ether saddr $negation $value"
+				param4="${param4:+$param4 }ether saddr ${negation:+$negation }$value"
+				param6="${param6:+$param6 }ether saddr ${negation:+$negation }$value"
 			fi
 		else
 			local target='src' type='ip'
 			if nftset 'create' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" && \
 				nftset 'add' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" "$value"; then
-				param4="$param4 $ip4Flag $negation saddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="$param6 $ip6Flag $negation saddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }saddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }saddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				unset ip4Flag
 				unset ip6Flag
 			else
-				param4="$param4 $ip4Flag saddr $negation $value"
-				param6="$param6 $ip6Flag saddr $negation $value"
+				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }saddr ${negation:+$negation }$value"
+				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }saddr ${negation:+$negation }$value"
 				unset ip4Flag
 				unset ip6Flag
 			fi
@@ -931,25 +960,25 @@ policy_routing_nft() {
 			unset negation; value="$dest_addr";
 		fi
 		if is_phys_dev "$value"; then
-			param4="$param4 oifname $negation ${value:1}"
-			param6="$param6 oifname $negation ${value:1}"
+			param4="${param4:+$param4 }oifname ${negation:+$negation }${value:1}"
+			param6="${param6:+$param6 }oifname ${negation:+$negation }${value:1}"
 		elif is_domain "$value"; then
 			local target='dst' type='ip'
 			if nftset 'create_resolver' "$iface" "$target" "$type" "$uid" "${name}: $dest_addr" && \
 				nftset 'add_resolver' "$iface" "$target" "$type" "$uid" "${name}: $dest_addr" "$value"; then
-				param4="$param4 $ip4Flag $negation daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="$param6 $ip6Flag $negation daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				unset ip4Flag
 				unset ip6Flag
 			elif nftset 'create' "$iface" "$target" "$type" "$uid" "${name}: $dest_addr" && \
 				nftset 'add' "$iface" "$target" "$type" "$uid" "${name}: $dest_addr" "$value"; then
-				param4="$param4 $ip4Flag $negation daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="$param6 $ip6Flag $negation daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				unset ip4Flag
 				unset ip6Flag
 			else
-				param4="$param4 $ip4Flag $negation daddr {$(resolveip_to_nftset '-4' "$value")}"
-				param6="$param6 $ip6Flag $negation daddr {$(resolveip_to_nftset '-6' "$value")}"
+				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr {$(resolveip_to_nftset '-4' "$value")}"
+				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr {$(resolveip_to_nftset '-6' "$value")}"
 				unset ip4Flag
 				unset ip6Flag
 			fi
@@ -957,13 +986,13 @@ policy_routing_nft() {
 			local target='dst' type='ip'
 			if nftset 'create' "$iface" "$target" "$type" "$uid" "${name}: $dest_addr" && \
 				nftset 'add' "$iface" "$target" "$type" "$uid" "${name}: $dest_addr" "$value"; then
-				param4="$param4 $ip4Flag $negation daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="$param6 $ip6Flag $negation daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				unset ip4Flag
 				unset ip6Flag
 			else
-				param4="$param4 $ip4Flag $negation daddr $value"
-				param6="$param6 $ip6Flag $negation daddr $value"
+				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr $value"
+				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr $value"
 				unset ip4Flag
 				unset ip6Flag
 			fi
@@ -980,8 +1009,8 @@ policy_routing_nft() {
 		else
 			unset negation; value="$src_port";
 		fi
-		param4="$param4 $proto sport $negation {$(ports_to_nftset "$value")}"
-		param6="$param6 $proto sport $negation {$(ports_to_nftset "$value")}"
+		param4="${param4:+$param4 }${proto:+$proto }sport ${negation:+$negation }{$(ports_to_nftset "$value")}"
+		param6="${param6:+$param6 }${proto:+$proto }sport ${negation:+$negation }{$(ports_to_nftset "$value")}"
 		unset proto
 	fi
 
@@ -991,21 +1020,27 @@ policy_routing_nft() {
 		else
 			unset negation; value="$dest_port";
 		fi
-		param4="$param4 $proto dport $negation {$(ports_to_nftset "$value")}"
-		param6="$param6 $proto dport $negation {$(ports_to_nftset "$value")}"
+		param4="${param4:+$param4 }${proto:+$proto }dport ${negation:+$negation }{$(ports_to_nftset "$value")}"
+		param6="${param6:+$param6 }${proto:+$proto }dport ${negation:+$negation }{$(ports_to_nftset "$value")}"
 	fi
 
-	param4="$nftInsertOption rule inet $nftTable $param4 $dest comment \"$name\""
-	param6="$nftInsertOption rule inet $nftTable $param6 $dest comment \"$name\""
-
-	if [ -z "$ipv6_enabled" ]; then
-		nft "$param4" || processPolicyError="${processPolicyError}${_ERROR_}: nft $param4\\n"
-	else
-		nft "$param4" || processPolicyError="${processPolicyError}${_ERROR_}: nft $param4\\n"
-		nft "$param6" || processPolicyError="${processPolicyError}${_ERROR_}: nft $param6\\n"
-	fi
+#	if ! nft_rule_exists "${nftPrefix}_${chain:-prerouting}" "$param4"; then
+		param4="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain:-prerouting} $param4 $dest comment \"$name\""
+		nft4 "$param4" || processPolicyError="${processPolicyError}${_ERROR_}: nft '$param4'\\n"
+#	fi
+#	if ! nft_rule_exists "${nftPrefix}_${chain:-prerouting}" "$param6" && [ -n "$ipv6_enabled" ]; then
+		param6="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain:-prerouting} $param6 $dest comment \"$name\""
+		nft6 "$param6" || processPolicyError="${processPolicyError}${_ERROR_}: nft '$param6'\\n"
+#	fi
 }
 policy_routing() { if is_nft; then policy_routing_nft "$@"; else policy_routing_iptables "$@"; fi; }
+
+nft_rule_exists() {
+	return 1
+	local c="$1"
+	shift
+	"$nft" list table inet "$nftTable" | sed -n "/chain $c {/,/\t}/p" | grep "$@"
+}
 
 policy_process() {
 	local i j uid="$9"
@@ -1560,6 +1595,7 @@ start_service() {
 
 	load_environment 'on_start' "$(load_validate_config)" || return 1
 	is_wan_up || return 1
+	rm -f "$nftTempFile"
 
 	if [ -n "$reloadedIface" ] && ! is_supported_interface "$reloadedIface"; then
 		return 0
@@ -1593,7 +1629,11 @@ start_service() {
 				dnsmasqStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
 				rm -f "$dnsmasqFile"
 			fi
-			if ! is_nft; then
+			if is_nft; then
+				for i in forward input output prerouting postrouting; do
+					nft flush chain inet "$nftTable" "${nftPrefix}_${i}"
+				done
+			else
 				for i in $usedChainsList; do
 					ipt -t mangle -N "${iptPrefix}_${i}"
 					ipt -t mangle "$rule_create_option" "$i" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
@@ -1703,7 +1743,11 @@ stop_service() {
 	fi
 	remove_lock
 	if [ "$enabled" -ne 0 ]; then
-		output "$serviceName stopped "; output_okn;
+		if is_nft; then
+			output "$serviceName (nft) stopped "; output_okn;
+		else
+			output "$serviceName (iptables) stopped "; output_okn;
+		fi
 	fi
 }
 
@@ -1711,7 +1755,11 @@ boot() { load_package_config; sleep "$procd_boot_delay" >/dev/null 2>&1; rc_proc
 reload_interface() { rc_procd start_service "$@"; }
 
 service_started() {
-	[ -n "$gatewaySummary" ] && output "$serviceName started with gateways:\\n${gatewaySummary}"
+	if is_nft; then
+		[ -n "$gatewaySummary" ] && output "$serviceName (nft) started with gateways:\\n${gatewaySummary}"
+	else
+		[ -n "$gatewaySummary" ] && output "$serviceName (iptables) started with gateways:\\n${gatewaySummary}"
+	fi
 	[ -n "$errorSummary" ] && output "${errorSummary}"
 	[ -n "$warningSummary" ] && output "${warningSummary}"
 	if [ -n "$errorSummary" ]; then
@@ -1785,17 +1833,17 @@ status_service_nft() {
 	echo "$_SEPARATOR_"
 	echo "$packageName chains - policies"
 	for i in forward input output prerouting postrouting; do
-		"$nft" list table inet fw4 | sed -n "/chain ${nftPrefix}_${i} {/,/}/p"
+		"$nft" list table inet fw4 | sed -n "/chain ${nftPrefix}_${i} {/,/\t}/p"
 	done
 	echo "$_SEPARATOR_"
 	echo "$packageName chains - marking"
 	for i in $(get_mark_nft_chains); do
-		"$nft" list table inet fw4 | sed -n "/chain ${i} {/,/}/p"
+		"$nft" list table inet fw4 | sed -n "/chain ${i} {/,/\t}/p"
 	done
 	echo "$_SEPARATOR_"
 	echo "$packageName nft sets"
 	for i in $(get_nft_sets); do
-		"$nft" list table inet fw4 | sed -n "/set ${i} {/,/}/p"
+		"$nft" list table inet fw4 | sed -n "/set ${i} {/,/\t}/p"
 	done
 	if [ -s "$dnsmasqFile" ]; then
 		echo "$_SEPARATOR_"
@@ -1867,7 +1915,7 @@ status_service_iptables() {
 						if [ -n "$ipv6_enabled" ]; then
 							echo "$_SEPARATOR_"
 							echo "$j IPv6 Table: $i"
-							ip6tables -v -t "$(str_to_lower $j)" -S "${iptPrefix}_${i}"
+							iptables -v -t "$(str_to_lower $j)" -S "${iptPrefix}_${i}"
 						fi
 					fi
 				done
@@ -1878,7 +1926,7 @@ status_service_iptables() {
 				if [ -n "$ipv6_enabled" ]; then
 					echo "$_SEPARATOR_"
 					echo "$j IPv6 Table"
-					ip6tables -L -t "$(str_to_lower $j)"
+					iptables -L -t "$(str_to_lower $j)"
 				fi
 			fi
 			i=0; ifaceMark="$wan_mark";

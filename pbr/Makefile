@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
-PKG_VERSION:=0.9.7
-PKG_RELEASE:=11
+PKG_VERSION:=0.9.8
+PKG_RELEASE:=3
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -23,16 +23,16 @@ define Package/pbr/default
 	PKGARCH:=all
 endef
 
+define Package/pbr
+$(call Package/pbr/default)
+	TITLE+= with nft/nft set support
+	DEPENDS+=+kmod-nft-core +kmod-nft-nat +nftables-json
+endef
+
 define Package/pbr-iptables
 $(call Package/pbr/default)
 	TITLE+= with iptables/ipset support
 	DEPENDS+=+ipset +iptables +kmod-ipt-ipset +iptables-mod-ipopt
-endef
-
-define Package/pbr-nftables
-$(call Package/pbr/default)
-	TITLE+= with nftables/nft set support
-	DEPENDS+=+kmod-nft-core +kmod-nft-nat +nftables-json
 endef
 
 define Package/pbr-netifd
@@ -42,19 +42,27 @@ endef
 
 define Package/pbr/description
 This service enables policy-based routing for WAN interfaces and various VPN tunnels.
+This version supports OpenWrt with both fw3/ipset/iptables and fw4/nft.
 endef
 
-Package/pbr-iptables/description = $(Package/pbr/description)
-Package/pbr-nftables/description = $(Package/pbr/description)
-Package/pbr-netifd/description = $(Package/pbr/description)
+define Package/pbr-iptables/description
+This service enables policy-based routing for WAN interfaces and various VPN tunnels.
+This version supports OpenWrt with fw3/ipset/iptables.
+endef
 
-define Package/pbr/conffiles
+define Package/pbr-netifd/description
+This service enables policy-based routing for WAN interfaces and various VPN tunnels.
+This version supports OpenWrt with both fw3/ipset/iptables and fw4/nft.
+This version uses OpenWrt native netifd/tables to set up interfaces. This is WIP.
+endef
+
+define Package/pbr/default/conffiles
 /etc/config/pbr
 endef
 
-Package/pbr-iptables/conffiles = $(Package/pbr/conffiles)
-Package/pbr-nftables/conffiles = $(Package/pbr/conffiles)
-Package/pbr-netifd/conffiles = $(Package/pbr/conffiles)
+Package/pbr/conffiles = $(Package/pbr/default/conffiles)
+Package/pbr-iptables/conffiles = $(Package/pbr/default/conffiles)
+Package/pbr-netifd/conffiles = $(Package/pbr/default/conffiles)
 
 define Build/Configure
 endef
@@ -62,7 +70,7 @@ endef
 define Build/Compile
 endef
 
-define Package/pbr/install
+define Package/pbr/default/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/firewall
@@ -78,22 +86,57 @@ define Package/pbr/install
 	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.netflix $(1)/usr/share/pbr/pbr.user.netflix
 endef
 
-define Package/pbr-iptables/install
-$(call Package/pbr/install,$(1))
-	$(INSTALL_CONF) ./files/etc/config/pbr.iptables $(1)/etc/config/pbr
-endef
-
-define Package/pbr-nftables/install
-$(call Package/pbr/install,$(1))
+define Package/pbr/install
+$(call Package/pbr/default/install,$(1))
 	$(INSTALL_CONF) ./files/etc/config/pbr.nftables $(1)/etc/config/pbr
 	$(INSTALL_DIR) $(1)/usr/share/nftables.d
 	$(CP) ./files/usr/share/nftables.d/* $(1)/usr/share/nftables.d/
 endef
 
+define Package/pbr-iptables/install
+$(call Package/pbr/default/install,$(1))
+	$(INSTALL_CONF) ./files/etc/config/pbr.iptables $(1)/etc/config/pbr
+endef
+
 define Package/pbr-netifd/install
-$(call Package/pbr/install,$(1))
+$(call Package/pbr/default/install,$(1))
 	$(INSTALL_CONF) ./files/etc/config/pbr.iptables $(1)/etc/config/pbr
 	$(INSTALL_DATA) ./files/etc/hotplug.d/firewall/70-pbr $(1)/etc/hotplug.d/firewall/70-pbr
+endef
+
+define Package/pbr/postinst
+	#!/bin/sh
+	# check if we are on real system
+	if [ -z "$${IPKG_INSTROOT}" ]; then
+		chmod -x /etc/init.d/pbr || true
+		fw4 reload || true
+		chmod +x /etc/init.d/pbr || true
+		echo -n "Installing rc.d symlink for pbr... "
+		/etc/init.d/pbr enable && echo "OK" || echo "FAIL"
+	fi
+	exit 0
+endef
+
+define Package/pbr/prerm
+	#!/bin/sh
+	# check if we are on real system
+	if [ -z "$${IPKG_INSTROOT}" ]; then
+		uci -q delete firewall.pbr || true
+		echo "Stopping pbr service... "
+		/etc/init.d/pbr stop || true
+		echo -n "Removing rc.d symlink for pbr... "
+		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
+	fi
+	exit 0
+endef
+
+define Package/pbr/postrm
+	#!/bin/sh
+	# check if we are on real system
+	if [ -z "$${IPKG_INSTROOT}" ]; then
+		fw4 reload || true
+	fi
+	exit 0
 endef
 
 define Package/pbr-iptables/postinst
@@ -115,41 +158,6 @@ define Package/pbr-iptables/prerm
 		/etc/init.d/pbr stop || true
 		echo -n "Removing rc.d symlink for pbr... "
 		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
-	fi
-	exit 0
-endef
-
-define Package/pbr-nftables/postinst
-	#!/bin/sh
-	# check if we are on real system
-	if [ -z "$${IPKG_INSTROOT}" ]; then
-		chmod -x /etc/init.d/pbr || true
-		fw4 reload || true
-		chmod +x /etc/init.d/pbr || true
-		echo -n "Installing rc.d symlink for pbr... "
-		/etc/init.d/pbr enable && echo "OK" || echo "FAIL"
-	fi
-	exit 0
-endef
-
-define Package/pbr-nftables/prerm
-	#!/bin/sh
-	# check if we are on real system
-	if [ -z "$${IPKG_INSTROOT}" ]; then
-		uci -q delete firewall.pbr || true
-		echo "Stopping pbr service... "
-		/etc/init.d/pbr stop || true
-		echo -n "Removing rc.d symlink for pbr... "
-		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
-	fi
-	exit 0
-endef
-
-define Package/pbr-nftables/postrm
-	#!/bin/sh
-	# check if we are on real system
-	if [ -z "$${IPKG_INSTROOT}" ]; then
-		fw4 reload || true
 	fi
 	exit 0
 endef
@@ -185,6 +193,6 @@ define Package/pbr-netifd/prerm
 	exit 0
 endef
 
+$(eval $(call BuildPackage,pbr))
 $(eval $(call BuildPackage,pbr-iptables))
-$(eval $(call BuildPackage,pbr-nftables))
 # $(eval $(call BuildPackage,pbr-netifd))
