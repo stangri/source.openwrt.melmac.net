@@ -8,7 +8,7 @@
 	local uci = require "luci.model.uci".cursor()
 	local sys = require "luci.sys"
 	local serviceRunning, serviceEnabled = false, false;
-	if sys.call("iptables -t mangle -L | grep -q PBR_PREROUTING") == 0 then
+	if sys.call("iptables -t mangle -L | grep -q PBR_PREROUTING >/dev/null 2>&1") == 0 or sys.call("nft list table inet fw4 | grep chain | grep -q pbr_mark_ >/dev/null 2>&1") == 0 then
 		serviceRunning = true
 	end
 	if uci:get(packageName, "config", "enabled") == "1" then

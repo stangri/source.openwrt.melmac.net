@@ -107,13 +107,13 @@ local packageFlavor = getPackageName() or packageName
 if packageVersion == "" then
 	statusText = translatef("%s is not installed or not found", packageName)
 end 
-if sys.call("iptables -t mangle -L | grep -q PBR_PREROUTING") == 0 then
+if sys.call("iptables -t mangle -L | grep -q PBR_PREROUTING >/dev/null 2>&1") == 0 then
 	serviceRunning = true
 	statusText = translate("Running (iptables)")
 	if serviceMode and serviceMode == "strict" then
 		statusText = translatef("%s (strict mode)", statusText)
 	end
-elseif sys.call("nft list table inet fw4 | grep chain | grep -q pbr_mark_") == 0 then
+elseif sys.call("nft list table inet fw4 | grep chain | grep -q pbr_mark_ >/dev/null 2>&1") == 0 then
 	serviceRunning = true
 	statusText = translate("Running (nft)")
 	if serviceMode and serviceMode == "strict" then
