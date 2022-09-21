@@ -109,7 +109,13 @@ if packageVersion == "" then
 end 
 if sys.call("iptables -t mangle -L | grep -q PBR_PREROUTING") == 0 then
 	serviceRunning = true
-	statusText = translate("Running")
+	statusText = translate("Running (iptables)")
+	if serviceMode and serviceMode == "strict" then
+		statusText = translatef("%s (strict mode)", statusText)
+	end
+elseif sys.call("nft list table inet fw4 | grep chain | grep -q pbr_mark_") == 0 then
+	serviceRunning = true
+	statusText = translate("Running (nft)")
 	if serviceMode and serviceMode == "strict" then
 		statusText = translatef("%s (strict mode)", statusText)
 	end
@@ -234,17 +240,23 @@ se:value("0", translate("Do not enforce policies when their gateway is down"))
 se:value("1", translate("Strictly enforce policies when their gateway is down"))
 se.default = 1
 
-local resolver_set_descr = translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>")
+local resolver_set_descr
+local resolver_set_descr_readme = translatef("Please check the %sREADME%s before changing this option.", "<a href=\"" .. readmeURL .. "#service-configuration-settings" .. "\" target=\"_blank\">", "</a>")
 if not checkDnsmasq() then
-	resolver_set_descr = resolver_set_descr .. "<br />" .. translatef("Please note that %s is not supported on this system.", "<i>dnsmasq.ipset</i>")
+	resolver_set_descr = translatef("Please note that %s is not supported on this system.", "<i>dnsmasq.ipset</i>")
 	resolver_set_descr = resolver_set_descr .. "<br />" .. translatef("Please note that %s is not supported on this system.", "<i>dnsmasq.nftset</i>")
 else
 	if not checkDnsmasqIpset() then 
-		resolver_set_descr = resolver_set_descr .. "<br />" .. translatef("Please note that %s is not supported on this system.", "<i>dnsmasq.ipset</i>")
+		resolver_set_descr = translatef("Please note that %s is not supported on this system.", "<i>dnsmasq.ipset</i>")
 	end
 	if not checkDnsmasqNftset() then 
-		resolver_set_descr = resolver_set_descr .. "<br />" .. translatef("Please note that %s is not supported on this system.", "<i>dnsmasq.nftset</i>")
+		resolver_set_descr = translatef("Please note that %s is not supported on this system.", "<i>dnsmasq.nftset</i>")
 	end
+end
+if resolver_set_descr then
+	resolver_set_descr = resolver_set_descr .. "<br />" .. resolver_set_descr_readme
+else
+	resolver_set_descr = resolver_set_descr_readme
 end
 resolver_set = config:taboption("basic", ListValue, "resolver_set", translate("Use resolver set support for domains"), resolver_set_descr)
 resolver_set:value("none", translate("Disabled"))

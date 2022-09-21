@@ -1,11 +1,12 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:119
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:125
 msgid "%s (disabled)"
 msgstr ""
 
 #: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:114
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:120
 msgid "%s (strict mode)"
 msgstr ""
 
@@ -13,90 +14,90 @@ msgstr ""
 msgid "%s is not installed or not found"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:270
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:282
 msgid ""
 "%sWARNING:%s Please make sure to check the %sREADME%s before changing "
 "anything in this section! Change any of the settings below with extreme "
 "caution!%s"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:283
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:295
 msgid "Add"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:328
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:340
 msgid "Add IGNORE Target"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:328
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:340
 msgid ""
 "Adds `IGNORE` to the list of interfaces for policies, allowing you to skip "
 "further processing by VPN Policy Routing."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:269
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:281
 msgid "Advanced Configuration"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:272
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:284
 msgid ""
 "Allows to specify the list of interface names (in lower case) to be "
 "explicitly supported by the service. Can be useful if your OpenVPN tunnels "
 "have dev option other than tun* or tap*."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:275
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:287
 msgid ""
 "Allows to specify the list of interface names (in lower case) to be ignored "
 "by the service. Can be useful if running both VPN server and VPN client on "
 "the router."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:223
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:229
 msgid "Basic Configuration"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:278
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:290
 msgid "Boot Time-out"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:390
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:402
 msgid "Chain"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:227
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:233
 msgid "Condensed output"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:218
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:224
 msgid "Configuration"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:225
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:231
 msgid "Controls both system log and console output verbosity."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:428
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:440
 msgid "Custom User File Includes"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:253
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:265
 msgid "DNSMASQ Ipset"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:257
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:269
 msgid "DNSMASQ Nft Set"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:421
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:433
 msgid "DSCP Tag"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:416
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:428
 msgid "DSCP Tagging"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:287
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:299
 msgid "Default ICMP Interface"
 msgstr ""
 
@@ -104,21 +105,21 @@ msgstr ""
 msgid "Disable"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:250
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:265
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:314
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:318
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:325
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:329
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:333
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:262
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:277
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:326
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:330
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:337
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:341
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:345
 msgid "Disabled"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:321
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:333
 msgid "Display these protocols in protocol column in Web UI."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:233
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:239
 msgid "Do not enforce policies when their gateway is down"
 msgstr ""
 
@@ -126,24 +127,24 @@ msgstr ""
 msgid "Enable"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:266
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:315
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:319
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:326
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:330
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:334
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:347
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:435
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:278
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:327
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:331
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:338
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:342
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:346
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:359
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:447
 msgid "Enabled"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:306
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:318
 msgid ""
 "FW Mask used by the service. High mask is used to avoid conflict with SQM/"
 "QoS. Change with caution together with"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:287
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:299
 msgid "Force the ICMP protocol interface."
 msgstr ""
 
@@ -151,19 +152,19 @@ msgstr ""
 msgid "Grant UCI and file access for luci-app-pbr"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:264
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:276
 msgid "IPv6 Support"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:275
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:287
 msgid "Ignored Interfaces"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:284
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:296
 msgid "Insert"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:399
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:411
 msgid "Interface"
 msgstr ""
 
@@ -171,19 +172,19 @@ msgstr ""
 msgid "Loading"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:353
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:365
 msgid "Local addresses / devices"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:360
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:372
 msgid "Local ports"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:351
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:363
 msgid "Name"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:338
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:350
 msgid ""
 "Name, interface and at least one other field are required. Multiple local "
 "and remote addresses/devices/domains and ports can be space separated. "
@@ -191,47 +192,47 @@ msgid ""
 "fields are left blank."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:288
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:300
 msgid "No Change"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:225
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:231
 msgid "Output verbosity"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:438
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:450
 msgid "Path"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:237
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:244
 msgid "Please check the %sREADME%s before changing this option."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:239
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:240
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:243
 #: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:246
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:247
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:250
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:253
 msgid "Please note that %s is not supported on this system."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:338
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:350
 msgid "Policies"
 msgstr ""
 
 #: applications/luci-app-pbr/luasrc/controller/pbr.lua:4
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:191
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:197
 msgid "Policy Based Routing"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:376
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:388
 msgid "Protocol"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:365
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:377
 msgid "Remote addresses / domains"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:370
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:382
 msgid "Remote ports"
 msgstr ""
 
@@ -239,98 +240,102 @@ msgstr ""
 msgid "Restart"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:282
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:294
 msgid "Rule Create option"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:429
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:441
 msgid ""
 "Run the following user files after setting up but before restarting DNSMASQ. "
 "See the %sREADME%s for details."
 msgstr ""
 
 #: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:112
-msgid "Running"
+msgid "Running (iptables)"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:232
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:118
+msgid "Running (nft)"
+msgstr ""
+
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:238
 msgid "See the %sREADME%s for details."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:282
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:294
 msgid "Select Add for -A/add and Insert for -I/Insert."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:213
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:219
 msgid "Service Control"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:203
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:209
 msgid "Service Errors"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:301
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:306
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:313
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:318
 msgid "Service FW Mask"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:198
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:204
 msgid "Service Gateways"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:194
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:200
 msgid "Service Status"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:193
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:199
 msgid "Service Status [%s %s]"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:208
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:214
 msgid "Service Warnings"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:417
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:429
 msgid ""
 "Set DSCP tags (in range between 1 and 63) for specific interfaces. See the "
 "%sREADME%s for details."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:324
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:336
 msgid "Show Chain Column"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:313
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:325
 msgid "Show Enable Column"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:317
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:329
 msgid "Show Protocol Column"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:332
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:344
 msgid "Show Up/Down Buttons"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:332
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:344
 msgid ""
 "Shows the Up/Down buttons for policies, allowing you to move a policy up or "
 "down in the list."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:324
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:336
 msgid ""
 "Shows the chain column for policies, allowing you to assign a PREROUTING, "
 "FORWARD, INPUT or OUTPUT chain to a policy."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:313
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:325
 msgid ""
 "Shows the enable checkbox column for policies, allowing you to quickly "
 "enable/disable specific policy without deleting it."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:317
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:329
 msgid ""
 "Shows the protocol column for policies, allowing you to assign a specific "
 "protocol to a policy."
@@ -340,13 +345,13 @@ msgstr ""
 msgid "Start"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:301
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:313
 msgid ""
 "Starting (WAN) FW Mark for marks used by the service. High starting mark is "
 "used to avoid conflict with SQM/QoS. Change with caution together with"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:296
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:308
 msgid "Starting (WAN) Table ID number for tables created by the service."
 msgstr ""
 
@@ -354,27 +359,27 @@ msgstr ""
 msgid "Stop"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:117
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:123
 msgid "Stopped"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:231
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:237
 msgid "Strict enforcement"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:234
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:240
 msgid "Strictly enforce policies when their gateway is down"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:272
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:284
 msgid "Supported Interfaces"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:321
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:333
 msgid "Supported Protocols"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:226
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:232
 msgid "Suppress/No output"
 msgstr ""
 
@@ -382,32 +387,32 @@ msgstr ""
 msgid "The %s indicates default gateway. See the %sREADME%s for details."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:278
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:290
 msgid ""
 "Time (in seconds) for service to wait for WAN gateway discovery on boot."
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:249
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:261
 msgid "Use resolver set support for domains"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:228
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:234
 msgid "Verbose output"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:289
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:301
 msgid "WAN"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:301
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:306
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:313
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:318
 msgid "WAN Table FW Mark"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:296
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:308
 msgid "WAN Table ID"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:311
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:323
 msgid "Web UI Configuration"
 msgstr ""
