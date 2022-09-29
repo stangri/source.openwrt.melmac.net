@@ -20,7 +20,10 @@ if [ -s "$TARGET_FNAME" ]; then
 			_ret=0
 		fi
 	elif [ -n "$nft" ] && [ -x "$nft" ] && "$nft" list set "$TARGET_TABLE" "$TARGET_SET" >/dev/null 2>&1; then
-		if awk -v table="$TARGET_TABLE" -v nftset="$TARGET_SET" '{print "add element " table " " nftset " " $1}' "$TARGET_FNAME" > "$TARGET_NFTFNAME" && "$nft" -f "$TARGET_NFTFNAME"; then
+		printf "add element %s %s { " "$TARGET_TABLE" "$TARGET_SET" > "$TARGET_NFTFNAME"
+		awk '{printf $1 ", "}' "$TARGET_FNAME" >> "$TARGET_NFTFNAME"
+		printf " } " >> "$TARGET_NFTFNAME"
+		if "$nft" -f "$TARGET_NFTFNAME"; then
 			rm -f "$TARGET_NFTFNAME"
 			_ret=0
 		fi
