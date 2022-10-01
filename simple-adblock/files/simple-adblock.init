@@ -1392,8 +1392,8 @@ load_validate_config() {
 		'compressed_cache:bool:0' \
 		'ipv6_enabled:bool:0' \
 		'allow_non_ascii:bool:0' \
-		'canary_domains_icloud:bool:1' \
-		'canary_domains_mozilla:bool:1' \
+		'canary_domains_icloud:bool:0' \
+		'canary_domains_mozilla:bool:0' \
 		'config_update_enabled:bool:0' \
 		'config_update_url:string:https://cdn.jsdelivr.net/gh/openwrt/packages/net/simple-adblock/files/simple-adblock.conf.update' \
 		'boot_delay:range(0,240):120' \
