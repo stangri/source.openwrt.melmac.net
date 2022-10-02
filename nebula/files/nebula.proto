@@ -4,7 +4,7 @@
 PKG_VERSION='dev-test'
 
 readonly PROG=/usr/sbin/nebula
-[ -x "$PROG" ] || exit 0
+[ -x "$PROG" ] || { log "Main executable not found"; exit 1; }
 
 [ -n "$INCLUDE_ONLY" ] || {
 	. /lib/functions.sh
@@ -13,8 +13,7 @@ readonly PROG=/usr/sbin/nebula
 	init_proto "$@"
 }
 
-version() { echo "Version: $PKG_VERSION"; }
-
+log() { logger -t 'nebula-proto' "$*"; }
 # https://gist.github.com/pkuczynski/8665367
 # shellcheck disable=SC2086,SC2155
 parse_yaml() {
@@ -33,27 +32,28 @@ parse_yaml() {
 	}'
 }
 
+version() { echo "Version: $PKG_VERSION"; }
+
 proto_nebula_init_config() {
 	available=1
-	no_proto_task=1
-	proto_config_add_string "config"
+	no_device=1
+	proto_config_add_string "config_file"
 }
 
 proto_nebula_setup() {
-	local interface="$1" config address addresses
+	local interface="$1" config_file address addresses
 	local yaml_listen_host yaml_listen_port yaml_tun_dev
-	proto_init_update "$interface" 1
 
-	json_get_vars config
-	if [ -z "$config" ]; then
-		config="$(uci -q get "network.${interface}.config")"
-	fi
-	logger -t nebula "start $interface with config: $config"
-	[ -s "$config" ] || return 1
-	eval "$(parse_yaml "$config" "yaml_")"
+	config_load network
+	config_get config_file "${interface}" "config_file"
+	proto_init_update "${interface}" 1
 
-	proto_export "INTERFACE=$interface"
-	proto_run_command "$interface" "$PROG" -config "$config"
+	[ -s "$config_file" ] || { log "Config file not found or empty!"; return 1; }
+	eval "$(parse_yaml "$config_file" "yaml_")"
+	[ "$yaml_tun_dev" = "$interface" ] || { log "Tunnel device in config file (${yaml_tun_dev}) doesn't match interface name (${interface})!"; return 1; }
+
+	log "Setting up ${interface} from ${config_file}."
+	proto_run_command "$interface" "$PROG" -config "$config_file"
 	proto_add_data
 	json_add_array firewall
 		json_add_object ""
@@ -67,32 +67,15 @@ proto_nebula_setup() {
 		json_close_object
 	json_close_array
 	proto_close_data
-
 	proto_send_update "$interface"
-
-	addresses="$(ip -4 a list dev "$interface" | grep inet | awk '{print $2}')"
-	for address in ${addresses}; do
-		case "${address}" in
-			*:*/*)
-				proto_add_ipv6_address "${address%%/*}" "${address##*/}"
-				;;
-			*.*/*)
-				proto_add_ipv4_address "${address%%/*}" "${address##*/}"
-				;;
-			*:*)
-				proto_add_ipv6_address "${address%%/*}" "128"
-				;;
-			*.*)
-				proto_add_ipv4_address "${address%%/*}" "32"
-				;;
-		esac
-	done
-	proto_send_update "$interface" 1
 }
 
 proto_nebula_teardown() {
 	local interface="$1"
-	proto_kill_command "$interface"
+	proto_kill_command "${interface}"
+	log "Killed interface ${interface}."
 }
 
-[ -n "$INCLUDE_ONLY" ] || add_protocol nebula
+[ -n "$INCLUDE_ONLY" ] || {
+	add_protocol nebula
+}
