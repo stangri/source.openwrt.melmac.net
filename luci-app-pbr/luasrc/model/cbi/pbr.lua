@@ -444,9 +444,7 @@ inc.sortable  = true
 inc.anonymous = true
 inc.addremove = true
 
-finc = inc:option(Flag, "enabled", translate("Enabled"))
-finc.optional = false
-finc.default = "1"
+inc:option(Flag, "enabled", translate("Enabled")).optional = false
 inc:option(Value, "path", translate("Path")).optional = false
 
 return m

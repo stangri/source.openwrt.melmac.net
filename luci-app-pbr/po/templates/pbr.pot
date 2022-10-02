@@ -200,7 +200,7 @@ msgstr ""
 msgid "Output verbosity"
 msgstr ""
 
-#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:450
+#: applications/luci-app-pbr/luasrc/model/cbi/pbr.lua:448
 msgid "Path"
 msgstr ""
 
