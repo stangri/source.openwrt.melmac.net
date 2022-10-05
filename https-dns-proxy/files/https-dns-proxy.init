@@ -142,6 +142,7 @@ start_instance() {
 	append_bootstrap "$cfg" 'bootstrap_dns' '-b' "$DEFAULT_BOOTSTRAP"
 	append_parm "$cfg" 'user' '-u' 'nobody'
 	append_parm "$cfg" 'group' '-g' 'nogroup'
+	append_parm "$cfg" 'polling_interval' '-i' '120'
 	append_parm "$cfg" 'proxy_server' '-t'
 	append_parm "$cfg" 'logfile' '-l'
 	append_bool "$cfg" 'use_http1' '-x'
