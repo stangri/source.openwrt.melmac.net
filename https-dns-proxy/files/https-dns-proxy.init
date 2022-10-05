@@ -135,14 +135,14 @@ start_instance() {
 	local cfg="$1" param listen_addr listen_port ipv6_resolvers_only p
 	config_get_bool ipv6_resolvers_only "$cfg" 'use_ipv6_resolvers_only' '0'
 	append_parm "$cfg" 'resolver_url' '-r'
-	append_parm "$cfg" 'polling_interval' '-i'
 	append_parm "$cfg" 'listen_addr' '-a' '127.0.0.1'
 	append_parm "$cfg" 'listen_port' '-p' "$port"
 	append_parm "$cfg" 'dscp_codepoint' '-c'
 	append_bootstrap "$cfg" 'bootstrap_dns' '-b' "$DEFAULT_BOOTSTRAP"
 	append_parm "$cfg" 'user' '-u' 'nobody'
 	append_parm "$cfg" 'group' '-g' 'nogroup'
-	append_parm "$cfg" 'polling_interval' '-i' '120'
+	append_parm "$cfg" 'ca_certs_file' '-C'
+	append_parm "$cfg" 'polling_interval' '-i'
 	append_parm "$cfg" 'proxy_server' '-t'
 	append_parm "$cfg" 'logfile' '-l'
 	append_bool "$cfg" 'use_http1' '-x'
