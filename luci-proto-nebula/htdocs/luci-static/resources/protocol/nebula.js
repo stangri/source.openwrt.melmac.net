@@ -37,7 +37,7 @@ return network.registerProtocol('nebula', {
 	renderFormOptions: function (s) {
 		var o;
 
-		o = s.taboption('general', form.Value, 'config', _('Config File'), _('Required. Path to the .yml config file for this interface.'));
+		o = s.taboption('general', form.Value, 'config_file', _('Config File'), _('Required. Path to the .yml config file for this interface.'));
 		o.rmempty = false;
 
 	},
