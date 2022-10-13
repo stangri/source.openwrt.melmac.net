@@ -40,7 +40,7 @@ define Package/fakeinternet/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DIR) $(1)/www_fakeinternet
 	$(INSTALL_BIN) ./files/fakeinternet.init $(1)/etc/init.d/fakeinternet
-	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/fakeinternet
+	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/fakeinternet
 	$(INSTALL_CONF) ./files/fakeinternet.config $(1)/etc/config/fakeinternet
 	$(INSTALL_BIN) ./files/fakeinternet.cgi $(1)/www_fakeinternet/error.cgi
 endef

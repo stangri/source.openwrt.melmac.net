@@ -40,7 +40,7 @@ define Package/wlanblinker/install
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/wlanblinker.init $(1)/etc/init.d/wlanblinker
-	$(SED) "s|^\(PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/wlanblinker
+	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/wlanblinker
 	$(INSTALL_CONF) ./files/wlanblinker.config $(1)/etc/config/wlanblinker
 	$(INSTALL_BIN) ./files/blink.sh $(1)/usr/sbin/blink
 endef
