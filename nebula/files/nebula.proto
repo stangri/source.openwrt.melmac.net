@@ -1,10 +1,11 @@
 #!/bin/sh
 # Copyright 2021 Stan Grishin (stangri@melmac.ca)
 # shellcheck disable=SC1091,SC2039,SC2034,SC3043
-PKG_VERSION='dev-test'
+readonly PKG_VERSION='dev-test'
 readonly PROG=/usr/sbin/nebula
+readonly packageName='nebula-proto'
 
-[ -x "$PROG" ] || { log "Main executable not found"; exit 1; }
+[ -x "$PROG" ] || { log "Main nebula executable '/usr/sbin/nebula' not found"; exit 1; }
 
 [ -n "$INCLUDE_ONLY" ] || {
 	. /lib/functions.sh
@@ -13,7 +14,7 @@ readonly PROG=/usr/sbin/nebula
 	init_proto "$@"
 }
 
-log() { logger -t 'nebula-proto' "$*"; }
+log() { logger -t "$packageName" "$*"; }
 # https://gist.github.com/pkuczynski/8665367
 # shellcheck disable=SC2086,SC2155
 parse_yaml() {
@@ -31,8 +32,6 @@ parse_yaml() {
 		}
 	}'
 }
-
-version() { echo "Version: $PKG_VERSION"; }
 
 proto_nebula_init_config() {
 	available=1
