@@ -1475,7 +1475,7 @@ user_file_process() {
 	fi
 }
 
-boot() { load_package_config; sleep "$procd_boot_delay" >/dev/null 2>&1; start_service 'on_boot'; rc_procd service_started; }
+# boot() { load_package_config; sleep "$procd_boot_delay" >/dev/null 2>&1; start_service 'on_boot'; rc_procd service_started; }
 reload_firewall() { rc_procd start_service 'on_firewall_reload' "$1"; }
 reload_interface() { rc_procd start_service 'on_interface_reload' "$1"; }
 
