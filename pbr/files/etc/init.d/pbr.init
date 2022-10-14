@@ -101,7 +101,7 @@ serviceStartTrigger=
 processPolicyError=
 processPolicyWarning=
 resolver_setSupported='0'
-usedChainsList='PREROUTING'
+usedChainsList='FORWARD INPUT OUTPUT POSTROUTING PREROUTING'
 nftPrevParam4=
 nftPrevParam6=
 
@@ -276,6 +276,7 @@ load_package_config() {
 			add|-a|-A|*) rule_create_option='-A';;
 		esac
 	fi
+	append_chains_targets
 }
 
 load_environment() {
@@ -675,7 +676,7 @@ cleanup_main_chains() {
 	for i in forward input output prerouting postrouting; do
 		nft flush chain inet "$nftTable" "${nftPrefix}_${i}"
 	done
-	for i in PREROUTING FORWARD INPUT OUTPUT; do
+	for i in $usedChainsList; do
 		ipt -t mangle -D "${i}" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
 		ipt -t mangle -F "${iptPrefix}_${i}"
 		ipt -t mangle -X "${iptPrefix}_${i}"
@@ -1178,7 +1179,7 @@ interface_process_tor_iptables() {
 			gatewaySummary="${gatewaySummary}${displayText}\\n"
 			;;
 		destroy)
-			for i in PREROUTING FORWARD INPUT OUTPUT; do
+			for i in $usedChainsList; do
 				i="$(str_to_lower "$i")"
 				ipt -t nat -D "${i}" -m mark --mark "0x0/${fw_mask}" -j "${nftPrefix}_${i}"
 				ipt -t nat -F "${nftPrefix}_${i}"; ipt -t nat -X "${nftPrefix}_${i}";
