@@ -276,7 +276,6 @@ load_package_config() {
 			add|-a|-A|*) rule_create_option='-A';;
 		esac
 	fi
-	append_chains_targets
 }
 
 load_environment() {
