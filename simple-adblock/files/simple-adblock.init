@@ -1307,14 +1307,6 @@ adb_stop() {
 	fi
 }
 
-#boot() {
-#	local boot_delay
-#	config_load "$packageName"
-#	config_get boot_delay 'config' 'boot_delay' '120'
-#	sleep "$boot_delay" >/dev/null 2>&1
-#	rc_procd start_service 'on_boot'
-#	rc_procd service_triggers
-#}
 service_started() { procd_set_config_changed firewall; }
 service_stopped() { procd_set_config_changed firewall; }
 restart_service() { rc_procd start_service 'restart'; }
