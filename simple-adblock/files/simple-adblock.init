@@ -644,7 +644,7 @@ process_url() {
 }
 
 download_lists() {
-	local hf w_filter j=0 R_TMP
+	local hf allow_filter j=0 R_TMP
 
 	json set message "$(get_status_text "statusDownloading")..."
 	json set status "statusDownloading"
@@ -701,7 +701,7 @@ download_lists() {
 	for hf in $blocked_domain $canaryDomains; do echo "$hf" | sed "$domainsFilter" >> $B_TMP; done
 	allowed_domain="${allowed_domain}
 $(cat $A_TMP)"
-	for hf in ${allowed_domain}; do hf="$(echo "$hf" | sed 's/\./\\./g')"; w_filter="$w_filter/^${hf}$/d;/\.${hf}$/d;"; done
+	for hf in ${allowed_domain}; do hf="$(echo "$hf" | sed 's/\./\\./g')"; allow_filter="$allow_filter/^(.*\.)?${hf}$/d;"; done
 
 	[ ! -s "$B_TMP" ] && return 1
 
@@ -768,7 +768,7 @@ $(cat $A_TMP)"
 
 	output 2 'Allowing domains '
 	json set message "$(get_status_text "statusProcessing"): allowing domains"
-	if sed -i "$w_filter" "$B_TMP"; then
+	if sed -i -E "$allow_filter" "$B_TMP"; then
 		output_ok
 	else
 		output_failn
