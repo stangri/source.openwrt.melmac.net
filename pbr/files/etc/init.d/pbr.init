@@ -1655,9 +1655,6 @@ service_triggers() {
 	procd_close_validate
 	procd_open_trigger
 		procd_add_reload_trigger 'openvpn'
-		if type procd_add_service_trigger >/dev/null 2>&1; then
-			procd_add_service_trigger "service.restart" "firewall" /etc/init.d/${packageName} reload
-		fi
 		procd_add_config_trigger "config.change" "${packageName}" /etc/init.d/${packageName} reload
 		for n in $ifacesSupported; do 
 			procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload_interface "$n"
