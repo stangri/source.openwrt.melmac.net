@@ -347,6 +347,8 @@ dnsmasq_restore_server_backup() {
 			uci_add_list_if_new 'dhcp' "$cfg" 'server' "$i"
 		done
 		uci_remove 'dhcp' "$cfg" 'doh_backup_server'
+	else
+		uci_remove 'dhcp' "$cfg" 'server'
 	fi
 }
 
