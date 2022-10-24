@@ -49,7 +49,7 @@ function checkIpset()
 end
 
 function checkNftset() 
-	if sys.call("command -v nft") == 0 then
+	if sys.call("command -v nft >/dev/null 2>&1") == 0 then
 		return true
 	else
 		return false
