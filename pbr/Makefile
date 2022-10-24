@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
-PKG_VERSION:=0.9.8
-PKG_RELEASE:=20
+PKG_VERSION:=0.9.9
+PKG_RELEASE:=1
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -26,7 +26,7 @@ endef
 define Package/pbr
 $(call Package/pbr/default)
 	TITLE+= with nft/nft set support
-	DEPENDS+=+kmod-nft-core +kmod-nft-nat +nftables-json
+	DEPENDS+=+kmod-nft-core +kmod-nft-nat +nftables-json +jsonfilter
 endef
 
 define Package/pbr-iptables

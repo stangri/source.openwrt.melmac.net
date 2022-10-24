@@ -88,17 +88,17 @@ if ubusStatus and ubusStatus[packageName] and
 	 ubusStatus[packageName]["instances"]["main"] and 
 	 ubusStatus[packageName]["instances"]["main"]["data"] and
 	 ubusStatus[packageName]["instances"]["main"]["data"]["status"] and 
-	 ubusStatus[packageName]["instances"]["main"]["data"]["status"][1] then
-	serviceGateways = ubusStatus[packageName]["instances"]["main"]["data"]["status"][1]["gateway"]
+	 ubusStatus[packageName]["instances"]["main"]["data"]["status"] then
+	serviceGateways = ubusStatus[packageName]["instances"]["main"]["data"]["status"]["gateway"]
 	serviceGateways = serviceGateways and serviceGateways:gsub('\\n', '\n')
 	serviceGateways = serviceGateways and serviceGateways:gsub('\\033%[0;32m%[\\xe2\\x9c\\x93%]\\033%[0m', '✓')
-	serviceErrors = ubusStatus[packageName]["instances"]["main"]["data"]["status"][1]["error"]
+	serviceErrors = ubusStatus[packageName]["instances"]["main"]["data"]["status"]["error"]
 	serviceErrors = serviceErrors and serviceErrors:gsub('\\n', '\n')
 	serviceErrors = serviceErrors and serviceErrors:gsub('\\033%[0;31mERROR\\033%[0m: ', '')
-	serviceWarnings = ubusStatus[packageName]["instances"]["main"]["data"]["status"][1]["warning"]
+	serviceWarnings = ubusStatus[packageName]["instances"]["main"]["data"]["status"]["warning"]
 	serviceWarnings = serviceWarnings and serviceWarnings:gsub('\\n', '\n')
 	serviceWarnings = serviceWarnings and serviceWarnings:gsub('\\033%[0;33mWARNING\\033%[0m: ', '')
-	serviceMode = ubusStatus[packageName]["instances"]["main"]["data"]["status"][1]["mode"]
+	serviceMode = ubusStatus[packageName]["instances"]["main"]["data"]["status"]["mode"]
 end
 
 local serviceRunning, statusText = false, nil
