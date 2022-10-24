@@ -1404,6 +1404,7 @@ load_validate_config() {
 		'download_timeout:range(1,40):20' \
 		'curl_retry:range(1,5):3' \
 		'verbosity:range(0,2):2' \
+		'wan6_trigger:bool:0' \
 		'led:or("", "none", file, device, string)' \
 		'dns:or("dnsmasq.addnhosts", "dnsmasq.conf", "dnsmasq.ipset", "dnsmasq.servers", "unbound.adb_list"):dnsmasq.servers' \
 		'dns_instance:or(list(integer, string)):0' \
