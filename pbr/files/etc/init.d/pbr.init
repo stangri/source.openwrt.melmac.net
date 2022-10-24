@@ -945,8 +945,8 @@ policy_routing_nft() {
 			param6="${param6:+$param6 }iifname ${negation:+$negation }${value:1}"
 		elif is_mac_address "$value"; then
 			local target='src' type='mac'
-			if nftset 'create' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" && \
-				nftset 'add' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" "$value"; then
+			if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
+				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
 				param4="${param4:+$param4 }ether ${negation:+$negation }saddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="${param6:+$param6 }ether ${negation:+$negation }saddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 		else
@@ -955,8 +955,8 @@ policy_routing_nft() {
 			fi
 		else
 			local target='src' type='ip'
-			if nftset 'create' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" && \
-				nftset 'add' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" "$value"; then
+			if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
+				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }saddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }saddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				unset ip4Flag
@@ -981,14 +981,14 @@ policy_routing_nft() {
 			param6="${param6:+$param6 }oifname ${negation:+$negation }${value:1}"
 		elif is_domain "$value"; then
 			local target='dst' type='ip'
-			if nftset 'create_resolver' "$iface" "$target" "$type" "$uid" "${name}: $dest_addr" && \
-				nftset 'add_resolver' "$iface" "$target" "$type" "$uid" "${name}: $dest_addr" "$value"; then
+			if nftset 'create_resolver' "$iface" "$target" "$type" "$uid" "$name" && \
+				nftset 'add_resolver' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				unset ip4Flag
 				unset ip6Flag
-			elif nftset 'create' "$iface" "$target" "$type" "$uid" "${name}: $dest_addr" && \
-				nftset 'add' "$iface" "$target" "$type" "$uid" "${name}: $dest_addr" "$value"; then
+			elif nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
+				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				unset ip4Flag
@@ -1001,8 +1001,8 @@ policy_routing_nft() {
 			fi
 		else
 			local target='dst' type='ip'
-			if nftset 'create' "$iface" "$target" "$type" "$uid" "${name}: $dest_addr" && \
-				nftset 'add' "$iface" "$target" "$type" "$uid" "${name}: $dest_addr" "$value"; then
+			if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
+				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				unset ip4Flag
