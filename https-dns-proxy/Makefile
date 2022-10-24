@@ -16,7 +16,7 @@ PKG_LICENSE_FILES:=LICENSE
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
-CMAKE_OPTIONS += -DCLANG_TIDY_EXE=
+CMAKE_OPTIONS += -DCLANG_TIDY_EXE= -DGIT_VERSION=$(PKG_VERSION)-$(PKG_RELEASE)
 
 define Package/https-dns-proxy
 	SECTION:=net
