@@ -88,7 +88,7 @@ endef
 
 define Package/pbr/install
 $(call Package/pbr/default/install,$(1))
-	$(INSTALL_CONF) ./files/etc/config/pbr.nftables $(1)/etc/config/pbr
+	$(INSTALL_CONF) ./files/etc/config/pbr $(1)/etc/config/pbr
 	$(INSTALL_DIR) $(1)/usr/share/nftables.d
 	$(CP) ./files/usr/share/nftables.d/* $(1)/usr/share/nftables.d/
 endef

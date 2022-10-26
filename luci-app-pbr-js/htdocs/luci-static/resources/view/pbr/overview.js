@@ -1,5 +1,4 @@
 // Copyright 2022 Stan Grishin (stangri@melmac.ca)
-// Many thanks to [@vsviridov](https://github.com/vsviridov) for help with transition to JS
 
 'use strict';
 'require form';
@@ -137,26 +136,9 @@ return view.extend({
 		o.placeholder = "0xff0000";
 		o.datatype = "hex(8)";
 
-//		o = s.taboption("tab_webui", form.ListValue, "webui_enable_column", _("Show Enable Column"),
-//			_("Shows the enable checkbox column for policies, allowing you to quickly " +
-//			"enable/disable specific policy without deleting it."));
-//		o.value("0", _("Disabled"));
-//		o.value("1", _("Enabled"));
-
-//		o = s.taboption("tab_webui", form.ListValue, "webui_protocol_column", _("Show Protocol Column"),
-//			_("Shows the protocol column for policies, allowing you to assign a specific protocol to a policy."));
-//		o.value("0", _("Disabled"));
-//		o.value("1", _("Enabled"));
-
 		o = s.taboption("tab_webui", form.DynamicList, "webui_supported_protocol", _("Supported Protocols"),
 			_("Display these protocols in protocol column in Web UI."));
 		o.optional = false;
-
-//		o = s.taboption("tab_webui", form.ListValue, "webui_chain_column", _("Show Chain Column"),
-//			_("Shows the chain column for policies, allowing you to assign a " +
-//			"PREROUTING, FORWARD, INPUT or OUTPUT chain to a policy."));
-//		o.value("0", _("Disabled"));
-//		o.value("1", _("Enabled"));
 
 		o = s.taboption("tab_webui", form.ListValue, "webui_show_ignore_target", _("Add IGNORE Target"),
 		_("Adds `IGNORE` to the list of interfaces for policies, allowing you to skip " +
@@ -164,22 +146,14 @@ return view.extend({
 		o.value("0", _("Disabled"));
 		o.value("1", _("Enabled"));
 
-//		o = s.taboption("tab_webui", form.ListValue, "webui_sorting", _("Show Up/Down Buttons"),
-//		_("Shows the Up/Down buttons for policies, allowing you to move a policy up or down in the list."));
-//		o.value("0", _("Disabled"));
-//		o.value("1", _("Enabled"));
-//		o.default = "1";
-
 		s = m.section(form.GridSection, 'policy', _('Policies'),
 			_("Name, interface and at least one other field are required. Multiple local and remote " +
 			"addresses/devices/domains and ports can be space separated. Placeholders below represent just " +
 			"the format/syntax and will not be used if fields are left blank."));
-// TODO: make sortable depend on uci config uci:get("pbr", "config", "webui_sorting")
 		s.sortable = true;
 		s.anonymous = true;
 		s.addremove = true;
 
-// TODO uci:get("pbr", "config", "webui_enable_column") == "1" then
 		o = s.option(form.Flag, "enabled", _("Enabled"));
 		o.default = "1";
 
@@ -204,7 +178,6 @@ return view.extend({
 		o.placeholder = "0-65535";
 		o.rmempty = true;
 
-// TODO if uci:get("pbr", "config", "webui_protocol_column") == "1" then
 		o = s.option(form.ListValue, "proto", _("Protocol"));
 		o.value("", _("all"));
 		o.default = ("", _("all"));
@@ -216,8 +189,6 @@ return view.extend({
 //		for key, value in pairs(enc) do
 //			proto: value(value: lower(), value: gsub(" ", "/"): upper())
 
-
-// TODO		if uci:get("pbr", "config", "webui_chain_column") == "1" then
 		o = s.option(form.ListValue, "chain", _("Chain"));
 		o.value("", "PREROUTING");
 		o.value("FORWARD", "FORWARD");
@@ -250,7 +221,6 @@ return view.extend({
 
 		s.option(form.Flag, "enabled", _("Enabled")).optional = false;
 		s.option(form.Value, "path", _("Path")).optional = false;
-
 
 		return m.render();
 	}

@@ -76,12 +76,6 @@ verbosity=
 wan_ip_rules_priority=
 wan_mark=
 wan_tid=
-#webui_enable_column=
-webui_chain_column=
-webui_show_ignore_target=
-#webui_sorting=
-#webui_protocol_column=
-#webui_supported_protocol=
 
 # run-time
 gatewaySummary=
@@ -257,12 +251,6 @@ load_package_config() {
 	config_get      wan_ip_rules_priority    'config' 'wan_ip_rules_priority' '30000'
 	config_get      wan_mark                 'config' 'wan_mark' '0x010000'
 	config_get      wan_tid                  'config' 'wan_tid' '201'
-	config_get_bool webui_chain_column       'config' 'webui_chain_column' '0'
-	config_get_bool webui_show_ignore_target 'config' 'webui_show_ignore_target' '0'
-#	config_get_bool webui_enable_column      'config' 'webui_enable_column' '0'
-#	config_get_bool webui_protocol_column    'config' 'webui_protocol_column' '0'
-#	config_get_bool webui_sorting            'config' 'webui_sorting' '1'
-#	config_get      webui_supported_protocol 'config' 'webui_supported_protocol'
 	[ -n "$ipv6_enabled" ] && [ "$ipv6_enabled" -eq 0 ] && unset ipv6_enabled
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
@@ -1067,14 +1055,6 @@ policy_process() {
 			chain="$(str_to_upper "$chain")"
 		fi
 		proto="$(str_to_lower "$proto")"
-		if [ "$chain" != 'prerouting' ] && [ "$webui_chain_column" != '1' ]; then
-			warningSummary="${warningSummary}$_WARNING_: Chain '$chain' is used by a policy '$name', but a WebUI setting to show chains column (webui_chain_column) is disabled!\\n"
-		fi
-		if [ "$interface" = 'ignore' ]; then
-			if [ "$webui_show_ignore_target" != '1' ]; then
-				warningSummary="${warningSummary}$_WARNING_: The 'ignore' target is used by a policy '$name', but a WebUI setting to show 'ignore' target (webui_show_ignore_target) is disabled!\\n"
-			fi
-		fi
 		[ "$proto" = 'auto' ] && unset proto
 		[ "$proto" = 'all' ] && unset proto
 		output 2 "Routing '$name' via $interface "
@@ -1876,12 +1856,7 @@ load_validate_config() {
 		'wan_ip_rules_priority:uinteger:30000' \
 		'rule_create_option:or("", "add", "insert"):add' \
 		'procd_reload_delay:integer:0' \
-		'webui_enable_column:bool:0' \
-		'webui_protocol_column:bool:0' \
-		'webui_supported_protocol:list(string)' \
-		'webui_chain_column:bool:0' \
-		'webui_sorting:bool:1' \
-		'webui_show_ignore_target:bool:0'
+		'webui_supported_protocol:list(string)'
 }
 
 # shellcheck disable=SC2120
@@ -1901,10 +1876,10 @@ load_validate_policy() {
 		'interface:or(uci("network", "@interface"),"ignore"):wan' \
 		'proto:or(string)' \
 		'chain:or("", "forward", "input", "output", "prerouting", "postrouting", "FORWARD", "INPUT", "OUTPUT", "PREROUTING", "POSTROUTING"):prerouting' \
-		'src_addr:list(neg(or(host,network,macaddr,string)))' \
-		'src_port:list(neg(or(portrange, string)))' \
-		'dest_addr:list(neg(or(host,network,string)))' \
-		'dest_port:list(neg(or(portrange, string)))'
+		'src_addr:list(neg(or(host,network,macaddr)))' \
+		'src_port:list(neg(or(portrange,port)))' \
+		'dest_addr:list(neg(or(host,network,macaddr)))' \
+		'dest_port:list(neg(or(portrange,port)))'
 }
 
 # shellcheck disable=SC2120
