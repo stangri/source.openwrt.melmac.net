@@ -2,35 +2,25 @@
 	"luci-app-pbr": {
 		"description": "Grant UCI and file access for luci-app-pbr",
 		"read": {
-			"cgi-io": [
-				"exec"
-			],
-			"file": {
-				"/usr/lib/opkg/status": [
-					"read"
-				],
-				"/etc/init.d/pbr *": [
-					"exec"
-				],
-				"/usr/bin/grep *": [
-					"exec"
-				],
-				"/usr/sbin/grep *": [
-					"exec"
-				],
-				"/usr/sbin/iptables *": [
-					"exec"
+			"ubus": {
+				"luci.pbr": [
+					"getActiveInterfaces",
+					"getInitList",
+					"getInitStatus",
+					"getPlatformSupport",
+					"getSupportedInterfaces"
 				]
 			},
 			"uci": [
-				"network",
 				"pbr"
 			]
 		},
 		"write": {
-			"uci": [
-				"pbr"
-			]
+			"ubus": {
+				"luci.pbr": [
+					"setInitAction"
+				]
+			}
 		}
 	}
 }
