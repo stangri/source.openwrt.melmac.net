@@ -34,7 +34,7 @@ return view.extend({
 		s.tab("tab_basic", _("Basic Configurations"));
 		s.tab("tab_advanced", _("Advanced Configuration"), 
 			_("%sWARNING:%s Please make sure to check the %sREADME%s before changing anything in this section! " +
-			"Change any of the settings below with extreme caution!%s", 
+			"Change any of the settings below with extreme caution!%s").format(
 			"<br/>&#160;&#160;&#160;&#160;<b>", "</b>", 
 			"<a href=\"" + pkg.URL + "#service-configuration-settings \" target=\"_blank\">", "</a>", "<br/><br/>"));
 		s.tab("tab_webui", _("Web UI Configuration"))
@@ -47,14 +47,15 @@ return view.extend({
 		o.default = "2";
 
 		o = s.taboption("tab_basic", form.ListValue, "strict_enforcement", _("Strict enforcement"),
-			_("See the %sREADME%s for details.", "<a href=\"" + pkg.URL + "#strict-enforcement\" target=\"_blank\">", "</a>"));
+			_("See the %sREADME%s for details.").format(
+			"<a href=\"" + pkg.URL + "#strict-enforcement\" target=\"_blank\">", "</a>"));
 		o.value("0", _("Do not enforce policies when their gateway is down"));
 		o.value("1", _("Strictly enforce policies when their gateway is down"));
 		o.default = "1";
 
 // TODO: add resolver_set to tab_basic
 		var resolver_set_descr = "description";
-		var resolver_set_descr_readme = _("Please check the %sREADME%s before changing this option.",
+		var resolver_set_descr_readme = _("Please check the %sREADME%s before changing this option.").format(
 		"<a href=\"" + pkg.URL + "#service-configuration-settings\" target=\"_blank\">", "</a>");
 
 // if not checkDnsmasq() then
@@ -136,26 +137,26 @@ return view.extend({
 		o.placeholder = "0xff0000";
 		o.datatype = "hex(8)";
 
-		o = s.taboption("tab_webui", form.ListValue, "webui_enable_column", _("Show Enable Column"),
-			_("Shows the enable checkbox column for policies, allowing you to quickly " +
-			"enable/disable specific policy without deleting it."));
-		o.value("0", _("Disabled"));
-		o.value("1", _("Enabled"));
+//		o = s.taboption("tab_webui", form.ListValue, "webui_enable_column", _("Show Enable Column"),
+//			_("Shows the enable checkbox column for policies, allowing you to quickly " +
+//			"enable/disable specific policy without deleting it."));
+//		o.value("0", _("Disabled"));
+//		o.value("1", _("Enabled"));
 
-		o = s.taboption("tab_webui", form.ListValue, "webui_protocol_column", _("Show Protocol Column"),
-			_("Shows the protocol column for policies, allowing you to assign a specific protocol to a policy."));
-		o.value("0", _("Disabled"));
-		o.value("1", _("Enabled"));
+//		o = s.taboption("tab_webui", form.ListValue, "webui_protocol_column", _("Show Protocol Column"),
+//			_("Shows the protocol column for policies, allowing you to assign a specific protocol to a policy."));
+//		o.value("0", _("Disabled"));
+//		o.value("1", _("Enabled"));
 
 		o = s.taboption("tab_webui", form.DynamicList, "webui_supported_protocol", _("Supported Protocols"),
 			_("Display these protocols in protocol column in Web UI."));
 		o.optional = false;
 
-		o = s.taboption("tab_webui", form.ListValue, "webui_chain_column", _("Show Chain Column"),
-			_("Shows the chain column for policies, allowing you to assign a " +
-			"PREROUTING, FORWARD, INPUT or OUTPUT chain to a policy."));
-		o.value("0", _("Disabled"));
-		o.value("1", _("Enabled"));
+//		o = s.taboption("tab_webui", form.ListValue, "webui_chain_column", _("Show Chain Column"),
+//			_("Shows the chain column for policies, allowing you to assign a " +
+//			"PREROUTING, FORWARD, INPUT or OUTPUT chain to a policy."));
+//		o.value("0", _("Disabled"));
+//		o.value("1", _("Enabled"));
 
 		o = s.taboption("tab_webui", form.ListValue, "webui_show_ignore_target", _("Add IGNORE Target"),
 		_("Adds `IGNORE` to the list of interfaces for policies, allowing you to skip " +
@@ -163,17 +164,16 @@ return view.extend({
 		o.value("0", _("Disabled"));
 		o.value("1", _("Enabled"));
 
-		o = s.taboption("tab_webui", form.ListValue, "webui_sorting", _("Show Up/Down Buttons"),
-		_("Shows the Up/Down buttons for policies, allowing you to move a policy up or down in the list."));
-		o.value("0", _("Disabled"));
-		o.value("1", _("Enabled"));
-		o.default = "1";
+//		o = s.taboption("tab_webui", form.ListValue, "webui_sorting", _("Show Up/Down Buttons"),
+//		_("Shows the Up/Down buttons for policies, allowing you to move a policy up or down in the list."));
+//		o.value("0", _("Disabled"));
+//		o.value("1", _("Enabled"));
+//		o.default = "1";
 
-		s = m.section(form.TypedSection, 'policy', _('Policies'),
+		s = m.section(form.GridSection, 'policy', _('Policies'),
 			_("Name, interface and at least one other field are required. Multiple local and remote " +
 			"addresses/devices/domains and ports can be space separated. Placeholders below represent just " +
 			"the format/syntax and will not be used if fields are left blank."));
-		s.template = "cbi/tblsection";
 // TODO: make sortable depend on uci config uci:get("pbr", "config", "webui_sorting")
 		s.sortable = true;
 		s.anonymous = true;
@@ -187,31 +187,31 @@ return view.extend({
 
 		o = s.option(form.Value, "src_addr", _("Local addresses / devices"));
 		o.rmempty = true;
-		o.datatype = "list(neg(or(host,network,macaddr,string)))";
+		o.datatype = "list(neg(or(host,network,macaddr)))";
 
 		o = s.option(form.Value, "src_port", _("Local ports"));
-		o.datatype = "list(neg(or(portrange, string)))";
+		o.datatype = "list(neg(or(portrange,port)))";
 		o.placeholder = "0-65535";
 		o.rmempty = true;
 
 		o = s.option(form.Value, "dest_addr", _("Remote addresses / domains"));
-		o.datatype = "list(neg(host))";
+		o.datatype = "list(neg(or(host,network,macaddr)))";
 		o.placeholder = "0.0.0.0/0";
 		o.rmempty = true;
 
-		o = s.option(Value, "dest_port", _("Remote ports"));
-		o.datatype = "list(neg(or(portrange, string)))";
+		o = s.option(form.Value, "dest_port", _("Remote ports"));
+		o.datatype = "list(neg(or(portrange,port)))";
 		o.placeholder = "0-65535";
 		o.rmempty = true;
 
 // TODO if uci:get("pbr", "config", "webui_protocol_column") == "1" then
 		o = s.option(form.ListValue, "proto", _("Protocol"));
-		o.value("", "AUTO");
-		o.default = "";
+		o.value("", _("all"));
+		o.default = ("", _("all"));
 		o.rmempty = true;
 // TODO:		enc = uci:get_list("pbr", "config", "webui_supported_protocol")
 //		if next(enc) == nil then
-//		enc = { "tcp", "udp", "tcp udp", "icmp", "all" }
+//		enc = { "all", "tcp", "udp", "tcp udp", "icmp" }
 //		end
 //		for key, value in pairs(enc) do
 //			proto: value(value: lower(), value: gsub(" ", "/"): upper())
@@ -224,10 +224,10 @@ return view.extend({
 		o.value("INPUT", "INPUT");
 		o.value("OUTPUT", "OUTPUT");
 		o.value("POSTROUTING", "POSTROUTING");
-		o.default = "";
+		o.default = ("", "PREROUTING");
 		o.rmempty = true;
 
-		o = s.option(ListValue, "interface", _("Interface"));
+		o = s.option(form.ListValue, "interface", _("Interface"));
 		o.datatype = "network";
 		o.rmempty = false;
 // TODO: populate interfaces from GetSupportedInterfaces call
@@ -235,15 +235,15 @@ return view.extend({
 		o.value("ignore", "IGNORE");
 
 		s = m.section(form.NamedSection, 'config', pkg.Name, _("DSCP Tagging"),
-			_("Set DSCP tags (in range between 1 and 63) for specific interfaces. See the %sREADME%s for details.",
+			_("Set DSCP tags (in range between 1 and 63) for specific interfaces. See the %sREADME%s for details.").format(
 			"<a href=\"" + pkg.URL +  "#dscp-tag-based-policies" +  "\" target=\"_blank\">", "</a>"));
 // TODO x = dscp:option(Value, name.. "_dscp", name: upper().. " ".._("DSCP Tag"))
 		o = s.option(form.Value, "wan_dscp", "WAN" + " " + _("DSCP Tag"));
 
-		s = m.section(form.TypedSection, 'include',_("Custom User File Includes"),
-			_("Run the following user files after setting up but before restarting DNSMASQ. See the %sREADME%s for details.",
+		s = m.section(form.GridSection, 'include',_("Custom User File Includes"),
+			_("Run the following user files after setting up but before restarting DNSMASQ. " +
+			"See the %sREADME%s for details.").format(
 			"<a href=\"" + pkg.URL +  "#custom-user-files\" target=\"_blank\">", "</a>"));
-		s.template = "cbi/tblsection";
 		s.sortable = true;
 		s.anonymous = true;
 		s.addremove = true;

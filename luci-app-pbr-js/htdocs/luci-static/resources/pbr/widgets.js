@@ -74,11 +74,26 @@ var RPC = {
 			this.emit('getInitStatus', result);
 		}.bind(this));
 	},
+	getActiveInterfaces: function getActiveInterfaces(name) {
+		_getActiveInterfaces(name).then(function (result) {
+			this.emit('getActiveInterfaces', result);
+		}.bind(this));
+	},
+	getPlatformSupport: function getPlatformSupport(name) {
+		_getPlatformSupport(name).then(function (result) {
+			this.emit('getPlatformSupport', result);
+		}.bind(this));
+	},
+	getSupportedInterfaces: function getSupportedInterfaces(name) {
+		_getSupportedInterfaces(name).then(function (result) {
+			this.emit('getSupportedInterfaces', result);
+		}.bind(this));
+	},
 	setInitAction: function setInitAction(name, action) {
 		_setInitAction(name, action).then(function (result) {
 			this.emit('setInitAction', result);
 		}.bind(this));
-	}
+	},
 }
 
 var statusCBI = form.DummyValue.extend({

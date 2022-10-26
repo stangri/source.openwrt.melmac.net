@@ -4,7 +4,7 @@ msgstr "Content-Type: text/plain; charset=UTF-8"
 #: applications/luci-app-pbr-js/htdocs/luci-static/resources/view/pbr/overview.js:36
 msgctxt "<br/>&#160;&#160;&#160;&#160;<b>"
 msgid ""
-"%sWARNING:%s Please make sure to check the %sREADME%s before changing "
+"%sWARNING:%s Please make sure to check the %s README %s before changing "
 "anything in this section! Change any of the settings below with extreme "
 "caution!%s"
 msgstr ""
@@ -73,7 +73,7 @@ msgstr ""
 msgid "Default ICMP Interface"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:176
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:191
 msgid "Disable"
 msgstr ""
 
@@ -87,7 +87,7 @@ msgstr ""
 msgid "Disabled"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:172
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:187
 msgid "Disabling %s service"
 msgstr ""
 
@@ -99,7 +99,7 @@ msgstr ""
 msgid "Do not enforce policies when their gateway is down"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:165
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:180
 msgid "Enable"
 msgstr ""
 
@@ -114,7 +114,7 @@ msgstr ""
 msgid "Enabled"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:161
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:176
 msgid "Enabling %s service"
 msgstr ""
 
@@ -172,7 +172,7 @@ msgstr ""
 msgid "No Change"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:110
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:125
 msgid "Not installed or not found"
 msgstr ""
 
@@ -202,7 +202,7 @@ msgstr ""
 msgid "Protocol"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:86
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:101
 msgid "Quering"
 msgstr ""
 
@@ -214,11 +214,11 @@ msgstr ""
 msgid "Remote ports"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:143
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:158
 msgid "Restart"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:139
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:154
 msgid "Restarting %s service"
 msgstr ""
 
@@ -233,15 +233,15 @@ msgid ""
 "See the %sREADME%s for details."
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:91
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:106
 msgid "Running (version: %s using iptables)"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:94
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:109
 msgid "Running (version: %s using nft)"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:97
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:112
 msgid "Running (version: %s)"
 msgstr ""
 
@@ -314,11 +314,11 @@ msgid ""
 "protocol to a policy."
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:132
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:147
 msgid "Start"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:128
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:143
 msgid "Starting %s service"
 msgstr ""
 
@@ -332,19 +332,19 @@ msgstr ""
 msgid "Starting (WAN) Table ID number for tables created by the service."
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:154
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:169
 msgid "Stop"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:105
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:120
 msgid "Stopped (Disabled)"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:102
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:117
 msgid "Stopped (version: %s)"
 msgstr ""
 
-#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:150
+#: applications/luci-app-pbr-js/htdocs/luci-static/resources/pbr/widgets.js:165
 msgid "Stopping %s service"
 msgstr ""
 

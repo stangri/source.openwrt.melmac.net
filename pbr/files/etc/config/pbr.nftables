@@ -14,11 +14,11 @@ config pbr 'config'
 	option webui_chain_column '1'
 	option webui_show_ignore_target '1'
 	option webui_sorting '1'
+	list webui_supported_protocol 'all'
 	list webui_supported_protocol 'tcp'
 	list webui_supported_protocol 'udp'
 	list webui_supported_protocol 'tcp udp'
 	list webui_supported_protocol 'icmp'
-	list webui_supported_protocol 'all'
 
 config include
 	option path '/usr/share/pbr/pbr.user.aws'
