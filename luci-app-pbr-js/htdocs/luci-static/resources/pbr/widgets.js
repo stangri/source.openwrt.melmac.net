@@ -5,7 +5,7 @@
 'require form';
 
 var pkg = {
-	get Name() { return 'vpnbypass'; }
+	get Name() { return 'pbr'; }
 };
 
 var _getInitList = rpc.declare({
@@ -26,6 +26,25 @@ var _getInitStatus = rpc.declare({
 	method: 'getInitStatus',
 	params: ['name']
 });
+
+var _getActiveInterfaces = rpc.declare({
+	object: 'luci.' + pkg.Name,
+	method: 'getActiveInterfaces',
+	params: ['name']
+});
+
+var _getPlatformSupport = rpc.declare({
+	object: 'luci.' + pkg.Name,
+	method: 'getPlatformSupport',
+	params: ['name']
+});
+
+var _getSupportedInterfaces = rpc.declare({
+	object: 'luci.' + pkg.Name,
+	method: 'getSupportedInterfaces',
+	params: ['name']
+});
+
 
 var RPC = {
 	listeners: [],
@@ -49,7 +68,6 @@ var RPC = {
 		_getInitList(name).then(function (result) {
 			this.emit('getInitList', result);
 		}.bind(this));
-
 	},
 	getInitStatus: function getInitStatus(name) {
 		_getInitStatus(name).then(function (result) {
@@ -69,7 +87,15 @@ var statusCBI = form.DummyValue.extend({
 		RPC.on('getInitStatus', function (reply) {
 			if (reply[pkg.Name].version) {
 				if (reply[pkg.Name].running) {
-					status.innerText = _("Running (version: %s)").format(reply[pkg.Name].version);
+					if (reply[pkg.Name].running_iptables) {
+						status.innerText = _("Running (version: %s using iptables)").format(reply[pkg.Name].version);
+					}
+					else if (reply[pkg.Name].running_nft) {
+						status.innerText = _("Running (version: %s using nft)").format(reply[pkg.Name].version);
+					}
+					else {
+						status.innerText = _("Running (version: %s)").format(reply[pkg.Name].version);
+					}
 				}
 				else {
 					if (reply[pkg.Name].enabled) {
