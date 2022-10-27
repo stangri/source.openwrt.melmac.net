@@ -5,6 +5,7 @@
 'require uci';
 'require view';
 'require pbr.widgets as widgets';
+'require pbr.status as statusWidget';
 
 var pkg = {
 	get Name() { return 'pbr'; },
@@ -22,11 +23,7 @@ return view.extend({
 
 		var m, s, o;
 
-		m = new form.Map(pkg.Name, _('Policy Based Routing'));
-
-		s = m.section(form.NamedSection, 'config', pkg.Name);
-		o = s.option(widgets.Status, '', _('Service Status'));
-		o = s.option(widgets.Buttons, '', _('Service Control'));
+		m = new form.Map(pkg.Name, _("Policy Based Routing - Configuration"));
 
 		s = m.section(form.NamedSection, 'config', pkg.Name);
 		s.tab("tab_basic", _("Basic Configurations"));
@@ -146,6 +143,7 @@ return view.extend({
 
 		o = s.option(form.Flag, "enabled", _("Enabled"));
 		o.default = "1";
+		o.editable = true;
 
 		o = s.option(form.Value, "name", _("Name"));
 
@@ -230,6 +228,8 @@ return view.extend({
 		s.option(form.Flag, "enabled", _("Enabled")).optional = false;
 		s.option(form.Value, "path", _("Path")).optional = false;
 
-		return m.render();
+		return Promise.all([statusWidget.render(), m.render()]);
+
+//		return m.render();
 	}
 });

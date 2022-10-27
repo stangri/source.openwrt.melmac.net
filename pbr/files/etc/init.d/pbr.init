@@ -57,6 +57,7 @@ readonly iptPrefix='PBR'
 readonly nft="$(command -v nft)"
 readonly nftTable="fw4"
 readonly nftPrefix='pbr'
+readonly chainsList='forward input output postrouting prerouting'
 
 # package config options
 boot_timeout=
@@ -94,7 +95,6 @@ serviceStartTrigger=
 processPolicyError=
 processPolicyWarning=
 resolver_setSupported='0'
-usedChainsList='FORWARD INPUT OUTPUT POSTROUTING PREROUTING'
 nftPrevParam4=
 nftPrevParam6=
 
@@ -622,10 +622,12 @@ cleanup_dnsmasq() { [ -s "$dnsmasqFile" ] && dnsmasqStoredHash="$(md5sum $dnsmas
 
 cleanup_main_chains() {
 	local i
-	for i in forward input output prerouting postrouting; do
+	for i in $chainsList; do
+		i="$(str_to_lower "$i")"
 		nft flush chain inet "$nftTable" "${nftPrefix}_${i}"
 	done
-	for i in $usedChainsList; do
+	for i in $chainsList; do
+		i="$(str_to_upper "$i")"
 		ipt -t mangle -D "${i}" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
 		ipt -t mangle -F "${iptPrefix}_${i}"
 		ipt -t mangle -X "${iptPrefix}_${i}"
@@ -729,6 +731,7 @@ policy_routing_iptables() {
 	local proto="$7" chain="${8:-PREROUTING}" uid="$9"
 	local mark param4 param6 i negation value dest ipInsertOption="-A"
 	mark=$(eval echo "\$mark_${iface//-/_}")
+	chain="$(str_to_upper "$chain")"
 
 	if [ -n "$ipv6_enabled" ] && { is_ipv6 "$laddr" || is_ipv6 "$raddr"; }; then
 		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$name' as IPv6 support is disabled\\n"
@@ -890,13 +893,14 @@ policy_routing_iptables() {
 policy_routing_nft() {
 	local name="$1" iface="$2" src_addr="$3" src_port="$4" dest_addr="$5" dest_port="$6"
 # shellcheck disable=SC2155
-	local proto="$(str_to_lower "$7")" chain="$(str_to_lower "$8")" uid="$9"
+	local proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}" uid="$9"
 	local mark i negation value dest nftInsertOption='add'
 	local ip4Flag='ip' ip6Flag='ip6'
 	local param4 param6
 #	local param4="${nftPrefix}_${chain:-prerouting}"
 #	local param6="${nftPrefix}_${chain:-prerouting}"
 	mark=$(eval echo "\$mark_${iface//-/_}")
+	chain="$(str_to_lower "$chain")"
 
 	if [ -z "$ipv6_enabled" ] && { is_ipv6 "$src_addr" || is_ipv6 "$dest_addr"; }; then
 		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$name' as IPv6 support is disabled\\n"
@@ -1122,7 +1126,7 @@ interface_process_tor_iptables() {
 			gatewaySummary="${gatewaySummary}${displayText}\\n"
 			;;
 		destroy)
-			for i in $usedChainsList; do
+			for i in $chainsList; do
 				i="$(str_to_lower "$i")"
 				ipt -t nat -D "${i}" -m mark --mark "0x0/${fw_mask}" -j "${nftPrefix}_${i}"
 				ipt -t nat -F "${nftPrefix}_${i}"; ipt -t nat -X "${nftPrefix}_${i}";
@@ -1133,13 +1137,13 @@ interface_process_tor_iptables() {
 			dnsPort="$(grep -m1 DNSPort /etc/tor/torrc | awk -F: '{print $2}')"
 			transPort="$(grep -m1 TransPort /etc/tor/torrc | awk -F: '{print $2}')"
 			dnsPort="${dnsPort:-9053}"; transPort="${transPort:-9040}"; 
-			for i in $usedChainsList; do
+			for i in $chainsList; do
 				ipt -t nat -N "${nftPrefix}_${i}"
 				ipt -t nat -A "$i" -m mark --mark "0x0/${fw_mask}" -j "${nftPrefix}_${i}"
 			done
 			if ips 'create' "$iface" 'dst' 'ip' && ips 'flush' "$iface" 'dst' 'ip'; then
 				nftset="${nftPrefix}_${iface}_dst_ip"
-				for i in $usedChainsList; do
+				for i in $chainsList; do
 					i="$(str_to_lower "$i")"
 					ipt -t nat -I "${nftPrefix}_${i}" -p udp -m udp --dport 53 -m set --match-set "${nftset}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
 					ipt -t nat -I "${nftPrefix}_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${nftset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-TCP" || s=1
@@ -1512,7 +1516,8 @@ start_service() {
 			cleanup_main_chains
 			cleanup_sets
 			if ! is_nft; then
-				for i in $usedChainsList; do
+				for i in $chainsList; do
+					i="$(str_to_upper "$i")"
 					ipt -t mangle -N "${iptPrefix}_${i}"
 					ipt -t mangle "$rule_create_option" "$i" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
 				done
@@ -1546,7 +1551,8 @@ start_service() {
 			cleanup_sets
 			cleanup_marking_chains
 			if ! is_nft; then
-				for i in $usedChainsList; do
+				for i in $chainsList; do
+					i="$(str_to_upper "$i")"
 					ipt -t mangle -N "${iptPrefix}_${i}"
 					ipt -t mangle "$rule_create_option" "$i" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
 				done
@@ -1584,11 +1590,11 @@ start_service() {
 		errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway!\\n"
 	fi
 	json_add_object 'status'
-	[ -n "$gatewaySummary" ] && json_add_string gateway "$gatewaySummary"
-	[ -n "$errorSummary" ] && json_add_string error "$errorSummary"
-	[ -n "$warningSummary" ] && json_add_string warning "$warningSummary"
+	[ -n "$gatewaySummary" ] && json_add_string 'gateways' "$gatewaySummary"
+	[ -n "$errorSummary" ] && json_add_string 'errors' "$errorSummary"
+	[ -n "$warningSummary" ] && json_add_string 'warnings' "$warningSummary"
 	if [ "$strict_enforcement" -ne 0 ] && str_contains "$gatewaySummary" '0.0.0.0'; then
-		json_add_string mode "strict"
+		json_add_string 'mode' "strict"
 	fi
 	json_close_object
 	procd_close_data
@@ -1771,7 +1777,8 @@ status_service_iptables() {
 
 		for j in Mangle NAT; do
 			if [ -z "$set_d" ]; then
-				for i in $usedChainsList; do
+				for i in $chainsList; do
+					i="$(str_to_upper "$i")"
 					if iptables -v -t "$(str_to_lower $j)" -S "${iptPrefix}_${i}" >/dev/null 2>&1; then
 						echo "$_SEPARATOR_"
 						echo "$j IP Table: $i"
@@ -1876,10 +1883,10 @@ load_validate_policy() {
 		'interface:or(uci("network", "@interface"),"ignore"):wan' \
 		'proto:or(string)' \
 		'chain:or("", "forward", "input", "output", "prerouting", "postrouting", "FORWARD", "INPUT", "OUTPUT", "PREROUTING", "POSTROUTING"):prerouting' \
-		'src_addr:list(neg(or(host,network,macaddr)))' \
-		'src_port:list(neg(or(portrange,port)))' \
-		'dest_addr:list(neg(or(host,network,macaddr)))' \
-		'dest_port:list(neg(or(portrange,port)))'
+		'src_addr:list(neg(or(host,network,macaddr,string)))' \
+		'src_port:list(neg(or(portrange,string)))' \
+		'dest_addr:list(neg(or(host,network,string)))' \
+		'dest_port:list(neg(or(portrange,string)))'
 }
 
 # shellcheck disable=SC2120

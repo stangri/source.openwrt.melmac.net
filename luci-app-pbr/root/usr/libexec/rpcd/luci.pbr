@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copyright 2022 Stan Grishin (stangri@melmac.ca)
-# shellcheck disable=SC1091,SC2019,SC2039,SC3043,SC3057,SC3060
+# shellcheck disable=SC1091,SC2018,SC2019,SC2039,SC3043,SC3057,SC3060
 
 # TechRef: https://openwrt.org/docs/techref/rpcd
 # TESTS
@@ -66,6 +66,10 @@ set_init_action() {
 
 get_init_status() {
 	local name="${1:-$packageName}"
+	local gateways warnings errors
+	gateways="$(ubus_get_status gateways | sed "s|\\\n|<br />|g;s|\(\\\033[^<]*\)|✓|g;")"
+	warnings="$(ubus_get_status warnings | sed "s|\\\n|<br />|g;s|\(\\\033[^:]*\)||g;")"
+	errors="$(ubus_get_status errors | sed "s|\\\n|<br />|g;s|\(\\\033[^:]*\)||g;")"
 	json_init
 	json_add_object  "$name"
 	json_add_boolean 'enabled' "$(is_enabled "$name")"
@@ -85,9 +89,9 @@ get_init_status() {
 		json_add_boolean 'running_nft' '0'
 	fi
 	json_add_string 'version' "$(get_version "$name")"
-	json_add_string 'error' "$(ubus_get_status error)"
-	json_add_string 'gateway' "$(ubus_get_status gateway)"
-	json_add_string 'warning' "$(ubus_get_status warning)"
+	json_add_string 'gateways' "$gateways"
+	json_add_string 'warnings' "$warnings"
+	json_add_string 'errors' "$errors"
 	json_close_object
 	json_dump
 	json_cleanup
@@ -150,7 +154,7 @@ get_platform_support() {
 }
 
 # shellcheck disable=SC3037
-get_active_interfaces() {
+get_gateways() {
 	local name="${1:-$packageName}"
 	echo -en "{\"$name\":{\"interfaces\":"
 	ubus call service list "{ 'name': '$name' }" | jsonfilter -e "@.${name}.instances.main.data.interfaces"
@@ -235,10 +239,10 @@ case "$1" in
 		json_add_object "getInitStatus"
 			json_add_string 'name' 'name'
 		json_close_object
-		json_add_object "getPlatformSupport"
+		json_add_object "getInterfaces"
 			json_add_string 'name' 'name'
 		json_close_object
-		json_add_object "getInterfaces"
+		json_add_object "getPlatformSupport"
 			json_add_string 'name' 'name'
 		json_close_object
 		json_add_object "setInitAction"
@@ -250,6 +254,13 @@ case "$1" in
 		;;
 	call)
 		case "$2" in
+			getGateways)
+				read -r input
+				json_load "$input"
+				json_get_var name 'name'
+				json_cleanup
+				get_gateways "$name"
+				;;
 			getInitList)
 				read -r input
 				json_load "$input"
@@ -264,12 +275,12 @@ case "$1" in
 				json_cleanup
 				get_init_status "$name"
 				;;
-			getGateways)
+			getInterfaces)
 				read -r input
 				json_load "$input"
 				json_get_var name 'name'
 				json_cleanup
-				get_active_interfaces "$name"
+				get_supported_interfaces "$name"
 				;;
 			getPlatformSupport)
 				read -r input
@@ -277,13 +288,6 @@ case "$1" in
 				json_get_var name 'name'
 				json_cleanup
 				get_platform_support "$name"
-				;;
-			getInterfaces)
-				read -r input
-				json_load "$input"
-				json_get_var name 'name'
-				json_cleanup
-				get_supported_interfaces "$name"
 				;;
 			setInitAction)
 				read -r input

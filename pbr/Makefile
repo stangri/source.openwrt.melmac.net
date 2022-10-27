@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=0.9.9
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -18,7 +18,7 @@ define Package/pbr/default
 	PROVIDES:=pbr
 	TITLE:=Policy Based Routing Service
 	URL:=https://docs.openwrt.melmac.net/pbr/
-	DEPENDS:=+jshn +resolveip +ip-full
+	DEPENDS:=+ip-full +jshn +jsonfilter +resolveip
 	CONFLICTS:=vpnbypass vpn-policy-routing
 	PKGARCH:=all
 endef
@@ -26,7 +26,7 @@ endef
 define Package/pbr
 $(call Package/pbr/default)
 	TITLE+= with nft/nft set support
-	DEPENDS+=+kmod-nft-core +kmod-nft-nat +nftables-json +jsonfilter
+	DEPENDS+=+firewall4 +kmod-nft-core +kmod-nft-nat +nftables-json
 endef
 
 define Package/pbr-iptables
@@ -109,7 +109,7 @@ define Package/pbr/postinst
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		chmod -x /etc/init.d/pbr || true
-		fw4 reload || true
+		fw4 -q reload || true
 		chmod +x /etc/init.d/pbr || true
 		echo -n "Installing rc.d symlink for pbr... "
 		/etc/init.d/pbr enable && echo "OK" || echo "FAIL"
@@ -134,7 +134,7 @@ define Package/pbr/postrm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
-		fw4 reload || true
+		fw4 -q reload || true
 	fi
 	exit 0
 endef

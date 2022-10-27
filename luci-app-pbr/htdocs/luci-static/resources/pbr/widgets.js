@@ -9,17 +9,16 @@ var pkg = {
 	get URL() { return 'https://docs.openwrt.melmac.net/' + pkg.Name + '/'; }
 };
 
+var _getGateways = rpc.declare({
+	object: 'luci.' + pkg.Name,
+	method: 'getGateways',
+	params: ['name']
+});
+
 var _getInitList = rpc.declare({
 	object: 'luci.' + pkg.Name,
 	method: 'getInitList',
 	params: ['name']
-});
-
-var _setInitAction = rpc.declare({
-	object: 'luci.' + pkg.Name,
-	method: 'setInitAction',
-	params: ['name', 'action'],
-	expect: { result: false }
 });
 
 var _getInitStatus = rpc.declare({
@@ -28,9 +27,9 @@ var _getInitStatus = rpc.declare({
 	params: ['name']
 });
 
-var _getGateways = rpc.declare({
+var _getInterfaces = rpc.declare({
 	object: 'luci.' + pkg.Name,
-	method: 'getGateways',
+	method: 'getInterfaces',
 	params: ['name']
 });
 
@@ -40,10 +39,11 @@ var _getPlatformSupport = rpc.declare({
 	params: ['name']
 });
 
-var _getInterfaces = rpc.declare({
+var _setInitAction = rpc.declare({
 	object: 'luci.' + pkg.Name,
-	method: 'getInterfaces',
-	params: ['name']
+	method: 'setInitAction',
+	params: ['name', 'action'],
+	expect: { result: false }
 });
 
 var RPC = {
@@ -95,39 +95,6 @@ var RPC = {
 		}.bind(this));
 	},
 }
-
-var statusCBI = form.DummyValue.extend({
-	renderWidget: function (section) {
-		var status = E('span', {}, _("Quering") + "...");
-		RPC.on('getInitStatus', function (reply) {
-			if (reply[pkg.Name].version) {
-				if (reply[pkg.Name].running) {
-					if (reply[pkg.Name].running_iptables) {
-						status.innerText = _("Running (version: %s using iptables)").format(reply[pkg.Name].version);
-					}
-					else if (reply[pkg.Name].running_nft) {
-						status.innerText = _("Running (version: %s using nft)").format(reply[pkg.Name].version);
-					}
-					else {
-						status.innerText = _("Running (version: %s)").format(reply[pkg.Name].version);
-					}
-				}
-				else {
-					if (reply[pkg.Name].enabled) {
-						status.innerText = _("Stopped (version: %s)").format(reply[pkg.Name].version);
-					}
-					else {
-						status.innerText = _("Stopped (Disabled)");
-					}
-				}
-			}
-			else {
-				status.innerText = _("Not installed or not found")
-			}
-		});
-		return E('div', {}, [status]);
-	}
-});
 
 var buttonsCBI = form.DummyValue.extend({
 	renderWidget: function (section) {
@@ -217,8 +184,75 @@ var buttonsCBI = form.DummyValue.extend({
 		});
 
 		RPC.getInitStatus(pkg.Name);
-		
+
 		return E('div', {}, [btn_start, btn_gap, btn_action, btn_gap, btn_stop, btn_gap_long, btn_enable, btn_gap, btn_disable]);
+	}
+});
+
+var errorCBI = form.DummyValue.extend({
+	renderWidget: function (section) {
+		var status = E('span', {}, _("Quering") + "...");
+		RPC.on('getInitStatus', function (reply) {
+			if (reply[pkg.Name].error) {
+				status.innerText = reply[pkg.Name].error;
+				self.hidden = false;
+			}
+			else {
+				status.innerText = "";
+				self.hidden = true;
+			}
+		});
+		return E('div', {}, [status]);
+	}
+});
+
+var statusCBI = form.DummyValue.extend({
+	renderWidget: function (section) {
+		var status = E('span', {}, _("Quering") + "...");
+		RPC.on('getInitStatus', function (reply) {
+			if (reply[pkg.Name].version) {
+				if (reply[pkg.Name].running) {
+					if (reply[pkg.Name].running_iptables) {
+						status.innerText = _("Running (version: %s using iptables)").format(reply[pkg.Name].version);
+					}
+					else if (reply[pkg.Name].running_nft) {
+						status.innerText = _("Running (version: %s using nft)").format(reply[pkg.Name].version);
+					}
+					else {
+						status.innerText = _("Running (version: %s)").format(reply[pkg.Name].version);
+					}
+				}
+				else {
+					if (reply[pkg.Name].enabled) {
+						status.innerText = _("Stopped (version: %s)").format(reply[pkg.Name].version);
+					}
+					else {
+						status.innerText = _("Stopped (Disabled)");
+					}
+				}
+			}
+			else {
+				status.innerText = _("Not installed or not found")
+			}
+		});
+		return E('div', {}, [status]);
+	}
+});
+
+var warningCBI = form.DummyValue.extend({
+	renderWidget: function (section) {
+		var status = E('span', {}, _("Quering") + "...");
+		RPC.on('getInitStatus', function (reply) {
+			var widgetEl = warningCBI.getUIElement();
+			console.log(widgetEl);
+			if (reply[pkg.Name].warning) {
+				status.innerText = reply[pkg.Name].warning;
+			}
+			else {
+				status.innerText = "";
+			}
+		});
+		return E('div', {}, [status]);
 	}
 });
 
@@ -228,7 +262,9 @@ RPC.on('setInitAction', function (reply) {
 });
 
 return L.Class.extend({
-	Status: statusCBI,
 	Buttons: buttonsCBI,
+	Error: errorCBI,
+	Status: statusCBI,
+	Warning: warningCBI,
 	RPC: RPC
 });
