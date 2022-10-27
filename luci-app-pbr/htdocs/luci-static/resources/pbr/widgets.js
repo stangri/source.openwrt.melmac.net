@@ -1,49 +1,53 @@
-// Thsis file wouldn't have been possible without help from [@vsviridov](https://github.com/vsviridov)
+// Copyright 2022 Stan Grishin <stangri@melmac.ca>
+// This code wouldn't have been possible without help from [@vsviridov](https://github.com/vsviridov)
 
-'require ui';
-'require rpc';
-'require form';
+"require rpc";
+"require ui";
 
 var pkg = {
-	get Name() { return 'pbr'; },
-	get URL() { return 'https://docs.openwrt.melmac.net/' + pkg.Name + '/'; }
+	get Name() {
+		return "pbr";
+	},
+	get URL() {
+		return "https://docs.openwrt.melmac.net/" + pkg.Name + "/";
+	},
 };
 
 var _getGateways = rpc.declare({
-	object: 'luci.' + pkg.Name,
-	method: 'getGateways',
-	params: ['name']
+	object: "luci." + pkg.Name,
+	method: "getGateways",
+	params: ["name"],
 });
 
 var _getInitList = rpc.declare({
-	object: 'luci.' + pkg.Name,
-	method: 'getInitList',
-	params: ['name']
+	object: "luci." + pkg.Name,
+	method: "getInitList",
+	params: ["name"],
 });
 
 var _getInitStatus = rpc.declare({
-	object: 'luci.' + pkg.Name,
-	method: 'getInitStatus',
-	params: ['name']
+	object: "luci." + pkg.Name,
+	method: "getInitStatus",
+	params: ["name"],
 });
 
 var _getInterfaces = rpc.declare({
-	object: 'luci.' + pkg.Name,
-	method: 'getInterfaces',
-	params: ['name']
+	object: "luci." + pkg.Name,
+	method: "getInterfaces",
+	params: ["name"],
 });
 
 var _getPlatformSupport = rpc.declare({
-	object: 'luci.' + pkg.Name,
-	method: 'getPlatformSupport',
-	params: ['name']
+	object: "luci." + pkg.Name,
+	method: "getPlatformSupport",
+	params: ["name"],
 });
 
 var _setInitAction = rpc.declare({
-	object: 'luci.' + pkg.Name,
-	method: 'setInitAction',
-	params: ['name', 'action'],
-	expect: { result: false }
+	object: "luci." + pkg.Name,
+	method: "setInitAction",
+	params: ["name", "action"],
+	expect: { result: false },
 });
 
 var RPC = {
@@ -96,175 +100,11 @@ var RPC = {
 	},
 }
 
-var buttonsCBI = form.DummyValue.extend({
-	renderWidget: function (section) {
-
-		var btn_gap = E('span', {}, '&#160;&#160;');
-		var btn_gap_long = E('span', {}, '&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;');
-
-		var btn_start = E('button', {
-			'class': 'btn cbi-button cbi-button-apply',
-			disabled: true,
-			click: function (ev) {
-				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Starting %s service').format(pkg.Name))
-				]);
-				return RPC.setInitAction(pkg.Name, 'start');
-			}
-		}, _('Start'));
-
-		var btn_action = E('button', {
-			'class': 'btn cbi-button cbi-button-apply',
-			disabled: true,
-			click: function (ev) {
-				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Restarting %s service').format(pkg.Name))
-				]);
-				return RPC.setInitAction(pkg.Name, 'restart');
-			}
-		}, _('Restart'));
-
-		var btn_stop = E('button', {
-			'class': 'btn cbi-button cbi-button-reset',
-			disabled: true,
-			click: function (ev) {
-				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Stopping %s service').format(pkg.Name))
-				]);
-				return RPC.setInitAction(pkg.Name, 'stop');
-			}
-		}, _('Stop'));
-
-		var btn_enable = E('button', {
-			'class': 'btn cbi-button cbi-button-apply',
-			disabled: true,
-			click: function (ev) {
-				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Enabling %s service').format(pkg.Name))
-				]);
-				return RPC.setInitAction(pkg.Name, 'enable');
-			}
-		}, _('Enable'));
-
-		var btn_disable = E('button', {
-			'class': 'btn cbi-button cbi-button-reset',
-			disabled: true,
-			click: function (ev) {
-				ui.showModal(null, [
-					E('p', { 'class': 'spinning' }, _('Disabling %s service').format(pkg.Name))
-				]);
-				return RPC.setInitAction(pkg.Name, 'disable');
-			}
-		}, _('Disable'));
-
-		RPC.on('getInitStatus', function (reply) {
-			if (reply[pkg.Name].version) {
-				if (reply[pkg.Name].enabled) {
-					btn_enable.disabled = true;
-					btn_disable.disabled = false;
-					if (reply[pkg.Name].running) {
-						btn_start.disabled = true;
-						btn_action.disabled = false;
-						btn_stop.disabled = false;
-					}
-					else {
-						btn_start.disabled = false;
-						btn_action.disabled = true;
-						btn_stop.disabled = true;
-					}
-				}
-				else {
-					btn_start.disabled = true;
-					btn_action.disabled = true;
-					btn_stop.disabled = true;
-					btn_enable.disabled = false;
-					btn_disable.disabled = true;
-				}
-			}
-		});
-
-		RPC.getInitStatus(pkg.Name);
-
-		return E('div', {}, [btn_start, btn_gap, btn_action, btn_gap, btn_stop, btn_gap_long, btn_enable, btn_gap, btn_disable]);
-	}
-});
-
-var errorCBI = form.DummyValue.extend({
-	renderWidget: function (section) {
-		var status = E('span', {}, _("Quering") + "...");
-		RPC.on('getInitStatus', function (reply) {
-			if (reply[pkg.Name].error) {
-				status.innerText = reply[pkg.Name].error;
-				self.hidden = false;
-			}
-			else {
-				status.innerText = "";
-				self.hidden = true;
-			}
-		});
-		return E('div', {}, [status]);
-	}
-});
-
-var statusCBI = form.DummyValue.extend({
-	renderWidget: function (section) {
-		var status = E('span', {}, _("Quering") + "...");
-		RPC.on('getInitStatus', function (reply) {
-			if (reply[pkg.Name].version) {
-				if (reply[pkg.Name].running) {
-					if (reply[pkg.Name].running_iptables) {
-						status.innerText = _("Running (version: %s using iptables)").format(reply[pkg.Name].version);
-					}
-					else if (reply[pkg.Name].running_nft) {
-						status.innerText = _("Running (version: %s using nft)").format(reply[pkg.Name].version);
-					}
-					else {
-						status.innerText = _("Running (version: %s)").format(reply[pkg.Name].version);
-					}
-				}
-				else {
-					if (reply[pkg.Name].enabled) {
-						status.innerText = _("Stopped (version: %s)").format(reply[pkg.Name].version);
-					}
-					else {
-						status.innerText = _("Stopped (Disabled)");
-					}
-				}
-			}
-			else {
-				status.innerText = _("Not installed or not found")
-			}
-		});
-		return E('div', {}, [status]);
-	}
-});
-
-var warningCBI = form.DummyValue.extend({
-	renderWidget: function (section) {
-		var status = E('span', {}, _("Quering") + "...");
-		RPC.on('getInitStatus', function (reply) {
-			var widgetEl = warningCBI.getUIElement();
-			console.log(widgetEl);
-			if (reply[pkg.Name].warning) {
-				status.innerText = reply[pkg.Name].warning;
-			}
-			else {
-				status.innerText = "";
-			}
-		});
-		return E('div', {}, [status]);
-	}
-});
-
 RPC.on('setInitAction', function (reply) {
 	ui.hideModal();
 	RPC.getInitStatus(pkg.Name);
 });
 
 return L.Class.extend({
-	Buttons: buttonsCBI,
-	Error: errorCBI,
-	Status: statusCBI,
-	Warning: warningCBI,
 	RPC: RPC
 });

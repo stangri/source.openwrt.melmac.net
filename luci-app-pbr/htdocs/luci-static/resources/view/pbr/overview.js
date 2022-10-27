@@ -1,4 +1,5 @@
-// Copyright 2022 Stan Grishin (stangri@melmac.ca)
+// Copyright 2022 Stan Grishin <stangri@melmac.ca>
+// This code wouldn't have been possible without help from [@vsviridov](https://github.com/vsviridov)
 
 'use strict';
 'require form';
@@ -229,7 +230,5 @@ return view.extend({
 		s.option(form.Value, "path", _("Path")).optional = false;
 
 		return Promise.all([statusWidget.render(), m.render()]);
-
-//		return m.render();
 	}
 });

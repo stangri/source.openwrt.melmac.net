@@ -1,4 +1,5 @@
-// Thsis file wouldn't have been possible without help from [@vsviridov](https://github.com/vsviridov)
+// Copyright 2022 Stan Grishin <stangri@melmac.ca>
+// This code wouldn't have been possible without help from [@vsviridov](https://github.com/vsviridov)
 
 "require ui";
 "require rpc";
@@ -51,6 +52,61 @@ var _setInitAction = rpc.declare({
 	expect: { result: false },
 });
 
+var RPC = {
+	listeners: [],
+	on: function on(event, callback) {
+		var pair = { event: event, callback: callback }
+		this.listeners.push(pair);
+		return function unsubscribe() {
+			this.listeners = this.listeners.filter(function (listener) {
+				return listener !== pair;
+			});
+		}.bind(this);
+	},
+	emit: function emit(event, data) {
+		this.listeners.forEach(function (listener) {
+			if (listener.event === event) {
+				listener.callback(data);
+			}
+		});
+	},
+	getInitList: function getInitList(name) {
+		_getInitList(name).then(function (result) {
+			this.emit('getInitList', result);
+		}.bind(this));
+	},
+	getInitStatus: function getInitStatus(name) {
+		_getInitStatus(name).then(function (result) {
+			this.emit('getInitStatus', result);
+		}.bind(this));
+	},
+	getGateways: function getGateways(name) {
+		_getGateways(name).then(function (result) {
+			this.emit('getGateways', result);
+		}.bind(this));
+	},
+	getPlatformSupport: function getPlatformSupport(name) {
+		_getPlatformSupport(name).then(function (result) {
+			this.emit('getPlatformSupport', result);
+		}.bind(this));
+	},
+	getInterfaces: function getInterfaces(name) {
+		_getInterfaces(name).then(function (result) {
+			this.emit('getInterfaces', result);
+		}.bind(this));
+	},
+	setInitAction: function setInitAction(name, action) {
+		_setInitAction(name, action).then(function (result) {
+			this.emit('setInitAction', result);
+		}.bind(this));
+	},
+}
+
+RPC.on('setInitAction', function (reply) {
+	ui.hideModal();
+	RPC.getInitStatus(pkg.Name);
+});
+
 return baseclass.extend({
 	render: function () {
 		return Promise.all([
@@ -87,7 +143,7 @@ return baseclass.extend({
 			else {
 				text = _("Not installed or not found");
 			}
-			var statusText = E('div', { }, text);
+			var statusText = E('div', {}, text);
 			var statusField = E('div', { class: 'cbi-value-field' }, statusText);
 			var statusDiv = E('div', { class: 'cbi-value' }, [statusTitle, statusField]);
 
@@ -95,9 +151,9 @@ return baseclass.extend({
 			if (replyStatus[pkg.Name].gateways) {
 				var gatewaysTitle = E('label', { class: 'cbi-value-title' }, _("Service Gateways"));
 				text = _("The %s indicates default gateway. See the %sREADME%s for details.").format("<strong>✓</strong>",
-				"<a href=\"" + pkg.URL + "#a-word-about-default-routing \" target=\"_blank\">", "</a>")
+					"<a href=\"" + pkg.URL + "#a-word-about-default-routing \" target=\"_blank\">", "</a>")
 				var gatewaysDescr = E('div', { class: 'cbi-value-description' }, text);
-				var gatewaysText = E('div', { }, replyStatus[pkg.Name].gateways);
+				var gatewaysText = E('div', {}, replyStatus[pkg.Name].gateways);
 				var gatewaysField = E('div', { class: 'cbi-value-field' }, [gatewaysText, gatewaysDescr]);
 				gatewaysDiv = E('div', { class: 'cbi-value' }, [gatewaysTitle, gatewaysField]);
 			}
@@ -120,7 +176,6 @@ return baseclass.extend({
 				errorsDiv = E('div', { class: 'cbi-value' }, [errorsTitle, errorsField]);
 			}
 
-
 			var btn_gap = E('span', {}, '&#160;&#160;');
 			var btn_gap_long = E('span', {}, '&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;');
 
@@ -131,7 +186,7 @@ return baseclass.extend({
 					ui.showModal(null, [
 						E('p', { 'class': 'spinning' }, _('Starting %s service').format(pkg.Name))
 					]);
-					return _setInitAction(pkg.Name, 'start');
+					return RPC.setInitAction(pkg.Name, 'start');
 				}
 			}, _('Start'));
 
@@ -142,7 +197,7 @@ return baseclass.extend({
 					ui.showModal(null, [
 						E('p', { 'class': 'spinning' }, _('Restarting %s service').format(pkg.Name))
 					]);
-					return _setInitAction(pkg.Name, 'restart');
+					return RPC.setInitAction(pkg.Name, 'restart');
 				}
 			}, _('Restart'));
 
@@ -153,7 +208,7 @@ return baseclass.extend({
 					ui.showModal(null, [
 						E('p', { 'class': 'spinning' }, _('Stopping %s service').format(pkg.Name))
 					]);
-					return _setInitAction(pkg.Name, 'stop');
+					return RPC.setInitAction(pkg.Name, 'stop');
 				}
 			}, _('Stop'));
 
@@ -164,7 +219,7 @@ return baseclass.extend({
 					ui.showModal(null, [
 						E('p', { 'class': 'spinning' }, _('Enabling %s service').format(pkg.Name))
 					]);
-					return _setInitAction(pkg.Name, 'enable');
+					return RPC.setInitAction(pkg.Name, 'enable');
 				}
 			}, _('Enable'));
 
@@ -175,7 +230,7 @@ return baseclass.extend({
 					ui.showModal(null, [
 						E('p', { 'class': 'spinning' }, _('Disabling %s service').format(pkg.Name))
 					]);
-					return _setInitAction(pkg.Name, 'disable');
+					return RPC.setInitAction(pkg.Name, 'disable');
 				}
 			}, _('Disable'));
 
