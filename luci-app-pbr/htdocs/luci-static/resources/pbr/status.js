@@ -160,7 +160,6 @@ return baseclass.extend({
 			var warningsDiv = [];
 			if (replyStatus[pkg.Name].warnings) {
 				var warningsTitle = E('label', { class: 'cbi-value-title' }, _("Service Warnings"));
-				var warningsField = E('div', { class: 'cbi-value-field' }, replyStatus[pkg.Name].warnings);
 				var warningsText = E('div', {}, replyStatus[pkg.Name].warnings);
 				var warningsField = E('div', { class: 'cbi-value-field' }, warningsText);
 				warningsDiv = E('div', { class: 'cbi-value' }, [warningsTitle, warningsField]);
@@ -169,7 +168,6 @@ return baseclass.extend({
 			var errorsDiv = [];
 			if (replyStatus[pkg.Name].errors) {
 				var errorsTitle = E('label', { class: 'cbi-value-title' }, _("Service Errors"));
-				var errorsField = E('div', { class: 'cbi-value-field' }, replyStatus[pkg.Name].errors);
 				var errorsText = E('div', {}, replyStatus[pkg.Name].errors);
 				var errorsField = E('div', { class: 'cbi-value-field' }, errorsText);
 				errorsDiv = E('div', { class: 'cbi-value' }, [errorsTitle, errorsField]);
@@ -258,7 +256,12 @@ return baseclass.extend({
 			var buttonsTitle = E('label', { class: 'cbi-value-title' }, _("Service Control"))
 			var buttonsText = E('div', {}, [btn_start, btn_gap, btn_action, btn_gap, btn_stop, btn_gap_long, btn_enable, btn_gap, btn_disable]);
 			var buttonsField = E('div', { class: 'cbi-value-field' }, buttonsText);
-			var buttonsDiv = E('div', { class: 'cbi-value' }, [buttonsTitle, buttonsField]);
+			if (replyStatus[pkg.Name].version) {
+				var buttonsDiv = E('div', { class: 'cbi-value' }, [buttonsTitle, buttonsField]);
+			}
+			else {
+				var buttonsDiv = [];
+			}
 
 			return E('div', {}, [header, statusDiv, gatewaysDiv, warningsDiv, errorsDiv, buttonsDiv]);
 		});
