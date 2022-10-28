@@ -1,10 +1,10 @@
 {
 	"admin/services/simple-adblock": {
-		"title": "Template",
+		"title": "Simple AdBlock",
 		"order": 90,
 		"action": {
 			"type": "view",
-			"path": "services/simple-adblock"
+			"path": "simple-adblock/overview"
 		},
 		"depends": {
 			"acl": [
