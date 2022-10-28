@@ -15,7 +15,7 @@
 . /lib/functions/network.sh
 . /usr/share/libubox/jshn.sh
 
-packageName="pbr"
+readonly packageName="pbr"
 
 is_enabled() { uci -q get "${1}.config.enabled"; }
 is_running_iptables() { iptables -t mangle -L | grep -q PBR_PREROUTING >/dev/null 2>&1; }
@@ -25,8 +25,8 @@ get_version() { grep -m1 -A2 -w "^Package: $1$" /usr/lib/opkg/status | sed -n 's
 print_json_bool() { json_init; json_add_boolean "$1" "$2"; json_dump; json_cleanup; }
 print_json_string() { json_init; json_add_string "$1" "$2"; json_dump; json_cleanup; }
 logger() { /usr/bin/logger -t "$packageName" "$@"; }
-ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.status.${1}"; }
-ubus_get_iface() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.interfaces[@.name='${1}']${2:+.$2}"; }
+ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances.main.data.status.${1}"; }
+ubus_get_iface() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances.main.data.interfaces[@.name='${1}']${2:+.$2}"; }
 
 get_init_list() {
 	local name="${1:-$packageName}"

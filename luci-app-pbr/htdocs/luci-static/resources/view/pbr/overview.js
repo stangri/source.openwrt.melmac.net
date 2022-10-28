@@ -44,7 +44,7 @@ return view.extend({
 			m = new form.Map(pkg.Name, _("Policy Based Routing - Configuration"));
 
 			s = m.section(form.NamedSection, 'config', pkg.Name);
-			s.tab("tab_basic", _("Basic Configurations"));
+			s.tab("tab_basic", _("Basic Configuration"));
 			s.tab("tab_advanced", _("Advanced Configuration"),
 				_("%sWARNING:%s Please make sure to check the %sREADME%s before changing anything in this section! " +
 					"Change any of the settings below with extreme caution!%s").format(
