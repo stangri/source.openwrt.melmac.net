@@ -104,17 +104,16 @@ var RPC = {
 
 RPC.on('setInitAction', function (reply) {
 	ui.hideModal();
-	RPC.getInitStatus(pkg.Name);
 });
 
 return baseclass.extend({
 	render: function () {
 		return Promise.all([
 			L.resolveDefault(_getInitStatus(), {}),
-			L.resolveDefault(_getGateways(), {}),
+//			L.resolveDefault(_getGateways(), {}),
 		]).then(function (data) {
 			var replyStatus = data[0];
-			var replyGateways = data[1];
+//			var replyGateways = data[1];
 			var text;
 
 			var header = E('h2', {}, _("Policy Based Routing - Status"))

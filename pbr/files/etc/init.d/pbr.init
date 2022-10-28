@@ -209,6 +209,8 @@ is_supported_iface_dev() { local n dev; for n in $ifacesSupported; do network_ge
 is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
 is_service_running_iptables() { [ -x "$iptables" ] && "$iptables" -t mangle -L | grep -q "${iptPrefix}_PREROUTING" >/dev/null 2>&1; }
 is_service_running_nft() { [ -x "$nft" ] && [ -n "$(get_mark_nft_chains)" ]; }
+# atomic
+# is_service_running_nft() { [ -x "$nft" ] && [ -s "$nftPermFile" ]; }
 is_service_running() { if is_nft; then is_service_running_nft; else is_service_running_iptables; fi; }
 is_netifd_table() { return 1; }
 _check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
@@ -495,12 +497,16 @@ ips() {
 	return $ipv4_error || $ipv6_error
 }
 
-nfta() { echo "$@" >> "$nftTempFile"; }
-nfta4() { echo "$@" >> "$nftTempFile"; }
-nfta6() { [ -z "$ipv6_enabled" ] || echo "$@" >> "$nftTempFile"; }
-nft() { nfta "$@"; [ -x "$nft" ] && "$nft" "$@" >/dev/null 2>&1; }
-nft4() { nfta "$@"; [ -x "$nft" ] && "$nft" "$@" >/dev/null 2>&1; }
-nft6() { nfta "$@"; [ -n "$ipv6_enabled" ] || return 0; [ -x "$nft" ] && [ -n "$*" ] && "$nft" "$@" >/dev/null 2>&1; }
+# atomic
+#nfta() { echo "$@" >> "$nftTempFile"; }
+#nfta4() { echo "$@" >> "$nftTempFile"; }
+#nfta6() { [ -z "$ipv6_enabled" ] || echo "$@" >> "$nftTempFile"; }
+#nft() { nfta "$@"; [ -x "$nft" ] && "$nft" "$@" >/dev/null 2>&1; }
+#nft4() { nfta "$@"; [ -x "$nft" ] && "$nft" "$@" >/dev/null 2>&1; }
+#nft6() { nfta "$@"; [ -n "$ipv6_enabled" ] || return 0; [ -x "$nft" ] && [ -n "$*" ] && "$nft" "$@" >/dev/null 2>&1; }
+nft() { [ -x "$nft" ] && "$nft" "$@" >/dev/null 2>&1; }
+nft4() { [ -x "$nft" ] && "$nft" "$@" >/dev/null 2>&1; }
+nft6() { [ -n "$ipv6_enabled" ] || return 0; [ -x "$nft" ] && [ -n "$*" ] && "$nft" "$@" >/dev/null 2>&1; }
 nftset() {
 	local command="$1" iface="$2" target="${3:-dst}" type="${4:-ip}" uid="$5" comment="$6" param="$7" mark="$7"
 	local nftset4 nftset6 i param4 param6
@@ -707,9 +713,10 @@ traffic_killswitch() {
 
 policy_routing_tor() { if is_nft; then policy_routing_tor_nft "$@"; else policy_routing_tor_iptables "$@"; fi; }
 policy_routing_tor_iptables() {
-	local comment="$1" iface="$2" src_addr="$3" src_port="$4" dest_addr="$5" dest_port="$6"
-# shellcheck disable=SC2155
-	local proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}" uid="$9"
+	local comment="$1" iface="$2" src_addr="$3" src_port="$4" dest_addr="$5" dest_port="$6" proto chain uid="$9"
+	proto="$(str_to_lower "$7")"
+	chain="$(str_to_upper "$8")"
+	chain="${chain:-PREROUTING}"
 	if [ -n "${src_addr}${src_port}${dest_port}" ]; then
 		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'src_addr', 'src_port' and 'dest_port' for policy '$comment'\\n"
 	fi
@@ -719,19 +726,35 @@ policy_routing_tor_iptables() {
 	if [ "$chain" != "PREROUTING" ]; then
 		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'chain' or set 'chain' to 'PREROUTING' for policy '$comment'\\n"
 	fi
-	ips 'add' "$iface" 'dst' 'net' '' "${comment}: $dest_addr" "$dest_addr" || processPolicyError="${processPolicyError}${_ERROR_}: ips 'add' '$iface' 'dst' 'net' '${comment}: $dest_addr' '$dest_addr'\\n"
+	ips 'add_resolver' "$iface" 'dst' 'ip' '' "${comment}: $dest_addr" "$dest_addr" || processPolicyError="${processPolicyError}${_ERROR_}: ips 'add_resolver' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
 	return 0
 }
-policy_routing_tor_nft() { :; } #TODO: support TOR in nft
+policy_routing_tor_nft() {
+	local comment="$1" iface="$2" src_addr="$3" src_port="$4" dest_addr="$5" dest_port="$6" proto chain uid="$9"
+	proto="$(str_to_lower "$7")"
+	chain="$(str_to_lower "$8")"
+	chain="${chain:-prerouting}"
+	if [ -n "${src_addr}${src_port}${dest_port}" ]; then
+		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'src_addr', 'src_port' and 'dest_port' for policy '$comment'\\n"
+	fi
+	if [ -n "$proto" ] && [ "$proto" != "all" ]; then
+		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment'\\n"
+	fi
+	if [ "$chain" != "prerouting" ]; then
+		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'chain' or set 'chain' to 'prerouting' for policy '$comment'\\n"
+	fi
+	nftset 'add_resolver' "$iface" 'dst' 'ip' '' "${comment}: $dest_addr" "$dest_addr" || processPolicyError="${processPolicyError}${_ERROR_}: nftset 'add_resolver' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
+	return 0
+}
 
 policy_routing() { if is_nft; then policy_routing_nft "$@"; else policy_routing_iptables "$@"; fi; }
 policy_routing_iptables() {
-	local name="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6"
-# shellcheck disable=SC2155
-	local proto="$7" chain="${8:-PREROUTING}" uid="$9"
 	local mark param4 param6 i negation value dest ipInsertOption="-A"
+	local name="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain uid="$9"
+	proto="$(str_to_lower "$7")"
+	chain="$(str_to_upper "$8")"
+	chain="${chain:-PREROUTING}"
 	mark=$(eval echo "\$mark_${iface//-/_}")
-	chain="$(str_to_upper "$chain")"
 
 	if [ -n "$ipv6_enabled" ] && { is_ipv6 "$laddr" || is_ipv6 "$raddr"; }; then
 		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$name' as IPv6 support is disabled\\n"
@@ -891,16 +914,13 @@ policy_routing_iptables() {
 	done
 }
 policy_routing_nft() {
-	local name="$1" iface="$2" src_addr="$3" src_port="$4" dest_addr="$5" dest_port="$6"
-# shellcheck disable=SC2155
-	local proto="$(str_to_lower "$7")" chain="${8:-PREROUTING}" uid="$9"
-	local mark i negation value dest nftInsertOption='add'
+	local mark param4 param6 i negation value dest nftInsertOption='add'
 	local ip4Flag='ip' ip6Flag='ip6'
-	local param4 param6
-#	local param4="${nftPrefix}_${chain:-prerouting}"
-#	local param6="${nftPrefix}_${chain:-prerouting}"
+	local name="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain uid="$9"
+	proto="$(str_to_lower "$7")"
+	chain="$(str_to_lower "$8")"
+	chain="${chain:-prerouting}"
 	mark=$(eval echo "\$mark_${iface//-/_}")
-	chain="$(str_to_lower "$chain")"
 
 	if [ -z "$ipv6_enabled" ] && { is_ipv6 "$src_addr" || is_ipv6 "$dest_addr"; }; then
 		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$name' as IPv6 support is disabled\\n"
@@ -1119,15 +1139,17 @@ policy_process() {
 
 interface_process_tor() { if is_nft; then interface_process_tor_nft "$@"; else interface_process_tor_iptables "$@"; fi; }
 interface_process_tor_iptables() {
-	local s=0 iface="$1" action="$2" displayText nftset
+	local s=0 iface="$1" action="$2"
+	local displayText set_name4 set_name6
+	local dnsPort trafficPort
 	case "$action" in
 		reload)
-			displayText="${iface}/53->${dnsPort}/80,443->${transPort}"
+			displayText="${iface}/53->${dnsPort}/80,443->${trafficPort}"
 			gatewaySummary="${gatewaySummary}${displayText}\\n"
 			;;
 		destroy)
 			for i in $chainsList; do
-				i="$(str_to_lower "$i")"
+				i="$(str_to_upper "$i")"
 				ipt -t nat -D "${i}" -m mark --mark "0x0/${fw_mask}" -j "${nftPrefix}_${i}"
 				ipt -t nat -F "${nftPrefix}_${i}"; ipt -t nat -X "${nftPrefix}_${i}";
 			done
@@ -1135,26 +1157,26 @@ interface_process_tor_iptables() {
 		create)
 			output 2 "Creating TOR redirects "
 			dnsPort="$(grep -m1 DNSPort /etc/tor/torrc | awk -F: '{print $2}')"
-			transPort="$(grep -m1 TransPort /etc/tor/torrc | awk -F: '{print $2}')"
-			dnsPort="${dnsPort:-9053}"; transPort="${transPort:-9040}"; 
+			trafficPort="$(grep -m1 TransPort /etc/tor/torrc | awk -F: '{print $2}')"
+			dnsPort="${dnsPort:-9053}"; trafficPort="${trafficPort:-9040}"; 
 			for i in $chainsList; do
 				ipt -t nat -N "${nftPrefix}_${i}"
 				ipt -t nat -A "$i" -m mark --mark "0x0/${fw_mask}" -j "${nftPrefix}_${i}"
 			done
-			if ips 'create' "$iface" 'dst' 'ip' && ips 'flush' "$iface" 'dst' 'ip'; then
-				nftset="${nftPrefix}_${iface}_dst_ip"
+			if ips 'create_resolver' "$iface" 'dst' 'ip' && ips 'flush' "$iface" 'dst' 'ip'; then
+				set_name4="${ipsPrefix}_${iface}_4_dst_ip"
 				for i in $chainsList; do
 					i="$(str_to_lower "$i")"
-					ipt -t nat -I "${nftPrefix}_${i}" -p udp -m udp --dport 53 -m set --match-set "${nftset}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
-					ipt -t nat -I "${nftPrefix}_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${nftset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-TCP" || s=1
-					ipt -t nat -I "${nftPrefix}_${i}" -p udp -m udp --dport 80 -m set --match-set "${nftset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTP-UDP" || s=1
-					ipt -t nat -I "${nftPrefix}_${i}" -p tcp -m tcp --dport 443 -m set --match-set "${nftset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTPS-TCP" || s=1
-					ipt -t nat -I "${nftPrefix}_${i}" -p udp -m udp --dport 443 -m set --match-set "${nftset}" dst -j REDIRECT --to-ports "$transPort" -m comment --comment "TorHTTPS-UDP" || s=1
+					ipt -t nat -I "${nftPrefix}_${i}" -p udp -m udp --dport 53 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
+					ipt -t nat -I "${nftPrefix}_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$trafficPort" -m comment --comment "TorHTTP-TCP" || s=1
+					ipt -t nat -I "${nftPrefix}_${i}" -p udp -m udp --dport 80 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$trafficPort" -m comment --comment "TorHTTP-UDP" || s=1
+					ipt -t nat -I "${nftPrefix}_${i}" -p tcp -m tcp --dport 443 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$trafficPort" -m comment --comment "TorHTTPS-TCP" || s=1
+					ipt -t nat -I "${nftPrefix}_${i}" -p udp -m udp --dport 443 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$trafficPort" -m comment --comment "TorHTTPS-UDP" || s=1
 				done
 			else
 				s=1
 			fi
-			displayText="${iface}/53->${dnsPort}/80,443->${transPort}"
+			displayText="${iface}/53->${dnsPort}/80,443->${trafficPort}"
 			if [ "$s" -eq 0 ]; then
 				gatewaySummary="${gatewaySummary}${displayText}\\n"
 				output_ok
@@ -1166,7 +1188,50 @@ interface_process_tor_iptables() {
 	esac
 	return $s
 }
-interface_process_tor_nft() { :; } #TODO: support tor interface in nft
+interface_process_tor_nft() {
+	local s=0 iface="$1" action="$2"
+	local displayText set_name4 set_name6
+	local dnsPort trafficPort
+	case "$action" in
+		reload)
+			displayText="${iface}/53->${dnsPort}/80,443->${trafficPort}"
+			gatewaySummary="${gatewaySummary}${displayText}\\n"
+			;;
+		destroy)
+			;;
+		create)
+			output 2 "Creating TOR redirects "
+			dnsPort="$(grep -m1 DNSPort /etc/tor/torrc | awk -F: '{print $2}')"
+			trafficPort="$(grep -m1 TransPort /etc/tor/torrc | awk -F: '{print $2}')"
+			dnsPort="${dnsPort:-9053}"; trafficPort="${trafficPort:-9040}"; 
+			if nftset 'create_resolver' "$iface" 'dst' 'ip' && nftset 'flush' "$iface" 'dst' 'ip'; then
+				set_name4="${nftPrefix}_${iface}_4_dst_ip"
+				set_name6="${nftPrefix}_${iface}_6_dst_ip"
+				nft meta nfproto ipv4 udp daddr "@${set_name4}" dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv4" || s=1
+				nft meta nfproto ipv4 tcp daddr "@${set_name4}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv4" || s=1
+				nft meta nfproto ipv4 udp daddr "@${set_name4}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv4" || s=1
+				nft meta nfproto ipv4 tcp daddr "@${set_name4}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv4" || s=1
+				nft meta nfproto ipv4 udp daddr "@${set_name4}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv4" || s=1
+				nft6 meta nfproto ipv6 udp daddr "@${set_name6}" dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv6" || s=1
+				nft6 meta nfproto ipv6 tcp daddr "@${set_name6}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv6" || s=1
+				nft6 meta nfproto ipv6 udp daddr "@${set_name6}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv6" || s=1
+				nft6 meta nfproto ipv6 tcp daddr "@${set_name6}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv6" || s=1
+				nft6 meta nfproto ipv6 udp daddr "@${set_name6}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv6" || s=1
+			else
+				s=1
+			fi
+			displayText="${iface}/53->${dnsPort}/80,443->${trafficPort}"
+			if [ "$s" -eq 0 ]; then
+				gatewaySummary="${gatewaySummary}${displayText}\\n"
+				output_ok
+			else
+				errorSummary="${errorSummary}${_ERROR_}: Failed to set up '$displayText'\\n"
+				output_fail
+			fi
+			;;
+	esac
+	return $s
+}
 
 interface_routing() {
 	local action="$1" tid="$2" mark="$3" iface="$4" gw4="$5" dev="$6" gw6="$7" dev6="$8" priority="$9"
