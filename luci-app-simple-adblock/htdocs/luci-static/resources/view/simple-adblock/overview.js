@@ -40,7 +40,6 @@ return view.extend({
 			//			var arrInterfaces = data[0][pkg.Name].interfaces;
 			var replyPlatform = data[0];
 			var m, s, o;
-			console.log(replyPlatform)
 			m = new form.Map(pkg.Name, _("Simple AdBlock - Configuration"));
 			s = m.section(form.NamedSection, 'config', pkg.Name);
 			s.tab("tab_basic", _("Basic Configuration"));
