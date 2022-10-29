@@ -239,7 +239,7 @@ load_package_config() {
 	config_load "$packageName"
 	config_get      boot_timeout             'config' 'boot_timeout' '30'
 	config_get_bool enabled                  'config' 'enabled' '0'
-	config_get      fw_mask                  'config' 'fw_mask' '0xff0000'
+	config_get      fw_mask                  'config' 'fw_mask' 'ff0000'
 	config_get      icmp_interface           'config' 'icmp_interface'
 	config_get      ignored_interface        'config' 'ignored_interface'
 	config_get_bool ipv6_enabled             'config' 'ipv6_enabled' '0'
@@ -251,8 +251,10 @@ load_package_config() {
 	config_get      supported_interface      'config' 'supported_interface'
 	config_get      verbosity                'config' 'verbosity' '2'
 	config_get      wan_ip_rules_priority    'config' 'wan_ip_rules_priority' '30000'
-	config_get      wan_mark                 'config' 'wan_mark' '0x010000'
+	config_get      wan_mark                 'config' 'wan_mark' '010000'
 	config_get      wan_tid                  'config' 'wan_tid' '201'
+	fw_mask="0x${fw_mask}"
+	wan_mark="0x${wan_mark}"
 	[ -n "$ipv6_enabled" ] && [ "$ipv6_enabled" -eq 0 ] && unset ipv6_enabled
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh

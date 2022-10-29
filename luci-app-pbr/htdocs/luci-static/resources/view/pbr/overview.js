@@ -127,15 +127,15 @@ return view.extend({
 					"used to avoid conflict with SQM/QoS. Change with caution together with") +
 				" " + _("Service FW Mask") + ".");
 			o.rmempty = true;
-			o.placeholder = "0x010000";
-//			o.datatype = "hex(8)";
+			o.placeholder = "010000";
+			o.datatype = "hexstring";
 
 			o = s.taboption("tab_advanced", form.Value, "fw_mask", _("Service FW Mask"),
 				_("FW Mask used by the service. High mask is used to avoid conflict with SQM/QoS. " +
 					"Change with caution together with") + " " + _("WAN Table FW Mark") + ".");
 			o.rmempty = true;
-			o.placeholder = "0xff0000";
-//			o.datatype = "hex(8)";
+			o.placeholder = "ff0000";
+			o.datatype = "hexstring";
 
 			o = s.taboption("tab_webui", form.DynamicList, "webui_supported_protocol", _("Supported Protocols"),
 				_("Display these protocols in protocol column in Web UI."));
@@ -157,7 +157,7 @@ return view.extend({
 
 			o = s.option(form.Value, "src_addr", _("Local addresses / devices"));
 			o.rmempty = true;
-			o.datatype = "list(neg(or(host,network,macaddr)))";
+			o.datatype = "list(neg(or(cidr,host,ipmask,ipaddr,macaddr,network)))";
 
 			o = s.option(form.Value, "src_port", _("Local ports"));
 			o.datatype = "list(neg(or(portrange,port)))";
@@ -165,8 +165,7 @@ return view.extend({
 			o.rmempty = true;
 
 			o = s.option(form.Value, "dest_addr", _("Remote addresses / domains"));
-			o.datatype = "list(neg(or(host,network,macaddr)))";
-			o.placeholder = "0.0.0.0/0";
+			o.datatype = "list(neg(or(cidr,host,ipmask,ipaddr,macaddr,network)))";
 			o.rmempty = true;
 
 			o = s.option(form.Value, "dest_port", _("Remote ports"));
@@ -212,6 +211,7 @@ return view.extend({
 			arrInterfaces.forEach(element => {
 				if (element.toLowerCase !== "ignore") {
 					o = s.option(form.Value, element + "_dscp", element.toUpperCase() + " " + _("DSCP Tag"));
+					o.datatype = "and(uinteger, min(1), max(63))";
 				}
 			});
 

@@ -34,7 +34,7 @@ msgstr ""
 msgid "Basic Configuration"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:193
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:192
 msgid "Chain"
 msgstr ""
 
@@ -50,11 +50,11 @@ msgstr ""
 msgid "Custom User File Includes"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:214
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:213
 msgid "DSCP Tag"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:209
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:208
 msgid "DSCP Tagging"
 msgstr ""
 
@@ -133,7 +133,7 @@ msgstr ""
 msgid "Insert"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:202
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:201
 msgid "Interface"
 msgstr ""
 
@@ -186,10 +186,6 @@ msgstr ""
 msgid "Policies"
 msgstr ""
 
-#: applications/luci-app-pbr/root/usr/share/luci/menu.d/pbr.json:3
-msgid "Policy Based Routing"
-msgstr ""
-
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:44
 msgid "Policy Based Routing - Configuration"
 msgstr ""
@@ -198,7 +194,11 @@ msgstr ""
 msgid "Policy Based Routing - Status"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:177
+#: applications/luci-app-pbr/root/usr/share/luci/menu.d/pbr.json:3
+msgid "Policy Routing"
+msgstr ""
+
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:176
 msgid "Protocol"
 msgstr ""
 
@@ -206,7 +206,7 @@ msgstr ""
 msgid "Remote addresses / domains"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:172
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:171
 msgid "Remote ports"
 msgstr ""
 
@@ -273,7 +273,7 @@ msgstr ""
 msgid "Service Warnings"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:210
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:209
 msgid ""
 "Set DSCP tags (in range between 1 and 63) for specific interfaces. See the "
 "%sREADME%s for details."
@@ -358,7 +358,7 @@ msgstr ""
 msgid "Web UI Configuration"
 msgstr ""
 
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:183
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:184
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:185
 msgid "all"
 msgstr ""

@@ -1,6 +1,6 @@
 {
 	"admin/services/pbr": {
-		"title": "Policy Based Routing",
+		"title": "Policy Routing",
 		"order": 90,
 		"action": {
 			"type": "view",
