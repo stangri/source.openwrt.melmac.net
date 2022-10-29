@@ -110,8 +110,8 @@ return view.extend({
 				_("Force the ICMP protocol interface."));
 			o.value("", _("No Change"));
 			arrInterfaces.forEach(element => {
-				if (element.name_lower !== "ignore") {
-					o.value(element.name_lower, element.name_upper);
+				if (element.toLowerCase !== "ignore") {
+					o.value(element);
 				}
 			});
 			o.rmempty = true;
@@ -201,7 +201,7 @@ return view.extend({
 
 			o = s.option(form.ListValue, "interface", _("Interface"));
 			arrInterfaces.forEach(element => {
-				o.value(element.name_lower);
+				o.value(element);
 			});
 			o.datatype = "network";
 			o.rmempty = false;
@@ -210,8 +210,8 @@ return view.extend({
 				_("Set DSCP tags (in range between 1 and 63) for specific interfaces. See the %sREADME%s for details.").format(
 					"<a href=\"" + pkg.URL + "#dscp-tag-based-policies" + "\" target=\"_blank\">", "</a>"));
 			arrInterfaces.forEach(element => {
-				if (element.name_lower !== "ignore") {
-					o = s.option(form.Value, element.name_lower + "_dscp", element.name_upper + " " + _("DSCP Tag"));
+				if (element.toLowerCase !== "ignore") {
+					o = s.option(form.Value, element + "_dscp", element.toUpperCase() + " " + _("DSCP Tag"));
 				}
 			});
 

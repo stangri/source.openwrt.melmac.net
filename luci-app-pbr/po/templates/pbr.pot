@@ -31,7 +31,7 @@ msgid ""
 msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:47
-msgid "Basic Configurations"
+msgid "Basic Configuration"
 msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:193
@@ -62,7 +62,7 @@ msgstr ""
 msgid "Default ICMP Interface"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:234
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:232
 msgid "Disable"
 msgstr ""
 
@@ -71,7 +71,7 @@ msgstr ""
 msgid "Disabled"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:230
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:228
 msgid "Disabling %s service"
 msgstr ""
 
@@ -93,7 +93,7 @@ msgstr ""
 msgid "Do not enforce policies when their gateway is down"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:223
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:221
 msgid "Enable"
 msgstr ""
 
@@ -103,7 +103,7 @@ msgstr ""
 msgid "Enabled"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:219
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:217
 msgid "Enabling %s service"
 msgstr ""
 
@@ -210,11 +210,11 @@ msgstr ""
 msgid "Remote ports"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:201
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:199
 msgid "Restart"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:197
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:195
 msgid "Restarting %s service"
 msgstr ""
 
@@ -248,11 +248,11 @@ msgstr ""
 msgid "Select Add for -A/add and Insert for -I/Insert."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:258
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:256
 msgid "Service Control"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:171
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:170
 msgid "Service Errors"
 msgstr ""
 
@@ -279,11 +279,11 @@ msgid ""
 "%sREADME%s for details."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:190
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:188
 msgid "Start"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:186
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:184
 msgid "Starting %s service"
 msgstr ""
 
@@ -297,7 +297,7 @@ msgstr ""
 msgid "Starting (WAN) Table ID number for tables created by the service."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:212
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:210
 msgid "Stop"
 msgstr ""
 
@@ -309,7 +309,7 @@ msgstr ""
 msgid "Stopped (version: %s)"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:208
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:206
 msgid "Stopping %s service"
 msgstr ""
 

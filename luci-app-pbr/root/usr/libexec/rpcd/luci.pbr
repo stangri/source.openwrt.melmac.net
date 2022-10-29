@@ -215,11 +215,7 @@ get_supported_interfaces() {
 	json_add_object "$name"
 	json_add_array 'interfaces'
 	for i in $ifacesSupported; do
-		json_add_object ''
-		json_add_string 'name' "$i"
-		json_add_string 'name_lower' "$(str_to_lower "$i")"
-		json_add_string 'name_upper' "$(str_to_upper "$i")"
-		json_close_object
+		json_add_string '' "$i"
 	done
 	json_close_array
 	json_close_object

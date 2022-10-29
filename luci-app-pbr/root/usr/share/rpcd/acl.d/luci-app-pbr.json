@@ -16,6 +16,9 @@
 			]
 		},
 		"write": {
+			"uci": [
+				"pbr"
+			],
 			"ubus": {
 				"luci.pbr": [
 					"setInitAction"
