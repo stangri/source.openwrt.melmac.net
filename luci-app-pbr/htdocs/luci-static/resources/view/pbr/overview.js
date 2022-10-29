@@ -128,14 +128,14 @@ return view.extend({
 				" " + _("Service FW Mask") + ".");
 			o.rmempty = true;
 			o.placeholder = "0x010000";
-			o.datatype = "hex(8)";
+//			o.datatype = "hex(8)";
 
 			o = s.taboption("tab_advanced", form.Value, "fw_mask", _("Service FW Mask"),
 				_("FW Mask used by the service. High mask is used to avoid conflict with SQM/QoS. " +
 					"Change with caution together with") + " " + _("WAN Table FW Mark") + ".");
 			o.rmempty = true;
 			o.placeholder = "0xff0000";
-			o.datatype = "hex(8)";
+//			o.datatype = "hex(8)";
 
 			o = s.taboption("tab_webui", form.DynamicList, "webui_supported_protocol", _("Supported Protocols"),
 				_("Display these protocols in protocol column in Web UI."));

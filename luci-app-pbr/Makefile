@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
-PKG_VERSION:=0.9.9-6
+PKG_VERSION:=0.9.9-7
 
 LUCI_TITLE:=Policy Based Routing Service Web UI
 LUCI_DESCRIPTION:=Provides Web UI for Policy Based Routing Service.
