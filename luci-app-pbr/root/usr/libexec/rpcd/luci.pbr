@@ -68,8 +68,8 @@ get_init_status() {
 	local name="${1:-$packageName}"
 	local gateways warnings errors
 	gateways="$(ubus_get_status gateways | sed "s|\\\n|<br />|g;s|\(\\\033[^<]*\)|✓|g;")"
-	warnings="$(ubus_get_status warnings | sed "s|\\\n|<br />|g;s|\(\\\033[^:]*\)||g;")"
-	errors="$(ubus_get_status errors | sed "s|\\\n|<br />|g;s|\(\\\033[^:]*\)||g;")"
+	warnings="$(ubus_get_status warnings | sed "s|\\\n|<br />|g;s|\(\\\033[^:]*\)||g;s|: ||g;")"
+	errors="$(ubus_get_status errors | sed "s|\\\n|<br />|g;s|\(\\\033[^:]*\)||g;s|: ||g;")"
 	json_init
 	json_add_object  "$name"
 	json_add_boolean 'enabled' "$(is_enabled "$name")"
