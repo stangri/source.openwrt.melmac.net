@@ -15,31 +15,31 @@ var pkg = {
 	},
 };
 
-var _getGateways = rpc.declare({
+var getGateways = rpc.declare({
 	object: "luci." + pkg.Name,
 	method: "getGateways",
 	params: ["name"],
 });
 
-var _getInitList = rpc.declare({
+var getInitList = rpc.declare({
 	object: "luci." + pkg.Name,
 	method: "getInitList",
 	params: ["name"],
 });
 
-var _getInitStatus = rpc.declare({
+var getInitStatus = rpc.declare({
 	object: "luci." + pkg.Name,
 	method: "getInitStatus",
 	params: ["name"],
 });
 
-var _getInterfaces = rpc.declare({
+var getInterfaces = rpc.declare({
 	object: "luci." + pkg.Name,
 	method: "getInterfaces",
 	params: ["name"],
 });
 
-var _getPlatformSupport = rpc.declare({
+var getPlatformSupport = rpc.declare({
 	object: "luci." + pkg.Name,
 	method: "getPlatformSupport",
 	params: ["name"],
@@ -71,27 +71,27 @@ var RPC = {
 		});
 	},
 	getInitList: function getInitList(name) {
-		_getInitList(name).then(function (result) {
+		getInitList(name).then(function (result) {
 			this.emit('getInitList', result);
 		}.bind(this));
 	},
 	getInitStatus: function getInitStatus(name) {
-		_getInitStatus(name).then(function (result) {
+		getInitStatus(name).then(function (result) {
 			this.emit('getInitStatus', result);
 		}.bind(this));
 	},
 	getGateways: function getGateways(name) {
-		_getGateways(name).then(function (result) {
+		getGateways(name).then(function (result) {
 			this.emit('getGateways', result);
 		}.bind(this));
 	},
 	getPlatformSupport: function getPlatformSupport(name) {
-		_getPlatformSupport(name).then(function (result) {
+		getPlatformSupport(name).then(function (result) {
 			this.emit('getPlatformSupport', result);
 		}.bind(this));
 	},
 	getInterfaces: function getInterfaces(name) {
-		_getInterfaces(name).then(function (result) {
+		getInterfaces(name).then(function (result) {
 			this.emit('getInterfaces', result);
 		}.bind(this));
 	},
@@ -102,15 +102,11 @@ var RPC = {
 	},
 }
 
-RPC.on('setInitAction', function (reply) {
-	ui.hideModal();
-});
-
-return baseclass.extend({
+var status = baseclass.extend({
 	render: function () {
 		return Promise.all([
-			L.resolveDefault(_getInitStatus(), {}),
-//			L.resolveDefault(_getGateways(), {}),
+			L.resolveDefault(getInitStatus(), {}),
+//			L.resolveDefault(getGateways(), {}),
 		]).then(function (data) {
 			var replyStatus = data[0];
 //			var replyGateways = data[1];
@@ -266,4 +262,16 @@ return baseclass.extend({
 			return E('div', {}, [header, statusDiv, gatewaysDiv, warningsDiv, errorsDiv, buttonsDiv]);
 		});
 	},
+});
+
+RPC.on('setInitAction', function (reply) {
+	ui.hideModal();
+	// refresh the page?
+});
+ 
+return L.Class.extend({
+	status: status,
+	getInterfaces: getInterfaces,
+	getPlatformSupport: getPlatformSupport,
+	RPC: RPC
 });

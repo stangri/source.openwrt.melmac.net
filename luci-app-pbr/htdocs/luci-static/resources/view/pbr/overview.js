@@ -6,24 +6,12 @@
 'require rpc';
 'require uci';
 'require view';
-'require pbr.status as statusWidget';
+'require pbr.status as pbr';
 
 var pkg = {
 	get Name() { return 'pbr'; },
 	get URL() { return 'https://docs.openwrt.melmac.net/' + pkg.Name + '/'; }
 };
-
-var _getInterfaces = rpc.declare({
-	object: "luci." + pkg.Name,
-	method: "getInterfaces",
-	params: ["name"],
-});
-
-var _getPlatformSupport = rpc.declare({
-	object: "luci." + pkg.Name,
-	method: "getPlatformSupport",
-	params: ["name"],
-});
 
 return view.extend({
 	load: function () {
@@ -34,13 +22,14 @@ return view.extend({
 
 	render: function () {
 		return Promise.all([
-			L.resolveDefault(_getInterfaces(), {}),
-			L.resolveDefault(_getPlatformSupport(), {}),
+			L.resolveDefault(pbr.getInterfaces(), {}),
+			L.resolveDefault(pbr.getPlatformSupport(), {}),
 		]).then(function (data) {
 			var arrInterfaces = data[0][pkg.Name].interfaces;
-			var replyPlatform = data[1];
-			var m, s, o;
+			var replyPlatform = data[1][pkg.Name];
+			var status, m, s, o;
 
+			status = new pbr.status();
 			m = new form.Map(pkg.Name, _("Policy Based Routing - Configuration"));
 
 			s = m.section(form.NamedSection, 'config', pkg.Name);
@@ -67,21 +56,21 @@ return view.extend({
 			o.default = "1";
 
 			var text = "";
-			if (!(replyPlatform[pkg.Name].dnsmasq_ipset_support)) {
+			if (!(replyPlatform.dnsmasq_ipset_support)) {
 				text += _("Please note that %s is not supported on this system.").format("<i>dnsmasq.ipset</i>") + "<br />"
 			}
-			if (!(replyPlatform[pkg.Name].dnsmasq_nftset_support)) {
+			if (!(replyPlatform.dnsmasq_nftset_support)) {
 				text += _("Please note that %s is not supported on this system.").format("<i>dnsmasq.nftset</i>") + "<br />"
 			}
 			text += _("Please check the %sREADME%s before changing this option.").format(
 				"<a href=\"" + pkg.URL + "#use-resolvers-set-support\" target=\"_blank\">", "</a>");
 			o = s.taboption("tab_basic", form.ListValue, "resolver_set", _("Use resolver set support for domains"), text);
 			o.value("none", _("Disabled"));
-			if (replyPlatform[pkg.Name].dnsmasq_ipset_support) {
+			if (replyPlatform.dnsmasq_ipset_support) {
 				o.value("dnsmasq.ipset", _("Dnsmasq ipset"));
 				o.default = ("dnsmasq.ipset", _("Dnsmasq ipset"));
 			}
-			if (replyPlatform[pkg.Name].dnsmasq_nftset_support) {
+			if (replyPlatform.dnsmasq_nftset_support) {
 				o.value("dnsmasq.nftset", _("Dnsmasq nft set"));
 				o.default = ("dnsmasq.nftset", _("Dnsmasq nft set"));
 			}
@@ -145,6 +134,7 @@ return view.extend({
 				_("Name, interface and at least one other field are required. Multiple local and remote " +
 					"addresses/devices/domains and ports can be space separated. Placeholders below represent just " +
 					"the format/syntax and will not be used if fields are left blank."));
+			s.rowcolors = true;
 			s.sortable = true;
 			s.anonymous = true;
 			s.addremove = true;
@@ -156,22 +146,26 @@ return view.extend({
 			o = s.option(form.Value, "name", _("Name"));
 
 			o = s.option(form.Value, "src_addr", _("Local addresses / devices"));
-			o.rmempty = true;
 			o.datatype = "list(neg(or(cidr,host,ipmask,ipaddr,macaddr,network)))";
+			o.rmempty = true;
+			o.default = "";
 
 			o = s.option(form.Value, "src_port", _("Local ports"));
 			o.datatype = "list(neg(or(portrange,port)))";
 			o.placeholder = "0-65535";
 			o.rmempty = true;
+			o.default = "";
 
 			o = s.option(form.Value, "dest_addr", _("Remote addresses / domains"));
 			o.datatype = "list(neg(or(cidr,host,ipmask,ipaddr,macaddr,network)))";
 			o.rmempty = true;
+			o.default = "";
 
 			o = s.option(form.Value, "dest_port", _("Remote ports"));
 			o.datatype = "list(neg(or(portrange,port)))";
 			o.placeholder = "0-65535";
 			o.rmempty = true;
+			o.default = "";
 
 			o = s.option(form.ListValue, "proto", _("Protocol"));
 			var proto = L.toArray(uci.get(pkg.Name, "config", "webui_supported_protocol"));
@@ -226,7 +220,7 @@ return view.extend({
 			s.option(form.Flag, "enabled", _("Enabled")).optional = false;
 			s.option(form.Value, "path", _("Path")).optional = false;
 
-			return Promise.all([statusWidget.render(), m.render()]);
+			return Promise.all([status.render(), m.render()]);
 		})
 	}
 });

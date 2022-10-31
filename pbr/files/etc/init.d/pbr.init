@@ -228,9 +228,9 @@ resolveip_to_nftset() { resolveip "$@" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d' | 
 # shellcheck disable=SC3037
 ports_to_nftset() { echo -ne "$value"; }
 get_mark_ipt_chains() { [ -n "$(command -v iptables-save)" ] && iptables-save | grep ":${iptPrefix}_MARK_" | awk '{ print $1 }' | sed 's/://'; }
-get_mark_nft_chains() { [ -x "$nft" ] && "$nft" list table inet "$nftTable" | grep chain | grep "${nftPrefix}_mark_" | awk '{ print $2 }'; }
+get_mark_nft_chains() { [ -x "$nft" ] && "$nft" list table inet "$nftTable" 2>/dev/null | grep chain | grep "${nftPrefix}_mark_" | awk '{ print $2 }'; }
 get_ipsets() { [ -x "$(command -v ipset)" ] && ipset list | grep "${ipsPrefix}_" | awk '{ print $2 }'; }
-get_nft_sets() { [ -x "$nft" ] && "$nft" list table inet "$nftTable" | grep 'set' | grep "${nftPrefix}_" | awk '{ print $2 }'; }
+get_nft_sets() { [ -x "$nft" ] && "$nft" list table inet "$nftTable" 2>/dev/null | grep 'set' | grep "${nftPrefix}_" | awk '{ print $2 }'; }
 is_ipset_type_supported() { ipset help hash:"$1" >/dev/null 2>&1; }
 ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.status.${1}"; }
 ubus_get_iface() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.interfaces[@.name='${1}']${2:+.$2}"; }
@@ -1380,7 +1380,7 @@ EOF
 	esac
 }
 
-json_add_interface() {
+json_add_gateway() {
 	local action="$1" tid="$2" mark="$3" iface="$4" gw4="$5" dev4="$6" gw6="$7" dev6="$8" priority="$9" default="${10}"
 	json_add_object ''
 	json_add_string name "$iface"
@@ -1440,7 +1440,7 @@ interface_process() {
 		create)
 			output 2 "Setting up routing for '$displayText' "
 			if interface_routing 'create' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"; then
-				json_add_interface 'create' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority" "$dispStatus"
+				json_add_gateway 'create' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority" "$dispStatus"
 				gatewaySummary="${gatewaySummary}${displayText}${dispStatus:+ $dispStatus}\\n"
 				output_ok
 			else
@@ -1464,7 +1464,7 @@ interface_process() {
 			if [ "$iface" = "$reloadedIface" ]; then
 				output 2 "Reloading routing for '$displayText' "
 				if interface_routing 'reload_interface' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"; then
-					json_add_interface 'reload_interface' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority" "$dispStatus"
+					json_add_gateway 'reload_interface' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority" "$dispStatus"
 					gatewaySummary="${gatewaySummary}${displayText}${dispStatus:+ $dispStatus}\\n"
 					output_ok
 				else
@@ -1526,7 +1526,13 @@ start_service() {
 			serviceStartTrigger='on_start'
 		;;
 		on_firewall_reload)
-			serviceStartTrigger='on_start'
+			if [ -z "$(ubus_get_status 'gateways')" ]; then # service is not running, do not start it on firewall reload
+				logger -t "$packageName" "Reload on firewall action aborted: service not running."
+				return 0;
+			else
+
+				serviceStartTrigger='on_start'
+			fi
 		;;
 		on_interface_reload)
 			serviceStartTrigger='on_interface_reload'
@@ -1571,7 +1577,7 @@ start_service() {
 	case $serviceStartTrigger in
 		on_interface_reload)
 			output 1 "Reloading Interface: $reloadedIface "
-			json_add_array 'interfaces'
+			json_add_array 'gateways'
 			interface_process 'all' 'prepare'
 			config_foreach interface_process 'interface' 'reload_interface' "$reloadedIface"
 			json_close_array
@@ -1588,7 +1594,7 @@ start_service() {
 					ipt -t mangle "$rule_create_option" "$i" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
 				done
 			fi
-			json_add_array 'interfaces'
+			json_add_array 'gateways'
 			interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'reload';
 			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'reload';
 			json_close_array
@@ -1624,7 +1630,7 @@ start_service() {
 				done
 			fi
 			output 1 'Processing interfaces '
-			json_add_array 'interfaces'
+			json_add_array 'gateways'
 			interface_process 'all' 'prepare'
 			config_foreach interface_process 'interface' 'create'
 			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'create'
@@ -1770,17 +1776,17 @@ status_service_nft() {
 	echo "$_SEPARATOR_"
 	echo "$packageName chains - policies"
 	for i in forward input output prerouting postrouting; do
-		"$nft" list table inet fw4 | sed -n "/chain ${nftPrefix}_${i} {/,/\t}/p"
+		"$nft" list table inet "$nftTable" | sed -n "/chain ${nftPrefix}_${i} {/,/\t}/p"
 	done
 	echo "$_SEPARATOR_"
 	echo "$packageName chains - marking"
 	for i in $(get_mark_nft_chains); do
-		"$nft" list table inet fw4 | sed -n "/chain ${i} {/,/\t}/p"
+		"$nft" list table inet "$nftTable" | sed -n "/chain ${i} {/,/\t}/p"
 	done
 	echo "$_SEPARATOR_"
 	echo "$packageName nft sets"
 	for i in $(get_nft_sets); do
-		"$nft" list table inet fw4 | sed -n "/set ${i} {/,/\t}/p"
+		"$nft" list table inet "$nftTable" | sed -n "/set ${i} {/,/\t}/p"
 	done
 	if [ -s "$dnsmasqFile" ]; then
 		echo "$_SEPARATOR_"
