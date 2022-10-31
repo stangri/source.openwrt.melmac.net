@@ -221,7 +221,7 @@ return view.extend({
 			o.optional = false;
 			o.editable = true;
 
-			o = option(form.Value, "path", _("Path"));
+			o = s.option(form.Value, "path", _("Path"));
 			o.optional = false;
 			o.editable = true;
 
