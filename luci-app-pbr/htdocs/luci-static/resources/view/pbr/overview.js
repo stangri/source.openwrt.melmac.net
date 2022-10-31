@@ -217,8 +217,13 @@ return view.extend({
 			s.anonymous = true;
 			s.addremove = true;
 
-			s.option(form.Flag, "enabled", _("Enabled")).optional = false;
-			s.option(form.Value, "path", _("Path")).optional = false;
+			o = s.option(form.Flag, "enabled", _("Enabled"));
+			o.optional = false;
+			o.editable = true;
+
+			o = option(form.Value, "path", _("Path"));
+			o.optional = false;
+			o.editable = true;
 
 			return Promise.all([status.render(), m.render()]);
 		})

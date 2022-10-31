@@ -169,7 +169,7 @@ msgstr ""
 msgid "Output verbosity"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:221
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:224
 msgid "Path"
 msgstr ""
 
