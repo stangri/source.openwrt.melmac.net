@@ -973,13 +973,9 @@ policy_routing_nft() {
 				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }saddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }saddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
-				unset ip4Flag
-				unset ip6Flag
 			else
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }saddr ${negation:+$negation }$value"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }saddr ${negation:+$negation }$value"
-				unset ip4Flag
-				unset ip6Flag
 			fi
 		fi
 	fi
@@ -999,19 +995,13 @@ policy_routing_nft() {
 				nftset 'add_resolver' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
-				unset ip4Flag
-				unset ip6Flag
 			elif nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
 				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
-				unset ip4Flag
-				unset ip6Flag
 			else
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr {$(resolveip_to_nftset '-4' "$value")}"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr {$(resolveip_to_nftset '-6' "$value")}"
-				unset ip4Flag
-				unset ip6Flag
 			fi
 		else
 			local target='dst' type='ip'
@@ -1019,13 +1009,9 @@ policy_routing_nft() {
 				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
-				unset ip4Flag
-				unset ip6Flag
 			else
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr $value"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr $value"
-				unset ip4Flag
-				unset ip6Flag
 			fi
 		fi
 	fi
