@@ -66,7 +66,9 @@ set_init_action() {
 
 get_init_status() {
 	local name="${1:-$packageName}"
-	local gateways warnings errors
+	local version gateways warnings errors
+	[ -z "$version" ] && version="$(get_version "$name")"
+	[ -z "$version" ] && version="$(get_version "${name}-iptables")"
 	gateways="$(ubus_get_status gateways | sed "s|\\\n|<br />|g;s|\(\\\033[^<]*\)|✓|g;")"
 	warnings="$(ubus_get_status warnings | sed "s|\\\n|<br />|g;s|\(\\\033[^:]*\)||g;s|: ||g;")"
 	errors="$(ubus_get_status errors | sed "s|\\\n|<br />|g;s|\(\\\033[^:]*\)||g;s|: ||g;")"
@@ -88,7 +90,7 @@ get_init_status() {
 	else
 		json_add_boolean 'running_nft' '0'
 	fi
-	json_add_string 'version' "$(get_version "$name")"
+	json_add_string 'version' "$version"
 	json_add_string 'gateways' "$gateways"
 	json_add_string 'warnings' "$warnings"
 	json_add_string 'errors' "$errors"
