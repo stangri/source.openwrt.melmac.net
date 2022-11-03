@@ -78,6 +78,7 @@ var RPC = {
 
 RPC.on('setInitAction', function (reply) {
 	ui.hideModal();
+	location.reload();
 });
 
 return baseclass.extend({
