@@ -3,7 +3,6 @@
 
 'use strict';
 'require form';
-'require rpc';
 'require uci';
 'require view';
 'require simple-adblock.status as adb';
