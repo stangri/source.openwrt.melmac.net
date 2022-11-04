@@ -1061,7 +1061,7 @@ adb_sizes() {
 }
 
 adb_start() {
-	local action status error message stats c entries
+	local action status error message stats c
 	local validation_result="$3"
 
 	load_environment "$validation_result" || return 1
