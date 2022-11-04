@@ -1,7 +1,6 @@
 {
 	"admin/services/simple-adblock": {
 		"title": "Simple AdBlock",
-		"order": 90,
 		"action": {
 			"type": "view",
 			"path": "simple-adblock/overview"
@@ -9,7 +8,10 @@
 		"depends": {
 			"acl": [
 				"luci-app-simple-adblock"
-			]
+			],
+			"uci": {
+				"simple-adblock": true
+			}
 		}
 	}
 }

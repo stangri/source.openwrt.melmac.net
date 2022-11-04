@@ -6,24 +6,12 @@
 'require rpc';
 'require uci';
 'require view';
-'require simple-adblock.status as statusWidget';
+'require simple-adblock.status as adb';
 
 var pkg = {
 	get Name() { return 'simple-adblock'; },
 	get URL() { return 'https://docs.openwrt.melmac.net/' + pkg.Name + '/'; }
 };
-
-var _getInterfaces = rpc.declare({
-	object: "luci." + pkg.Name,
-	method: "getInterfaces",
-	params: ["name"],
-});
-
-var _getPlatformSupport = rpc.declare({
-	object: "luci." + pkg.Name,
-	method: "getPlatformSupport",
-	params: ["name"],
-});
 
 return view.extend({
 	load: function () {
@@ -34,12 +22,12 @@ return view.extend({
 
 	render: function () {
 		return Promise.all([
-			//			L.resolveDefault(_getInterfaces(), {}),
-			L.resolveDefault(_getPlatformSupport(), {}),
+			L.resolveDefault(adb.getPlatformSupport(), {}),
 		]).then(function (data) {
-			//			var arrInterfaces = data[0][pkg.Name].interfaces;
 			var replyPlatform = data[0];
-			var m, s, o;
+			var status, m, s, o;
+
+			status = new adb.status();
 			m = new form.Map(pkg.Name, _("Simple AdBlock - Configuration"));
 			s = m.section(form.NamedSection, 'config', pkg.Name);
 			s.tab("tab_basic", _("Basic Configuration"));
@@ -168,7 +156,7 @@ return view.extend({
 				_("URLs to lists of hosts to be blocked."));
 			o.addremove = false;
 
-			return Promise.all([statusWidget.render(), m.render()]);
+			return Promise.all([status.render(), m.render()]);
 		})
 	}
 });
