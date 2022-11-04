@@ -235,6 +235,174 @@ is_ipset_type_supported() { ipset help hash:"$1" >/dev/null 2>&1; }
 ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.status.${1}"; }
 ubus_get_iface() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.interfaces[@.name='${1}']${2:+.$2}"; }
 
+resolver() {
+	local param="$1"
+	shift
+	case "$resolver_set" in
+		none) return 0;;
+		adguardhome.ipset)
+			case "$param" in
+				add_resolver) :;;
+				create_resolver) :;;
+				check_support) :;;
+				cleanup) :;;
+				configure) :;;
+				init) :;;
+				init_end) :;;
+				kill) :;;
+				reload) :;;
+				restart) :;;
+				compare_hash) :;;
+				store_hash) :;;
+			esac
+		;;
+		dnsmasq.ipset)
+			case "$param" in
+				add_resolver)
+					[ "$resolver_setSupported" -eq 0 ] && return 1
+					ips 'add_resolver' "$@"
+					return "$?"
+				;;
+				create_resolver)
+					[ "$resolver_setSupported" -eq 0 ] && return 1
+					ips 'create_resolver' "$@"
+					return "$?"
+				;;
+				check_support)
+					if [ ! -x "$ipset" ]; then
+						errorSummary="${errorSummary}${_ERROR_}: The ipset binary cannot be found, make sure to install ipset!\\n"
+						resolver_set='none'
+						return 1
+					fi
+					if ! dnsmasq -v 2>/dev/null | grep -q 'no-ipset' && dnsmasq -v 2>/dev/null | grep -q 'ipset'; then
+						resolver_setSupported='1'
+						return 0
+					else
+						warningSummary="${warningSummary}${_WARNING_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported on this system!\\n"
+						resolver_set='none'
+						return 1
+					fi
+				;;
+				cleanup) :;;
+				configure) :;;
+				init) :;;
+				init_end) :;;
+				kill) if killall -q -s HUP dnsmasq; then return 0; else return 1; fi;;
+				reload)
+					output 3 'Reloading dnsmasq '
+					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
+						output_okn
+						return 0
+					else
+						output_failn
+						return 1
+					fi
+				;;
+				restart)
+					output 3 'Restarting dnsmasq '
+					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
+						output_okn
+						return 0
+					else
+						output_failn
+						return 1
+					fi
+				;;
+				compare_hash) :;;
+				store_hash) :;;
+			esac
+		;;
+		dnsmasq.nftset)
+			case "$param" in
+				add_resolver)
+					[ "$resolver_setSupported" -eq 0 ] && return 1
+					nftset 'add_resolver' "$@"
+					return "$?"
+				;;
+				create_resolver)
+					[ "$resolver_setSupported" -eq 0 ] && return 1
+					nftset 'create_resolver' "$@"
+					return "$?"
+				;;
+				check_support)
+					if [ ! -x "$nft" ]; then
+						errorSummary="${errorSummary}${_ERROR_}: This version of $packageName supports only nftables, but nft binary cannot be found!\\n"
+						resolver_set='none'
+						return 1
+					fi
+					if ! dnsmasq -v 2>/dev/null | grep -q 'no-nftset' && dnsmasq -v 2>/dev/null | grep -q 'nftset'; then
+						resolver_setSupported='1'
+						return 0
+					else
+						warningSummary="${warningSummary}${_WARNING_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported on this system!\\n"
+						resolver_set='none'
+						return 1
+					fi
+				;;
+				cleanup) :;;
+				configure) :;;
+				init) :;;
+				init_end) :;;
+				kill) if killall -q -s HUP dnsmasq; then return 0; else return 1; fi;;
+				reload)
+					output 3 'Reloading dnsmasq '
+					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
+						output_okn
+						return 0
+					else
+						output_failn
+						return 1
+					fi
+				;;
+				restart)
+					output 3 'Restarting dnsmasq '
+					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
+						output_okn
+						return 0
+					else
+						output_failn
+						return 1
+					fi
+				;;
+				compare_hash) :;;
+				store_hash) :;;
+			esac
+		;;
+		unbound.ipset)
+			case "$param" in
+				add_resolver) :;;
+				create_resolver) :;;
+				check_support) :;;
+				cleanup) :;;
+				configure) :;;
+				init) :;;
+				init_end) :;;
+				kill) :;;
+				reload) :;;
+				restart) :;;
+				compare_hash) :;;
+				store_hash) :;;
+			esac
+		;;
+		unbound.nftset)
+			case "$param" in
+				add_resolver) :;;
+				create_resolver) :;;
+				check_support) :;;
+				cleanup) :;;
+				configure) :;;
+				init) :;;
+				init_end) :;;
+				kill) :;;
+				reload) :;;
+				restart) :;;
+				compare_hash) :;;
+				store_hash) :;;
+			esac
+		;;
+	esac
+}
+
 load_package_config() {
 	config_load "$packageName"
 	config_get      boot_timeout             'config' 'boot_timeout' '30'
@@ -276,13 +444,13 @@ load_environment() {
 
 	if [ "$param" = 'on_start' ]; then
 		if [ -n "$validation_result" ] && [ "$validation_result" != '0' ]; then
-			output "${_ERROR_}: $packageName config validation failed!\\n"
+			output "${_ERROR_}: The $packageName config validation failed!\\n"
 			output "Please check if the '$packageConfigFile' contains correct values for config options.\\n"
 			return 1
 		fi
 
 		if [ "$enabled" -eq 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: ${packageName} is currently disabled.\\n"
+			errorSummary="${errorSummary}${_ERROR_}: The ${packageName} is currently disabled.\\n"
 			errorSummary="${errorSummary}Enable ${packageName} from WebUI or run the following commands:\\n"
 			errorSummary="${errorSummary}uci set $packageName.config.enabled='1'; uci commit $packageName;\\n"
 			return 1
@@ -311,6 +479,7 @@ load_environment() {
 		else
 			case $resolver_set in
 				none) : ;;
+				adguardhome.ipset) : ;;
 				dnsmasq.ipset)
 					if ! dnsmasq -v 2>/dev/null | grep -q 'no-ipset' && dnsmasq -v 2>/dev/null | grep -q 'ipset'; then
 						resolver_setSupported='1'
@@ -1645,7 +1814,7 @@ start_service() {
 	traffic_killswitch 'remove'
 
 	if [ -z "$gatewaySummary" ]; then
-		errorSummary="${errorSummary}${_ERROR_}: failed to set up any gateway!\\n"
+		errorSummary="${errorSummary}${_ERROR_}: Failed to set up any gateway!\\n"
 	fi
 	json_add_object 'status'
 	[ -n "$gatewaySummary" ] && json_add_string 'gateways' "$gatewaySummary"
@@ -1893,8 +2062,8 @@ status_service_iptables() {
 			[ "$s" = "1" ] && printf "%b" "https://paste.ee/p/$id $__OK__\\n" || printf "%b" "$__FAIL__\\n"
 			[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
 		else
-			printf "%b" "$__FAIL__\\n"
-			printf "%b" "$_ERROR_: curl, libopenssl or ca-bundle were not found!\\nRun 'opkg update; opkg install curl libopenssl ca-bundle' to install them.\\n"
+			printf "%b" "${__FAIL__}\\n"
+			printf "%b" "${_ERROR_}: The curl, libopenssl or ca-bundle packages were not found!\\nRun 'opkg update; opkg install curl libopenssl ca-bundle' to install them.\\n"
 		fi
 	else
 		printf "%b" "Your support details have been logged to '/var/${packageName}-support'. $__OK__\\n"

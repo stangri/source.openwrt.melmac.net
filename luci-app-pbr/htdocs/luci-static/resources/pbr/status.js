@@ -266,12 +266,11 @@ var status = baseclass.extend({
 
 RPC.on('setInitAction', function (reply) {
 	ui.hideModal();
-	// refresh the page?
+	location.reload();
 });
- 
+
 return L.Class.extend({
 	status: status,
 	getInterfaces: getInterfaces,
-	getPlatformSupport: getPlatformSupport,
-	RPC: RPC
+	getPlatformSupport: getPlatformSupport
 });
