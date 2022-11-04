@@ -80,67 +80,65 @@ var status = baseclass.extend({
 	render: function () {
 		return Promise.all([
 			L.resolveDefault(getInitStatus(), {}),
-			//			L.resolveDefault(getGateways(), {}),
 		]).then(function (data) {
 			var replyStatus = data[0];
-			//			var replyGateways = data[1];
 			var text ="";
-			var arrPorts = replyStatus[pkg.Name].force_dns_ports;
-			var outputFile = replyStatus[pkg.Name].outputFile;
-			var outputCache = replyStatus[pkg.Name].outputCache;
-			var outputGzip = replyStatus[pkg.Name].outputGzip;
-			var statusTable = [];
-			statusTable["statusNoInstall"] = _("%s is not installed or not found").format(pkg.Name);;
-			statusTable["statusStopped"] = _("Stopped");
-			statusTable["statusStarting"] = _("Starting");
-			statusTable["statusRestarting"] = _("Restarting");
-			statusTable["statusForceReloading"] = _("Force Reloading");
-			statusTable["statusDownloading"] = _("Downloading");
-			statusTable["statusError"] = _("Error");
-			statusTable["statusWarning"] = _("Warning");
-			statusTable["statusFail"] = _("Fail");
-			statusTable["statusSuccess"] = _("Active");
+			var status = replyStatus[pkg.Name];
+			var outputFile = status.outputFile;
+			var outputCache = status.outputCache;
+			var statusTable = {
+			  statusNoInstall: _("%s is not installed or not found").format(pkg.Name),
+			  statusStopped: _("Stopped"),
+			  statusStarting: _("Starting"),
+			  statusRestarting: _("Restarting"),
+			  statusForceReloading: _("Force Reloading"),
+			  statusDownloading: _("Downloading"),
+			  statusError: _("Error"),
+			  statusWarning: _("Warning"),
+			  statusFail: _("Fail"),
+			  statusSuccess: _("Active")
+			};
 
 			var header = E('h2', {}, _("Simple AdBlock - Status"))
 			var statusTitle = E('label', { class: 'cbi-value-title' }, _("Service Status"));
-			if (replyStatus[pkg.Name].version) {
-				text += _("Version: %s").format(replyStatus[pkg.Name].version) + " - ";
-				switch (replyStatus[pkg.Name].status) {
+			if (status.version) {
+				text += _("Version: %s").format(status.version) + " - ";
+				switch (status.status) {
 					case 'statusSuccess':
-						text += statusTable[replyStatus[pkg.Name].status] + ".";
-						text += "<br />" + _("Blocking %s domains (with %s).").format(replyStatus[pkg.Name].entries, replyStatus[pkg.Name].dns);
-						if (replyStatus[pkg.Name].outputGzipExists) {
+						text += statusTable[status.status] + ".";
+						text += "<br />" + _("Blocking %s domains (with %s).").format(status.entries, status.dns);
+						if (status.outputGzipExists) {
 							text += "<br />" + _("Compressed cache file created.");
 						}
-						if (replyStatus[pkg.Name].force_dns_active) {
+						if (status.force_dns_active) {
 							text += "<br />" + _("Force DNS ports:");
-							arrPorts.forEach(element => {
+							status.force_dns_ports.forEach(element => {
 								text += " " + element;
 							});
 							text += ".";
 						}
 						break;
 					case 'statusStopped':
-						if (replyStatus[pkg.Name].enabled) {
-							text += statusTable[replyStatus[pkg.Name].status] + ".";
+						if (status.enabled) {
+							text += statusTable[status.status] + ".";
 						}
 						else {
-							text += statusTable[replyStatus[pkg.Name].status] + _("disabled") + "."
+							text += statusTable[status.status] + _("disabled") + "."
 						}
-						if (replyStatus[pkg.Name].outputCacheExists) {
+						if (status.outputCacheExists) {
 							text += "<br />" + _("Cache file found.");
 						}
-						else if (replyStatus[pkg.Name].outputGzipExists) {
+						else if (status.outputGzipExists) {
 							text += "<br />" + _("Compressed cache file found.");
 						}
 						break;
 					case 'statusRestarting':
 					case 'statusForceReloading':
 					case 'statusDownloading':
-						text += statusTable[replyStatus[pkg.Name].status] + "...";
+						text += statusTable[status.status] + "...";
 						break;
 					default:
-						text += statusTable[replyStatus[pkg.Name].status] + ".";
+						text += statusTable[status.status] + ".";
 						break;
 				}
 			}
@@ -152,40 +150,41 @@ var status = baseclass.extend({
 			var statusDiv = E('div', { class: 'cbi-value' }, [statusTitle, statusField]);
 
 			var warningsDiv = [];
-			if (replyStatus[pkg.Name].warnings) {
+			if (status.warnings) {
 				var warningsTitle = E('label', { class: 'cbi-value-title' }, _("Service Warnings"));
-				var warningsText = E('div', {}, replyStatus[pkg.Name].warnings);
+				var warningsText = E('div', {}, status.warnings);
 				var warningsField = E('div', { class: 'cbi-value-field' }, warningsText);
 				warningsDiv = E('div', { class: 'cbi-value' }, [warningsTitle, warningsField]);
 			}
 
 			var errorsDiv = [];
-			if ((replyStatus[pkg.Name].errors).length) {
-				var errorTable = [];
-				errorTable["errorOutputFileCreate"] = _("failed to create '%s' file").format(outputFile);
-				errorTable["errorFailDNSReload"] = _("failed to restart/reload DNS resolver");
-				errorTable["errorSharedMemory"] = _("failed to access shared memory");
-				errorTable["errorSorting"] = _("failed to sort data file");
-				errorTable["errorOptimization"] = _("failed to optimize data file");
-				errorTable["errorAllowListProcessing"] = _("failed to process allow-list");
-				errorTable["errorDataFileFormatting"] = _("failed to format data file");
-				errorTable["errorMovingDataFile"] = _("failed to move temporary data file to '%s'").format(outputFile);
-				errorTable["errorCreatingCompressedCache"] = _("failed to create compressed cache");
-				errorTable["errorRemovingTempFiles"] = _("failed to remove temporary files");
-				errorTable["errorRestoreCompressedCache"] = _("failed to unpack compressed cache");
-				errorTable["errorRestoreCache"] = _("failed to move '%s' to '%s'").format(outputCache, outputFile);
-				errorTable["errorOhSnap"] = _("failed to create block-list or restart DNS resolver");
-				errorTable["errorStopping"] = _("failed to stop %s").format(pkg.Name);
-				errorTable["errorDNSReload"] = _("failed to reload/restart DNS resolver");
-				errorTable["errorDownloadingConfigUpdate"] = _("failed to download Config Update file");
-				errorTable["errorDownloadingList"] = _("failed to download");
-				errorTable["errorParsingConfigUpdate"] = _("failed to parse Config Update file");
-				errorTable["errorParsingList"] = _("failed to parse");
-				errorTable["errorNoSSLSupport"] = _("no HTTPS/SSL support on device");
-				errorTable["errorCreatingDirectory"] = _("failed to create output/cache/gzip file directory");
+			if ((status.errors).length) {
+				var errorTable = {
+					errorOutputFileCreate: _("failed to create '%s' file").format(outputFile),
+					errorFailDNSReload: _("failed to restart/reload DNS resolver"),
+					errorSharedMemory: _("failed to access shared memory"),
+					errorSorting: _("failed to sort data file"),
+					errorOptimization: _("failed to optimize data file"),
+					errorAllowListProcessing: _("failed to process allow-list"),
+					errorDataFileFormatting: _("failed to format data file"),
+					errorMovingDataFile: _("failed to move temporary data file to '%s'").format(outputFile),
+					errorCreatingCompressedCache: _("failed to create compressed cache"),
+					errorRemovingTempFiles: _("failed to remove temporary files"),
+					errorRestoreCompressedCache: _("failed to unpack compressed cache"),
+					errorRestoreCache: _("failed to move '%s' to '%s'").format(outputCache, outputFile),
+					errorOhSnap: _("failed to create block-list or restart DNS resolver"),
+					errorStopping: _("failed to stop %s").format(pkg.Name),
+					errorDNSReload: _("failed to reload/restart DNS resolver"),
+					errorDownloadingConfigUpdate: _("failed to download Config Update file"),
+					errorDownloadingList: _("failed to download"),
+					errorParsingConfigUpdate: _("failed to parse Config Update file"),
+					errorParsingList: _("failed to parse"),
+					errorNoSSLSupport: _("no HTTPS/SSL support on device"),
+					errorCreatingDirectory: _("failed to create output/cache/gzip file directory")
+				}
 				var errorsTitle = E('label', { class: 'cbi-value-title' }, _("Service Errors"));
 				var text = "";
-				(replyStatus[pkg.Name].errors).forEach(element => {
+				(status.errors).forEach(element => {
 					text += errorTable[element] + ".<br />";
 				});
 				var errorsText = E('div', {}, text);
@@ -251,10 +250,10 @@ var status = baseclass.extend({
 				}
 			}, _('Disable'));
 
-			if (replyStatus[pkg.Name].enabled) {
+			if (status.enabled) {
 				btn_enable.disabled = true;
 				btn_disable.disabled = false;
-				switch (replyStatus[pkg.Name].status) {
+				switch (status.status) {
 					case 'statusSuccess':
 						btn_start.disabled = true;
 						btn_action.disabled = false;
@@ -286,7 +285,7 @@ var status = baseclass.extend({
 			var buttonsTitle = E('label', { class: 'cbi-value-title' }, _("Service Control"))
 			var buttonsText = E('div', {}, [btn_start, btn_gap, btn_action, btn_gap, btn_stop, btn_gap_long, btn_enable, btn_gap, btn_disable]);
 			var buttonsField = E('div', { class: 'cbi-value-field' }, buttonsText);
-			if (replyStatus[pkg.Name].version) {
+			if (status.version) {
 				buttonsDiv = E('div', { class: 'cbi-value' }, [buttonsTitle, buttonsField]);
 			}
 
