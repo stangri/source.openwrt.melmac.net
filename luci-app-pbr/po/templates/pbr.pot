@@ -194,7 +194,7 @@ msgstr ""
 msgid "Policy Based Routing - Status"
 msgstr ""
 
-#: applications/luci-app-pbr/root/usr/share/luci/menu.d/pbr.json:3
+#: applications/luci-app-pbr/root/usr/share/luci/menu.d/luci-app-pbr.json:3
 msgid "Policy Routing"
 msgstr ""
 
