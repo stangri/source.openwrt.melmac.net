@@ -791,7 +791,8 @@ nftset() {
 			nft flush set inet "$nftTable" "$nftset6" && ipv6_error=0
 		;;
 	esac
-	[ -n "$ipv6_enabled" ] || ipv6_error=1
+# nft6 returns true if IPv6 support is not enabled
+	[ -z "$ipv6_enabled" ] && ipv6_error='1'
 	return $ipv4_error || $ipv6_error
 }
 
@@ -921,6 +922,7 @@ policy_routing_tor_nft() {
 policy_routing() { if is_nft; then policy_routing_nft "$@"; else policy_routing_iptables "$@"; fi; }
 policy_routing_iptables() {
 	local mark param4 param6 i negation value dest ipInsertOption="-A"
+	local ip4error='1' ip6error='1'
 	local name="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain uid="$9"
 	proto="$(str_to_lower "$7")"
 	chain="$(str_to_upper "$8")"
@@ -1076,12 +1078,26 @@ policy_routing_iptables() {
 			param6="$param6 -m comment --comment $(str_extras_to_underscore "$name")"
 		fi
 
+		local ipv4_error='0' ipv6_error='0'
 		if [ "$param4" = "$param6" ]; then
-			ipt4 "$param4" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param4\\n"
+			ipt4 "$param4" || ipv4_error='1'
 		else
-			ipt4 "$param4" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param4\\n"
-			ipt6 "$param6" || processPolicyError="${processPolicyError}${_ERROR_}: iptables $param6\\n"
+			ipt4 "$param4" || ipv4_error='1'
+			ipt6 "$param6" || ipv6_error='1'
 		fi
+
+# ipt6 returns true if IPv6 support is not enabled
+	[ -z "$ipv6_enabled" ] && ipv6_error='1'
+	if [ "$ipv4_error" -eq '1' ] && [ "$ipv6_error" -eq '1' ]; then
+		if [ -n "$ipv6_enabled" ]; then
+			processPolicyError="${processPolicyError}${_ERROR_}: Policy insertion failed for both IPv4 and IPv6!\\n"
+			processPolicyError="${processPolicyError}${_ERROR_}: iptables $param4\\n"
+			processPolicyError="${processPolicyError}${_ERROR_}: iptables $param6\\n"
+		else
+			processPolicyError="${processPolicyError}${_ERROR_}: iptables $param4\\n"
+		fi
+	fi
+
 	done
 }
 policy_routing_nft() {
@@ -1212,13 +1228,26 @@ policy_routing_nft() {
 	param4="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain:-prerouting} $param4 $dest comment \"$name\""
 	param6="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain:-prerouting} $param6 $dest comment \"$name\""
 
+	local ipv4_error='0' ipv6_error='0'
 	if [ "$nftPrevParam4" != "$param4" ]; then
-		nft4 "$param4" || processPolicyError="${processPolicyError}${_ERROR_}: nft '$param4'\\n"
+		nft4 "$param4" || ipv4_error='1'
 		nftPrevParam4="$param4"
 	fi
 	if [ "$nftPrevParam6" != "$param6" ]; then
-		nft6 "$param6" || processPolicyError="${processPolicyError}${_ERROR_}: nft '$param6'\\n"
+		nft6 "$param6" || ipv6_error='1'
 		nftPrevParam6="$param6"
+	fi
+
+# nft6 returns true if IPv6 support is not enabled
+	[ -z "$ipv6_enabled" ] && ipv6_error='1'
+	if [ "$ipv4_error" -eq '1' ] && [ "$ipv6_error" -eq '1' ]; then
+		if [ -n "$ipv6_enabled" ]; then
+			processPolicyError="${processPolicyError}${_ERROR_}: Policy insertion failed for both IPv4 and IPv6!\\n"
+			processPolicyError="${processPolicyError}${_ERROR_}: nft '$param4'\\n"
+			processPolicyError="${processPolicyError}${_ERROR_}: nft '$param6'\\n"
+		else
+			processPolicyError="${processPolicyError}${_ERROR_}: nft '$param4'\\n"
+		fi
 	fi
 }
 
