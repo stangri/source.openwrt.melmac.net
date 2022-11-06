@@ -76,7 +76,6 @@ supported_interface=
 verbosity=
 wan_ip_rules_priority=
 wan_mark=
-wan_tid=
 
 # run-time
 gatewaySummary=
@@ -199,6 +198,7 @@ is_ipv6_link_local() { [ "${1:0:4}" = "fe80" ]; }
 is_ipv6_unique_local() { [ "${1:0:2}" = "fc" ] || [ "${1:0:2}" = "fd" ]; }
 is_ipv6_global() { [ "${1:0:4}" = "2001" ]; }
 # is_ipv6_global() { is_ipv6 "$1" && ! is_ipv6_link_local "$1" && ! is_ipv6_link_local "$1"; }
+is_list() { str_contains "$1" "," || str_contains "$1" " "; }
 is_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
 is_domain() { str_contains "$1" '[a-zA-Z]'; }
 is_phys_dev() { [ "${1:0:1}" = "@" ] && ip l show | grep -E -q "^\\d+\\W+${1:1}"; }
@@ -212,7 +212,9 @@ is_service_running_nft() { [ -x "$nft" ] && [ -n "$(get_mark_nft_chains)" ]; }
 # atomic
 # is_service_running_nft() { [ -x "$nft" ] && [ -s "$nftPermFile" ]; }
 is_service_running() { if is_nft; then is_service_running_nft; else is_service_running_iptables; fi; }
-is_netifd_table() { return 1; }
+is_netifd_table() { local iface="$1"; [ "$(uci -q get "network.${iface}.ip4table")" = "${packageName}_${iface%6}" ]; }
+get_rt_tables_id() { grep "${packageName}_${iface}" /etc/iproute2/rt_tables | awk '{print $1;}'; }
+get_rt_tables_next_id() { echo "$(($(sort -r -n /etc/iproute2/rt_tables | grep -o -E -m 1 "^[0-9]+")+1))"; }
 _check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
 is_config_enabled() {
 	local cfg="$1" _cfg_enabled=1
@@ -225,6 +227,12 @@ is_config_enabled() {
 resolveip_to_ipt() { resolveip "$@" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d'; }
 # shellcheck disable=SC2016
 resolveip_to_nftset() { resolveip "$@" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d' | tr '\n' ' '; }
+resolveip_to_nftset4() { resolveip_to_nftset -4 "$@"; }
+resolveip_to_nftset6() { [ -n "$ipv6_enabled" ] && resolveip_to_nftset -6 "$@"; }
+# shellcheck disable=SC2016
+ipv4_leases_to_nftset() { [ -s '/tmp/dhcp.leases' ] || return 1; grep "$1" '/tmp/dhcp.leases' | awk '{print $3}' | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d' | tr '\n' ' '; }
+# shellcheck disable=SC2016
+ipv6_leases_to_nftset() { [ -s '/tmp/hosts/odhcpd' ] || return 1; grep "$1" '/tmp/hosts/odhcpd' | awk '{print $1}' | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d' | tr '\n' ' '; }
 # shellcheck disable=SC3037
 ports_to_nftset() { echo -ne "$value"; }
 get_mark_ipt_chains() { [ -n "$(command -v iptables-save)" ] && iptables-save | grep ":${iptPrefix}_MARK_" | awk '{ print $1 }' | sed 's/://'; }
@@ -420,7 +428,6 @@ load_package_config() {
 	config_get      verbosity                'config' 'verbosity' '2'
 	config_get      wan_ip_rules_priority    'config' 'wan_ip_rules_priority' '30000'
 	config_get      wan_mark                 'config' 'wan_mark' '010000'
-	config_get      wan_tid                  'config' 'wan_tid' '201'
 	fw_mask="0x${fw_mask}"
 	wan_mark="0x${wan_mark}"
 	[ -n "$ipv6_enabled" ] && [ "$ipv6_enabled" -eq 0 ] && unset ipv6_enabled
@@ -694,14 +701,20 @@ nftset() {
 
 	case "$command" in
 		add)
-			if is_domain "$param"; then
-				param4="$(resolveip_to_nftset -4 "$param")"
-				param6="$(resolveip_to_nftset -6 "$param")"
-				nft4 add element inet "$nftTable" "$nftset4" "{ $param4 }" && ipv4_error=0
-				nft6 add element inet "$nftTable" "$nftset6" "{ $param6 }" && ipv6_error=0
-			else
+			if is_netmask "$param" || is_ipv4 "$param" || is_ipv6 "$param" \
+				|| is_mac_address "$param" || is_list "$param"; then
 				nft4 add element inet "$nftTable" "$nftset4" "{ $param }" && ipv4_error=0
 				nft6 add element inet "$nftTable" "$nftset6" "{ $param }" && ipv6_error=0
+			else
+#			elif is_domain "$param"; then
+				if [ "$target" = 'src' ]; then
+					param4="$(ipv4_leases_to_nftset "$param")"
+					param6="$(ipv6_leases_to_nftset "$param")"
+				fi
+				[ -z "$param4" ] &&	param4="$(resolveip_to_nftset4 "$param")"
+				[ -z "$param6" ] &&	param6="$(resolveip_to_nftset6 "$param")"
+				nft4 add element inet "$nftTable" "$nftset4" "{ $param4 }" && ipv4_error=0
+				nft6 add element inet "$nftTable" "$nftset6" "{ $param6 }" && ipv6_error=0
 			fi
 		;;
 		add_resolver)
@@ -1185,8 +1198,8 @@ policy_routing_nft() {
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 			else
-				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr {$(resolveip_to_nftset '-4' "$value")}"
-				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr {$(resolveip_to_nftset '-6' "$value")}"
+				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr {$(resolveip_to_nftset4 "$value")}"
+				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr {$(resolveip_to_nftset6 "$value")}"
 			fi
 		else
 			local target='dst' type='ip'
@@ -1426,25 +1439,8 @@ interface_routing() {
 	fi
 	case "$action" in
 		create)
-			sed -i "/${ipTablePrefix}_${iface}/d" /etc/iproute2/rt_tables
-			ip route flush table "$tid" >/dev/null 2>&1
-			if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
+			if is_netifd_table "$iface"; then
 				ipv4_error=0
-				echo "$tid ${ipTablePrefix}_${iface}" >> /etc/iproute2/rt_tables
-				if [ -z "$gw4" ]; then
-					ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
-				else
-					ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
-				fi
-# shellcheck disable=SC2086
-				while read -r i; do
-					idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
-					if ! is_supported_iface_dev "$idev"; then
-						ip -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
-					fi
-				done << EOF
-				$(ip -4 route list table main)
-EOF
 				if [ -z "$(ip rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
 					ip rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
 				fi
@@ -1457,25 +1453,64 @@ EOF
 					ipt -t mangle -A "${iptPrefix}_MARK_${mark}" -j MARK --set-xmark "${mark}/${fw_mask}" || ipv4_error=1
 					ipt -t mangle -A "${iptPrefix}_MARK_${mark}" -j RETURN || ipv4_error=1
 				fi
-			fi
-			if [ -n "$ipv6_enabled" ]; then
-				ipv6_error=0
-				if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne 0 ]; then
-					if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
-						ip -6 route add unreachable default table "$tid" || ipv6_error=1
-					elif ip -6 route list table main | grep -q " dev $dev6 "; then
-						while read -r i; do
-							ip -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
-						done << EOF
-						$(ip -6 route list table main | grep " dev $dev6 ")
-EOF
-					else
-						ip -6 route add "$(ip -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
-						ip -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+				if [ -n "$ipv6_enabled" ]; then
+					ipv6_error=0
+					if [ -z "$(ip -6 rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
+						ip -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
 					fi
 				fi
-				if [ -z "$(ip -6 rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
-					ip -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
+			else
+				sed -i "/${ipTablePrefix}_${iface}/d" /etc/iproute2/rt_tables
+				ip route flush table "$tid" >/dev/null 2>&1
+				if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
+					ipv4_error=0
+					echo "$tid ${ipTablePrefix}_${iface}" >> /etc/iproute2/rt_tables
+					if [ -z "$gw4" ]; then
+						ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
+					else
+						ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+					fi
+					# shellcheck disable=SC2086
+					while read -r i; do
+						idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
+						if ! is_supported_iface_dev "$idev"; then
+							ip -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
+						fi
+					done << EOF
+					$(ip -4 route list table main)
+EOF
+					if [ -z "$(ip rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
+						ip rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
+					fi
+					if is_nft; then
+						nft add chain inet "$nftTable" "${nftPrefix}_mark_${mark}" || ipv4_error=1 
+						nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} counter mark set mark and ${fw_maskXor} xor ${mark}" || ipv4_error=1
+						nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} return" || ipv4_error=1
+					else
+						ipt -t mangle -N "${iptPrefix}_MARK_${mark}" || ipv4_error=1
+						ipt -t mangle -A "${iptPrefix}_MARK_${mark}" -j MARK --set-xmark "${mark}/${fw_mask}" || ipv4_error=1
+						ipt -t mangle -A "${iptPrefix}_MARK_${mark}" -j RETURN || ipv4_error=1
+					fi
+				fi
+				if [ -n "$ipv6_enabled" ]; then
+					ipv6_error=0
+					if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne 0 ]; then
+						if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
+							ip -6 route add unreachable default table "$tid" || ipv6_error=1
+						elif ip -6 route list table main | grep -q " dev $dev6 "; then
+							while read -r i; do
+								ip -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							done << EOF
+							$(ip -6 route list table main | grep " dev $dev6 ")
+EOF
+						else
+							ip -6 route add "$(ip -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							ip -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+						fi
+					fi
+					if [ -z "$(ip -6 rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
+						ip -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
+					fi
 				fi
 			fi
 			if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
@@ -1516,11 +1551,14 @@ EOF
 		;;
 		delete|destroy)
 			ip rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
-			ip route flush table "$tid" >/dev/null 2>&1
-			sed -i "/${ipTablePrefix}_${iface}/d" /etc/iproute2/rt_tables
+			if ! is_netifd_table "$iface"; then
+				ip route flush table "$tid" >/dev/null 2>&1
+				sed -i "/${ipTablePrefix}_${iface}/d" /etc/iproute2/rt_tables
+			fi
 			return "$s"
 		;;
 		reload_interface)
+			is_netifd_table "$iface" && return 0;
 			ipv4_error=0
 			ip rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
 			ip route flush table "$tid" >/dev/null 2>&1
@@ -1590,7 +1628,6 @@ interface_process() {
 
 	if [ "$iface" = 'all' ] && [ "$action" = 'prepare' ]; then
 		config_load 'network'
-		ifaceTableID="$wan_tid"
 		ifaceMark="$(printf '0x%06x' "$wan_mark")"
 		ifacePriority="$wan_ip_rules_priority"
 		return 0
@@ -1601,15 +1638,16 @@ interface_process() {
 	[ $((ifaceMark)) -gt $((fw_mask)) ] && return 1
 
 	network_get_device dev "$iface"
-	if is_wan "$iface" && [ -n "$wanIface6" ]; then
+	if is_wan "$iface" && [ -n "$wanIface6" ] && str_contains "$wanIface6" "$iface"; then
 		network_get_device dev6 "$wanIface6"
 	fi
 
 	[ -z "$dev6" ] && dev6="$dev"
-	[ -z "$ifaceTableID" ] && ifaceTableID="$wan_tid"
 	[ -z "$ifaceMark" ] && ifaceMark="$(printf '0x%06x' "$wan_mark")"
 	[ -z "$ifacePriority" ] && ifacePriority="$wan_ip_rules_priority"
 
+	ifaceTableID="$(get_rt_tables_id "$iface")"
+	[ -z "$ifaceTableID" ] && ifaceTableID="$(get_rt_tables_next_id)"
 	eval "mark_${iface//-/_}"='$ifaceMark'
 	eval "tid_${iface//-/_}"='$ifaceTableID'
 	pbr_get_gateway gw4 "$iface" "$dev"
@@ -1660,7 +1698,7 @@ interface_process() {
 			fi
 		;;
 	esac
-	ifaceTableID="$((ifaceTableID + 1))"
+#	ifaceTableID="$((ifaceTableID + 1))"
 	ifaceMark="$(printf '0x%06x' $((ifaceMark + wan_mark)))"
 	ifacePriority="$((ifacePriority - 1))"
 	return $s
@@ -1934,7 +1972,7 @@ status_service() {
 }
 
 status_service_nft() {
-	local i dev dev6
+	local i dev dev6 wan_tid
 
 	json_load "$(ubus call system board)"; json_select release; json_get_var dist distribution; json_get_var vers version
 	if [ -n "$wanIface4" ]; then
@@ -1977,10 +2015,20 @@ status_service_nft() {
 		echo "dnsmasq sets"
 		cat "$dnsmasqFile"
 	fi
+#	echo "$_SEPARATOR_"
+#	ip rule list | grep "${packageName}_"
+	echo "$_SEPARATOR_"
+	tableCount="$(grep -c "${packageName}_" /etc/iproute2/rt_tables)" || tableCount=0
+	wan_tid=$(($(get_rt_tables_next_id)-tableCount))
+	i=0; while [ $i -lt $tableCount ]; do 
+		echo "IPv4 table $((wan_tid + i)) route: $(ip -4 route show table $((wan_tid + i)) | grep default)"
+		echo "IPv4 table $((wan_tid + i)) rule:  $(ip -4 rule list table "$((wan_tid + i))")"
+		i=$((i + 1))
+	done
 }
 
 status_service_iptables() {
-	local dist vers out id s param status set_d set_p tableCount i=0 dev dev6 j
+	local dist vers out id s param status set_d set_p tableCount i=0 dev dev6 j wan_tid
 
 	json_load "$(ubus call system board)"; json_select release; json_get_var dist distribution; json_get_var vers version
 	if [ -n "$wanIface4" ]; then
@@ -2011,14 +2059,13 @@ status_service_iptables() {
 
 		echo "$_SEPARATOR_"
 		echo "Routes/IP Rules"
-		tableCount=$(ip rule list | grep -c 'fwmark') || tableCount=0
+		tableCount="$(grep -c "${packageName}_" /etc/iproute2/rt_tables)" || tableCount=0
 		if [ -n "$set_d" ]; then route; else route | grep '^default'; fi
 		if [ -n "$set_d" ]; then ip rule list; fi
+		wan_tid=$(($(get_rt_tables_next_id)-tableCount))
 		i=0; while [ $i -lt $tableCount ]; do 
-			echo ""
-			echo "IPv4 Table $((wan_tid + i)): $(ip -4 route show table $((wan_tid + i)))"
-			echo "IPv4 Table $((wan_tid + i)) Rules:"
-			ip -4 rule list table "$((wan_tid + i))"
+			echo "IPv4 table $((wan_tid + i)) route: $(ip -4 route show table $((wan_tid + i)) | grep default)"
+			echo "IPv4 table $((wan_tid + i)) rule:  $(ip -4 rule list table "$((wan_tid + i))")"
 			i=$((i + 1))
 		done
 
@@ -2109,7 +2156,6 @@ load_validate_config() {
 		'ipv6_enabled:bool:0' \
 		'resolver_set:or("", "none", "dnsmasq.ipset", "dnsmasq.nftset"):dnsmasq.nftset' \
 		'verbosity:range(0,2):1' \
-		'wan_tid:integer:201' \
 		"wan_mark:regex('0x[A-Fa-f0-9]{8}'):0x010000" \
 		"fw_mask:regex('0x[A-Fa-f0-9]{8}'):0xff0000" \
 		'icmp_interface:or("","ignore", uci("network", "@interface"))' \
