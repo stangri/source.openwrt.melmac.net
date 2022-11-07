@@ -54,13 +54,15 @@ fi
 echo -e "${__OK__}"
 }
 
-# . /lib/functions.sh
-# . /lib/functions/network.sh
-# config_load network
-# config_foreach pbr_iface_process interface
-# uci commit network
-# echo -en "Restarting network... "
-# /etc/init.d/network restart
-# echo -e "${__OK__}"
+if [ -s "/etc/.custom_revision" ]; then
+	. /lib/functions.sh
+	. /lib/functions/network.sh
+	config_load network
+	config_foreach pbr_iface_process interface
+	uci commit network
+	echo -en "Restarting network... "
+	/etc/init.d/network restart
+	echo -e "${__OK__}"
+fi
 
 exit 0
