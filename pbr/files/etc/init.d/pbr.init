@@ -190,7 +190,7 @@ is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ] || [ "${1/#wan6}" != 
 is_ignored_interface() { str_contains_word "$ignored_interface" "$1"; }
 is_supported_interface() { str_contains_word "$supported_interface" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; } || is_ignore_target "$1"; }
 is_ignore_target() { [ "$(str_to_lower "$1")" = 'ignore' ]; }
-is_mac_address() { expr "$1" : '[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]$' >/dev/null; }
+is_mac_address() { expr "$1" : '[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]$' >/dev/null; }
 is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; }
 is_ipv6() { ! is_mac_address "$1" && str_contains "$1" ":"; }
 is_family_mismatch() { ( is_netmask "${1//!}" && is_ipv6 "${2//!}" ) || ( is_ipv6 "${1//!}" && is_netmask "${2//!}" ); }
@@ -232,7 +232,7 @@ resolveip_to_nftset6() { [ -n "$ipv6_enabled" ] && resolveip_to_nftset -6 "$@"; 
 # shellcheck disable=SC2016
 ipv4_leases_to_nftset() { [ -s '/tmp/dhcp.leases' ] || return 1; grep "$1" '/tmp/dhcp.leases' | awk '{print $3}' | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d' | tr '\n' ' '; }
 # shellcheck disable=SC2016
-ipv6_leases_to_nftset() { [ -s '/tmp/hosts/odhcpd' ] || return 1; grep "$1" '/tmp/hosts/odhcpd' | awk '{print $1}' | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d' | tr '\n' ' '; }
+ipv6_leases_to_nftset() { [ -s '/tmp/hosts/odhcpd' ] || return 1; grep -v '^\#' '/tmp/hosts/odhcpd' | grep "$1" | awk '{print $1}' | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d' | tr '\n' ' '; }
 # shellcheck disable=SC3037
 ports_to_nftset() { echo -ne "$value"; }
 get_mark_ipt_chains() { [ -n "$(command -v iptables-save)" ] && iptables-save | grep ":${iptPrefix}_MARK_" | awk '{ print $1 }' | sed 's/://'; }
@@ -1161,7 +1161,7 @@ policy_routing_nft() {
 				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
 				param4="${param4:+$param4 }ether ${negation:+$negation }saddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="${param6:+$param6 }ether ${negation:+$negation }saddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
-		else
+			else
 				param4="${param4:+$param4 }ether saddr ${negation:+$negation }$value"
 				param6="${param6:+$param6 }ether saddr ${negation:+$negation }$value"
 			fi
