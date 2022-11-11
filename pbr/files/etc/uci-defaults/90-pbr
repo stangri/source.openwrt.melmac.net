@@ -60,7 +60,7 @@ pbr_iface_setup() {
 	echo -e "${__OK__}"
 }
 
-if [ -s "/etc/.custom_revision" ]; then
+if [ -s "/etc/.custom_revision" ] && /bin/false; then
 . /lib/functions.sh
 . /lib/functions/network.sh
 config_load network

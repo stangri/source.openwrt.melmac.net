@@ -17,11 +17,11 @@ if type extra_command >/dev/null 2>&1; then
 			WARNING: while paste.ee uploads are unlisted, they are still publicly available
 		List domain names after options to include their lookup in report"
 	extra_command 'version' 'Show version information'
-	extra_command 'reload_firewall' 'Run service on firewall reload'
-	extra_command 'reload_interface' 'Run service on indicated interface reload'
+	extra_command 'on_firewall_reload' 'Run service on firewall reload'
+	extra_command 'on_interface_reload' 'Run service on indicated interface reload'
 else
 # shellcheck disable=SC2034
-	EXTRA_COMMANDS='reload_firewall reload_interface status version'
+	EXTRA_COMMANDS='on_firewall_reload on_interface_reload status version'
 # shellcheck disable=SC2034
 	EXTRA_HELP="	status	Generates output required to troubleshoot routing issues
 		Use '-d' option for more detailed output
@@ -1733,8 +1733,15 @@ user_file_process() {
 	fi
 }
 
-reload_firewall() { rc_procd start_service 'on_firewall_reload' "$1"; }
-reload_interface() { rc_procd start_service 'on_interface_reload' "$1"; }
+on_firewall_reload() { 
+	if [ -z "$(ubus_get_status 'gateways')" ]; then # service is not running, do not start it on firewall reload
+		logger -t "$packageName" "Reload on firewall action aborted: service not running."
+		return 0;
+	else
+		rc_procd start_service 'on_firewall_reload' "$1"
+	fi
+}
+on_interface_reload() { rc_procd start_service 'on_interface_reload' "$1"; }
 
 start_service() {
 	local resolverStoredHash resolverNewHash i reloadedIface param="$1"
@@ -1748,13 +1755,7 @@ start_service() {
 			serviceStartTrigger='on_start'
 		;;
 		on_firewall_reload)
-			if [ -z "$(ubus_get_status 'gateways')" ]; then # service is not running, do not start it on firewall reload
-				logger -t "$packageName" "Reload on firewall action aborted: service not running."
-				return 0;
-			else
-
-				serviceStartTrigger='on_start'
-			fi
+			serviceStartTrigger='on_start'
 		;;
 		on_interface_reload)
 			serviceStartTrigger='on_interface_reload'
@@ -1926,7 +1927,7 @@ service_triggers() {
 		procd_add_reload_trigger 'openvpn'
 		procd_add_config_trigger "config.change" "${packageName}" /etc/init.d/${packageName} reload
 		for n in $ifacesSupported; do 
-			procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} reload_interface "$n"
+			procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} on_interface_reload "$n"
 		done
 	procd_close_trigger
 	if [ "$serviceStartTrigger" = 'on_start' ]; then
