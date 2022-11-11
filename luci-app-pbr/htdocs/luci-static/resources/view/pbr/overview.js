@@ -126,6 +126,14 @@ return view.extend({
 			o.placeholder = "ff0000";
 			o.datatype = "hexstring";
 
+			o = s.taboption("tab_webui", form.ListValue, "webui_show_ignore_target", _("Add Ignore Target"),
+				_("Adds 'ignore' to the list of interfaces for policies. See the %sREADME%s for details.").format(
+					"<a href=\"" + pkg.URL + "#ignore-target\" target=\"_blank\">", "</a>"));
+			o.value("0", _("Disabled"))
+			o.value("1", _("Enabled"))
+			o.default = "0";
+			o.optional = false;
+
 			o = s.taboption("tab_webui", form.DynamicList, "webui_supported_protocol", _("Supported Protocols"),
 				_("Display these protocols in protocol column in Web UI."));
 			o.optional = false;

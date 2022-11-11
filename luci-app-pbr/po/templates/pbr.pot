@@ -12,6 +12,16 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:129
+msgid "Add Ignore Target"
+msgstr ""
+
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:130
+msgid ""
+"Adds 'ignore' to the list of interfaces for policies. See the %sREADME%s for "
+"details."
+msgstr ""
+
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:37
 msgid "Advanced Configuration"
 msgstr ""
@@ -34,7 +44,7 @@ msgstr ""
 msgid "Basic Configuration"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:186
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:194
 msgid "Chain"
 msgstr ""
 
@@ -46,15 +56,15 @@ msgstr ""
 msgid "Controls both system log and console output verbosity."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:212
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:220
 msgid "Custom User File Includes"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:207
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:215
 msgid "DSCP Tag"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:202
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:210
 msgid "DSCP Tagging"
 msgstr ""
 
@@ -68,6 +78,7 @@ msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:68
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:79
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:132
 msgid "Disabled"
 msgstr ""
 
@@ -75,7 +86,7 @@ msgstr ""
 msgid "Disabling %s service"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:130
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:138
 msgid "Display these protocols in protocol column in Web UI."
 msgstr ""
 
@@ -98,8 +109,9 @@ msgid "Enable"
 msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:80
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:142
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:220
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:133
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:150
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:228
 msgid "Enabled"
 msgstr ""
 
@@ -133,23 +145,23 @@ msgstr ""
 msgid "Insert"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:195
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:203
 msgid "Interface"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:148
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:156
 msgid "Local addresses / devices"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:153
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:161
 msgid "Local ports"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:146
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:154
 msgid "Name"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:134
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:142
 msgid ""
 "Name, interface and at least one other field are required. Multiple local "
 "and remote addresses/devices/domains and ports can be space separated. "
@@ -169,7 +181,7 @@ msgstr ""
 msgid "Output verbosity"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:224
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:232
 msgid "Path"
 msgstr ""
 
@@ -182,7 +194,7 @@ msgstr ""
 msgid "Please note that %s is not supported on this system."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:133
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:141
 msgid "Policies"
 msgstr ""
 
@@ -198,15 +210,15 @@ msgstr ""
 msgid "Policy Routing"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:170
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:178
 msgid "Protocol"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:159
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:167
 msgid "Remote addresses / domains"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:164
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:172
 msgid "Remote ports"
 msgstr ""
 
@@ -222,7 +234,7 @@ msgstr ""
 msgid "Rule Create option"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:213
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:221
 msgid ""
 "Run the following user files after setting up but before restarting DNSMASQ. "
 "See the %sREADME%s for details."
@@ -273,7 +285,7 @@ msgstr ""
 msgid "Service Warnings"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:203
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:211
 msgid ""
 "Set DSCP tags (in range between 1 and 63) for specific interfaces. See the "
 "%sREADME%s for details."
@@ -325,7 +337,7 @@ msgstr ""
 msgid "Supported Interfaces"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:129
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:137
 msgid "Supported Protocols"
 msgstr ""
 
@@ -358,7 +370,7 @@ msgstr ""
 msgid "Web UI Configuration"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:177
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:178
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:185
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:186
 msgid "all"
 msgstr ""
