@@ -62,6 +62,7 @@ readonly sharedMemoryError="/dev/shm/$packageName-error"
 readonly sharedMemoryOutput="/dev/shm/$packageName-output"
 readonly hostsFilter='/localhost/d;/^#/d;/^[^0-9]/d;s/^0\.0\.0\.0.//;s/^127\.0\.0\.1.//;s/[[:space:]]*#.*$//;s/[[:cntrl:]]$//;s/[[:space:]]//g;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
 readonly domainsFilter='/^#/d;s/[[:space:]]*#.*$//;s/[[:space:]]*$//;s/[[:cntrl:]]$//;/[[:space:]]/d;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
+readonly dnsmasqAddressFilter='\|^address=/[[:alnum:]_.-].*/#|!d'
 readonly _OK_='\033[0;32m\xe2\x9c\x93\033[0m'
 readonly _FAIL_='\033[0;31m\xe2\x9c\x97\033[0m'
 readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
@@ -184,7 +185,7 @@ output() {
 
 load_environment() {
 	local i j wan_if wan_gw
-	local validation_result="$1"
+	local validation_result="$1" quiet="$2"
 
 	if [ "$validation_result" != '0' ]; then
 		output "${_ERROR_}: $packageName config validation failed!\\n"
@@ -205,7 +206,18 @@ load_environment() {
 		set -x
 	fi
 
-	case $dns in
+	if [ -n "$dnsmasq_config_file_url" ]; then
+		case "$dns" in
+			dnsmasq.conf) :;;
+			*)
+				if [ -z "$quiet" ]; then
+					output "$_WARNING_: use of external dnsmasq config file detected, please set 'dns' option to 'dnsmasq.conf'!\\n"
+				fi
+			;;
+		esac
+	fi
+
+	case "$dns" in
 		dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
 			if dnsmasq -v 2>/dev/null | grep -q 'no-IDN' || ! dnsmasq -v 2>/dev/null | grep -q -w 'IDN'; then
 				allow_non_ascii=0
@@ -215,24 +227,32 @@ load_environment() {
 			allow_non_ascii=1;;
 	esac
 
-	case $dns in
+	case "$dns" in
 		dnsmasq.ipset)
 			if dnsmasq -v 2>/dev/null | grep -q 'no-ipset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'ipset'; then
-				output "$_ERROR_: dnsmasq ipset support is enabled in $packageName, but dnsmasq is either not installed or installed dnsmasq does not support ipset!\\n"
+				if [ -z "$quiet" ]; then
+					output "$_ERROR_: dnsmasq ipset support is enabled in $packageName, but dnsmasq is either not installed or installed dnsmasq does not support ipset!\\n"
+				fi
 				dns='dnsmasq.servers'
 			fi
 			if ! ipset help hash:net; then
-				output "$_ERROR_: dnsmasq ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+				if [ -z "$quiet" ]; then
+					output "$_ERROR_: dnsmasq ipset support is enabled in $packageName, but ipset is either not installed or installed ipset does not support 'hash:net' type!\\n"
+				fi
 				dns='dnsmasq.servers'
 			fi
 		;;
 		dnsmasq.nftset)
 			if dnsmasq -v 2>/dev/null | grep -q 'no-nftset' || ! dnsmasq -v 2>/dev/null | grep -q -w 'nftset'; then
-				output "$_ERROR_: dnsmasq nft sets support is enabled in $packageName, but dnsmasq is either not installed or installed dnsmasq does not support nft sets!\\n"
+				if [ -z "$quiet" ]; then
+					output "$_ERROR_: dnsmasq nft sets support is enabled in $packageName, but dnsmasq is either not installed or installed dnsmasq does not support nft sets!\\n"
+				fi
 				dns='dnsmasq.servers'
 			fi
 			if [ -z "$nft" ]; then
-				output "$_ERROR_: dnsmasq nft sets support is enabled in $packageName, but nft is not installed!\\n"
+				if [ -z "$quiet" ]; then
+					output "$_ERROR_: dnsmasq nft sets support is enabled in $packageName, but nft is not installed!\\n"
+				fi
 				dns='dnsmasq.servers'
 			fi
 		;;
@@ -332,8 +352,10 @@ load_environment() {
 			is_present '/usr/libexec/grep-gnu' || s="$s grep"
 			is_present '/usr/libexec/sed-gnu' || s="$s sed"
 			is_present '/usr/libexec/sort-coreutils' || s="$s coreutils-sort"
-			output "$_WARNING_: Some recommended packages are missing, install them by running:\\n"
-			output "$s;\\n"
+			if [ -z "$quiet" ]; then
+				output "$_WARNING_: Some recommended packages are missing, install them by running:\\n"
+				output "$s;\\n"
+			fi
 	fi
 	# Prefer curl because it supports the file:// scheme.
 	if is_present 'curl'; then
@@ -359,6 +381,7 @@ load_environment() {
 	else
 		unset isSSLSupported
 	fi
+	cache 'test' && return 0 
 	cache 'test_gzip' && return 0
 	network_flush_cache; network_find_wan wan_if; network_get_gateway wan_gw "$wan_if";
 	[ -n "$wan_gw" ] && return 0
@@ -604,16 +627,16 @@ process_url() {
 	local label type D_TMP R_TMP
 	if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then return 1; fi
 	label="${1##*//}"; label="${label%%/*}";
-	if [ "$2" = 'hosts' ]; then
-		label="Hosts:   $label"; filter="$hostsFilter";
-	else
-		label="Domains: $label"; filter="$domainsFilter";
-	fi
-	if [ "$3" = 'blocked' ]; then
-		type='Blocked'; D_TMP="$B_TMP";
-	else
-		type='Allowed'; D_TMP="$A_TMP";
-	fi
+	case "$2" in
+		dnsmasq) label="Dnsmasq: $label"; filter="$dnsmasqAddressFilter";;
+		domains) label="Domains: $label"; filter="$domainsFilter";;
+		hosts) label="Hosts:   $label"; filter="$hostsFilter";;
+	esac
+	case "$3" in
+		allowed) type='Allowed'; D_TMP="$A_TMP";;
+		blocked) type='Blocked'; D_TMP="$B_TMP";;
+		file) type='File'; D_TMP="$B_TMP";;
+	esac
 	if [ "${1:0:5}" = "https" ] && [ -z "$isSSLSupported" ]; then
 		output 1 "$_FAIL_"
 		output 2 "[DL] $type $label $__FAIL__\\n"
@@ -643,6 +666,42 @@ process_url() {
 	return 0
 }
 
+download_dnsmasq_file() {
+	local hf allow_filter j=0 R_TMP
+
+	json set message "$(get_status_text "statusDownloading")..."
+	json set status "statusDownloading"
+
+	rm -f "$A_TMP" "$B_TMP" "$outputFile" "$outputCache" "$outputGzip"
+	if [ "$($awk '/^MemFree/ {print int($2/1000)}' "/proc/meminfo")" -lt 32 ]; then
+		output 3 'Low free memory, restarting resolver '
+		if dns 'quiet'; then
+			output_okn
+		else 
+			output_failn
+		fi
+	fi
+	touch $A_TMP; touch $B_TMP;
+	output 1 'Downloading dnsmasq file '
+	rm -f "$sharedMemoryError"
+	process_url "$dnsmasq_config_file_url" 'dnsmasq' 'file'
+#	output 1 '\n'
+	if [ -s "$sharedMemoryError" ]; then
+		while IFS= read -r line; do
+			json add error "$line"
+		done < "$sharedMemoryError"
+		rm -f "$sharedMemoryError"
+	fi
+	output 2 'Creating dnsmasq file '
+	if mv "$B_TMP" "$outputFile"; then
+		output 2 "$__OK__\\n"
+	else
+		output 2 "$__FAIL__\\n"
+		json add error "errorMovingDataFile"
+	fi
+	output 1 '\n'
+}
+
 download_lists() {
 	local hf allow_filter j=0 R_TMP
 
@@ -655,7 +714,7 @@ download_lists() {
 		if dns 'quiet'; then
 			output_okn
 		else 
-			output_fail
+			output_failn
 		fi
 	fi
 	touch $A_TMP; touch $B_TMP;
@@ -858,7 +917,7 @@ $(cat $A_TMP)"
 adb_allow() {
 	local c hf string="$1"
 	local validation_result="$3"
-	load_environment "$validation_result" || return 1
+	load_environment "$validation_result" 'quiet' || return 1
 	if [ ! -s "$outputFile" ]; then
 		output "No block-list ('$outputFile') found.\\n"
 	elif [ -z "$string" ]; then
@@ -946,7 +1005,7 @@ adb_allow() {
 adb_check() {
 	local c param="$1"
 	local validation_result="$3"
-	load_environment "$validation_result" || return 1
+	load_environment "$validation_result" 'quiet' || return 1
 	if [ ! -s "$outputFile" ]; then
 		output "No block-list ('$outputFile') found.\\n"
 	elif [ -z "$param" ]; then
@@ -986,7 +1045,7 @@ adb_check() {
 adb_config_update() {
 	local R_TMP label
 	local param="$1" validation_result="$3"
-	load_environment "$validation_result" || return 1
+	load_environment "$validation_result" 'quiet' || return 1
 	label="${config_update_url##*//}"
 	label="${label%%/*}";
 	[ "$config_update_enabled" -ne 0 ] || return 0
@@ -1020,7 +1079,7 @@ adb_config_update() {
 adb_sizes() {
 	local i
 	local validation_result="$3"
-	load_environment "$validation_result" || return 1
+	load_environment "$validation_result" 'quiet' || return 1
 
 	echo "# $(date)"
 	for i in $blocked_domains_url; do
@@ -1138,7 +1197,11 @@ adb_start() {
 			output 3 "Starting $serviceName...\\n"
 			json set status "statusStarting"
 		fi
-		download_lists
+		if [ -n "$dnsmasq_config_file_url" ]; then
+			download_dnsmasq_file
+		else
+			download_lists
+		fi
 		dns 'on_start'
 	fi
 	if [ "$action" = 'restart' ]; then
@@ -1257,7 +1320,7 @@ adb_start() {
 adb_status() {
 	local c url status message error stats
 	local validation_result="$3"
-	load_environment "$validation_result" || return 1
+	load_environment "$validation_result" 'quiet' || return 1
 	status="$(json get status)"
 	message="$(json get message)"
 	error="$(json get error)"
@@ -1288,7 +1351,7 @@ adb_status() {
 
 adb_stop() {
 	local validation_result="$3"
-	load_environment "$validation_result" || return 1
+	load_environment "$validation_result" 'quiet' || return 1
 	if [ -s "$outputFile" ]; then
 		output "Stopping $serviceName... "
 		cache 'create'
@@ -1390,6 +1453,7 @@ load_validate_config() {
 	local blocked_domain
 	local blocked_domains_url
 	local blocked_hosts_url
+	local dnsmasq_config_file_url
 	uci_load_validate "$packageName" "$packageName" "$1" "${2}${3:+ $3}" \
 		'enabled:bool:0' \
 		'force_dns:bool:1' \
@@ -1415,5 +1479,6 @@ load_validate_config() {
 		'allowed_domains_url:list(string)' \
 		'blocked_domain:list(string)' \
 		'blocked_domains_url:list(string)' \
-		'blocked_hosts_url:list(string)'
+		'blocked_hosts_url:list(string)' \
+		'dnsmasq_config_file_url:string'
 }
