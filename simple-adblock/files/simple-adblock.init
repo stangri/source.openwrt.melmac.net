@@ -75,7 +75,6 @@ readonly ipset="$(command -v ipset)"
 readonly nft="$(command -v nft)"
 readonly canaryDomainsMozilla='use-application-dns.net'
 readonly canaryDomainsiCloud='mask.icloud.com mask-h2.icloud.com'
-# readonly canaryDomains="$canaryDomainsMozilla $canaryDomainsiCloud"
 
 debug() { local i j; for i in "$@"; do eval "j=\$$i"; echo "${i}: ${j} "; done; }
 
