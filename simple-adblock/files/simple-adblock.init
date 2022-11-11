@@ -525,7 +525,7 @@ json() {
 		get)
 			case "$param" in
 				triggers)
-					curReload="$parallel_downloads $debug $download_timeout $allowed_domain $blocked_domain $allowed_domains_url $blocked_domains_url $blocked_hosts_url $dns $config_update_enabled $config_update_url"
+					curReload="$parallel_downloads $debug $download_timeout $allowed_domain $blocked_domain $allowed_domains_url $blocked_domains_url $blocked_hosts_url $dns $config_update_enabled $config_update_url $dnsmasq_config_file_url"
 					curRestart="$compressed_cache $force_dns $led $force_dns_port"
 					if [ ! -s "$jsonFile" ]; then
 						ret='on_boot'
@@ -559,7 +559,7 @@ json() {
 		set)
 			case "$param" in
 				triggers) 
-					reload="$parallel_downloads $debug $download_timeout $allowed_domain $blocked_domain $allowed_domains_url $blocked_domains_url $blocked_hosts_url $dns $config_update_enabled $config_update_url"
+					reload="$parallel_downloads $debug $download_timeout $allowed_domain $blocked_domain $allowed_domains_url $blocked_domains_url $blocked_hosts_url $dns $config_update_enabled $config_update_url $dnsmasq_config_file_url"
 					restart="$compressed_cache $force_dns $led $force_dns_port"
 				;;
 				*)
