@@ -139,7 +139,8 @@ return view.extend({
 			s = m.section(form.NamedSection, "config", "simple-adblock", 
 				_("Allowed and Blocked Lists Management"));
 			o = s.option(form.Value, "dnsmasq_config_file_url", _("Dnsmasq Config File URL"),
-				_("URL to the external dnsmasq config file."));
+				_("URL to the external dnsmasq config file, see the %sREADME%s for details.")
+					.format("<a href=\"" + pkg.URL + "#dnsmasq_config_file_url\" target=\"_blank\">", "</a>"));
 			o.addremove = true;
 			o.rmempty = true;
 			o = s.option(form.DynamicList, "allowed_domain", _("Allowed Domains"),
