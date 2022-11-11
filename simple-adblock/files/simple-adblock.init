@@ -919,86 +919,90 @@ adb_allow() {
 	load_environment "$validation_result" 'quiet' || return 1
 	if [ ! -s "$outputFile" ]; then
 		output "No block-list ('$outputFile') found.\\n"
+		return 0
 	elif [ -z "$string" ]; then
 		output "Usage: /etc/init.d/${packageName} allow 'domain' ...\\n"
-	else
-		case "$dns" in
-			dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
-				output 1 "Allowing domain(s) and restarting dnsmasq "
-				output 2 "Allowing domain(s) \\n"
-				for c in $string; do
-					output 2 "  $c "
-					hf="$(echo "$c" | sed 's/\./\\./g')"
-					if sed -i "/^${hf}$/d;/\.${hf}$/d;" "$outputFile" && \
-						uci_add_list_if_new "${packageName}" 'config' 'allowed_domain' "$c"; then
-							output_ok
-					else
-						output_fail
-					fi
-				done
-				if [ "$compressed_cache" -gt 0 ]; then
-					output 2 'Creating compressed cache '
-					if cache 'create_gzip'; then
-						output_ok
-					else
-						output_failn
-					fi
-				fi
-				output 2 "Committing changes to config "
-				if [ -n "$(uci_changes "$packageName")" ] && uci_commit "$packageName"; then
-					allowed_domain="$(uci_get "$packageName" 'config' 'allowed_domain')"
-					json set triggers
-					json set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${dns})"
-					output_ok; 
-					if [ "$dns" = 'dnsmasq.ipset' ]; then
-						output 2 "Flushing adb ipset "
-						if ipset -q -! flush adb; then output_ok; else output_fail; fi
-					fi
-					if [ "$dns" = 'dnsmasq.nftset' ]; then
-						output 2 "Flushing adb nft sets "
-						nft flush set inet fw4 adb6
-						if nft flush set inet fw4 adb4; then output_ok; else output_fail; fi
-					fi
-					output 2 "Restarting dnsmasq "
-					if dnsmasq_restart; then output_okn; else output_failn; fi
-				else 
-					output_fail; 
-				fi
-			;;
-			unbound.adb_list)
-				output 1 "Allowing domain(s) and restarting Unbound "
-				output 2 "Allowing domain(s) \\n"
-				for c in $string; do 
-					output 2 "  $c "
-					if sed -i "/${string}/d" "$outputFile" && \
-						uci_add_list_if_new "$packageName" 'config' 'allowed_domain' "$string"; then
-							output_ok
-					else
-						output_fail
-					fi
-				done
-				if [ "$compressed_cache" -gt 0 ]; then
-					output 2 'Creating compressed cache '
-					if cache 'create_gzip'; then
-						output_ok
-					else
-						output_failn
-					fi
-				fi
-				output 2 "Committing changes to config "
-				if [ -n "$(uci_changes "$packageName")" ] && uci_commit "$packageName"; then
-					allowed_domain="$(uci_get "$packageName" 'config' 'allowed_domain')"
-					json set triggers
-					json set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${dns})"
-					output_ok; 
-					output 2 "Restarting Unbound "
-					if unbound_restart; then output_okn; else output_failn; fi
-				else 
-					output_fail; 
-				fi
-			;;
-		esac
+		return 0
+	elif [ -n "$dnsmasq_config_file_url" ]; then
+		output "Allowing individual domains is not possible when using external dnsmasq config file.\\n"
+		return 0
 	fi
+	case "$dns" in
+		dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
+			output 1 "Allowing domain(s) and restarting dnsmasq "
+			output 2 "Allowing domain(s) \\n"
+			for c in $string; do
+				output 2 "  $c "
+				hf="$(echo "$c" | sed 's/\./\\./g')"
+				if sed -i "/^${hf}$/d;/\.${hf}$/d;" "$outputFile" && \
+					uci_add_list_if_new "${packageName}" 'config' 'allowed_domain' "$c"; then
+						output_ok
+				else
+					output_fail
+				fi
+			done
+			if [ "$compressed_cache" -gt 0 ]; then
+				output 2 'Creating compressed cache '
+				if cache 'create_gzip'; then
+					output_ok
+				else
+					output_failn
+				fi
+			fi
+			output 2 "Committing changes to config "
+			if [ -n "$(uci_changes "$packageName")" ] && uci_commit "$packageName"; then
+				allowed_domain="$(uci_get "$packageName" 'config' 'allowed_domain')"
+				json set triggers
+				json set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${dns})"
+				output_ok; 
+				if [ "$dns" = 'dnsmasq.ipset' ]; then
+					output 2 "Flushing adb ipset "
+					if ipset -q -! flush adb; then output_ok; else output_fail; fi
+				fi
+				if [ "$dns" = 'dnsmasq.nftset' ]; then
+					output 2 "Flushing adb nft sets "
+					nft flush set inet fw4 adb6
+					if nft flush set inet fw4 adb4; then output_ok; else output_fail; fi
+				fi
+				output 2 "Restarting dnsmasq "
+				if dnsmasq_restart; then output_okn; else output_failn; fi
+			else 
+				output_fail; 
+			fi
+		;;
+		unbound.adb_list)
+			output 1 "Allowing domain(s) and restarting Unbound "
+			output 2 "Allowing domain(s) \\n"
+			for c in $string; do 
+				output 2 "  $c "
+				if sed -i "/${string}/d" "$outputFile" && \
+					uci_add_list_if_new "$packageName" 'config' 'allowed_domain' "$string"; then
+						output_ok
+				else
+					output_fail
+				fi
+			done
+			if [ "$compressed_cache" -gt 0 ]; then
+				output 2 'Creating compressed cache '
+				if cache 'create_gzip'; then
+					output_ok
+				else
+					output_failn
+				fi
+			fi
+			output 2 "Committing changes to config "
+			if [ -n "$(uci_changes "$packageName")" ] && uci_commit "$packageName"; then
+				allowed_domain="$(uci_get "$packageName" 'config' 'allowed_domain')"
+				json set triggers
+				json set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${dns})"
+				output_ok; 
+				output 2 "Restarting Unbound "
+				if unbound_restart; then output_okn; else output_failn; fi
+			else 
+				output_fail; 
+			fi
+		;;
+	esac
 }
 
 adb_check() {
@@ -1007,38 +1011,39 @@ adb_check() {
 	load_environment "$validation_result" 'quiet' || return 1
 	if [ ! -s "$outputFile" ]; then
 		output "No block-list ('$outputFile') found.\\n"
+		return 0
 	elif [ -z "$param" ]; then
 		output "Usage: /etc/init.d/${packageName} check 'domain' ...\\n"
-	else
-		for string in ${param}; do
-			c="$(grep -c "$string" "$outputFile")"
-			if [ "$c" -gt 0 ]; then
-				if [ "$c" -eq 1 ]; then
-					output "Found 1 match for '$string' in '$outputFile'.\\n"
-				else
-					output "Found $c matches for '$string' in '$outputFile'.\\n"
-				fi
-				if [ "$c" -le 20 ]; then
-					case "$dns" in
-						dnsmasq.addnhosts)
-							grep "$string" "$outputFile" | sed 's|^127.0.0.1 ||;s|^:: ||;';;
-						dnsmasq.conf)
-							grep "$string" "$outputFile" | sed 's|local=/||;s|/$||;';;
-						dnsmasq.ipset)
-							grep "$string" "$outputFile" | sed 's|ipset=/||;s|/adb$||;';;
-						dnsmasq.nftset)
-							grep "$string" "$outputFile" | sed 's|nftset=/||;s|/4#inet#adb#adb4||;';;
-						dnsmasq.servers)
-							grep "$string" "$outputFile" | sed 's|server=/||;s|/$||;';;
-						unbound.adb_list)
-							grep "$string" "$outputFile" | sed 's|^local-zone: "||;s|" static$||;';;
-					esac
-				fi
-			else
-				output "The '$string' is not found in current block-list ('$outputFile').\\n"
-			fi
-		done
+		return 0
 	fi
+	for string in ${param}; do
+		c="$(grep -c "$string" "$outputFile")"
+		if [ "$c" -gt 0 ]; then
+			if [ "$c" -eq 1 ]; then
+				output "Found 1 match for '$string' in '$outputFile'.\\n"
+			else
+				output "Found $c matches for '$string' in '$outputFile'.\\n"
+			fi
+			if [ "$c" -le 20 ]; then
+				case "$dns" in
+					dnsmasq.addnhosts)
+						grep "$string" "$outputFile" | sed 's|^127.0.0.1 ||;s|^:: ||;';;
+					dnsmasq.conf)
+						grep "$string" "$outputFile" | sed 's|local=/||;s|/$||;';;
+					dnsmasq.ipset)
+						grep "$string" "$outputFile" | sed 's|ipset=/||;s|/adb$||;';;
+					dnsmasq.nftset)
+						grep "$string" "$outputFile" | sed 's|nftset=/||;s|/4#inet#adb#adb4||;';;
+					dnsmasq.servers)
+						grep "$string" "$outputFile" | sed 's|server=/||;s|/$||;';;
+					unbound.adb_list)
+						grep "$string" "$outputFile" | sed 's|^local-zone: "||;s|" static$||;';;
+				esac
+			fi
+		else
+			output "The '$string' is not found in current block-list ('$outputFile').\\n"
+		fi
+	done
 }
 
 adb_config_update() {
