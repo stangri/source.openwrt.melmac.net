@@ -110,8 +110,14 @@ return view.extend({
 
 			o = s.taboption("tab_advanced", form.Value, "download_timeout", _("Download time-out (in seconds)"),
 				_("Stop the download if it is stalled for set number of seconds."));
-			o.default = "10";
+			o.default = "20";
 			o.datatype = "range(1,60)";
+
+			o = s.taboption("tab_advanced", form.Value, "curl_max_file_size", _("Curl maximum file size (in bytes)"),
+				_("If curl is installed and detected, it would not download files bigger than this."));
+			o.default = "";
+			o.datatype = "uinteger";
+			o.rmempty = true;
 
 			o = s.taboption("tab_advanced", form.Value, "curl_retry", _("Curl download retry"),
 				_("If curl is installed and detected, it would retry download this many times on timeout/fail."));

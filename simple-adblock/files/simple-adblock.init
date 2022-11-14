@@ -358,16 +358,22 @@ load_environment() {
 	fi
 	# Prefer curl because it supports the file:// scheme.
 	if is_present 'curl'; then
-		dl_command="curl --insecure --retry $curl_retry --connect-timeout $download_timeout --silent"
+		dl_command="curl --silent --insecure"
+		dl_command="${dl_command}${curl_max_file_size:+ --max-filesize $curl_max_file_size}"
+		dl_command="${dl_command}${curl_retry:+ --retry $curl_retry}"
+		dl_command="${dl_command}${download_timeout:+ --connect-timeout $download_timeout}"
 		dl_flag="-o"
 	elif is_present '/usr/libexec/wget-ssl'; then
-		dl_command="/usr/libexec/wget-ssl --no-check-certificate --timeout $download_timeout -q"
+		dl_command="/usr/libexec/wget-ssl --no-check-certificate -q"
+		dl_command="${dl_command}${download_timeout:+ --timeout $download_timeout}"
 		dl_flag="-O"
 	elif is_present wget && wget --version 2>/dev/null | grep -q "+https"; then
-		dl_command="wget --no-check-certificate --timeout $download_timeout -q"
+		dl_command="wget --no-check-certificate -q"
+		dl_command="${dl_command}${download_timeout:+ --timeout $download_timeout}"
 		dl_flag="-O"
 	else
-		dl_command="uclient-fetch --no-check-certificate --timeout $download_timeout -q"
+		dl_command="uclient-fetch --no-check-certificate -q"
+		dl_command="${dl_command}${download_timeout:+ --timeout $download_timeout}"
 		dl_flag="-O"
 	fi
 	led="${led:+/sys/class/leds/$led}"
@@ -1447,6 +1453,7 @@ load_validate_config() {
 	local config_update_url
 	local boot_delay
 	local download_timeout
+	local curl_max_file_size
 	local curl_retry
 	local verbosity
 	local led
@@ -1471,9 +1478,9 @@ load_validate_config() {
 		'canary_domains_mozilla:bool:0' \
 		'config_update_enabled:bool:0' \
 		'config_update_url:string:https://cdn.jsdelivr.net/gh/openwrt/packages/net/simple-adblock/files/simple-adblock.conf.update' \
-		'boot_delay:range(0,240):120' \
-		'download_timeout:range(1,40):20' \
-		'curl_retry:range(1,5):3' \
+		'download_timeout:range(1,60):20' \
+		'curl_max_file_size:uinteger' \
+		'curl_retry:range(0,30):3' \
 		'verbosity:range(0,2):2' \
 		'procd_trigger_wan6:bool:0' \
 		'led:or("", "none", file, device, string)' \
