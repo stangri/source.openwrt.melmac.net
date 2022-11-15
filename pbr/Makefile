@@ -5,22 +5,23 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=0.9.9
-PKG_RELEASE:=24
+PKG_RELEASE:=25
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/pbr/default
-	SECTION:=net
-	CATEGORY:=Network
-	SUBMENU:=VPN
-	PROVIDES:=pbr
-	TITLE:=Policy Based Routing Service
-	URL:=https://docs.openwrt.melmac.net/pbr/
-	DEPENDS:=+ip-full +jshn +jsonfilter +resolveip
-	CONFLICTS:=vpnbypass vpn-policy-routing
-	PKGARCH:=all
+  SECTION:=net
+  CATEGORY:=Network
+  SUBMENU:=VPN
+  PROVIDES:=pbr
+  TITLE:=Policy Based Routing Service
+  URL:=https://docs.openwrt.melmac.net/pbr/
+  DEPENDS:=+ip-full +jshn +jsonfilter +resolveip
+  CONFLICTS:=vpnbypass vpn-policy-routing
+  PROVIDES:=vpnbypass vpn-policy-routing
+  PKGARCH:=all
 endef
 
 define Package/pbr
@@ -56,13 +57,12 @@ This version supports OpenWrt with both fw3/ipset/iptables and fw4/nft.
 This version uses OpenWrt native netifd/tables to set up interfaces. This is WIP.
 endef
 
-define Package/pbr/default/conffiles
+define Package/pbr/conffiles
 /etc/config/pbr
 endef
 
-Package/pbr/conffiles = $(Package/pbr/default/conffiles)
-Package/pbr-iptables/conffiles = $(Package/pbr/default/conffiles)
-Package/pbr-netifd/conffiles = $(Package/pbr/default/conffiles)
+Package/pbr-iptables/conffiles = $(Package/pbr/conffiles)
+Package/pbr-netifd/conffiles = $(Package/pbr/conffiles)
 
 define Build/Configure
 endef
@@ -100,8 +100,8 @@ endef
 
 define Package/pbr-netifd/install
 $(call Package/pbr/default/install,$(1))
-	$(INSTALL_CONF) ./files/etc/config/pbr.iptables $(1)/etc/config/pbr
-	$(INSTALL_DATA) ./files/etc/hotplug.d/firewall/70-pbr $(1)/etc/hotplug.d/firewall/70-pbr
+	$(INSTALL_CONF) ./files/etc/config/pbr $(1)/etc/config/pbr
+	$(INSTALL_BIN)  ./files/etc/uci-defaults/91-pbr $(1)/etc/uci-defaults/91-pbr
 endef
 
 define Package/pbr/postinst
@@ -195,4 +195,4 @@ endef
 
 $(eval $(call BuildPackage,pbr))
 $(eval $(call BuildPackage,pbr-iptables))
-# $(eval $(call BuildPackage,pbr-netifd))
+$(eval $(call BuildPackage,pbr-netifd))
