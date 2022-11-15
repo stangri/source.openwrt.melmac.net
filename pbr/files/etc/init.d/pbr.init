@@ -93,7 +93,7 @@ wanGW6=
 serviceStartTrigger=
 processPolicyError=
 processPolicyWarning=
-resolver_setSupported='0'
+resolver_set_supported=
 nftPrevParam4=
 nftPrevParam6=
 
@@ -246,12 +246,28 @@ ubus_get_iface() { ubus call service list "{ 'name': '$packageName' }" | jsonfil
 resolver() {
 	local param="$1"
 	shift
+
 	case "$resolver_set" in
-		none) return 0;;
+		''|none)
+			case "$param" in
+				add_resolver_element) return 1;;
+				create_resolver_set) return 1;;
+				check_support) return 0;;
+				cleanup) return 0;;
+				configure) return 0;;
+				init) return 0;;
+				init_end) return 0;;
+				kill) return 0;;
+				reload) return 0;;
+				restart) return 0;;
+				compare_hash) return 0;;
+				store_hash) return 0;;
+			esac
+		;;
 		adguardhome.ipset)
 			case "$param" in
-				add_resolver) :;;
-				create_resolver) :;;
+				add_resolver_element) :;;
+				create_resolver_set) :;;
 				check_support) :;;
 				cleanup) :;;
 				configure) :;;
@@ -266,36 +282,31 @@ resolver() {
 		;;
 		dnsmasq.ipset)
 			case "$param" in
-				add_resolver)
-					[ "$resolver_setSupported" -eq 0 ] && return 1
-					ips 'add_resolver' "$@"
-					return "$?"
-				;;
-				create_resolver)
-					[ "$resolver_setSupported" -eq 0 ] && return 1
-					ips 'create_resolver' "$@"
-					return "$?"
-				;;
+				add_resolver_element)
+					[ -n "$resolver_set_supported" ] && ips 'add_dnsmasq_element' "$@";;
+				create_resolver_set)
+					[ -n "$resolver_set_supported" ] && ips 'create_dnsmasq_set' "$@";;
 				check_support)
 					if [ ! -x "$ipset" ]; then
-						errorSummary="${errorSummary}${_ERROR_}: The ipset binary cannot be found, make sure to install ipset!\\n"
-						resolver_set='none'
+						errorSummary="${errorSummary}${_ERROR_}: Resolver set support (${resolver_set}) requires ipset, but ipset binary cannot be found!\\n"
 						return 1
 					fi
 					if ! dnsmasq -v 2>/dev/null | grep -q 'no-ipset' && dnsmasq -v 2>/dev/null | grep -q 'ipset'; then
-						resolver_setSupported='1'
+						resolver_set_supported='true'
 						return 0
 					else
 						warningSummary="${warningSummary}${_WARNING_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported on this system!\\n"
-						resolver_set='none'
 						return 1
 					fi
 				;;
-				cleanup) :;;
-				configure) :;;
+				cleanup)
+					rm -f "$dnsmasqFile";;
+				configure)
+					mkdir -p "${dnsmasqFile%/*}";;
 				init) :;;
 				init_end) :;;
-				kill) if killall -q -s HUP dnsmasq; then return 0; else return 1; fi;;
+				kill)
+					killall -q -s HUP dnsmasq;;
 				reload)
 					output 3 'Reloading dnsmasq '
 					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
@@ -316,42 +327,44 @@ resolver() {
 						return 1
 					fi
 				;;
-				compare_hash) :;;
-				store_hash) :;;
+				compare_hash)
+					local resolverNewHash
+					if [ -s "$dnsmasqFile" ]; then
+						resolverNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+					fi
+					[ "$resolverNewHash" != "$resolverStoredHash" ]
+				;;
+				store_hash)
+					[ -s "$dnsmasqFile" ] && resolverStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')";;
 			esac
 		;;
 		dnsmasq.nftset)
 			case "$param" in
-				add_resolver)
-					[ "$resolver_setSupported" -eq 0 ] && return 1
-					nftset 'add_resolver' "$@"
-					return "$?"
-				;;
-				create_resolver)
-					[ "$resolver_setSupported" -eq 0 ] && return 1
-					nftset 'create_resolver' "$@"
-					return "$?"
-				;;
+				add_resolver_element)
+					[ -n "$resolver_set_supported" ] && nftset 'add_dnsmasq_element' "$@";;
+				create_resolver_set)
+					[ -n "$resolver_set_supported" ] && nftset 'create_dnsmasq_set' "$@";;
 				check_support)
 					if [ ! -x "$nft" ]; then
-						errorSummary="${errorSummary}${_ERROR_}: This version of $packageName supports only nftables, but nft binary cannot be found!\\n"
-						resolver_set='none'
+						errorSummary="${errorSummary}${_ERROR_}: Resolver set support (${resolver_set}) requires nftables, but nft binary cannot be found!\\n"
 						return 1
 					fi
 					if ! dnsmasq -v 2>/dev/null | grep -q 'no-nftset' && dnsmasq -v 2>/dev/null | grep -q 'nftset'; then
-						resolver_setSupported='1'
+						resolver_set_supported='true'
 						return 0
 					else
 						warningSummary="${warningSummary}${_WARNING_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported on this system!\\n"
-						resolver_set='none'
 						return 1
 					fi
 				;;
-				cleanup) :;;
-				configure) :;;
+				cleanup)
+					rm -f "$dnsmasqFile";;
+				configure)
+					mkdir -p "${dnsmasqFile%/*}";;
 				init) :;;
 				init_end) :;;
-				kill) if killall -q -s HUP dnsmasq; then return 0; else return 1; fi;;
+				kill)
+					killall -q -s HUP dnsmasq;;
 				reload)
 					output 3 'Reloading dnsmasq '
 					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
@@ -372,14 +385,21 @@ resolver() {
 						return 1
 					fi
 				;;
-				compare_hash) :;;
-				store_hash) :;;
+				compare_hash)
+					local resolverNewHash
+					if [ -s "$dnsmasqFile" ]; then
+						resolverNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+					fi
+					[ "$resolverNewHash" != "$resolverStoredHash" ]
+				;;
+				store_hash)
+					[ -s "$dnsmasqFile" ] && resolverStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')";;
 			esac
 		;;
 		unbound.ipset)
 			case "$param" in
-				add_resolver) :;;
-				create_resolver) :;;
+				add_resolver_element) :;;
+				create_resolver_set) :;;
 				check_support) :;;
 				cleanup) :;;
 				configure) :;;
@@ -394,8 +414,8 @@ resolver() {
 		;;
 		unbound.nftset)
 			case "$param" in
-				add_resolver) :;;
-				create_resolver) :;;
+				add_resolver_element) :;;
+				create_resolver_set) :;;
 				check_support) :;;
 				cleanup) :;;
 				configure) :;;
@@ -420,7 +440,7 @@ load_package_config() {
 	config_get      ignored_interface        'config' 'ignored_interface'
 	config_get_bool ipv6_enabled             'config' 'ipv6_enabled' '0'
 	config_get      procd_boot_delay         'config' 'procd_boot_delay' '0'
-	config_get      resolver_set             'config' 'resolver_set' 'dnsmasq.nftset'
+	config_get      resolver_set             'config' 'resolver_set'
 	config_get      rule_create_option       'config' 'rule_create_option' 'add'
 	config_get_bool secure_reload            'config' 'secure_reload' '1'
 	config_get_bool strict_enforcement       'config' 'strict_enforcement' '0'
@@ -455,50 +475,15 @@ load_environment() {
 			output "Please check if the '$packageConfigFile' contains correct values for config options.\\n"
 			return 1
 		fi
-
 		if [ "$enabled" -eq 0 ]; then
 			errorSummary="${errorSummary}${_ERROR_}: The ${packageName} is currently disabled.\\n"
 			errorSummary="${errorSummary}Enable ${packageName} from WebUI or run the following commands:\\n"
 			errorSummary="${errorSummary}uci set $packageName.config.enabled='1'; uci commit $packageName;\\n"
 			return 1
 		fi
-
-		if is_nft; then
-#			if [ ! -x "$nft" ]; then
-#				errorSummary="${errorSummary}${_ERROR_}: This version of $packageName supports only nftables, but nft binary cannot be found!\\n"
-#				return 1
-#			fi
-			case $resolver_set in
-				none) : ;;
-				dnsmasq.nftset)
-					if ! dnsmasq -v 2>/dev/null | grep -q 'no-nftset' && dnsmasq -v 2>/dev/null | grep -q 'nftset'; then
-						resolver_setSupported='1'
-					else
-						errorSummary="${errorSummary}${_ERROR_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported on this system!\\n"
-						resolver_set='none'
-					fi
-				;;
-				*)
-					errorSummary="${errorSummary}${_ERROR_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported in this version!\\n"
-					resolver_set='none'
-				;;
-			esac
-		else
-			case $resolver_set in
-				none) : ;;
-				adguardhome.ipset) : ;;
-				dnsmasq.ipset)
-					if ! dnsmasq -v 2>/dev/null | grep -q 'no-ipset' && dnsmasq -v 2>/dev/null | grep -q 'ipset'; then
-						resolver_setSupported='1'
-					fi
-				;;
-				*)
-					errorSummary="${errorSummary}${_ERROR_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported in this version!\\n"
-					resolver_set='none'
-				;;
-			esac
-		fi
+		resolver 'check_support'
 	fi
+
 	load_network "$param"
 }
 
@@ -593,29 +578,17 @@ ips() {
 			ips4 -q -! add "$ipset4" comment "$comment" && ipv4_error=0
 			ips6 -q -! add "$ipset6" comment "$comment" && ipv6_error=0
 		;;
-		add_resolver)
-			[ "$resolver_setSupported" -eq 0 ] && return 1
-			case "$resolver_set" in
-				dnsmasq.ipset)
-					[ -n "$ipv6_enabled" ] || unset ipset6
-					echo "ipset=/${param}/${ipset4}${ipset6:+,$ipset6} # $comment" >> "$dnsmasqFile" && ipv4_error=0
-				;;
-				*) return 1;;
-			esac
+		add_dnsmasq_element)
+			[ -n "$ipv6_enabled" ] || unset ipset6
+			echo "ipset=/${param}/${ipset4}${ipset6:+,$ipset6} # $comment" >> "$dnsmasqFile" && ipv4_error=0
 		;;
 		create)
 			ips4 -q -! create "$ipset4" "hash:$type" comment && ipv4_error=0
 			ips6 -q -! create "$ipset6" "hash:$type" comment family inet6 && ipv6_error=0
 		;;
-		create_resolver)
-			[ "$resolver_setSupported" -eq 0 ] && return 1
-			case "$resolver_set" in
-				dnsmasq.ipset)
-					ips4 -q -! create "$ipset4" "hash:$type" comment && ipv4_error=0
-					ips6 -q -! create "$ipset6" "hash:$type" comment family inet6 && ipv6_error=0
-				;;
-				*) return 1;;
-			esac
+		create_dnsmasq_set)
+			ips4 -q -! create "$ipset4" "hash:$type" comment && ipv4_error=0
+			ips6 -q -! create "$ipset6" "hash:$type" comment family inet6 && ipv6_error=0
 		;;
 		create_user_set)
 			case "$type" in
@@ -717,15 +690,9 @@ nftset() {
 				nft6 add element inet "$nftTable" "$nftset6" "{ $param6 }" && ipv6_error=0
 			fi
 		;;
-		add_resolver)
-			[ "$resolver_setSupported" -eq 0 ] && return 1
-			case "$resolver_set" in
-				dnsmasq.nftset)
-					[ -n "$ipv6_enabled" ] || unset nftset6
-					echo "nftset=/${param}/4#inet#${nftTable}#${nftset4}${nftset6:+,6#inet#${nftTable}#$nftset6} # $comment" >> "$dnsmasqFile" && ipv4_error=0
-				;;
-				*) return 1;;
-			esac
+		add_dnsmasq_element)
+			[ -n "$ipv6_enabled" ] || unset nftset6
+			echo "nftset=/${param}/4#inet#${nftTable}#${nftset4}${nftset6:+,6#inet#${nftTable}#$nftset6} # $comment" >> "$dnsmasqFile" && ipv4_error=0
 		;;
 		create)
 			case "$type" in
@@ -739,15 +706,9 @@ nftset() {
 					;;
 				esac
 		;;
-		create_resolver)
-			[ "$resolver_setSupported" -eq 0 ] && return 1
-			case "$resolver_set" in
-				dnsmasq.nftset)
-					nft4 add set inet "$nftTable" "$nftset4" "{ type ipv4_addr; flags interval; auto-merge; comment \"$comment\"; }" && ipv4_error=0
-					nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; flags interval; auto-merge; comment \"$comment\"; }" && ipv6_error=0
-				;;
-				*) return 1;;
-			esac
+		create_dnsmasq_set)
+			nft4 add set inet "$nftTable" "$nftset4" "{ type ipv4_addr; flags interval; auto-merge; comment \"$comment\"; }" && ipv4_error=0
+			nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; flags interval; auto-merge; comment \"$comment\"; }" && ipv6_error=0
 		;;
 		create_user_set)
 			case "$type" in
@@ -911,7 +872,7 @@ policy_routing_tor_iptables() {
 	if [ "$chain" != "PREROUTING" ]; then
 		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'chain' or set 'chain' to 'PREROUTING' for policy '$comment'\\n"
 	fi
-	ips 'add_resolver' "$iface" 'dst' 'ip' '' "${comment}: $dest_addr" "$dest_addr" || processPolicyError="${processPolicyError}${_ERROR_}: ips 'add_resolver' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
+	resolver 'add_resolver_element' "$iface" 'dst' 'ip' '' "${comment}: $dest_addr" "$dest_addr" || processPolicyError="${processPolicyError}${_ERROR_}: resolver 'add_resolver_element' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
 	return 0
 }
 policy_routing_tor_nft() {
@@ -928,7 +889,7 @@ policy_routing_tor_nft() {
 	if [ "$chain" != "prerouting" ]; then
 		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'chain' or set 'chain' to 'prerouting' for policy '$comment'\\n"
 	fi
-	nftset 'add_resolver' "$iface" 'dst' 'ip' '' "${comment}: $dest_addr" "$dest_addr" || processPolicyError="${processPolicyError}${_ERROR_}: nftset 'add_resolver' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
+	resolver 'add_resolver_element' "$iface" 'dst' 'ip' '' "${comment}: $dest_addr" "$dest_addr" || processPolicyError="${processPolicyError}${_ERROR_}: resolver 'add_resolver_element' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
 	return 0
 }
 
@@ -1051,8 +1012,8 @@ policy_routing_iptables() {
 				fi
 			elif is_domain "$value"; then
 				local target='dst' type='ip'
-				if ips 'create_resolver' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
-					ips 'add_resolver' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
+				if resolver 'create_resolver_set' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
+					resolver 'add_resolver_element' "$iface" "$target" "$type" "$uid" "${name}: $raddr" "$value"; then
 					param4="$param4 -m set $negation --match-set ${ipsPrefix}_${iface}_4_${target}_${type}_${uid} $target"
 					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}_6_${target}_${type}_${uid} $target"
 				elif ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $raddr" && \
@@ -1189,8 +1150,8 @@ policy_routing_nft() {
 			param6="${param6:+$param6 }oifname ${negation:+$negation }${value:1}"
 		elif is_domain "$value"; then
 			local target='dst' type='ip'
-			if nftset 'create_resolver' "$iface" "$target" "$type" "$uid" "$name" && \
-				nftset 'add_resolver' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
+			if resolver 'create_resolver_set' "$iface" "$target" "$type" "$uid" "$name" && \
+				resolver 'add_resolver_element' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
 				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 			elif nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
@@ -1361,7 +1322,7 @@ interface_process_tor_iptables() {
 				ipt -t nat -N "${nftPrefix}_${i}"
 				ipt -t nat -A "$i" -m mark --mark "0x0/${fw_mask}" -j "${nftPrefix}_${i}"
 			done
-			if ips 'create_resolver' "$iface" 'dst' 'ip' && ips 'flush' "$iface" 'dst' 'ip'; then
+			if resolver 'create_resolver_set' "$iface" 'dst' 'ip' && ips 'flush' "$iface" 'dst' 'ip'; then
 				set_name4="${ipsPrefix}_${iface}_4_dst_ip"
 				for i in $chainsList; do
 					i="$(str_to_lower "$i")"
@@ -1402,7 +1363,7 @@ interface_process_tor_nft() {
 			dnsPort="$(grep -m1 DNSPort /etc/tor/torrc | awk -F: '{print $2}')"
 			trafficPort="$(grep -m1 TransPort /etc/tor/torrc | awk -F: '{print $2}')"
 			dnsPort="${dnsPort:-9053}"; trafficPort="${trafficPort:-9040}"; 
-			if nftset 'create_resolver' "$iface" 'dst' 'ip' && nftset 'flush' "$iface" 'dst' 'ip'; then
+			if resolver 'create_resolver_set' "$iface" 'dst' 'ip' && nftset 'flush' "$iface" 'dst' 'ip'; then
 				set_name4="${nftPrefix}_${iface}_4_dst_ip"
 				set_name6="${nftPrefix}_${iface}_6_dst_ip"
 				nft meta nfproto ipv4 udp daddr "@${set_name4}" dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv4" || s=1
@@ -1807,7 +1768,10 @@ start_service() {
 			output 1 '\n'
 		;;
 		on_reload)
-			cleanup_dnsmasq
+			resolver 'store_hash'
+			resolver 'cleanup'
+			resolver 'configure'
+			resolver 'init'
 			cleanup_main_chains
 			cleanup_sets
 			if ! is_nft; then
@@ -1835,13 +1799,14 @@ start_service() {
 				config_foreach load_validate_include 'include' user_file_process
 				output 1 '\n'
 			fi
-			if [ -s "$dnsmasqFile" ]; then
-				resolverNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
-			fi
-			[ "$resolverNewHash" != "$resolverStoredHash" ] && dnsmasq_restart
+			resolver 'init_end'
+			resolver 'compare_hash' && resolver 'restart'
 		;;
 		on_start|*)
-			cleanup_dnsmasq
+			resolver 'store_hash'
+			resolver 'cleanup'
+			resolver 'configure'
+			resolver 'init'
 			cleanup_main_chains
 			cleanup_sets
 			cleanup_marking_chains
@@ -1873,10 +1838,8 @@ start_service() {
 				config_foreach load_validate_include 'include' user_file_process
 				output 1 '\n'
 			fi
-			if [ -s "$dnsmasqFile" ]; then
-				resolverNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
-			fi
-			[ "$resolverNewHash" != "$resolverStoredHash" ] && dnsmasq_restart
+			resolver 'init_end'
+			resolver 'compare_hash' && resolver 'restart'
 		;;
 	esac
 	traffic_killswitch 'remove'
@@ -1951,7 +1914,9 @@ stop_service() {
 	ip route flush cache
 	unset ifaceMark
 	unset ifaceTableID
-	cleanup_dnsmasq && dnsmasq_restart
+	resolver 'store_hash'
+	resolver 'cleanup'
+	resolver 'compare_hash' && resolver 'restart'
 	traffic_killswitch 'remove'
 	if [ "$enabled" -ne 0 ]; then
 		if is_nft; then
@@ -2155,7 +2120,7 @@ load_validate_config() {
 		'strict_enforcement:bool:1' \
 		'secure_reload:bool:0' \
 		'ipv6_enabled:bool:0' \
-		'resolver_set:or("", "none", "dnsmasq.ipset", "dnsmasq.nftset"):dnsmasq.nftset' \
+		'resolver_set:or("", "none", "dnsmasq.ipset", "dnsmasq.nftset")' \
 		'verbosity:range(0,2):1' \
 		"wan_mark:regex('0x[A-Fa-f0-9]{8}'):0x010000" \
 		"fw_mask:regex('0x[A-Fa-f0-9]{8}'):0xff0000" \
