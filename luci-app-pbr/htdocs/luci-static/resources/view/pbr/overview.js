@@ -56,6 +56,9 @@ return view.extend({
 			o.default = "1";
 
 			var text = "";
+			if (!(replyPlatform.adguardhome_ipset_support)) {
+				text += _("Please note that %s is not supported on this system.").format("<i>adguardhome.ipset</i>") + "<br />"
+			}
 			if (!(replyPlatform.dnsmasq_ipset_support)) {
 				text += _("Please note that %s is not supported on this system.").format("<i>dnsmasq.ipset</i>") + "<br />"
 			}
@@ -66,6 +69,10 @@ return view.extend({
 				"<a href=\"" + pkg.URL + "#use-resolvers-set-support\" target=\"_blank\">", "</a>");
 			o = s.taboption("tab_basic", form.ListValue, "resolver_set", _("Use resolver set support for domains"), text);
 			o.value("none", _("Disabled"));
+			if (replyPlatform.adguardhome_ipset_support) {
+				o.value("adguardhome.ipset", _("AdGuardHome ipset"));
+				o.default = ("adguardhome.ipset", _("AdGuardHome ipset"));
+			}
 			if (replyPlatform.dnsmasq_ipset_support) {
 				o.value("dnsmasq.ipset", _("Dnsmasq ipset"));
 				o.default = ("dnsmasq.ipset", _("Dnsmasq ipset"));

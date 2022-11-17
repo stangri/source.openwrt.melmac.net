@@ -54,6 +54,10 @@ readonly ipset="$(command -v ipset)"
 readonly ipsPrefix='pbr'
 readonly iptPrefix='PBR'
 # shellcheck disable=SC2155
+readonly agh="$(command -v AdGuardHome)"
+readonly aghConfigFile='/etc/AdGuardHome.yaml'
+readonly aghIpsetFile="/var/run/${packageName}.AdGuardHome.ipsets"
+# shellcheck disable=SC2155
 readonly nft="$(command -v nft)"
 readonly nftTable="fw4"
 readonly nftPrefix='pbr'
@@ -105,6 +109,8 @@ output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
 str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
 str_replace() { echo "${1//$2/$3}"; }
 str_contains() { [ -n "$1" ] &&[ -n "$2" ] && [ "${1//$2}" != "$1" ]; }
+is_greater() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
+is_greater_or_equal() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" = "$2"; }
 str_contains_word() { echo "$1" | grep -q -w "$2"; }
 str_to_lower() { echo "$1" | tr 'A-Z' 'a-z'; }
 str_to_upper() { echo "$1" | tr 'a-z' 'A-Z'; }
@@ -244,6 +250,7 @@ ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfi
 ubus_get_iface() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.interfaces[@.name='${1}']${2:+.$2}"; }
 
 resolver() {
+	local agh_version
 	local param="$1"
 	shift
 
@@ -266,18 +273,70 @@ resolver() {
 		;;
 		adguardhome.ipset)
 			case "$param" in
-				add_resolver_element) :;;
-				create_resolver_set) :;;
-				check_support) :;;
-				cleanup) :;;
-				configure) :;;
+				add_resolver_element)
+					[ -n "$resolver_set_supported" ] && ips 'add_agh_element' "$@";;
+				create_resolver_set)
+					[ -n "$resolver_set_supported" ] && ips 'create_agh_set' "$@";;
+				check_support)
+					if [ ! -x "$ipset" ]; then
+						errorSummary="${errorSummary}${_ERROR_}: Resolver set support (${resolver_set}) requires ipset, but ipset binary cannot be found!\\n"
+						return 1
+					fi
+					if [ -n "$agh" ] && [ -s "$aghConfigFile" ]; then
+						agh_version="$($agh --version | sed 's|AdGuard Home, version v0\.\(.*\)|\1|')"
+					fi
+					if is_greater_or_equal "$agh_version" '107.13'; then
+						resolver_set_supported='true'
+						return 0
+					else
+						warningSummary="${warningSummary}${_WARNING_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported on this system!\\n"
+						return 1
+					fi
+				;;
+				cleanup)
+					[ -n "$resolver_set_supported" ] && rm -f "$aghIpsetFile";;
+				configure)
+					[ -z "$resolver_set_supported" ] && return 1
+					mkdir -p "${aghIpsetFile%/*}"
+					sed -i '/ipset_file/d' "$aghConfigFile"
+					sed -i "/  ipset:/a \ \ ipset_file: $aghIpsetFile" "$aghConfigFile"
+				;;
 				init) :;;
 				init_end) :;;
-				kill) :;;
-				reload) :;;
-				restart) :;;
-				compare_hash) :;;
-				store_hash) :;;
+				kill)
+					[ -n "$resolver_set_supported" ] && [ -n "$agh" ] && killall -q -s HUP "$agh";;
+				reload)
+					[ -z "$resolver_set_supported" ] && return 1
+					output 3 'Reloading adguardhome '
+					if /etc/init.d/adguardhome reload >/dev/null 2>&1; then
+						output_okn
+						return 0
+					else
+						output_failn
+						return 1
+					fi
+				;;
+				restart)
+					[ -z "$resolver_set_supported" ] && return 1
+					output 3 'Restarting adguardhome '
+					if /etc/init.d/adguardhome restart >/dev/null 2>&1; then
+						output_okn
+						return 0
+					else
+						output_failn
+						return 1
+					fi
+				;;
+				compare_hash)
+					[ -z "$resolver_set_supported" ] && return 1
+					local resolverNewHash
+					if [ -s "$aghIpsetFile" ]; then
+						resolverNewHash="$(md5sum $aghIpsetFile | awk '{ print $1; }')"
+					fi
+					[ "$resolverNewHash" != "$resolverStoredHash" ]
+				;;
+				store_hash)
+					[ -s "$aghIpsetFile" ] && resolverStoredHash="$(md5sum $aghIpsetFile | awk '{ print $1; }')";;
 			esac
 		;;
 		dnsmasq.ipset)
@@ -300,14 +359,15 @@ resolver() {
 					fi
 				;;
 				cleanup)
-					rm -f "$dnsmasqFile";;
+					[ -n "$resolver_set_supported" ] && rm -f "$dnsmasqFile";;
 				configure)
-					mkdir -p "${dnsmasqFile%/*}";;
+					[ -n "$resolver_set_supported" ] && mkdir -p "${dnsmasqFile%/*}";;
 				init) :;;
 				init_end) :;;
 				kill)
-					killall -q -s HUP dnsmasq;;
+					[ -n "$resolver_set_supported" ] && killall -q -s HUP dnsmasq;;
 				reload)
+					[ -z "$resolver_set_supported" ] && return 1
 					output 3 'Reloading dnsmasq '
 					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
 						output_okn
@@ -318,6 +378,7 @@ resolver() {
 					fi
 				;;
 				restart)
+					[ -z "$resolver_set_supported" ] && return 1
 					output 3 'Restarting dnsmasq '
 					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
 						output_okn
@@ -328,6 +389,7 @@ resolver() {
 					fi
 				;;
 				compare_hash)
+					[ -z "$resolver_set_supported" ] && return 1
 					local resolverNewHash
 					if [ -s "$dnsmasqFile" ]; then
 						resolverNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
@@ -358,14 +420,15 @@ resolver() {
 					fi
 				;;
 				cleanup)
-					rm -f "$dnsmasqFile";;
+					[ -n "$resolver_set_supported" ] && rm -f "$dnsmasqFile";;
 				configure)
-					mkdir -p "${dnsmasqFile%/*}";;
+					[ -n "$resolver_set_supported" ] && mkdir -p "${dnsmasqFile%/*}";;
 				init) :;;
 				init_end) :;;
 				kill)
-					killall -q -s HUP dnsmasq;;
+					[ -n "$resolver_set_supported" ] && killall -q -s HUP dnsmasq;;
 				reload)
+					[ -z "$resolver_set_supported" ] && return 1
 					output 3 'Reloading dnsmasq '
 					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
 						output_okn
@@ -376,6 +439,7 @@ resolver() {
 					fi
 				;;
 				restart)
+					[ -z "$resolver_set_supported" ] && return 1
 					output 3 'Restarting dnsmasq '
 					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
 						output_okn
@@ -386,6 +450,7 @@ resolver() {
 					fi
 				;;
 				compare_hash)
+					[ -z "$resolver_set_supported" ] && return 1
 					local resolverNewHash
 					if [ -s "$dnsmasqFile" ]; then
 						resolverNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
@@ -578,11 +643,19 @@ ips() {
 			ips4 -q -! add "$ipset4" comment "$comment" && ipv4_error=0
 			ips6 -q -! add "$ipset6" comment "$comment" && ipv6_error=0
 		;;
+		add_agh_element)
+			[ -n "$ipv6_enabled" ] || unset ipset6
+			echo "ipset=/${param}/${ipset4}${ipset6:+,$ipset6} # $comment" >> "$aghIpsetFile" && ipv4_error=0
+		;;
 		add_dnsmasq_element)
 			[ -n "$ipv6_enabled" ] || unset ipset6
 			echo "ipset=/${param}/${ipset4}${ipset6:+,$ipset6} # $comment" >> "$dnsmasqFile" && ipv4_error=0
 		;;
 		create)
+			ips4 -q -! create "$ipset4" "hash:$type" comment && ipv4_error=0
+			ips6 -q -! create "$ipset6" "hash:$type" comment family inet6 && ipv6_error=0
+		;;
+		create_agh_set)
 			ips4 -q -! create "$ipset4" "hash:$type" comment && ipv4_error=0
 			ips6 -q -! create "$ipset6" "hash:$type" comment family inet6 && ipv6_error=0
 		;;

@@ -16,10 +16,17 @@
 . /usr/share/libubox/jshn.sh
 
 readonly packageName="pbr"
+# shellcheck disable=SC2155
+readonly ipset="$(command -v ipset)"
+# shellcheck disable=SC2155
+readonly agh="$(command -v AdGuardHome)"
+readonly aghConfigFile='/etc/AdGuardHome.yaml'
+# shellcheck disable=SC2155
+readonly nft="$(command -v nft)"
 
 is_enabled() { uci -q get "${1}.config.enabled"; }
 is_running_iptables() { iptables -t mangle -L | grep -q PBR_PREROUTING >/dev/null 2>&1; }
-is_running_nft() { nft list table inet fw4 | grep chain | grep -q pbr_mark_ >/dev/null 2>&1; }
+is_running_nft() { "$nft" list table inet fw4 | grep chain | grep -q pbr_mark_ >/dev/null 2>&1; }
 is_running() { is_running_iptables || is_running_nft; }
 get_version() { grep -m1 -A2 -w "^Package: $1$" /usr/lib/opkg/status | sed -n 's/Version: //p'; }
 print_json_bool() { json_init; json_add_boolean "$1" "$2"; json_dump; json_cleanup; }
@@ -27,6 +34,7 @@ print_json_string() { json_init; json_add_string "$1" "$2"; json_dump; json_clea
 logger() { /usr/bin/logger -t "$packageName" "$@"; }
 ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances.main.data.status.${1}"; }
 ubus_get_gateway() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances.main.data.gateways[@.name='${1}']${2:+.$2}"; }
+is_greater_or_equal() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" = "$2"; }
 
 get_init_list() {
 	local name
@@ -75,6 +83,7 @@ get_init_status() {
 	local version gateways warnings errors
 	[ -z "$version" ] && version="$(get_version "$name")"
 	[ -z "$version" ] && version="$(get_version "${name}-iptables")"
+	[ -z "$version" ] && version="$(get_version "${name}-netifd")"
 	gateways="$(ubus_get_status gateways | sed "s|\\\n|<br />|g;s|\(\\\033[^<]*\)|✓|g;")"
 	warnings="$(ubus_get_status warnings | sed "s|\\\n|<br />|g;s|\(\\\033[^:]*\)||g;s|: ||g;")"
 	errors="$(ubus_get_status errors | sed "s|\\\n|<br />|g;s|\(\\\033[^:]*\)||g;s|: ||g;")"
@@ -105,21 +114,29 @@ get_init_status() {
 	json_cleanup
 }
 
-check_ipset() { { command -v ipset && /usr/sbin/ipset help hash:net; } >/dev/null 2>&1; }
-check_nft() { command -v nft >/dev/null 2>&1; }
+check_ipset() { { [ -n "$ipset" ] && "$ipset" help hash:net; } >/dev/null 2>&1; }
+check_nft() { [ -n "$nft" ]; }
+check_agh() { [ -n "$agh" ] && [ -s "$aghConfigFile" ]; }
 check_dnsmasq() { command -v dnsmasq >/dev/null 2>&1; }
 check_unbound() { command -v unbound >/dev/null 2>&1; }
+check_agh_ipset() {
+	check_ipset || return 1
+	check_agh || return 1
+	is_greater_or_equal "$($agh --version | sed 's|AdGuard Home, version v0\.\(.*\)|\1|')" '107.13'
+}
 check_dnsmasq_ipset() {
 	local o;
+	check_ipset || return 1
 	check_dnsmasq || return 1
 	o="$(dnsmasq -v 2>/dev/null)"
-	check_ipset && ! echo "$o" | grep -q 'no-ipset' && echo "$o" | grep -q 'ipset'
+	! echo "$o" | grep -q 'no-ipset' && echo "$o" | grep -q 'ipset'
 }
 check_dnsmasq_nftset() {
 	local o;
+	check_nft || return 1
 	check_dnsmasq || return 1
 	o="$(dnsmasq -v 2>/dev/null)"
-	check_nft && ! echo "$o" | grep -q 'no-nftset' && echo "$o" | grep -q 'nftset'
+	! echo "$o" | grep -q 'no-nftset' && echo "$o" | grep -q 'nftset'
 }
 
 get_platform_support() {
@@ -138,6 +155,11 @@ get_platform_support() {
 	else
 		json_add_boolean 'nft_installed' '0'
 	fi
+	if check_agh; then
+		json_add_boolean 'adguardhome_installed' '1'
+	else
+		json_add_boolean 'adguardhome_installed' '0'
+	fi
 	if check_dnsmasq; then
 		json_add_boolean 'dnsmasq_installed' '1'
 	else
@@ -147,6 +169,11 @@ get_platform_support() {
 		json_add_boolean 'unbound_installed' '1'
 	else
 		json_add_boolean 'unbound_installed' '0'
+	fi
+	if check_agh_ipset; then
+		json_add_boolean 'adguardhome_ipset_support' '1'
+	else
+		json_add_boolean 'adguardhome_ipset_support' '0'
 	fi
 	if check_dnsmasq_ipset; then
 		json_add_boolean 'dnsmasq_ipset_support' '1'
