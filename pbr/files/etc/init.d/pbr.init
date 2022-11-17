@@ -33,6 +33,7 @@ fi
 readonly PKG_VERSION='dev-test'
 readonly packageName='pbr'
 readonly serviceName="$packageName $PKG_VERSION"
+readonly serviceTrapSignals='exit SIGHUP SIGQUIT SIGKILL'
 readonly packageConfigFile="/etc/config/${packageName}"
 readonly nftTempFile="/var/run/${packageName}.nft"
 #readonly nftPermFile="/etc/nftables.d/table-post/30-pbr.nft"
@@ -1779,9 +1780,19 @@ on_firewall_reload() {
 }
 on_interface_reload() { rc_procd start_service 'on_interface_reload' "$1"; }
 
+trap_process() {
+#	verbosity=0
+	traffic_killswitch 'remove'
+}
+
 start_service() {
 	local resolverStoredHash resolverNewHash i reloadedIface param="$1"
 	local createUserSets
+
+	for i in $serviceTrapSignals; do
+# shellcheck disable=SC2064
+		trap "trap_process $i" "$i"
+	done
 
 	load_environment 'on_start' "$(load_validate_config)" || return 1
 	is_wan_up || return 1
@@ -1923,6 +1934,8 @@ start_service() {
 		;;
 	esac
 	traffic_killswitch 'remove'
+# shellcheck disable=SC2086
+	trap - $serviceTrapSignals
 
 	if [ -z "$gatewaySummary" ]; then
 		errorSummary="${errorSummary}${_ERROR_}: Failed to set up any gateway!\\n"
