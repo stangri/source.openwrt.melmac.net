@@ -1114,27 +1114,27 @@ policy_routing_nft() {
 			unset negation; value="$src_addr";
 		fi
 		if is_phys_dev "$value"; then
-			param4="${param4:+$param4 }iifname ${negation:+$negation }${value:1}"
-			param6="${param6:+$param6 }iifname ${negation:+$negation }${value:1}"
+			param4="$param4 iifname $negation ${value:1}"
+			param6="$param6 iifname $negation ${value:1}"
 		elif is_mac_address "$value"; then
 			local target='src' type='mac'
 			if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
 				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-				param4="${param4:+$param4 }ether ${negation:+$negation }saddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="${param6:+$param6 }ether ${negation:+$negation }saddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				param4="$param4 ether saddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+				param6="$param6 ether saddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 			else
-				param4="${param4:+$param4 }ether saddr ${negation:+$negation }$value"
-				param6="${param6:+$param6 }ether saddr ${negation:+$negation }$value"
+				param4="$param4 ether saddr $negation $value"
+				param6="$param6 ether saddr $negation $value"
 			fi
 		else
 			local target='src' type='ip'
 			if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
 				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }saddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }saddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				param4="$param4 $ip4Flag saddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+				param6="$param6 $ip6Flag saddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 			else
-				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }saddr ${negation:+$negation }$value"
-				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }saddr ${negation:+$negation }$value"
+				param4="$param4 $ip4Flag saddr $negation $value"
+				param6="$param6 $ip6Flag saddr $negation $value"
 			fi
 		fi
 	fi
@@ -1146,31 +1146,31 @@ policy_routing_nft() {
 			unset negation; value="$dest_addr";
 		fi
 		if is_phys_dev "$value"; then
-			param4="${param4:+$param4 }oifname ${negation:+$negation }${value:1}"
-			param6="${param6:+$param6 }oifname ${negation:+$negation }${value:1}"
+			param4="$param4 oifname $negation ${value:1}"
+			param6="$param6 oifname $negation ${value:1}"
 		elif is_domain "$value"; then
 			local target='dst' type='ip'
 			if resolver 'create_resolver_set' "$iface" "$target" "$type" "$uid" "$name" && \
 				resolver 'add_resolver_element' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				param4="$param4 $ip4Flag daddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+				param6="$param6 $ip6Flag daddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 			elif nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
 				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				param4="$param4 $ip4Flag daddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+				param6="$param6 $ip6Flag daddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 			else
-				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr {$(resolveip_to_nftset4 "$value")}"
-				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr {$(resolveip_to_nftset6 "$value")}"
+				param4="$param4 $ip4Flag daddr $negation {$(resolveip_to_nftset4 "$value")}"
+				param6="$param6 $ip6Flag daddr $negation {$(resolveip_to_nftset6 "$value")}"
 			fi
 		else
 			local target='dst' type='ip'
 			if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
 				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				param4="$param4 $ip4Flag daddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+				param6="$param6 $ip6Flag daddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 			else
-				param4="${param4:+$param4 }${ip4Flag:+$ip4Flag }${negation:+$negation }daddr $value"
-				param6="${param6:+$param6 }${ip6Flag:+$ip6Flag }${negation:+$negation }daddr $value"
+				param4="$param4 $ip4Flag daddr $negation $value"
+				param6="$param6 $ip6Flag daddr $negation $value"
 			fi
 		fi
 	fi
@@ -1185,8 +1185,8 @@ policy_routing_nft() {
 		else
 			unset negation; value="$src_port";
 		fi
-		param4="${param4:+$param4 }${proto:+$proto }sport ${negation:+$negation }{$(ports_to_nftset "$value")}"
-		param6="${param6:+$param6 }${proto:+$proto }sport ${negation:+$negation }{$(ports_to_nftset "$value")}"
+		param4="$param4 ${proto:+$proto }sport $negation {$(ports_to_nftset "$value")}"
+		param6="$param6 ${proto:+$proto }sport $negation {$(ports_to_nftset "$value")}"
 	fi
 
 	if [ -n "$dest_port" ]; then
@@ -1195,12 +1195,12 @@ policy_routing_nft() {
 		else
 			unset negation; value="$dest_port";
 		fi
-		param4="${param4:+$param4 }${proto:+$proto }dport ${negation:+$negation }{$(ports_to_nftset "$value")}"
-		param6="${param6:+$param6 }${proto:+$proto }dport ${negation:+$negation }{$(ports_to_nftset "$value")}"
+		param4="$param4 ${proto:+$proto }dport $negation {$(ports_to_nftset "$value")}"
+		param6="$param6 ${proto:+$proto }dport $negation {$(ports_to_nftset "$value")}"
 	fi
 
-	param4="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain:-prerouting} $param4 $dest comment \"$name\""
-	param6="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain:-prerouting} $param6 $dest comment \"$name\""
+	param4="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} $param4 $dest comment \"$name\""
+	param6="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} $param6 $dest comment \"$name\""
 
 	local ipv4_error='0' ipv6_error='0'
 	if [ "$nftPrevParam4" != "$param4" ]; then
@@ -1497,16 +1497,17 @@ EOF
 			return "$s"
 		;;
 		create_user_set)
+			[ -z "$createUserSet" ] && return 0;
 			if is_nft; then
-				nftset 'create_user_set' "$iface" 'dst' 'ip' '' '' "$mark" || s=1
-				nftset 'create_user_set' "$iface" 'src' 'ip' '' '' "$mark" || s=1
-				nftset 'create_user_set' "$iface" 'src' 'mac' '' '' "$mark" || s=1
+				nftset 'create_user_set' "$iface" 'dst' 'ip' 'user' '' "$mark" || s=1
+				nftset 'create_user_set' "$iface" 'src' 'ip' 'user' '' "$mark" || s=1
+				nftset 'create_user_set' "$iface" 'src' 'mac' 'user' '' "$mark" || s=1
 			else
-				ips 'create_user_set' "$iface" 'dst' 'ip' '' '' "$mark" || s=1
-				ips 'create_user_set' "$iface" 'src' 'ip' '' '' "$mark" || s=1
-				ips 'create_user_set' "$iface" 'dst' 'net' '' '' "$mark" || s=1
-				ips 'create_user_set' "$iface" 'src' 'net' '' '' "$mark" || s=1
-				ips 'create_user_set' "$iface" 'src' 'mac' '' '' "$mark" || s=1
+				ips 'create_user_set' "$iface" 'dst' 'ip' 'user' '' "$mark" || s=1
+				ips 'create_user_set' "$iface" 'src' 'ip' 'user' '' "$mark" || s=1
+				ips 'create_user_set' "$iface" 'dst' 'net' 'user' '' "$mark" || s=1
+				ips 'create_user_set' "$iface" 'src' 'net' 'user' '' "$mark" || s=1
+				ips 'create_user_set' "$iface" 'src' 'mac' 'user' '' "$mark" || s=1
 			fi
 			return "$s"
 		;;
@@ -1622,7 +1623,8 @@ interface_process() {
 	case "$action" in
 		create)
 			output 2 "Setting up routing for '$displayText' "
-			if interface_routing 'create' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"; then
+			if interface_routing 'create' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority" && \
+				interface_routing 'create_user_set' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"; then
 				json_add_gateway 'create' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority" "$dispStatus"
 				gatewaySummary="${gatewaySummary}${displayText}${dispStatus:+ $dispStatus}\\n"
 				output_ok
@@ -1631,9 +1633,9 @@ interface_process() {
 				output_fail
 			fi
 		;;
-		create_user_set)
-			interface_routing 'create_user_set' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"
-		;;
+#		create_user_set)
+#			interface_routing 'create_user_set' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"
+#		;;
 		destroy)
 			displayText="${iface}/${dispDev:+$dispDev/}${dispGw4}${ipv6_enabled:+/$dispGw6}"
 			output 2 "Removing routing for '$displayText' "
@@ -1706,6 +1708,7 @@ on_interface_reload() { rc_procd start_service 'on_interface_reload' "$1"; }
 
 start_service() {
 	local resolverStoredHash resolverNewHash i reloadedIface param="$1"
+	local createUserSets
 
 	load_environment 'on_start' "$(load_validate_config)" || return 1
 	is_wan_up || return 1
@@ -1752,6 +1755,10 @@ start_service() {
 		serviceStartTrigger="${serviceStartTrigger:-on_start}"
 	fi
 
+	if is_config_enabled 'include'; then
+		createUserSets='true'
+	fi
+
 	procd_open_instance "main"
 	procd_set_param command /bin/true
 	procd_set_param stdout 1
@@ -1782,8 +1789,10 @@ start_service() {
 				done
 			fi
 			json_add_array 'gateways'
-			interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'reload';
-			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'reload';
+			interface_process 'all' 'prepare'
+			config_foreach interface_process 'interface' 'reload'
+			interface_process_tor 'tor' 'destroy'
+			is_tor_running && interface_process_tor 'tor' 'reload'
 			json_close_array
 			if is_config_enabled 'policy'; then
 				output 1 'Processing policies '
@@ -1792,8 +1801,6 @@ start_service() {
 				output 1 '\n'
 			fi
 			if is_config_enabled 'include'; then
-				interface_process 'all' 'prepare'
-				config_foreach interface_process 'interface' 'create_user_set'
 				output 1 'Processing user file(s) '
 				config_load "$packageName"
 				config_foreach load_validate_include 'include' user_file_process
@@ -1821,7 +1828,8 @@ start_service() {
 			json_add_array 'gateways'
 			interface_process 'all' 'prepare'
 			config_foreach interface_process 'interface' 'create'
-			interface_process_tor 'tor' 'destroy'; is_tor_running && interface_process_tor 'tor' 'create'
+			interface_process_tor 'tor' 'destroy'
+			is_tor_running && interface_process_tor 'tor' 'create'
 			json_close_array
 			ip route flush cache
 			output 1 '\n'
@@ -1832,7 +1840,6 @@ start_service() {
 				output 1 '\n'
 			fi
 			if is_config_enabled 'include'; then
-				interface_process 'all' 'prepare'; config_foreach interface_process 'interface' 'create_user_set';
 				output 1 'Processing user file(s) '
 				config_load "$packageName"
 				config_foreach load_validate_include 'include' user_file_process

@@ -3,8 +3,8 @@
 # Credits to https://forum.openwrt.org/u/dscpl for api.hackertarget.com code.
 # Credits to https://github.com/kkeker and https://github.com/tophirsch for api.bgpview.io code.
 
-TARGET_SET='pbr_wan_4_dst_ip'
-TARGET_IPSET='pbr_wan_4_dst_net'
+TARGET_SET='pbr_wan_4_dst_ip_user'
+TARGET_IPSET='pbr_wan_4_dst_net_user'
 TARGET_TABLE='inet fw4'
 TARGET_ASN='2906'
 TARGET_FNAME="/var/pbr_tmp_AS${TARGET_ASN}"
