@@ -884,12 +884,24 @@ cleanup_sets() {
 	done
 }
 
+trap_process() {
+#	verbosity=0
+	output "\\n"
+	output "Unexpected exit or service termination: '${1}'!\\n"
+	errorSummary="${errorSummary}${_ERROR_}: Unexpected exit or service termination: '${1}'\\n"
+	traffic_killswitch 'remove'
+}
+
 traffic_killswitch() {
 	local s=0
 	case "$1" in
 		insert)
 			local lan_subnet wan_device
 			[ "$secure_reload" -ne 0 ] || return 0
+			for i in $serviceTrapSignals; do
+# shellcheck disable=SC2064
+				trap "trap_process $i" "$i"
+			done
 			output 3 'Activating traffic killswitch '
 			network_get_subnet lan_subnet 'lan'
 			network_get_physdev wan_device 'wan'
@@ -927,6 +939,8 @@ traffic_killswitch() {
 					output_failn
 				fi
 			fi
+# shellcheck disable=SC2086
+			trap - $serviceTrapSignals
 		;;
 	esac
 }
@@ -1780,19 +1794,9 @@ on_firewall_reload() {
 }
 on_interface_reload() { rc_procd start_service 'on_interface_reload' "$1"; }
 
-trap_process() {
-#	verbosity=0
-	traffic_killswitch 'remove'
-}
-
 start_service() {
 	local resolverStoredHash resolverNewHash i reloadedIface param="$1"
 	local createUserSets
-
-	for i in $serviceTrapSignals; do
-# shellcheck disable=SC2064
-		trap "trap_process $i" "$i"
-	done
 
 	load_environment 'on_start' "$(load_validate_config)" || return 1
 	is_wan_up || return 1
@@ -1848,6 +1852,7 @@ start_service() {
 	procd_set_param stdout 1
 	procd_set_param stderr 1
 	procd_open_data
+
 	traffic_killswitch 'insert'
 	case $serviceStartTrigger in
 		on_interface_reload)
@@ -1934,8 +1939,6 @@ start_service() {
 		;;
 	esac
 	traffic_killswitch 'remove'
-# shellcheck disable=SC2086
-	trap - $serviceTrapSignals
 
 	if [ -z "$gatewaySummary" ]; then
 		errorSummary="${errorSummary}${_ERROR_}: Failed to set up any gateway!\\n"
