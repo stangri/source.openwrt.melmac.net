@@ -118,31 +118,29 @@ get_status_text() {
 	printf "%b" "$_ret"
 }
 get_error_text() {
-	local _ret
 	case "$1" in
-		errorOutputFileCreate) _ret="failed to create $outputFile file";;
-		errorFailDNSReload) _ret="failed to restart/reload DNS resolver";;
-		errorSharedMemory) _ret="failed to access shared memory";;
-		errorSorting) _ret="failed to sort data file";;
-		errorOptimization) _ret="failed to optimize data file";;
-		errorAllowListProcessing) _ret="failed to process allow-list";;
-		errorDataFileFormatting) _ret="failed to format data file";;
-		errorMovingDataFile) _ret="failed to move data file '${A_TMP}' to '${outputFile}'";;
-		errorCreatingCompressedCache) _ret="failed to create compressed cache";;
-		errorRemovingTempFiles) _ret="failed to remove temporary files";;
-		errorRestoreCompressedCache) _ret="failed to unpack compressed cache";;
-		errorRestoreCache) _ret="failed to move '$outputCache' to '$outputFile'";;
-		errorOhSnap) _ret="failed to create block-list or restart DNS resolver";;
-		errorStopping) _ret="failed to stop $serviceName";;
-		errorDNSReload) _ret="failed to reload/restart DNS resolver";;
-		errorDownloadingConfigUpdate) _ret="failed to download Config Update file";;
-		errorDownloadingList) _ret="failed to download";;
-		errorParsingConfigUpdate) _ret="failed to parse Config Update file";;
-		errorParsingList) _ret="failed to parse";;
-		errorNoSSLSupport) _ret="no HTTPS/SSL support on device";;
-		errorCreatingDirectory) _ret="failed to create output/cache/gzip file directory";;
+		errorOutputFileCreate) printf "%b" "failed to create $outputFile file";;
+		errorFailDNSReload) printf "%b" "failed to restart/reload DNS resolver";;
+		errorSharedMemory) printf "%b" "failed to access shared memory";;
+		errorSorting) printf "%b" "failed to sort data file";;
+		errorOptimization) printf "%b" "failed to optimize data file";;
+		errorAllowListProcessing) printf "%b" "failed to process allow-list";;
+		errorDataFileFormatting) printf "%b" "failed to format data file";;
+		errorMovingDataFile) printf "%b" "failed to move data file '${A_TMP}' to '${outputFile}'";;
+		errorCreatingCompressedCache) printf "%b" "failed to create compressed cache";;
+		errorRemovingTempFiles) printf "%b" "failed to remove temporary files";;
+		errorRestoreCompressedCache) printf "%b" "failed to unpack compressed cache";;
+		errorRestoreCache) printf "%b" "failed to move '$outputCache' to '$outputFile'";;
+		errorOhSnap) printf "%b" "failed to create block-list or restart DNS resolver";;
+		errorStopping) printf "%b" "failed to stop $serviceName";;
+		errorDNSReload) printf "%b" "failed to reload/restart DNS resolver";;
+		errorDownloadingConfigUpdate) printf "%b" "failed to download Config Update file";;
+		errorDownloadingList) printf "%b" "failed to download";;
+		errorParsingConfigUpdate) printf "%b" "failed to parse Config Update file";;
+		errorParsingList) printf "%b" "failed to parse";;
+		errorNoSSLSupport) printf "%b" "no HTTPS/SSL support on device";;
+		errorCreatingDirectory) printf "%b" "failed to create output/cache/gzip file directory";;
 	esac
-	printf "%b" "$_ret"
 }
 
 output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
