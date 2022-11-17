@@ -102,6 +102,12 @@ resolver_set_supported=
 nftPrevParam4=
 nftPrevParam6=
 
+get_error_text() {
+	case "$1" in
+		errorNoIpset) printf "%b" "Resolver set support (${resolver_set}) requires ipset, but ipset binary cannot be found!";;
+	esac
+}
+
 version() { echo "$PKG_VERSION"; }
 output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
 output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
@@ -280,7 +286,7 @@ resolver() {
 					[ -n "$resolver_set_supported" ] && ips 'create_agh_set' "$@";;
 				check_support)
 					if [ ! -x "$ipset" ]; then
-						errorSummary="${errorSummary}${_ERROR_}: Resolver set support (${resolver_set}) requires ipset, but ipset binary cannot be found!\\n"
+						errorSummary="${errorSummary}${_ERROR_}: $(get_error_text 'errorNoIpset')\\n"
 						return 1
 					fi
 					if [ -n "$agh" ] && [ -s "$aghConfigFile" ]; then
@@ -908,7 +914,7 @@ traffic_killswitch() {
 			if is_nft; then
 				nft add chain inet "$nftTable" "${nftPrefix}_killswitch" '{ type filter hook forward priority 0; policy accept; }' || s=1
 				nft add rule inet "$nftTable" "${nftPrefix}_killswitch" oifname "$wan_device" ip saddr "$lan_subnet" counter reject || s=1
-		#		nft add rule inet "$nftTable" "${nftPrefix}_killswitch" oifname '$wan_devices' ip saddr '$lan_subnet' counter reject || s=1
+#				nft add rule inet "$nftTable" "${nftPrefix}_killswitch" oifname '$wan_devices' ip saddr '$lan_subnet' counter reject || s=1
 			else
 				ipt -N "${iptPrefix}_KILLSWITCH" || s=1
 				ipt -A "${iptPrefix}_KILLSWITCH" -s "$lan_subnet" -o "$wan_device" -j REJECT || s=1
@@ -960,7 +966,8 @@ policy_routing_tor_iptables() {
 	if [ "$chain" != "PREROUTING" ]; then
 		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'chain' or set 'chain' to 'PREROUTING' for policy '$comment'\\n"
 	fi
-	resolver 'add_resolver_element' "$iface" 'dst' 'ip' '' "${comment}: $dest_addr" "$dest_addr" || processPolicyError="${processPolicyError}${_ERROR_}: resolver 'add_resolver_element' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
+	resolver 'add_resolver_element' "$iface" 'dst' 'ip' '' "${comment}: $dest_addr" "$dest_addr" || \
+		processPolicyError="${processPolicyError}${_ERROR_}: resolver 'add_resolver_element' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
 	return 0
 }
 policy_routing_tor_nft() {
@@ -977,7 +984,8 @@ policy_routing_tor_nft() {
 	if [ "$chain" != "prerouting" ]; then
 		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'chain' or set 'chain' to 'prerouting' for policy '$comment'\\n"
 	fi
-	resolver 'add_resolver_element' "$iface" 'dst' 'ip' '' "${comment}: $dest_addr" "$dest_addr" || processPolicyError="${processPolicyError}${_ERROR_}: resolver 'add_resolver_element' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
+	resolver 'add_resolver_element' "$iface" 'dst' 'ip' '' "${comment}: $dest_addr" "$dest_addr" || \
+		processPolicyError="${processPolicyError}${_ERROR_}: resolver 'add_resolver_element' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
 	return 0
 }
 
