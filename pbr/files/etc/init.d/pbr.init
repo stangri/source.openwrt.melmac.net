@@ -1570,7 +1570,7 @@ EOF
 			return "$s"
 		;;
 		create_user_set)
-			[ -z "$createUserSet" ] && return 0;
+			[ -z "$createUserSets" ] && return 0;
 			if is_nft; then
 				nftset 'create_user_set' "$iface" 'dst' 'ip' 'user' '' "$mark" || s=1
 				nftset 'create_user_set' "$iface" 'src' 'ip' 'user' '' "$mark" || s=1
