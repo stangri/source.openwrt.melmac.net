@@ -658,7 +658,7 @@ ips() {
 		;;
 		add_agh_element)
 			[ -n "$ipv6_enabled" ] || unset ipset6
-			echo "ipset=/${param}/${ipset4}${ipset6:+,$ipset6} # $comment" >> "$aghIpsetFile" && ipv4_error=0
+			echo "${param}/${ipset4}${ipset6:+,$ipset6} # $comment" >> "$aghIpsetFile" && ipv4_error=0
 		;;
 		add_dnsmasq_element)
 			[ -n "$ipv6_enabled" ] || unset ipset6
