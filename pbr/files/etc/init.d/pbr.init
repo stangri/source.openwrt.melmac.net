@@ -57,8 +57,8 @@ readonly ipsPrefix='pbr'
 readonly iptPrefix='PBR'
 # shellcheck disable=SC2155
 readonly agh="$(command -v AdGuardHome)"
-readonly aghConfigFile='/etc/AdGuardHome.yaml'
-readonly aghIpsetFile="/var/run/${packageName}.AdGuardHome.ipsets"
+readonly aghConfigFile='/etc/adguardhome.yaml'
+readonly aghIpsetFile="/var/run/${packageName}.adguardhome.ipsets"
 # shellcheck disable=SC2155
 readonly nft="$(command -v nft)"
 readonly nftTable="fw4"
@@ -304,6 +304,7 @@ resolver() {
 							return 0
 						else
 							warningSummary="${warningSummary}${_WARNING_}: Installed AdGuardHome version ($agh_version) doesn't support 'ipset_file' option!\\n"
+							return 1
 						fi
 					else
 						warningSummary="${warningSummary}${_WARNING_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported on this system!\\n"
