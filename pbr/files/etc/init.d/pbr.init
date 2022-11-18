@@ -45,6 +45,7 @@ readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
 readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
+readonly ip_full='/usr/libexec/ip-full'
 readonly ipTablePrefix='pbr'
 # shellcheck disable=SC2155
 readonly iptables="$(command -v iptables)"
@@ -104,6 +105,7 @@ nftPrevParam6=
 
 get_error_text() {
 	case "$1" in
+		errorNoIpFull) printf "%b" "ip-full binary cannot be found!";;
 		errorNoIpset) printf "%b" "Resolver set support (${resolver_set}) requires ipset, but ipset binary cannot be found!";;
 	esac
 }
@@ -551,6 +553,10 @@ load_environment() {
 			errorSummary="${errorSummary}${_ERROR_}: The ${packageName} is currently disabled.\\n"
 			errorSummary="${errorSummary}Enable ${packageName} from WebUI or run the following commands:\\n"
 			errorSummary="${errorSummary}uci set $packageName.config.enabled='1'; uci commit $packageName;\\n"
+			return 1
+		fi
+		if [ ! -x "$ip_full" ]; then
+			errorSummary="${errorSummary}${_ERROR_}: $(get_error_text 'errorNoIpFull')\\n"
 			return 1
 		fi
 		resolver 'check_support'
@@ -1498,8 +1504,8 @@ interface_routing() {
 		create)
 			if is_netifd_table "$iface"; then
 				ipv4_error=0
-				if [ -z "$(ip rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
-					ip rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
+				if [ -z "$($ip_full rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
+					$ip_full rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
 				fi
 				if is_nft; then
 					nft add chain inet "$nftTable" "${nftPrefix}_mark_${mark}" || ipv4_error=1 
@@ -1512,32 +1518,32 @@ interface_routing() {
 				fi
 				if [ -n "$ipv6_enabled" ]; then
 					ipv6_error=0
-					if [ -z "$(ip -6 rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
-						ip -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
+					if [ -z "$($ip_full -6 rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
+						$ip_full -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
 					fi
 				fi
 			else
 				sed -i "/${ipTablePrefix}_${iface}/d" /etc/iproute2/rt_tables
-				ip route flush table "$tid" >/dev/null 2>&1
+				$ip_full route flush table "$tid" >/dev/null 2>&1
 				if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
 					ipv4_error=0
 					echo "$tid ${ipTablePrefix}_${iface}" >> /etc/iproute2/rt_tables
 					if [ -z "$gw4" ]; then
-						ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
+						$ip_full -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 					else
-						ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+						$ip_full -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 					fi
 					# shellcheck disable=SC2086
 					while read -r i; do
 						idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
 						if ! is_supported_iface_dev "$idev"; then
-							ip -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
+							$ip_full -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
 						fi
 					done << EOF
-					$(ip -4 route list table main)
+					$($ip_full -4 route list table main)
 EOF
-					if [ -z "$(ip rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
-						ip rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
+					if [ -z "$($ip_full rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
+						$ip_full rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
 					fi
 					if is_nft; then
 						nft add chain inet "$nftTable" "${nftPrefix}_mark_${mark}" || ipv4_error=1 
@@ -1553,20 +1559,20 @@ EOF
 					ipv6_error=0
 					if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne 0 ]; then
 						if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
-							ip -6 route add unreachable default table "$tid" || ipv6_error=1
-						elif ip -6 route list table main | grep -q " dev $dev6 "; then
+							$ip_full -6 route add unreachable default table "$tid" || ipv6_error=1
+						elif $ip_full -6 route list table main | grep -q " dev $dev6 "; then
 							while read -r i; do
-								ip -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+								$ip_full -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 							done << EOF
-							$(ip -6 route list table main | grep " dev $dev6 ")
+							$($ip_full -6 route list table main | grep " dev $dev6 ")
 EOF
 						else
-							ip -6 route add "$(ip -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
-							ip -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							$ip_full -6 route add "$($ip_full -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							$ip_full -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 						fi
 					fi
-					if [ -z "$(ip -6 rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
-						ip -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
+					if [ -z "$($ip_full -6 rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
+						$ip_full -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
 					fi
 				fi
 			fi
@@ -1608,9 +1614,9 @@ EOF
 			return "$s"
 		;;
 		delete|destroy)
-			ip rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
+			$ip_full rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
 			if ! is_netifd_table "$iface"; then
-				ip route flush table "$tid" >/dev/null 2>&1
+				$ip_full route flush table "$tid" >/dev/null 2>&1
 				sed -i "/${ipTablePrefix}_${iface}/d" /etc/iproute2/rt_tables
 			fi
 			return "$s"
@@ -1618,36 +1624,36 @@ EOF
 		reload_interface)
 			is_netifd_table "$iface" && return 0;
 			ipv4_error=0
-			ip rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
-			ip route flush table "$tid" >/dev/null 2>&1
-			ip -4 route del default table "$tid" >/dev/null 2>&1
+			$ip_full rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
+			$ip_full route flush table "$tid" >/dev/null 2>&1
+			$ip_full -4 route del default table "$tid" >/dev/null 2>&1
 			if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
 				if [ -z "$gw4" ]; then
-					ip -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
+					$ip_full -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 				else
-					ip -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+					$ip_full -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 				fi
 				if [ -z "$(ip rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
-					ip rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
+					$ip_full rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
 				fi
 			fi
 			if [ -n "$ipv6_enabled" ]; then
-				ip -6 route del default table "$tid" >/dev/null 2>&1
+				$ip_full -6 route del default table "$tid" >/dev/null 2>&1
 				ipv6_error=0
 				if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne 0 ]; then
 					if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
-						ip -6 route add unreachable default table "$tid" || ipv6_error=1
+						$ip_full -6 route add unreachable default table "$tid" || ipv6_error=1
 					else
 						while read -r i; do
 # shellcheck disable=SC2086
-							ip -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							$ip_full -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
 						done << EOF
-		$(ip -6 route list default table main | grep " dev $dev6 ")
+		$($ip_full -6 route list default table main | grep " dev $dev6 ")
 EOF
 					fi
 				fi
-				if [ -z "$(ip -6 rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
-					ip -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
+				if [ -z "$($ip_full -6 rule list fwmark "${mark}/${fw_mask}" table "$tid")" ]; then
+					$ip_full -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
 				fi
 			fi
 			if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
