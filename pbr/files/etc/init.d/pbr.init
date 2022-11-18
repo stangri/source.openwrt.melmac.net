@@ -17,8 +17,8 @@ if type extra_command >/dev/null 2>&1; then
 			WARNING: while paste.ee uploads are unlisted, they are still publicly available
 		List domain names after options to include their lookup in report"
 	extra_command 'version' 'Show version information'
-	extra_command 'on_firewall_reload' 'Run service on firewall reload'
-	extra_command 'on_interface_reload' 'Run service on indicated interface reload'
+	extra_command 'on_firewall_reload' '	Run service on firewall reload'
+	extra_command 'on_interface_reload' '	Run service on indicated interface reload'
 else
 # shellcheck disable=SC2034
 	EXTRA_COMMANDS='on_firewall_reload on_interface_reload status version'
@@ -170,7 +170,7 @@ pbr_get_gateway() {
 #		gw="$(ubus call "network.interface.${iface}" status | jsonfilter -e "@.route[0].nexthop")"
 #	fi
 	if [ -z "$gw" ] || [ "$gw" = '0.0.0.0' ]; then
-		gw="$(ip -4 a list dev "$dev" 2>/dev/null | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
+		gw="$($ip_full -4 a list dev "$dev" 2>/dev/null | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
 	fi
 	eval "$1"='$gw'
 }
@@ -178,7 +178,7 @@ pbr_get_gateway6() {
 	local iface="$2" dev="$3" gw
 	network_get_gateway6 gw "$iface" true
 	if [ -z "$gw" ] || [ "$gw" = '::/0' ] || [ "$gw" = '::0/0' ] || [ "$gw" = '::' ]; then
-		gw="$(ip -6 a list dev "$dev" 2>/dev/null | grep inet6 | awk '{print $2}')"
+		gw="$($ip_full -6 a list dev "$dev" 2>/dev/null | grep inet6 | awk '{print $2}')"
 	fi
 	eval "$1"='$gw'
 }
@@ -219,7 +219,7 @@ is_domain() { str_contains "$1" '[a-zA-Z]'; }
 is_phys_dev() { [ "${1:0:1}" = "@" ] && ip l show | grep -E -q "^\\d+\\W+${1:1}"; }
 dnsmasq_kill() { killall -q -s HUP dnsmasq; }
 dnsmasq_restart() { output 3 'Restarting dnsmasq '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
-is_default_dev() { [ "$1" = "$(ip -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
+is_default_dev() { [ "$1" = "$($ip_full -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
 is_supported_iface_dev() { local n dev; for n in $ifacesSupported; do network_get_device dev "$n"; [ "$1" = "$dev" ] && return 0; done; return 1; }
 is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
 is_service_running_iptables() { [ -x "$iptables" ] && "$iptables" -t mangle -L | grep -q "${iptPrefix}_PREROUTING" >/dev/null 2>&1; }
@@ -2057,8 +2057,8 @@ status_service_nft() {
 	fi
 	if [ -n "$wanIface6" ]; then
 		network_get_device dev6 "$wanIface6"
-		wanGW6=$(ip -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
-		[ "$wanGW6" = "default" ] && wanGW6=$(ip -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
+		wanGW6=$($ip_full -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
+		[ "$wanGW6" = "default" ] && wanGW6=$($ip_full -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
 	fi
 	while [ "${1:0:1}" = "-" ]; do param="${1//-/}"; eval "set_$param=1"; shift; done
 	[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
@@ -2097,8 +2097,8 @@ status_service_nft() {
 	tableCount="$(grep -c "${packageName}_" /etc/iproute2/rt_tables)" || tableCount=0
 	wan_tid=$(($(get_rt_tables_next_id)-tableCount))
 	i=0; while [ $i -lt $tableCount ]; do 
-		echo "IPv4 table $((wan_tid + i)) route: $(ip -4 route show table $((wan_tid + i)) | grep default)"
-		echo "IPv4 table $((wan_tid + i)) rule:  $(ip -4 rule list table "$((wan_tid + i))")"
+		echo "IPv4 table $((wan_tid + i)) route: $($ip_full -4 route show table $((wan_tid + i)) | grep default)"
+		echo "IPv4 table $((wan_tid + i)) rule:  $($ip_full -4 rule list table "$((wan_tid + i))")"
 		i=$((i + 1))
 	done
 }
@@ -2113,8 +2113,8 @@ status_service_iptables() {
 	fi
 	if [ -n "$wanIface6" ]; then
 		network_get_device dev6 "$wanIface6"
-		wanGW6=$(ip -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
-		[ "$wanGW6" = "default" ] && wanGW6=$(ip -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
+		wanGW6=$($ip_full -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
+		[ "$wanGW6" = "default" ] && wanGW6=$($ip_full -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
 	fi
 	while [ "${1:0:1}" = "-" ]; do param="${1//-/}"; eval "set_$param=1"; shift; done
 	[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
@@ -2140,14 +2140,14 @@ status_service_iptables() {
 		if [ -n "$set_d" ]; then ip rule list; fi
 		wan_tid=$(($(get_rt_tables_next_id)-tableCount))
 		i=0; while [ $i -lt $tableCount ]; do 
-			echo "IPv4 table $((wan_tid + i)) route: $(ip -4 route show table $((wan_tid + i)) | grep default)"
-			echo "IPv4 table $((wan_tid + i)) rule:  $(ip -4 rule list table "$((wan_tid + i))")"
+			echo "IPv4 table $((wan_tid + i)) route: $($ip_full -4 route show table $((wan_tid + i)) | grep default)"
+			echo "IPv4 table $((wan_tid + i)) rule:  $($ip_full -4 rule list table "$((wan_tid + i))")"
 			i=$((i + 1))
 		done
 
 		if [ -n "$ipv6_enabled" ]; then
 			i=0; while [ $i -lt $tableCount ]; do
-				ip -6 route show table $((wan_tid + i)) | while read -r param; do
+				$ip_full -6 route show table $((wan_tid + i)) | while read -r param; do
 					echo "IPv6 Table $((wan_tid + i)): $param"
 				done
 				i=$((i + 1))
