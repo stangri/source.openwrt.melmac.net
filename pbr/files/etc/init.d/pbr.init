@@ -263,6 +263,12 @@ resolver() {
 	local param="$1"
 	shift
 
+	if [ "$param" = 'cleanup_all' ]; then
+		rm -f "$aghIpsetFile"
+		rm -f "$dnsmasqFile"
+		return 0
+	fi
+
 	case "$resolver_set" in
 		''|none)
 			case "$param" in
@@ -293,10 +299,12 @@ resolver() {
 					fi
 					if [ -n "$agh" ] && [ -s "$aghConfigFile" ]; then
 						agh_version="$($agh --version | sed 's|AdGuard Home, version v0\.\(.*\)|\1|')"
-					fi
-					if is_greater_or_equal "$agh_version" '107.13'; then
-						resolver_set_supported='true'
-						return 0
+						if is_greater_or_equal "$agh_version" '107.13'; then
+							resolver_set_supported='true'
+							return 0
+						else
+							warningSummary="${warningSummary}${_WARNING_}: Installed AdGuardHome version ($agh_version) doesn't support 'ipset_file' option!\\n"
+						fi
 					else
 						warningSummary="${warningSummary}${_WARNING_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported on this system!\\n"
 						return 1
@@ -658,7 +666,7 @@ ips() {
 		;;
 		add_agh_element)
 			[ -n "$ipv6_enabled" ] || unset ipset6
-			echo "${param}/${ipset4}${ipset6:+,$ipset6} # $comment" >> "$aghIpsetFile" && ipv4_error=0
+			echo "${param}/${ipset4}${ipset6:+,$ipset6}" >> "$aghIpsetFile" && ipv4_error=0
 		;;
 		add_dnsmasq_element)
 			[ -n "$ipv6_enabled" ] || unset ipset6
@@ -1874,7 +1882,7 @@ start_service() {
 		;;
 		on_reload)
 			resolver 'store_hash'
-			resolver 'cleanup'
+			resolver 'cleanup_all'
 			resolver 'configure'
 			resolver 'init'
 			cleanup_main_chains
@@ -1909,7 +1917,7 @@ start_service() {
 		;;
 		on_start|*)
 			resolver 'store_hash'
-			resolver 'cleanup'
+			resolver 'cleanup_all'
 			resolver 'configure'
 			resolver 'init'
 			cleanup_main_chains
