@@ -148,7 +148,7 @@ output() {
 is_present() { command -v "$1" >/dev/null 2>&1; }
 is_installed() { [ -s "/usr/lib/opkg/info/${1}.control" ]; }
 is_variant_installed() { [ "$(echo /usr/lib/opkg/info/"${1}"*.control)" != "/usr/lib/opkg/info/${1}*.control" ]; }
-is_nft() { [ -x "$nft" ] && [ "$resolver_set" != 'dnsmasq.ipset' ] && "$nft" list chains inet | grep -q "${nftPrefix}_prerouting"; }
+is_nft() { [ -x "$nft" ] && ! str_contains "$resolver_set" 'ipset' && "$nft" list chains inet | grep -q "${nftPrefix}_prerouting"; }
 _build_ifaces_all() { ifacesAll="${ifacesAll}${1} "; }
 _build_ifaces_supported() { is_supported_interface "$1" && ifacesSupported="${ifacesSupported}${1} "; }
 pbr_find_iface() {
