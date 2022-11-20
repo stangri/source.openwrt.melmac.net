@@ -20,7 +20,7 @@ readonly packageName="pbr"
 readonly ipset="$(command -v ipset)"
 # shellcheck disable=SC2155
 readonly agh="$(command -v AdGuardHome)"
-readonly aghConfigFile='/etc/AdGuardHome.yaml'
+readonly aghConfigFile='/etc/adguardhome.yaml'
 # shellcheck disable=SC2155
 readonly nft="$(command -v nft)"
 
@@ -122,7 +122,7 @@ check_unbound() { command -v unbound >/dev/null 2>&1; }
 check_agh_ipset() {
 	check_ipset || return 1
 	check_agh || return 1
-	is_greater_or_equal "$($agh --version | sed 's|AdGuard Home, version v0\.\(.*\)|\1|')" '107.13'
+	is_greater_or_equal "$($agh --version | sed 's|AdGuard Home, version v\(.*\)|\1|')" '0.107.13'
 }
 check_dnsmasq_ipset() {
 	local o;

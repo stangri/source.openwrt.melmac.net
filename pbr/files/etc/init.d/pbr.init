@@ -264,6 +264,7 @@ resolver() {
 	shift
 
 	if [ "$param" = 'cleanup_all' ]; then
+		sed -i "/ipset_file: ${aghIpsetFile}/d" "$aghConfigFile" >/dev/null 2>&1
 		rm -f "$aghIpsetFile"
 		rm -f "$dnsmasqFile"
 		return 0
@@ -298,8 +299,8 @@ resolver() {
 						return 1
 					fi
 					if [ -n "$agh" ] && [ -s "$aghConfigFile" ]; then
-						agh_version="$($agh --version | sed 's|AdGuard Home, version v0\.\(.*\)|\1|')"
-						if is_greater_or_equal "$agh_version" '107.13'; then
+						agh_version="$($agh --version | sed 's|AdGuard Home, version v\(.*\)|\1|')"
+						if is_greater_or_equal "$agh_version" '0.107.13'; then
 							resolver_set_supported='true'
 							return 0
 						else
@@ -312,14 +313,20 @@ resolver() {
 					fi
 				;;
 				cleanup)
-					[ -n "$resolver_set_supported" ] && rm -f "$aghIpsetFile";;
+					[ -z "$resolver_set_supported" ] && return 0
+					rm -f "$aghIpsetFile"
+					sed -i "/ipset_file: ${aghIpsetFile}/d" "$aghConfigFile" >/dev/null 2>&1
+					;;
 				configure)
 					[ -z "$resolver_set_supported" ] && return 1
 					mkdir -p "${aghIpsetFile%/*}"
-					sed -i '/ipset_file/d' "$aghConfigFile"
+					sed -i '/ipset_file/d' "$aghConfigFile" >/dev/null 2>&1
 					sed -i "/  ipset:/a \ \ ipset_file: $aghIpsetFile" "$aghConfigFile"
 				;;
-				init) :;;
+				init)
+					[ -z "$resolver_set_supported" ] && return 0
+					touch "$aghIpsetFile"
+				;;
 				init_end) :;;
 				kill)
 					[ -n "$resolver_set_supported" ] && [ -n "$agh" ] && killall -q -s HUP "$agh";;
@@ -387,7 +394,7 @@ resolver() {
 				reload)
 					[ -z "$resolver_set_supported" ] && return 1
 					output 3 'Reloading dnsmasq '
-					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
+					if /etc/init.d/dnsmasq reload >/dev/null 2>&1; then
 						output_okn
 						return 0
 					else
@@ -448,7 +455,7 @@ resolver() {
 				reload)
 					[ -z "$resolver_set_supported" ] && return 1
 					output 3 'Reloading dnsmasq '
-					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
+					if /etc/init.d/dnsmasq reload >/dev/null 2>&1; then
 						output_okn
 						return 0
 					else
@@ -2029,7 +2036,7 @@ stop_service() {
 	unset ifaceMark
 	unset ifaceTableID
 	resolver 'store_hash'
-	resolver 'cleanup'
+	resolver 'cleanup_all'
 	resolver 'compare_hash' && resolver 'restart'
 	traffic_killswitch 'remove'
 	if [ "$enabled" -ne 0 ]; then
@@ -2202,6 +2209,11 @@ status_service_iptables() {
 			echo "$_SEPARATOR_"
 			echo "DNSMASQ sets"
 			cat "$dnsmasqFile"
+		fi
+		if [ -s "$aghIpsetFile" ]; then
+			echo "$_SEPARATOR_"
+			echo "AdGuardHome sets"
+			cat "$aghIpsetFile"
 		fi
 		echo "$_SEPARATOR_"
 	} | tee -a /var/${packageName}-support
