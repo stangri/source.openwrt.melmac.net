@@ -320,13 +320,11 @@ resolver() {
 				configure)
 					[ -z "$resolver_set_supported" ] && return 1
 					mkdir -p "${aghIpsetFile%/*}"
+					touch "$aghIpsetFile"
 					sed -i '/ipset_file/d' "$aghConfigFile" >/dev/null 2>&1
 					sed -i "/  ipset:/a \ \ ipset_file: $aghIpsetFile" "$aghConfigFile"
 				;;
-				init)
-					[ -z "$resolver_set_supported" ] && return 0
-					touch "$aghIpsetFile"
-				;;
+				init) :;;
 				init_end) :;;
 				kill)
 					[ -n "$resolver_set_supported" ] && [ -n "$agh" ] && killall -q -s HUP "$agh";;
