@@ -2107,7 +2107,8 @@ status_service_nft() {
 	wan_tid=$(($(get_rt_tables_next_id)-tableCount))
 	i=0; while [ $i -lt $tableCount ]; do 
 		echo "IPv4 table $((wan_tid + i)) route: $($ip_full -4 route show table $((wan_tid + i)) | grep default)"
-		echo "IPv4 table $((wan_tid + i)) rule:  $($ip_full -4 rule list table "$((wan_tid + i))")"
+		echo "IPv4 table $((wan_tid + i)) rule(s):"
+		$ip_full -4 rule list table "$((wan_tid + i))"
 		i=$((i + 1))
 	done
 }
@@ -2150,7 +2151,8 @@ status_service_iptables() {
 		wan_tid=$(($(get_rt_tables_next_id)-tableCount))
 		i=0; while [ $i -lt $tableCount ]; do 
 			echo "IPv4 table $((wan_tid + i)) route: $($ip_full -4 route show table $((wan_tid + i)) | grep default)"
-			echo "IPv4 table $((wan_tid + i)) rule:  $($ip_full -4 rule list table "$((wan_tid + i))")"
+			echo "IPv4 table $((wan_tid + i)) rule(s):"
+			$ip_full -4 rule list table "$((wan_tid + i))"
 			i=$((i + 1))
 		done
 
