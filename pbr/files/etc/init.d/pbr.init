@@ -1774,7 +1774,7 @@ interface_process() {
 	esac
 #	ifaceTableID="$((ifaceTableID + 1))"
 	ifaceMark="$(printf '0x%06x' $((ifaceMark + wan_mark)))"
-	ifacePriority="$((ifacePriority - 1))"
+	ifacePriority="$((ifacePriority + 1))"
 	return $s
 }
 
