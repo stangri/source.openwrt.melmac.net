@@ -87,16 +87,16 @@ var status = baseclass.extend({
 			var outputFile = status.outputFile;
 			var outputCache = status.outputCache;
 			var statusTable = {
-			  statusNoInstall: _("%s is not installed or not found").format(pkg.Name),
-			  statusStopped: _("Stopped"),
-			  statusStarting: _("Starting"),
-			  statusRestarting: _("Restarting"),
-			  statusForceReloading: _("Force Reloading"),
-			  statusDownloading: _("Downloading"),
-			  statusError: _("Error"),
-			  statusWarning: _("Warning"),
-			  statusFail: _("Fail"),
-			  statusSuccess: _("Active")
+				statusNoInstall: _("%s is not installed or not found").format(pkg.Name),
+				statusStopped: _("Stopped"),
+				statusStarting: _("Starting"),
+				statusRestarting: _("Restarting"),
+				statusForceReloading: _("Force Reloading"),
+				statusDownloading: _("Downloading"),
+				statusError: _("Error"),
+				statusWarning: _("Warning"),
+				statusFail: _("Fail"),
+				statusSuccess: _("Active")
 			};
 
 			var header = E('h2', {}, _("Simple AdBlock - Status"))
