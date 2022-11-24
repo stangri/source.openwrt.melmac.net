@@ -3,6 +3,7 @@
 
 "require ui";
 "require rpc";
+"require uci";
 "require form";
 "require baseclass";
 
@@ -108,27 +109,27 @@ var status = baseclass.extend({
 			L.resolveDefault(getInitStatus(), {}),
 //			L.resolveDefault(getGateways(), {}),
 		]).then(function (data) {
-			var replyStatus = data[0];
+//			var replyStatus = data[0];
 //			var replyGateways = data[1];
+			var reply = data[0][pkg.Name];
 			var text;
-
-			var header = E('h2', {}, _("Policy Based Routing - Status"))
+			var header = E('h2', {}, _("Policy Based Routing - Status"));
 			var statusTitle = E('label', { class: 'cbi-value-title' }, _("Service Status"));
-			if (replyStatus[pkg.Name].version) {
-				if (replyStatus[pkg.Name].running) {
-					if (replyStatus[pkg.Name].running_iptables) {
-						text = _("Running (version: %s using iptables)").format(replyStatus[pkg.Name].version);
+			if (reply.version) {
+				if (reply.running) {
+					if (reply.running_iptables) {
+						text = _("Running (version: %s using iptables)").format(reply.version);
 					}
-					else if (replyStatus[pkg.Name].running_nft) {
-						text = _("Running (version: %s using nft)").format(replyStatus[pkg.Name].version);
+					else if (reply.running_nft) {
+						text = _("Running (version: %s using nft)").format(reply.version);
 					}
 					else {
-						text = _("Running (version: %s)").format(replyStatus[pkg.Name].version);
+						text = _("Running (version: %s)").format(reply.version);
 					}
 				}
 				else {
-					if (replyStatus[pkg.Name].enabled) {
-						text = _("Stopped (version: %s)").format(replyStatus[pkg.Name].version);
+					if (reply.enabled) {
+						text = _("Stopped (version: %s)").format(reply.version);
 					}
 					else {
 						text = _("Stopped (Disabled)");
@@ -143,28 +144,64 @@ var status = baseclass.extend({
 			var statusDiv = E('div', { class: 'cbi-value' }, [statusTitle, statusField]);
 
 			var gatewaysDiv = [];
-			if (replyStatus[pkg.Name].gateways) {
+			if (reply.gateways) {
 				var gatewaysTitle = E('label', { class: 'cbi-value-title' }, _("Service Gateways"));
 				text = _("The %s indicates default gateway. See the %sREADME%s for details.").format("<strong>✓</strong>",
 					"<a href=\"" + pkg.URL + "#a-word-about-default-routing \" target=\"_blank\">", "</a>")
 				var gatewaysDescr = E('div', { class: 'cbi-value-description' }, text);
-				var gatewaysText = E('div', {}, replyStatus[pkg.Name].gateways);
+				var gatewaysText = E('div', {}, reply.gateways);
 				var gatewaysField = E('div', { class: 'cbi-value-field' }, [gatewaysText, gatewaysDescr]);
 				gatewaysDiv = E('div', { class: 'cbi-value' }, [gatewaysTitle, gatewaysField]);
 			}
 
 			var warningsDiv = [];
-			if (replyStatus[pkg.Name].warnings) {
+			if (reply.warnings && reply.warnings.length) {
+				var textLabelsTable = {
+					warningResolverNotSupported: _("Resolver set (%s) is not supported on this system.").format(uci.get(pkg.Name, 'config', 'resolver_set')),
+					warningAGHVersionTooLow: _("Installed AdGuardHome (%s) doesn't support 'ipset_file' option."),
+					warningPolicyProcess: _("%s")
+				};
 				var warningsTitle = E('label', { class: 'cbi-value-title' }, _("Service Warnings"));
-				var warningsText = E('div', {}, replyStatus[pkg.Name].warnings);
+				var text = "";
+				(reply.warnings).forEach(element => {
+					text += _(textLabelsTable[element.id]).format(element.extra || ' ') + "<br />";
+				});
+				var warningsText = E('div', {}, text);
 				var warningsField = E('div', { class: 'cbi-value-field' }, warningsText);
 				warningsDiv = E('div', { class: 'cbi-value' }, [warningsTitle, warningsField]);
 			}
 
 			var errorsDiv = [];
-			if (replyStatus[pkg.Name].errors) {
+			if (reply.errors && reply.errors.length) {
+				var textLabelsTable = {
+					errorConfigValidation: _("Config (%s) validation failure!").format('/etc/config/' + pkg.Name),
+					errorNoIpFull: _("ip-full binary cannot be found!"),
+					errorNoIpset: _("Resolver set support (%s) requires ipset, but ipset binary cannot be found!").format(uci.get(pkg.Name, 'config', 'resolver_set')),
+					errorNoNft: _("Resolver set support (%s) requires nftables, but nft binary cannot be found!").format(uci.get(pkg.Name, 'config', 'resolver_set')),
+					errorResolverNotSupported: _("Resolver set (%s) is not supported on this system!").format(uci.get(pkg.Name, 'config', 'resolver_set')),
+					errorServiceDisabled: _("The %s service is currently disabled!").format(pkg.Name),
+					errorNoWanGateway: _("The %s service failed to discover WAN gateway!").format(pkg.Name),
+					errorIpsetNameTooLong: _("The ipset name '%s' is longer than allowed 31 characters!"),
+					errorNftsetNameTooLong: _("The nft set name '%s' is longer than allowed 31 characters!"),
+					errorUnexpectedExit: _("Unexpected exit or service termination: '%s'!"),
+					errorPolicyNoSrcDest: _("Policy '%s' has no source/destination parameters!"),
+					errorPolicyNoInterface: _("Policy '%s' has no assigned interface!"),
+					errorPolicyUnknownInterface: _("Policy '%s' has an unknown interface!"),
+					errorPolicyProcess: _("%s"),
+					errorFailedSetup: _("Failed to set up '%s'!"),
+					errorFailedReload: _("Failed to reload '%s'!"),
+					errorUserFileNotFound: _("Custom user file '%s' not found or empty!"),
+					ererrorUserFileSyntax: _("Syntax error in custom user file '%s'!"),
+					errorUserFileRunning: _("Error running custom user file '%s'!"),
+					errorUserFileNoCurl: _("Use of 'curl' is detected in custom user file '%s', but 'curl' isn't installed!"),
+					errorNoGateways: _("Failed to set up any gateway!")
+				};
 				var errorsTitle = E('label', { class: 'cbi-value-title' }, _("Service Errors"));
-				var errorsText = E('div', {}, replyStatus[pkg.Name].errors);
+				var text = "";
+				(reply.errors).forEach(element => {
+					text += _(textLabelsTable[element.id]).format(element.extra || ' ') + "<br />";
+				});
+				var errorsText = E('div', {}, text);
 				var errorsField = E('div', { class: 'cbi-value-field' }, errorsText);
 				errorsDiv = E('div', { class: 'cbi-value' }, [errorsTitle, errorsField]);
 			}
@@ -227,10 +264,10 @@ var status = baseclass.extend({
 				}
 			}, _('Disable'));
 
-			if (replyStatus[pkg.Name].enabled) {
+			if (reply.enabled) {
 				btn_enable.disabled = true;
 				btn_disable.disabled = false;
-				if (replyStatus[pkg.Name].running) {
+				if (reply.running) {
 					btn_start.disabled = true;
 					btn_action.disabled = false;
 					btn_stop.disabled = false;
@@ -252,7 +289,7 @@ var status = baseclass.extend({
 			var buttonsTitle = E('label', { class: 'cbi-value-title' }, _("Service Control"))
 			var buttonsText = E('div', {}, [btn_start, btn_gap, btn_action, btn_gap, btn_stop, btn_gap_long, btn_enable, btn_gap, btn_disable]);
 			var buttonsField = E('div', { class: 'cbi-value-field' }, buttonsText);
-			if (replyStatus[pkg.Name].version) {
+			if (reply.version) {
 				var buttonsDiv = E('div', { class: 'cbi-value' }, [buttonsTitle, buttonsField]);
 			}
 			else {

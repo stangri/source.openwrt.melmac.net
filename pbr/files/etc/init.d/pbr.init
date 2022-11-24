@@ -103,10 +103,95 @@ resolver_set_supported=
 nftPrevParam4=
 nftPrevParam6=
 
-get_error_text() {
+state() {
+	local action="$1" param="$2" value="$3"
+	shift 3
+# shellcheck disable=SC2124
+	local extras="$@"
+	local line error_id error_extra label
+	case "$action" in
+		add)
+			line="$(eval echo "\$$param")"
+			eval "$param"='${line:+$line#}${value}${extras:+ $extras}'
+		;;
+		json)
+			case "$param" in
+				errorSummary)
+					json_add_array 'errors';;
+				warningSummary)
+					json_add_array 'warnings';;
+			esac
+			if [ -n "$(eval echo "\$$param")" ]; then
+				while read -r line; do
+					if str_contains "$line" ' '; then
+						error_id="${line% *}"
+						error_extra="${line#* }"
+					else
+						error_id="$line"
+					fi
+					json_add_object
+					json_add_string 'id' "$error_id"
+					json_add_string 'extra' "$error_extra"
+					json_close_object
+				done <<EOF
+$(eval echo "\$$param" | tr \# \\n)
+EOF
+			fi
+			json_close_array
+		;;
+		print)
+			[ -z "$(eval echo "\$$param")" ] && return 0
+			case "$param" in
+				errorSummary)
+					label="${_ERROR_}:";;
+				warningSummary)
+					label="${_WARNING_}:";;
+			esac
+				while read -r line; do
+					if str_contains "$line" ' '; then
+						error_id="${line% *}"
+						error_extra="${line#* }"
+						printf "%b $(get_text "$error_id")\\n" "$label" "$error_extra"
+					else
+						error_id="$line"
+						printf "%b $(get_text "$error_id")\\n" "$label"
+					fi
+				done <<EOF
+$(eval echo "\$$param" | tr \# \\n)
+EOF
+		;;
+		set)
+			eval "$param"='${value}${extras:+ $extras}'
+		;;
+	esac
+}
+
+get_text() {
 	case "$1" in
-		errorNoIpFull) printf "%b" "ip-full binary cannot be found!";;
-		errorNoIpset) printf "%b" "Resolver set support (${resolver_set}) requires ipset, but ipset binary cannot be found!";;
+		errorConfigValidation) echo "Config ($packageConfigFile) validation failure!";;
+		errorNoIpFull) echo "ip-full binary cannot be found!";;
+		errorNoIpset) echo "Resolver set support (${resolver_set}) requires ipset, but ipset binary cannot be found!";;
+		errorNoNft) echo "Resolver set support (${resolver_set}) requires nftables, but nft binary cannot be found!";;
+		errorResolverNotSupported) echo "Resolver set (${resolver_set}) is not supported on this system!";;
+		errorServiceDisabled) echo "The ${packageName} service is currently disabled!";;
+		errorNoWanGateway) echo "The ${serviceName} service failed to discover WAN gateway!";;
+		errorIpsetNameTooLong) echo "The ipset name '%s' is longer than allowed 31 characters!";;
+		errorNftsetNameTooLong) echo "The nft set name '%s' is longer than allowed 31 characters!";;
+		errorUnexpectedExit) echo "Unexpected exit or service termination: '%s'!";;
+		errorPolicyNoSrcDest) echo "Policy '%s' has no source/destination parameters!";;
+		errorPolicyNoInterface) echo "Policy '%s' has no assigned interface!";;
+		errorPolicyUnknownInterface) echo "Policy '%s' has an unknown interface!";;
+		errorPolicyProcess) echo "%s";;
+		errorFailedSetup) echo "Failed to set up '%s'!";;
+		errorFailedReload) echo "Failed to reload '%s'!";;
+		errorUserFileNotFound) echo "Custom user file '%s' not found or empty!";;
+		ererrorUserFileSyntax) echo "Syntax error in custom user file '%s'!";;
+		errorUserFileRunning) echo "Error running custom user file '%s'!";;
+		errorUserFileNoCurl) echo "Use of 'curl' is detected in custom user file '%s', but 'curl' isn't installed!";;
+		errorNoGateways) echo "Failed to set up any gateway!";;
+		warningResolverNotSupported) echo "Resolver set (${resolver_set}) is not supported on this system.";;
+		warningAGHVersionTooLow) echo "Installed AdGuardHome (%s) doesn't support 'ipset_file' option.";;
+		warningPolicyProcess) echo "%s";;
 	esac
 }
 
@@ -295,7 +380,7 @@ resolver() {
 					[ -n "$resolver_set_supported" ] && ips 'create_agh_set' "$@";;
 				check_support)
 					if [ ! -x "$ipset" ]; then
-						errorSummary="${errorSummary}${_ERROR_}: $(get_error_text 'errorNoIpset')\\n"
+						state add 'errorSummary' 'errorNoIpset'
 						return 1
 					fi
 					if [ -n "$agh" ] && [ -s "$aghConfigFile" ]; then
@@ -304,11 +389,11 @@ resolver() {
 							resolver_set_supported='true'
 							return 0
 						else
-							warningSummary="${warningSummary}${_WARNING_}: Installed AdGuardHome version ($agh_version) doesn't support 'ipset_file' option!\\n"
+							state add 'warningSummary' 'warningAGHVersionTooLow' "$agh_version"
 							return 1
 						fi
 					else
-						warningSummary="${warningSummary}${_WARNING_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported on this system!\\n"
+						state add 'warningSummary' 'warningResolverNotSupported'
 						return 1
 					fi
 				;;
@@ -370,14 +455,14 @@ resolver() {
 					[ -n "$resolver_set_supported" ] && ips 'create_dnsmasq_set' "$@";;
 				check_support)
 					if [ ! -x "$ipset" ]; then
-						errorSummary="${errorSummary}${_ERROR_}: Resolver set support (${resolver_set}) requires ipset, but ipset binary cannot be found!\\n"
+						state add 'errorSummary' 'errorNoIpset'
 						return 1
 					fi
 					if ! dnsmasq -v 2>/dev/null | grep -q 'no-ipset' && dnsmasq -v 2>/dev/null | grep -q 'ipset'; then
 						resolver_set_supported='true'
 						return 0
 					else
-						warningSummary="${warningSummary}${_WARNING_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported on this system!\\n"
+						state add 'warningSummary' 'warningResolverNotSupported'
 						return 1
 					fi
 				;;
@@ -431,14 +516,14 @@ resolver() {
 					[ -n "$resolver_set_supported" ] && nftset 'create_dnsmasq_set' "$@";;
 				check_support)
 					if [ ! -x "$nft" ]; then
-						errorSummary="${errorSummary}${_ERROR_}: Resolver set support (${resolver_set}) requires nftables, but nft binary cannot be found!\\n"
+						state add 'errorSummary' 'errorNoNft'
 						return 1
 					fi
 					if ! dnsmasq -v 2>/dev/null | grep -q 'no-nftset' && dnsmasq -v 2>/dev/null | grep -q 'nftset'; then
 						resolver_set_supported='true'
 						return 0
 					else
-						warningSummary="${warningSummary}${_WARNING_}: Resolver set support (${resolver_set}) is enabled in $packageName, but this resolver set is not supported on this system!\\n"
+						state add 'warningSummary' 'warningResolverNotSupported'
 						return 1
 					fi
 				;;
@@ -561,16 +646,15 @@ load_environment() {
 		if [ -n "$validation_result" ] && [ "$validation_result" != '0' ]; then
 			output "${_ERROR_}: The $packageName config validation failed!\\n"
 			output "Please check if the '$packageConfigFile' contains correct values for config options.\\n"
+			state add 'errorSummary' 'errorConfigValidation'
 			return 1
 		fi
 		if [ "$enabled" -eq 0 ]; then
-			errorSummary="${errorSummary}${_ERROR_}: The ${packageName} is currently disabled.\\n"
-			errorSummary="${errorSummary}Enable ${packageName} from WebUI or run the following commands:\\n"
-			errorSummary="${errorSummary}uci set $packageName.config.enabled='1'; uci commit $packageName;\\n"
+			state add 'errorSummary' 'errorServiceDisabled'
 			return 1
 		fi
 		if [ ! -x "$ip_full" ]; then
-			errorSummary="${errorSummary}${_ERROR_}: $(get_error_text 'errorNoIpFull')\\n"
+			state add 'errorSummary' 'errorNoIpFull'
 			return 1
 		fi
 		resolver 'check_support'
@@ -604,7 +688,7 @@ is_wan_up() {
 	if [ -n "$wanGW" ]; then
 		return 0
 	else
-		errorSummary="${errorSummary}${_ERROR_}: ${serviceName} failed to discover WAN gateway!\\n"
+		state add 'errorSummary' 'errorNoWanGateway'
 		return 1
 	fi
 }
@@ -661,7 +745,7 @@ ips() {
 	[ -x "$ipset" ] || return 1
 
 	if [ "${#ipset4}" -gt 31 ]; then 
-		errorSummary="${errorSummary}${_ERROR_}: ipset name '$ipset4' is longer than allowed 31 characters. Shorten the name of relevant interface!\\n"
+		state add 'errorSummary' 'errorIpsetNameTooLong' "$ipset4"
 		return 1
 	fi
 
@@ -768,7 +852,7 @@ nftset() {
 	[ -x "$nft" ] || return 1
 
 	if [ "${#nftset4}" -gt 255 ]; then 
-		errorSummary="${errorSummary}${_ERROR_}: nft set name '$nftset4' is longer than allowed 255 characters. Shorten the name of relevant interface!\\n"
+		state add 'errorSummary' 'errorNftsetNameTooLong' "$nftset4"
 		return 1
 	fi
 
@@ -914,7 +998,7 @@ trap_process() {
 #	verbosity=0
 	output "\\n"
 	output "Unexpected exit or service termination: '${1}'!\\n"
-	errorSummary="${errorSummary}${_ERROR_}: Unexpected exit or service termination: '${1}'\\n"
+	state add 'errorSummary' 'errorUnexpectedExit' "$1"
 	traffic_killswitch 'remove'
 }
 
@@ -1358,15 +1442,15 @@ policy_process() {
 		[ "$proto" = 'all' ] && unset proto
 		output 2 "Routing '$name' via $interface "
 		if [ -z "${src_addr}${src_port}${dest_addr}${dest_port}" ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Policy '$name' has no source/destination parameters\\n"
+			state add 'errorSummary' 'errorPolicyNoSrcDest' "$name"
 			output_fail; return 1;
 		fi
 		if [ -z "$interface" ]; then
-			errorSummary="${errorSummary}${_ERROR_}: Policy '$name' has no assigned interface\\n"
+			state add 'errorSummary' 'errorPolicyNoInterface' "$name"
 			output_fail; return 1;
 		fi
 		if ! is_supported_interface "$interface"; then
-			errorSummary="${errorSummary}${_ERROR_}: Policy '$name' has an unknown interface: '${interface}'\\n"
+			state add 'errorSummary' 'errorPolicyUnknownInterface' "$name"
 			output_fail; return 1;
 		fi
 		src_port="${src_port//  / }"; src_port="${src_port// /,}"; src_port="${src_port//,\!/ !}"; 
@@ -1382,11 +1466,11 @@ policy_process() {
 		fi
 		policy_process "$name" "$interface" "$src_addr" "$src_port" "$dest_addr" "$dest_port" "$proto" "$chain" "$uid"
 		if [ -n "$processPolicyWarning" ]; then
-			warningSummary="${warningSummary}${processPolicyWarning}\\n"
+			state add 'warningSummary' 'warningPolicyProcess' "$processPolicyWarning"
 		fi
 		if [ -n "$processPolicyError" ]; then
 			output_fail
-			errorSummary="${errorSummary}${processPolicyError}\\n"
+			state add 'errorSummary' 'errorPolicyProcess' "$processPolicyError"
 		else
 			output_ok
 		fi
@@ -1456,7 +1540,7 @@ interface_process_tor_iptables() {
 				gatewaySummary="${gatewaySummary}${displayText}\\n"
 				output_ok
 			else
-				errorSummary="${errorSummary}${_ERROR_}: Failed to set up '$displayText'\\n"
+				state add 'errorSummary' 'errorFailedSetup' "$displayText"
 				output_fail
 			fi
 			;;
@@ -1500,7 +1584,7 @@ interface_process_tor_nft() {
 				gatewaySummary="${gatewaySummary}${displayText}\\n"
 				output_ok
 			else
-				errorSummary="${errorSummary}${_ERROR_}: Failed to set up '$displayText'\\n"
+				state add 'errorSummary' 'errorFailedSetup' "$displayText"
 				output_fail
 			fi
 			;;
@@ -1740,7 +1824,7 @@ interface_process() {
 				gatewaySummary="${gatewaySummary}${displayText}${dispStatus:+ $dispStatus}\\n"
 				output_ok
 			else
-				errorSummary="${errorSummary}${_ERROR_}: Failed to set up '$displayText'\\n"
+				state add 'errorSummary' 'errorFailedSetup' "$displayText"
 				output_fail
 			fi
 		;;
@@ -1764,7 +1848,7 @@ interface_process() {
 					gatewaySummary="${gatewaySummary}${displayText}${dispStatus:+ $dispStatus}\\n"
 					output_ok
 				else
-					errorSummary="${errorSummary}${_ERROR_}: Failed to reload '$displayText'\\n"
+					state add 'errorSummary' 'errorFailedReload' "$displayText"
 					output_fail
 				fi
 			else
@@ -1782,22 +1866,21 @@ user_file_process() {
 	local shellBin="${SHELL:-/bin/ash}"
 	[ "$enabled" -gt 0 ] || return 0
 	if [ ! -s "$path" ]; then
-		errorSummary="${errorSummary}${_ERROR_}: Custom user file '$path' not found or empty!\\n"
+		state add 'errorSummary' 'errorUserFileNotFound' "$path"
 		output_fail
 		return 1
 	fi
 	if ! $shellBin -n "$path"; then
-		errorSummary="${errorSummary}${_ERROR_}: Syntax error in custom user file '$path'!\\n"
+		state add 'errorSummary' 'ererrorUserFileSyntax' "$path"
 		output_fail
 		return 1
 	fi
 	output 2 "Running $path "
 # shellcheck disable=SC1090
 	if ! . "$path"; then
-		errorSummary="${errorSummary}${_ERROR_}: Error running custom user file '$path'!\\n"
+		state add 'errorSummary' 'errorUserFileRunning' "$path"
 		if grep -q -w 'curl' "$path" && ! is_present 'curl'; then
-			errorSummary="${errorSummary}${_ERROR_}: Use of 'curl' is detected in custom user file '$path', but 'curl' isn't installed!\\n"
-			errorSummary="${errorSummary}${_ERROR_}: If 'curl' is needed, install it with 'opkg update; opkg install curl;' command in CLI.\\n"
+			state add 'errorSummary' 'errorUserFileNoCurl' "$path"
 		fi
 		output_fail
 		return 1
@@ -1964,7 +2047,7 @@ start_service() {
 	traffic_killswitch 'remove'
 
 	if [ -z "$gatewaySummary" ]; then
-		errorSummary="${errorSummary}${_ERROR_}: Failed to set up any gateway!\\n"
+		state add 'errorSummary' 'errorNoGateways'
 	fi
 	json_add_object 'status'
 	[ -n "$gatewaySummary" ] && json_add_string 'gateways' "$gatewaySummary"
@@ -1984,8 +2067,8 @@ service_started() {
 	else
 		[ -n "$gatewaySummary" ] && output "$serviceName (iptables) started with gateways:\\n${gatewaySummary}"
 	fi
-	[ -n "$errorSummary" ] && output "${errorSummary}"
-	[ -n "$warningSummary" ] && output "${warningSummary}"
+	state print 'errorSummary'
+	state print 'warningSummary'
 	if [ -n "$errorSummary" ]; then
 		return 2
 	elif [ -n "$warningSummary" ]; then
