@@ -1959,7 +1959,6 @@ start_service() {
 	procd_set_param stderr 1
 	procd_open_data
 
-	traffic_killswitch 'insert'
 	case $serviceStartTrigger in
 		on_interface_reload)
 			output 1 "Reloading Interface: $reloadedIface "
@@ -1970,6 +1969,7 @@ start_service() {
 			output 1 '\n'
 		;;
 		on_reload)
+			traffic_killswitch 'insert'
 			resolver 'store_hash'
 			resolver 'cleanup_all'
 			resolver 'configure'
@@ -1996,15 +1996,21 @@ start_service() {
 				output 1 '\n'
 			fi
 			if is_config_enabled 'include'; then
+				traffic_killswitch 'remove'
 				output 1 'Processing user file(s) '
 				config_load "$packageName"
 				config_foreach load_validate_include 'include' user_file_process
 				output 1 '\n'
+				resolver 'init_end'
+				resolver 'compare_hash' && resolver 'restart'
+			else
+				resolver 'init_end'
+				resolver 'compare_hash' && resolver 'restart'
+				traffic_killswitch 'remove'
 			fi
-			resolver 'init_end'
-			resolver 'compare_hash' && resolver 'restart'
 		;;
 		on_start|*)
+			traffic_killswitch 'insert'
 			resolver 'store_hash'
 			resolver 'cleanup_all'
 			resolver 'configure'
@@ -2035,16 +2041,20 @@ start_service() {
 				output 1 '\n'
 			fi
 			if is_config_enabled 'include'; then
+				traffic_killswitch 'remove'
 				output 1 'Processing user file(s) '
 				config_load "$packageName"
 				config_foreach load_validate_include 'include' user_file_process
 				output 1 '\n'
+				resolver 'init_end'
+				resolver 'compare_hash' && resolver 'restart'
+			else
+				resolver 'init_end'
+				resolver 'compare_hash' && resolver 'restart'
+				traffic_killswitch 'remove'
 			fi
-			resolver 'init_end'
-			resolver 'compare_hash' && resolver 'restart'
 		;;
 	esac
-	traffic_killswitch 'remove'
 
 	if [ -z "$gatewaySummary" ]; then
 		state add 'errorSummary' 'errorNoGateways'
