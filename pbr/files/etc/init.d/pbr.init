@@ -103,68 +103,6 @@ resolver_set_supported=
 nftPrevParam4=
 nftPrevParam6=
 
-state() {
-	local action="$1" param="$2" value="$3"
-	shift 3
-# shellcheck disable=SC2124
-	local extras="$@"
-	local line error_id error_extra label
-	case "$action" in
-		add)
-			line="$(eval echo "\$$param")"
-			eval "$param"='${line:+$line#}${value}${extras:+ $extras}'
-		;;
-		json)
-			case "$param" in
-				errorSummary)
-					json_add_array 'errors';;
-				warningSummary)
-					json_add_array 'warnings';;
-			esac
-			if [ -n "$(eval echo "\$$param")" ]; then
-				while read -r line; do
-					if str_contains "$line" ' '; then
-						error_id="${line% *}"
-						error_extra="${line#* }"
-					else
-						error_id="$line"
-					fi
-					json_add_object
-					json_add_string 'id' "$error_id"
-					json_add_string 'extra' "$error_extra"
-					json_close_object
-				done <<EOF
-$(eval echo "\$$param" | tr \# \\n)
-EOF
-			fi
-			json_close_array
-		;;
-		print)
-			[ -z "$(eval echo "\$$param")" ] && return 0
-			case "$param" in
-				errorSummary)
-					label="${_ERROR_}:";;
-				warningSummary)
-					label="${_WARNING_}:";;
-			esac
-				while read -r line; do
-					if str_contains "$line" ' '; then
-						error_id="${line% *}"
-						error_extra="${line#* }"
-						printf "%b $(get_text "$error_id")\\n" "$label" "$error_extra"
-					else
-						error_id="$line"
-						printf "%b $(get_text "$error_id")\\n" "$label"
-					fi
-				done <<EOF
-$(eval echo "\$$param" | tr \# \\n)
-EOF
-		;;
-		set)
-			eval "$param"='${value}${extras:+ $extras}'
-		;;
-	esac
-}
 
 get_text() {
 	case "$1" in
@@ -342,267 +280,6 @@ get_nft_sets() { [ -x "$nft" ] && "$nft" list table inet "$nftTable" 2>/dev/null
 is_ipset_type_supported() { ipset help hash:"$1" >/dev/null 2>&1; }
 ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.status.${1}"; }
 ubus_get_iface() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.interfaces[@.name='${1}']${2:+.$2}"; }
-
-resolver() {
-	local agh_version
-	local param="$1"
-	shift
-
-	if [ "$param" = 'cleanup_all' ]; then
-		sed -i "/ipset_file: ${aghIpsetFile}/d" "$aghConfigFile" >/dev/null 2>&1
-		rm -f "$aghIpsetFile"
-		rm -f "$dnsmasqFile"
-		return 0
-	fi
-
-	case "$resolver_set" in
-		''|none)
-			case "$param" in
-				add_resolver_element) return 1;;
-				create_resolver_set) return 1;;
-				check_support) return 0;;
-				cleanup) return 0;;
-				configure) return 0;;
-				init) return 0;;
-				init_end) return 0;;
-				kill) return 0;;
-				reload) return 0;;
-				restart) return 0;;
-				compare_hash) return 0;;
-				store_hash) return 0;;
-			esac
-		;;
-		adguardhome.ipset)
-			case "$param" in
-				add_resolver_element)
-					[ -n "$resolver_set_supported" ] && ips 'add_agh_element' "$@";;
-				create_resolver_set)
-					[ -n "$resolver_set_supported" ] && ips 'create_agh_set' "$@";;
-				check_support)
-					if [ ! -x "$ipset" ]; then
-						state add 'errorSummary' 'errorNoIpset'
-						return 1
-					fi
-					if [ -n "$agh" ] && [ -s "$aghConfigFile" ]; then
-						agh_version="$($agh --version | sed 's|AdGuard Home, version v\(.*\)|\1|')"
-						if is_greater_or_equal "$agh_version" '0.107.13'; then
-							resolver_set_supported='true'
-							return 0
-						else
-							state add 'warningSummary' 'warningAGHVersionTooLow' "$agh_version"
-							return 1
-						fi
-					else
-						state add 'warningSummary' 'warningResolverNotSupported'
-						return 1
-					fi
-				;;
-				cleanup)
-					[ -z "$resolver_set_supported" ] && return 0
-					rm -f "$aghIpsetFile"
-					sed -i "/ipset_file: ${aghIpsetFile}/d" "$aghConfigFile" >/dev/null 2>&1
-					;;
-				configure)
-					[ -z "$resolver_set_supported" ] && return 1
-					mkdir -p "${aghIpsetFile%/*}"
-					touch "$aghIpsetFile"
-					sed -i '/ipset_file/d' "$aghConfigFile" >/dev/null 2>&1
-					sed -i "/  ipset:/a \ \ ipset_file: $aghIpsetFile" "$aghConfigFile"
-				;;
-				init) :;;
-				init_end) :;;
-				kill)
-					[ -n "$resolver_set_supported" ] && [ -n "$agh" ] && killall -q -s HUP "$agh";;
-				reload)
-					[ -z "$resolver_set_supported" ] && return 1
-					output 3 'Reloading adguardhome '
-					if /etc/init.d/adguardhome reload >/dev/null 2>&1; then
-						output_okn
-						return 0
-					else
-						output_failn
-						return 1
-					fi
-				;;
-				restart)
-					[ -z "$resolver_set_supported" ] && return 1
-					output 3 'Restarting adguardhome '
-					if /etc/init.d/adguardhome restart >/dev/null 2>&1; then
-						output_okn
-						return 0
-					else
-						output_failn
-						return 1
-					fi
-				;;
-				compare_hash)
-					[ -z "$resolver_set_supported" ] && return 1
-					local resolverNewHash
-					if [ -s "$aghIpsetFile" ]; then
-						resolverNewHash="$(md5sum $aghIpsetFile | awk '{ print $1; }')"
-					fi
-					[ "$resolverNewHash" != "$resolverStoredHash" ]
-				;;
-				store_hash)
-					[ -s "$aghIpsetFile" ] && resolverStoredHash="$(md5sum $aghIpsetFile | awk '{ print $1; }')";;
-			esac
-		;;
-		dnsmasq.ipset)
-			case "$param" in
-				add_resolver_element)
-					[ -n "$resolver_set_supported" ] && ips 'add_dnsmasq_element' "$@";;
-				create_resolver_set)
-					[ -n "$resolver_set_supported" ] && ips 'create_dnsmasq_set' "$@";;
-				check_support)
-					if [ ! -x "$ipset" ]; then
-						state add 'errorSummary' 'errorNoIpset'
-						return 1
-					fi
-					if ! dnsmasq -v 2>/dev/null | grep -q 'no-ipset' && dnsmasq -v 2>/dev/null | grep -q 'ipset'; then
-						resolver_set_supported='true'
-						return 0
-					else
-						state add 'warningSummary' 'warningResolverNotSupported'
-						return 1
-					fi
-				;;
-				cleanup)
-					[ -n "$resolver_set_supported" ] && rm -f "$dnsmasqFile";;
-				configure)
-					[ -n "$resolver_set_supported" ] && mkdir -p "${dnsmasqFile%/*}";;
-				init) :;;
-				init_end) :;;
-				kill)
-					[ -n "$resolver_set_supported" ] && killall -q -s HUP dnsmasq;;
-				reload)
-					[ -z "$resolver_set_supported" ] && return 1
-					output 3 'Reloading dnsmasq '
-					if /etc/init.d/dnsmasq reload >/dev/null 2>&1; then
-						output_okn
-						return 0
-					else
-						output_failn
-						return 1
-					fi
-				;;
-				restart)
-					[ -z "$resolver_set_supported" ] && return 1
-					output 3 'Restarting dnsmasq '
-					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
-						output_okn
-						return 0
-					else
-						output_failn
-						return 1
-					fi
-				;;
-				compare_hash)
-					[ -z "$resolver_set_supported" ] && return 1
-					local resolverNewHash
-					if [ -s "$dnsmasqFile" ]; then
-						resolverNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
-					fi
-					[ "$resolverNewHash" != "$resolverStoredHash" ]
-				;;
-				store_hash)
-					[ -s "$dnsmasqFile" ] && resolverStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')";;
-			esac
-		;;
-		dnsmasq.nftset)
-			case "$param" in
-				add_resolver_element)
-					[ -n "$resolver_set_supported" ] && nftset 'add_dnsmasq_element' "$@";;
-				create_resolver_set)
-					[ -n "$resolver_set_supported" ] && nftset 'create_dnsmasq_set' "$@";;
-				check_support)
-					if [ ! -x "$nft" ]; then
-						state add 'errorSummary' 'errorNoNft'
-						return 1
-					fi
-					if ! dnsmasq -v 2>/dev/null | grep -q 'no-nftset' && dnsmasq -v 2>/dev/null | grep -q 'nftset'; then
-						resolver_set_supported='true'
-						return 0
-					else
-						state add 'warningSummary' 'warningResolverNotSupported'
-						return 1
-					fi
-				;;
-				cleanup)
-					[ -n "$resolver_set_supported" ] && rm -f "$dnsmasqFile";;
-				configure)
-					[ -n "$resolver_set_supported" ] && mkdir -p "${dnsmasqFile%/*}";;
-				init) :;;
-				init_end) :;;
-				kill)
-					[ -n "$resolver_set_supported" ] && killall -q -s HUP dnsmasq;;
-				reload)
-					[ -z "$resolver_set_supported" ] && return 1
-					output 3 'Reloading dnsmasq '
-					if /etc/init.d/dnsmasq reload >/dev/null 2>&1; then
-						output_okn
-						return 0
-					else
-						output_failn
-						return 1
-					fi
-				;;
-				restart)
-					[ -z "$resolver_set_supported" ] && return 1
-					output 3 'Restarting dnsmasq '
-					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
-						output_okn
-						return 0
-					else
-						output_failn
-						return 1
-					fi
-				;;
-				compare_hash)
-					[ -z "$resolver_set_supported" ] && return 1
-					local resolverNewHash
-					if [ -s "$dnsmasqFile" ]; then
-						resolverNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
-					fi
-					[ "$resolverNewHash" != "$resolverStoredHash" ]
-				;;
-				store_hash)
-					[ -s "$dnsmasqFile" ] && resolverStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')";;
-			esac
-		;;
-		unbound.ipset)
-			case "$param" in
-				add_resolver_element) :;;
-				create_resolver_set) :;;
-				check_support) :;;
-				cleanup) :;;
-				configure) :;;
-				init) :;;
-				init_end) :;;
-				kill) :;;
-				reload) :;;
-				restart) :;;
-				compare_hash) :;;
-				store_hash) :;;
-			esac
-		;;
-		unbound.nftset)
-			case "$param" in
-				add_resolver_element) :;;
-				create_resolver_set) :;;
-				check_support) :;;
-				cleanup) :;;
-				configure) :;;
-				init) :;;
-				init_end) :;;
-				kill) :;;
-				reload) :;;
-				restart) :;;
-				compare_hash) :;;
-				store_hash) :;;
-			esac
-		;;
-	esac
-}
 
 load_package_config() {
 	config_load "$packageName"
@@ -955,7 +632,6 @@ nftset() {
 }
 
 cleanup_dnsmasq() { [ -s "$dnsmasqFile" ] && resolverStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')" && rm "$dnsmasqFile" >/dev/null 2>&1; }
-
 cleanup_main_chains() {
 	local i
 	for i in $chainsList; do
@@ -992,6 +668,330 @@ cleanup_sets() {
 		ipset -q -! flush "$i" >/dev/null 2>&1
 		ipset -q -! destroy "$i" >/dev/null 2>&1
 	done
+}
+
+state() {
+	local action="$1" param="$2" value="${3//#/_}"
+	shift 3
+# shellcheck disable=SC2124
+	local extras="$@"
+	local line error_id error_extra label
+	case "$action" in
+		add)
+			line="$(eval echo "\$$param")"
+			eval "$param"='${line:+$line#}${value}${extras:+ $extras}'
+		;;
+		json)
+			case "$param" in
+				errorSummary)
+					json_add_array 'errors';;
+				warningSummary)
+					json_add_array 'warnings';;
+			esac
+			if [ -n "$(eval echo "\$$param")" ]; then
+				while read -r line; do
+					if str_contains "$line" ' '; then
+						error_id="${line% *}"
+						error_extra="${line#* }"
+					else
+						error_id="$line"
+					fi
+					json_add_object
+					json_add_string 'id' "$error_id"
+					json_add_string 'extra' "$error_extra"
+					json_close_object
+				done <<EOF
+$(eval echo "\$$param" | tr \# \\n)
+EOF
+			fi
+			json_close_array
+		;;
+		print)
+			[ -z "$(eval echo "\$$param")" ] && return 0
+			case "$param" in
+				errorSummary)
+					label="${_ERROR_}:";;
+				warningSummary)
+					label="${_WARNING_}:";;
+			esac
+				while read -r line; do
+					if str_contains "$line" ' '; then
+						error_id="${line% *}"
+						error_extra="${line#* }"
+						printf "%b $(get_text "$error_id")\\n" "$label" "$error_extra"
+					else
+						error_id="$line"
+						printf "%b $(get_text "$error_id")\\n" "$label"
+					fi
+				done <<EOF
+$(eval echo "\$$param" | tr \# \\n)
+EOF
+		;;
+		set)
+			eval "$param"='${value}${extras:+ $extras}'
+		;;
+	esac
+}
+
+resolver() {
+	local agh_version
+	local param="$1"
+	shift
+
+	if [ "$param" = 'cleanup_all' ]; then
+		sed -i "/ipset_file: ${aghIpsetFile}/d" "$aghConfigFile" >/dev/null 2>&1
+		rm -f "$aghIpsetFile"
+		rm -f "$dnsmasqFile"
+		return 0
+	fi
+
+	case "$resolver_set" in
+		''|none)
+			case "$param" in
+				add_resolver_element) return 1;;
+				create_resolver_set) return 1;;
+				check_support) return 0;;
+				cleanup) return 0;;
+				configure) return 0;;
+				init) return 0;;
+				init_end) return 0;;
+				kill) return 0;;
+				reload) return 0;;
+				restart) return 0;;
+				compare_hash) return 0;;
+				store_hash) return 0;;
+			esac
+		;;
+		adguardhome.ipset)
+			case "$param" in
+				add_resolver_element)
+					[ -n "$resolver_set_supported" ] && ips 'add_agh_element' "$@";;
+				create_resolver_set)
+					[ -n "$resolver_set_supported" ] && ips 'create_agh_set' "$@";;
+				check_support)
+					if [ ! -x "$ipset" ]; then
+						state add 'errorSummary' 'errorNoIpset'
+						return 1
+					fi
+					if [ -n "$agh" ] && [ -s "$aghConfigFile" ]; then
+						agh_version="$($agh --version | sed 's|AdGuard Home, version v\(.*\)|\1|')"
+						if is_greater_or_equal "$agh_version" '0.107.13'; then
+							resolver_set_supported='true'
+							return 0
+						else
+							state add 'warningSummary' 'warningAGHVersionTooLow' "$agh_version"
+							return 1
+						fi
+					else
+						state add 'warningSummary' 'warningResolverNotSupported'
+						return 1
+					fi
+				;;
+				cleanup)
+					[ -z "$resolver_set_supported" ] && return 0
+					rm -f "$aghIpsetFile"
+					sed -i "/ipset_file: ${aghIpsetFile}/d" "$aghConfigFile" >/dev/null 2>&1
+					;;
+				configure)
+					[ -z "$resolver_set_supported" ] && return 1
+					mkdir -p "${aghIpsetFile%/*}"
+					touch "$aghIpsetFile"
+					sed -i '/ipset_file/d' "$aghConfigFile" >/dev/null 2>&1
+					sed -i "/  ipset:/a \ \ ipset_file: $aghIpsetFile" "$aghConfigFile"
+				;;
+				init) :;;
+				init_end) :;;
+				kill)
+					[ -n "$resolver_set_supported" ] && [ -n "$agh" ] && killall -q -s HUP "$agh";;
+				reload)
+					[ -z "$resolver_set_supported" ] && return 1
+					output 3 'Reloading adguardhome '
+					if /etc/init.d/adguardhome reload >/dev/null 2>&1; then
+						output_okn
+						return 0
+					else
+						output_failn
+						return 1
+					fi
+				;;
+				restart)
+					[ -z "$resolver_set_supported" ] && return 1
+					output 3 'Restarting adguardhome '
+					if /etc/init.d/adguardhome restart >/dev/null 2>&1; then
+						output_okn
+						return 0
+					else
+						output_failn
+						return 1
+					fi
+				;;
+				compare_hash)
+					[ -z "$resolver_set_supported" ] && return 1
+					local resolverNewHash
+					if [ -s "$aghIpsetFile" ]; then
+						resolverNewHash="$(md5sum $aghIpsetFile | awk '{ print $1; }')"
+					fi
+					[ "$resolverNewHash" != "$resolverStoredHash" ]
+				;;
+				store_hash)
+					[ -s "$aghIpsetFile" ] && resolverStoredHash="$(md5sum $aghIpsetFile | awk '{ print $1; }')";;
+			esac
+		;;
+		dnsmasq.ipset)
+			case "$param" in
+				add_resolver_element)
+					[ -n "$resolver_set_supported" ] && ips 'add_dnsmasq_element' "$@";;
+				create_resolver_set)
+					[ -n "$resolver_set_supported" ] && ips 'create_dnsmasq_set' "$@";;
+				check_support)
+					if [ ! -x "$ipset" ]; then
+						state add 'errorSummary' 'errorNoIpset'
+						return 1
+					fi
+					if ! dnsmasq -v 2>/dev/null | grep -q 'no-ipset' && dnsmasq -v 2>/dev/null | grep -q 'ipset'; then
+						resolver_set_supported='true'
+						return 0
+					else
+						state add 'warningSummary' 'warningResolverNotSupported'
+						return 1
+					fi
+				;;
+				cleanup)
+					[ -n "$resolver_set_supported" ] && rm -f "$dnsmasqFile";;
+				configure)
+					[ -n "$resolver_set_supported" ] && mkdir -p "${dnsmasqFile%/*}";;
+				init) :;;
+				init_end) :;;
+				kill)
+					[ -n "$resolver_set_supported" ] && killall -q -s HUP dnsmasq;;
+				reload)
+					[ -z "$resolver_set_supported" ] && return 1
+					output 3 'Reloading dnsmasq '
+					if /etc/init.d/dnsmasq reload >/dev/null 2>&1; then
+						output_okn
+						return 0
+					else
+						output_failn
+						return 1
+					fi
+				;;
+				restart)
+					[ -z "$resolver_set_supported" ] && return 1
+					output 3 'Restarting dnsmasq '
+					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
+						output_okn
+						return 0
+					else
+						output_failn
+						return 1
+					fi
+				;;
+				compare_hash)
+					[ -z "$resolver_set_supported" ] && return 1
+					local resolverNewHash
+					if [ -s "$dnsmasqFile" ]; then
+						resolverNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+					fi
+					[ "$resolverNewHash" != "$resolverStoredHash" ]
+				;;
+				store_hash)
+					[ -s "$dnsmasqFile" ] && resolverStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')";;
+			esac
+		;;
+		dnsmasq.nftset)
+			case "$param" in
+				add_resolver_element)
+					[ -n "$resolver_set_supported" ] && nftset 'add_dnsmasq_element' "$@";;
+				create_resolver_set)
+					[ -n "$resolver_set_supported" ] && nftset 'create_dnsmasq_set' "$@";;
+				check_support)
+					if [ ! -x "$nft" ]; then
+						state add 'errorSummary' 'errorNoNft'
+						return 1
+					fi
+					if ! dnsmasq -v 2>/dev/null | grep -q 'no-nftset' && dnsmasq -v 2>/dev/null | grep -q 'nftset'; then
+						resolver_set_supported='true'
+						return 0
+					else
+						state add 'warningSummary' 'warningResolverNotSupported'
+						return 1
+					fi
+				;;
+				cleanup)
+					[ -n "$resolver_set_supported" ] && rm -f "$dnsmasqFile";;
+				configure)
+					[ -n "$resolver_set_supported" ] && mkdir -p "${dnsmasqFile%/*}";;
+				init) :;;
+				init_end) :;;
+				kill)
+					[ -n "$resolver_set_supported" ] && killall -q -s HUP dnsmasq;;
+				reload)
+					[ -z "$resolver_set_supported" ] && return 1
+					output 3 'Reloading dnsmasq '
+					if /etc/init.d/dnsmasq reload >/dev/null 2>&1; then
+						output_okn
+						return 0
+					else
+						output_failn
+						return 1
+					fi
+				;;
+				restart)
+					[ -z "$resolver_set_supported" ] && return 1
+					output 3 'Restarting dnsmasq '
+					if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then
+						output_okn
+						return 0
+					else
+						output_failn
+						return 1
+					fi
+				;;
+				compare_hash)
+					[ -z "$resolver_set_supported" ] && return 1
+					local resolverNewHash
+					if [ -s "$dnsmasqFile" ]; then
+						resolverNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+					fi
+					[ "$resolverNewHash" != "$resolverStoredHash" ]
+				;;
+				store_hash)
+					[ -s "$dnsmasqFile" ] && resolverStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')";;
+			esac
+		;;
+		unbound.ipset)
+			case "$param" in
+				add_resolver_element) :;;
+				create_resolver_set) :;;
+				check_support) :;;
+				cleanup) :;;
+				configure) :;;
+				init) :;;
+				init_end) :;;
+				kill) :;;
+				reload) :;;
+				restart) :;;
+				compare_hash) :;;
+				store_hash) :;;
+			esac
+		;;
+		unbound.nftset)
+			case "$param" in
+				add_resolver_element) :;;
+				create_resolver_set) :;;
+				check_support) :;;
+				cleanup) :;;
+				configure) :;;
+				init) :;;
+				init_end) :;;
+				kill) :;;
+				reload) :;;
+				restart) :;;
+				compare_hash) :;;
+				store_hash) :;;
+			esac
+		;;
+	esac
 }
 
 trap_process() {
