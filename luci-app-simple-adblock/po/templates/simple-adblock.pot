@@ -1,6 +1,10 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:172
+msgid "%s is currently disabled"
+msgstr ""
+
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:90
 msgid "%s is not installed or not found"
 msgstr ""
@@ -74,6 +78,10 @@ msgstr ""
 msgid "Compressed cache file found."
 msgstr ""
 
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:171
+msgid "Config (%s) validation failure!"
+msgstr ""
+
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:42
 msgid "Controls system log and console output verbosity."
 msgstr ""
@@ -94,7 +102,7 @@ msgstr ""
 msgid "DNS resolution option, see the %sREADME%s for details."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:251
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:268
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:37
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:39
 msgid "Disable"
@@ -105,7 +113,7 @@ msgstr ""
 msgid "Disable Debugging"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:247
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:264
 msgid "Disabling %s service"
 msgstr ""
 
@@ -135,7 +143,7 @@ msgstr ""
 msgid "Downloading"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:240
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:257
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:38
 msgid "Enable"
 msgstr ""
@@ -149,7 +157,7 @@ msgstr ""
 msgid "Enables debug output to /tmp/simple-adblock.log."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:236
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:253
 msgid "Enabling %s service"
 msgstr ""
 
@@ -165,7 +173,7 @@ msgstr ""
 msgid "Force DNS ports:"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:218
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:235
 msgid "Force Re-Download"
 msgstr ""
 
@@ -182,7 +190,7 @@ msgstr ""
 msgid "Force Router DNS server to all local devices"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:214
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:231
 msgid "Force re-downloading %s block lists"
 msgstr ""
 
@@ -262,11 +270,11 @@ msgstr ""
 msgid "Restarting"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:285
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:302
 msgid "Service Control"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:185
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:202
 msgid "Service Errors"
 msgstr ""
 
@@ -274,7 +282,7 @@ msgstr ""
 msgid "Service Status"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:154
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:158
 msgid "Service Warnings"
 msgstr ""
 
@@ -298,7 +306,7 @@ msgstr ""
 msgid "Some output"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:207
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:224
 msgid "Start"
 msgstr ""
 
@@ -306,11 +314,11 @@ msgstr ""
 msgid "Starting"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:203
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:220
 msgid "Starting %s service"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:229
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:246
 msgid "Stop"
 msgstr ""
 
@@ -322,7 +330,7 @@ msgstr ""
 msgid "Stopped"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:225
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:242
 msgid "Stopping %s service"
 msgstr ""
 
@@ -336,6 +344,10 @@ msgstr ""
 
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:43
 msgid "Suppress output"
+msgstr ""
+
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:178
+msgid "The %s service failed to discover WAN gateway!"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:148
@@ -353,6 +365,10 @@ msgstr ""
 
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:169
 msgid "URLs to lists of hosts to be blocked."
+msgstr ""
+
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:177
+msgid "Unable to create directory for '%s'"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:130
@@ -389,8 +405,30 @@ msgstr ""
 msgid "dnsmasq ipset"
 msgstr ""
 
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:173
+msgid ""
+"dnsmasq ipset support is enabled, but dnsmasq is either not installed or "
+"installed dnsmasq does not support ipset"
+msgstr ""
+
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:174
+msgid ""
+"dnsmasq ipset support is enabled, but ipset is either not installed or "
+"installed ipset does not support '%s' type"
+msgstr ""
+
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:93
 msgid "dnsmasq nft set"
+msgstr ""
+
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:175
+msgid ""
+"dnsmasq nft set support is enabled, but dnsmasq is either not installed or "
+"installed dnsmasq does not support nft set"
+msgstr ""
+
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:176
+msgid "dnsmasq nft sets support is enabled, but nft is not installed"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:95
@@ -398,87 +436,91 @@ msgstr ""
 msgid "dnsmasq servers file"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:165
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:182
 msgid "failed to access shared memory"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:163
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:180
 msgid "failed to create '%s' file"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:175
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:192
 msgid "failed to create block-list or restart DNS resolver"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:171
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:188
 msgid "failed to create compressed cache"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:183
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:179
+msgid "failed to create directory for %s file"
+msgstr ""
+
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:200
 msgid "failed to create output/cache/gzip file directory"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:179
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:196
 msgid "failed to download"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:178
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:195
 msgid "failed to download Config Update file"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:169
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:186
 msgid "failed to format data file"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:174
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:191
 msgid "failed to move '%s' to '%s'"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:170
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:187
 msgid "failed to move temporary data file to '%s'"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:167
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:184
 msgid "failed to optimize data file"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:181
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:198
 msgid "failed to parse"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:180
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:197
 msgid "failed to parse Config Update file"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:168
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:185
 msgid "failed to process allow-list"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:177
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:194
 msgid "failed to reload/restart DNS resolver"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:172
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:189
 msgid "failed to remove temporary files"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:164
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:181
 msgid "failed to restart/reload DNS resolver"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:166
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:183
 msgid "failed to sort data file"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:176
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:193
 msgid "failed to stop %s"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:173
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:190
 msgid "failed to unpack compressed cache"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:182
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:199
 msgid "no HTTPS/SSL support on device"
 msgstr ""
 
@@ -486,6 +528,15 @@ msgstr ""
 msgid "none"
 msgstr ""
 
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:156
+msgid "some recommended packages are missing"
+msgstr ""
+
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:98
 msgid "unbound adblock list"
+msgstr ""
+
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:155
+msgid ""
+"use of external dnsmasq config file detected, please set '%s' option to '%s'"
 msgstr ""
