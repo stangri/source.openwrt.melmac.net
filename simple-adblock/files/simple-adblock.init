@@ -796,6 +796,7 @@ $(cat $A_TMP)"
 
 	output 1 'Processing downloads '
 	output 2 'Sorting combined list '
+	json set status "statusProcessing"
 	json set message "$(get_text "statusProcessing"): sorting combined list"
 	if [ "$allow_non_ascii" -gt 0 ]; then
 		if sort -u "$B_TMP" > "$A_TMP"; then

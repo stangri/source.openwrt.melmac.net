@@ -90,10 +90,10 @@ var status = baseclass.extend({
 				statusNoInstall: _("%s is not installed or not found").format(pkg.Name),
 				statusStopped: _("Stopped"),
 				statusStarting: _("Starting"),
-				statusProcessing: _("Processing"),
+				statusProcessing: _("Processing lists"),
 				statusRestarting: _("Restarting"),
 				statusForceReloading: _("Force Reloading"),
-				statusDownloading: _("Downloading"),
+				statusDownloading: _("Downloading lists"),
 				statusError: _("Error"),
 				statusWarning: _("Warning"),
 				statusFail: _("Fail"),
@@ -136,6 +136,7 @@ var status = baseclass.extend({
 					case 'statusRestarting':
 					case 'statusForceReloading':
 					case 'statusDownloading':
+					case 'statusProcessing':
 						text += statusTable[reply.status] + "...";
 						break;
 					default:
