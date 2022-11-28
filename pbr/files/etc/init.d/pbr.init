@@ -1632,6 +1632,8 @@ interface_routing() {
 					fi
 					# shellcheck disable=SC2086
 					while read -r i; do
+						# shellcheck disable=SC2001
+						i="$(echo "$i" | sed 's/linkdown$//')"
 						idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
 						if ! is_supported_iface_dev "$idev"; then
 							$ip_full -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
