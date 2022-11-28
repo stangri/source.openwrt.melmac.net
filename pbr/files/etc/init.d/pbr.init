@@ -1636,6 +1636,8 @@ interface_routing() {
 					fi
 					# shellcheck disable=SC2086
 					while read -r i; do
+						i="$(echo "$i" | sed 's/ linkdown$//')"
+						i="$(echo "$i" | sed 's/ onlink$//')"
 						idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
 						if ! is_supported_iface_dev "$idev"; then
 							$ip_full -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
@@ -1663,6 +1665,8 @@ EOF
 							$ip_full -6 route add unreachable default table "$tid" || ipv6_error=1
 						elif $ip_full -6 route list table main | grep -q " dev $dev6 "; then
 							while read -r i; do
+								i="$(echo "$i" | sed 's/ linkdown$//')"
+								i="$(echo "$i" | sed 's/ onlink$//')"
 								$ip_full -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 							done << EOF
 							$($ip_full -6 route list table main | grep " dev $dev6 ")
