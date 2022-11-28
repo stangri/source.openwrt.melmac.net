@@ -85,8 +85,8 @@ get_init_status() {
 	[ -z "$version" ] && version="$(get_version "${name}-iptables")"
 	[ -z "$version" ] && version="$(get_version "${name}-netifd")"
 	gateways="$(ubus_get_status gateways | sed "s|\\\n|<br />|g;s|\(\\\033[^<]*\)|✓|g;")"
-	warnings="$(ubus_get_status warnings | sed "s|\\\n|<br />|g;s|\(\\\033[^:]*\)||g;s|: ||g;")"
-	errors="$(ubus_get_status errors | sed "s|\\\n|<br />|g;s|\(\\\033[^:]*\)||g;s|: ||g;")"
+	warnings="$(ubus_get_status warnings)"
+	errors="$(ubus_get_status errors)"
 	json_init
 	json_add_object  "$name"
 	json_add_boolean 'enabled' "$(is_enabled "$name")"

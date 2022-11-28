@@ -164,7 +164,7 @@ var status = baseclass.extend({
 				var warningsTitle = E('label', { class: 'cbi-value-title' }, _("Service Warnings"));
 				var text = "";
 				(reply.warnings).forEach(element => {
-					text += _(textLabelsTable[element.id]).format(element.extra || ' ') + "<br />";
+					text += (textLabelsTable[element.id]).format(element.extra || ' ') + "<br />";
 				});
 				var warningsText = E('div', {}, text);
 				var warningsField = E('div', { class: 'cbi-value-field' }, warningsText);
@@ -199,7 +199,7 @@ var status = baseclass.extend({
 				var errorsTitle = E('label', { class: 'cbi-value-title' }, _("Service Errors"));
 				var text = "";
 				(reply.errors).forEach(element => {
-					text += _(textLabelsTable[element.id]).format(element.extra || ' ') + "<br />";
+					text += (textLabelsTable[element.id]).format(element.extra || ' ') + "<br />";
 				});
 				var errorsText = E('div', {}, text);
 				var errorsField = E('div', { class: 'cbi-value-field' }, errorsText);

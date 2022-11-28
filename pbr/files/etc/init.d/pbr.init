@@ -105,32 +105,34 @@ nftPrevParam6=
 
 
 get_text() {
+	local r
 	case "$1" in
-		errorConfigValidation) echo "Config ($packageConfigFile) validation failure!";;
-		errorNoIpFull) echo "ip-full binary cannot be found!";;
-		errorNoIpset) echo "Resolver set support (${resolver_set}) requires ipset, but ipset binary cannot be found!";;
-		errorNoNft) echo "Resolver set support (${resolver_set}) requires nftables, but nft binary cannot be found!";;
-		errorResolverNotSupported) echo "Resolver set (${resolver_set}) is not supported on this system!";;
-		errorServiceDisabled) echo "The ${packageName} service is currently disabled!";;
-		errorNoWanGateway) echo "The ${serviceName} service failed to discover WAN gateway!";;
-		errorIpsetNameTooLong) echo "The ipset name '%s' is longer than allowed 31 characters!";;
-		errorNftsetNameTooLong) echo "The nft set name '%s' is longer than allowed 31 characters!";;
-		errorUnexpectedExit) echo "Unexpected exit or service termination: '%s'!";;
-		errorPolicyNoSrcDest) echo "Policy '%s' has no source/destination parameters!";;
-		errorPolicyNoInterface) echo "Policy '%s' has no assigned interface!";;
-		errorPolicyUnknownInterface) echo "Policy '%s' has an unknown interface!";;
-		errorPolicyProcess) echo "%s";;
-		errorFailedSetup) echo "Failed to set up '%s'!";;
-		errorFailedReload) echo "Failed to reload '%s'!";;
-		errorUserFileNotFound) echo "Custom user file '%s' not found or empty!";;
-		ererrorUserFileSyntax) echo "Syntax error in custom user file '%s'!";;
-		errorUserFileRunning) echo "Error running custom user file '%s'!";;
-		errorUserFileNoCurl) echo "Use of 'curl' is detected in custom user file '%s', but 'curl' isn't installed!";;
-		errorNoGateways) echo "Failed to set up any gateway!";;
-		warningResolverNotSupported) echo "Resolver set (${resolver_set}) is not supported on this system.";;
-		warningAGHVersionTooLow) echo "Installed AdGuardHome (%s) doesn't support 'ipset_file' option.";;
-		warningPolicyProcess) echo "%s";;
+		errorConfigValidation) r="Config ($packageConfigFile) validation failure!";;
+		errorNoIpFull) r="ip-full binary cannot be found!";;
+		errorNoIpset) r="Resolver set support (${resolver_set}) requires ipset, but ipset binary cannot be found!";;
+		errorNoNft) r="Resolver set support (${resolver_set}) requires nftables, but nft binary cannot be found!";;
+		errorResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system!";;
+		errorServiceDisabled) r="The ${packageName} service is currently disabled!";;
+		errorNoWanGateway) r="The ${serviceName} service failed to discover WAN gateway!";;
+		errorIpsetNameTooLong) r="The ipset name '%s' is longer than allowed 31 characters!";;
+		errorNftsetNameTooLong) r="The nft set name '%s' is longer than allowed 31 characters!";;
+		errorUnexpectedExit) r="Unexpected exit or service termination: '%s'!";;
+		errorPolicyNoSrcDest) r="Policy '%s' has no source/destination parameters!";;
+		errorPolicyNoInterface) r="Policy '%s' has no assigned interface!";;
+		errorPolicyUnknownInterface) r="Policy '%s' has an unknown interface!";;
+		errorPolicyProcess) r="%s";;
+		errorFailedSetup) r="Failed to set up '%s'!";;
+		errorFailedReload) r="Failed to reload '%s'!";;
+		errorUserFileNotFound) r="Custom user file '%s' not found or empty!";;
+		ererrorUserFileSyntax) r="Syntax error in custom user file '%s'!";;
+		errorUserFileRunning) r="Error running custom user file '%s'!";;
+		errorUserFileNoCurl) r="Use of 'curl' is detected in custom user file '%s', but 'curl' isn't installed!";;
+		errorNoGateways) r="Failed to set up any gateway!";;
+		warningResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system.";;
+		warningAGHVersionTooLow) r="Installed AdGuardHome (%s) doesn't support 'ipset_file' option.";;
+		warningPolicyProcess) r="%s";;
 	esac
+	echo "$r"
 }
 
 version() { echo "$PKG_VERSION"; }
@@ -691,6 +693,8 @@ state() {
 			if [ -n "$(eval echo "\$$param")" ]; then
 				while read -r line; do
 					if str_contains "$line" ' '; then
+#			url="${c##*|}"
+#			c="${c%|*}"
 						error_id="${line% *}"
 						error_extra="${line#* }"
 					else
