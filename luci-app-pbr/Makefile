@@ -9,7 +9,7 @@ PKG_VERSION:=0.9.9-46
 
 LUCI_TITLE:=Policy Based Routing Service Web UI
 LUCI_DESCRIPTION:=Provides Web UI for Policy Based Routing Service.
-LUCI_DEPENDS:=+luci-mod-admin-full +jsonfilter +pbr
+LUCI_DEPENDS:=+luci-base +jsonfilter +pbr
 LUCI_PKGARCH:=all
 
 include ../../luci.mk

@@ -9,7 +9,7 @@ PKG_VERSION:=0.0.1-5
 
 LUCI_TITLE:=Wireshark-helper Web UI
 LUCI_DESCRIPTION:=Provides Web UI for Wireshark-helper.
-LUCI_DEPENDS:=+luci-compat +luci-mod-admin-full +wireshark-helper
+LUCI_DEPENDS:=+luci-compat +luci-base +wireshark-helper
 LUCI_PKGARCH:=all
 
 include ../../luci.mk

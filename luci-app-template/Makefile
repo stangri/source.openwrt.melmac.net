@@ -9,7 +9,7 @@ PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 LUCI_TITLE:=Template JS Web UI
 LUCI_URL:=https://docs.openwrt.melmac.net/luci-app-template-js/
 LUCI_DESCRIPTION:=Provides template for JS-based Web UI applications.
-LUCI_DEPENDS:=+luci-mod-admin-full +jshn
+LUCI_DEPENDS:=+luci-base +jshn
 LUCI_PKGARCH:=all
 
 include ../../luci.mk

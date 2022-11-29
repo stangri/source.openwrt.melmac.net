@@ -8,7 +8,7 @@ PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 PKG_VERSION:=1.0.0-1
 
 LUCI_TITLE:=Easy Flash Web UI
-LUCI_DEPENDS:=+luci-compat +luci-mod-admin-full
+LUCI_DEPENDS:=+luci-compat +luci-base
 LUCI_PKGARCH:=all
 
 define Package/luci/luci-app-easyflash/description
