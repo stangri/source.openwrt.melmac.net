@@ -57,13 +57,13 @@ return view.extend({
 
 			var text = "";
 			if (!(replyPlatform.adguardhome_ipset_support)) {
-				text += _("Please note that %s is not supported on this system.").format("<i>adguardhome.ipset</i>") + "<br />"
+				text += _("The %s is not supported on this system.").format("<i>adguardhome.ipset</i>") + "<br />"
 			}
 			if (!(replyPlatform.dnsmasq_ipset_support)) {
-				text += _("Please note that %s is not supported on this system.").format("<i>dnsmasq.ipset</i>") + "<br />"
+				text += _("The %s is not supported on this system.").format("<i>dnsmasq.ipset</i>") + "<br />"
 			}
 			if (!(replyPlatform.dnsmasq_nftset_support)) {
-				text += _("Please note that %s is not supported on this system.").format("<i>dnsmasq.nftset</i>") + "<br />"
+				text += _("The %s is not supported on this system.").format("<i>dnsmasq.nftset</i>") + "<br />"
 			}
 			text += _("Please check the %sREADME%s before changing this option.").format(
 				"<a href=\"" + pkg.URL + "#use-resolvers-set-support\" target=\"_blank\">", "</a>");

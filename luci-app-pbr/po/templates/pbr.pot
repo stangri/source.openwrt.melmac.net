@@ -227,12 +227,6 @@ msgstr ""
 msgid "Please check the %sREADME%s before changing this option."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:60
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:63
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:66
-msgid "Please note that %s is not supported on this system."
-msgstr ""
-
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:148
 msgid "Policies"
 msgstr ""
@@ -420,6 +414,12 @@ msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:149
 msgid "The %s indicates default gateway. See the %sREADME%s for details."
+msgstr ""
+
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:60
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:63
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:66
+msgid "The %s is not supported on this system."
 msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:183
