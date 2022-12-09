@@ -187,7 +187,7 @@ var status = baseclass.extend({
 					errorPolicyNoSrcDest: _("Policy '%s' has no source/destination parameters!"),
 					errorPolicyNoInterface: _("Policy '%s' has no assigned interface!"),
 					errorPolicyUnknownInterface: _("Policy '%s' has an unknown interface!"),
-					errorPolicyProcess: _("%s"),
+					errorPolicyProcess: _("Policy processing error (%s)!"),
 					errorFailedSetup: _("Failed to set up '%s'!"),
 					errorFailedReload: _("Failed to reload '%s'!"),
 					errorUserFileNotFound: _("Custom user file '%s' not found or empty!"),
