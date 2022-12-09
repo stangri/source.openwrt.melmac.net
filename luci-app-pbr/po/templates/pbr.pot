@@ -2,7 +2,6 @@ msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:162
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:190
 msgid "%s"
 msgstr ""
 
@@ -253,6 +252,10 @@ msgstr ""
 
 #: applications/luci-app-pbr/root/usr/share/luci/menu.d/luci-app-pbr.json:3
 msgid "Policy Routing"
+msgstr ""
+
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:190
+msgid "Policy processing error (%s)!"
 msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:185
