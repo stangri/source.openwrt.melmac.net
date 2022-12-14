@@ -121,7 +121,7 @@ get_text() {
 		errorPolicyNoSrcDest) r="Policy '%s' has no source/destination parameters!";;
 		errorPolicyNoInterface) r="Policy '%s' has no assigned interface!";;
 		errorPolicyUnknownInterface) r="Policy '%s' has an unknown interface!";;
-		errorPolicyProcess) r="%s";;
+		errorPolicyProcessCMD) r="%s";;
 		errorFailedSetup) r="Failed to set up '%s'!";;
 		errorFailedReload) r="Failed to reload '%s'!";;
 		errorUserFileNotFound) r="Custom user file '%s' not found or empty!";;
@@ -129,9 +129,20 @@ get_text() {
 		errorUserFileRunning) r="Error running custom user file '%s'!";;
 		errorUserFileNoCurl) r="Use of 'curl' is detected in custom user file '%s', but 'curl' isn't installed!";;
 		errorNoGateways) r="Failed to set up any gateway!";;
+		errorResolver) r="Resolver %s";;
+		errorPolicyProcessNoIpv6) r="Skipping IPv6 policy '%s' as IPv6 support is disabled";;
+		errorPolicyProcessUnknownFwmark) r="Unknown packet mark for interface '%s'";;
+		errorPolicyProcessMismatchFamily) r="Mismatched IP family between in policy %s";;
+		errorPolicyProcessUnknownProtocol) r="Unknown protocol in policy %s";;
+		errorPolicyProcessInsertionFailed) r="Insertion failed for both IPv4 and IPv6 for policy %s";;
+		errorPolicyProcessInsertionFailedIpv4) r="Insertion failed for IPv4 for policy %s";;
 		warningResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system.";;
 		warningAGHVersionTooLow) r="Installed AdGuardHome (%s) doesn't support 'ipset_file' option.";;
-		warningPolicyProcess) r="%s";;
+		warningPolicyProcessCMD) r="%s";;
+		warningTorUnsetParams) r="Please unset 'src_addr', 'src_port' and 'dest_port' for policy '%s'";;
+		warningTorUnsetProto) r="Please unset 'proto' or set 'proto' to 'all' for policy '%s'";;
+		warningTorUnsetChainIpt) r="Please unset 'chain' or set 'chain' to 'PREROUTING' for policy '%s'";;
+		warningTorUnsetChainNft) r="Please unset 'chain' or set 'chain' to 'prerouting' for policy '%s'";;
 	esac
 	echo "$r"
 }
@@ -1073,16 +1084,20 @@ policy_routing_tor_iptables() {
 	chain="$(str_to_upper "$8")"
 	chain="${chain:-PREROUTING}"
 	if [ -n "${src_addr}${src_port}${dest_port}" ]; then
-		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'src_addr', 'src_port' and 'dest_port' for policy '$comment'\\n"
+		state add 'warningSummary' 'warningTorUnsetParams' "$comment"
+#		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'src_addr', 'src_port' and 'dest_port' for policy '$comment'\\n"
 	fi
 	if [ -n "$proto" ] && [ "$proto" != "all" ]; then
-		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment'\\n"
+		state add 'warningSummary' 'warningTorUnsetProto' "$comment"
+#		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment'\\n"
 	fi
 	if [ "$chain" != "PREROUTING" ]; then
-		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'chain' or set 'chain' to 'PREROUTING' for policy '$comment'\\n"
+		state add 'warningSummary' 'warningTorUnsetChainIpt' "$comment"
+#		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'chain' or set 'chain' to 'PREROUTING' for policy '$comment'\\n"
 	fi
 	resolver 'add_resolver_element' "$iface" 'dst' 'ip' '' "${comment}: $dest_addr" "$dest_addr" || \
-		processPolicyError="${processPolicyError}${_ERROR_}: resolver 'add_resolver_element' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
+		state add 'errorSummary' 'errorResolver' "'add_resolver_element' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'"
+#		processPolicyError="${processPolicyError}${_ERROR_}: resolver 'add_resolver_element' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
 	return 0
 }
 policy_routing_tor_nft() {
@@ -1091,16 +1106,20 @@ policy_routing_tor_nft() {
 	chain="$(str_to_lower "$8")"
 	chain="${chain:-prerouting}"
 	if [ -n "${src_addr}${src_port}${dest_port}" ]; then
-		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'src_addr', 'src_port' and 'dest_port' for policy '$comment'\\n"
+		state add 'warningSummary' 'warningTorUnsetParams' "$comment"
+#		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'src_addr', 'src_port' and 'dest_port' for policy '$comment'\\n"
 	fi
 	if [ -n "$proto" ] && [ "$proto" != "all" ]; then
-		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment'\\n"
+		state add 'warningSummary' 'warningTorUnsetProto' "$comment"
+#		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'proto' or set 'proto' to 'all' for policy '$comment'\\n"
 	fi
 	if [ "$chain" != "prerouting" ]; then
-		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'chain' or set 'chain' to 'prerouting' for policy '$comment'\\n"
+		state add 'warningSummary' 'warningTorUnsetChainNft' "$comment"
+#		processPolicyWarning="${processPolicyWarning}${_WARNING_}: Please unset 'chain' or set 'chain' to 'prerouting' for policy '$comment'\\n"
 	fi
 	resolver 'add_resolver_element' "$iface" 'dst' 'ip' '' "${comment}: $dest_addr" "$dest_addr" || \
-		processPolicyError="${processPolicyError}${_ERROR_}: resolver 'add_resolver_element' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
+		state add 'errorSummary' 'errorResolver' "'add_resolver_element' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'"
+#		processPolicyError="${processPolicyError}${_ERROR_}: resolver 'add_resolver_element' '$iface' 'dst' 'ip' '${comment}: $dest_addr' '$dest_addr'\\n"
 	return 0
 }
 
@@ -1115,7 +1134,9 @@ policy_routing_iptables() {
 	mark=$(eval echo "\$mark_${iface//-/_}")
 
 	if [ -n "$ipv6_enabled" ] && { is_ipv6 "$laddr" || is_ipv6 "$raddr"; }; then
-		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$name' as IPv6 support is disabled\\n"
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessNoIpv6' "$name"
+#		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$name' as IPv6 support is disabled\\n"
 		return 1
 	fi
 
@@ -1124,7 +1145,9 @@ policy_routing_iptables() {
 	elif [ "$iface" = "ignore" ]; then
 		dest="-j RETURN"
 	else
-		processPolicyError="${processPolicyError}${_ERROR_}: Unknown fw_mark for ${iface}\\n"
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessUnknownFwmark' "$iface"
+#		processPolicyError="${processPolicyError}${_ERROR_}: Unknown fw_mark for ${iface}\\n"
 		return 1
 	fi
 
@@ -1137,7 +1160,9 @@ policy_routing_iptables() {
 	fi
 
 	if is_family_mismatch "$laddr" "$raddr"; then 
-		processPolicyError="${processPolicyError}${_ERROR_}: Mismatched IP family between '$laddr' and '$raddr' in policy '$name'\\n"
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessMismatchFamily' "${name}: '$laddr' '$raddr'"
+#		processPolicyError="${processPolicyError}${_ERROR_}: Mismatched IP family between '$laddr' and '$raddr' in policy '$name'\\n"
 		return 1
 	fi
 
@@ -1146,7 +1171,9 @@ policy_routing_iptables() {
 			param4="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest"
 			param6="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest"
 		elif ! is_supported_protocol "$i"; then
-			processPolicyError="${processPolicyError}${_ERROR_}: Unknown protocol '$i' in policy '$name'\\n"
+			processPolicyError='true'
+			state add 'errorSummary' 'errorPolicyProcessUnknownProtocol' "${name}: '$i'"
+#			processPolicyError="${processPolicyError}${_ERROR_}: Unknown protocol '$i' in policy '$name'\\n"
 			return 1
 		else
 			param4="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest -p $i"
@@ -1275,11 +1302,18 @@ policy_routing_iptables() {
 	[ -z "$ipv6_enabled" ] && ipv6_error='1'
 	if [ "$ipv4_error" -eq '1' ] && [ "$ipv6_error" -eq '1' ]; then
 		if [ -n "$ipv6_enabled" ]; then
-			processPolicyError="${processPolicyError}${_ERROR_}: Policy insertion failed for both IPv4 and IPv6!\\n"
-			processPolicyError="${processPolicyError}${_ERROR_}: iptables $param4\\n"
-			processPolicyError="${processPolicyError}${_ERROR_}: iptables $param6\\n"
+			processPolicyError='true'
+			state add 'errorSummary' 'errorPolicyProcessInsertionFailed' "$name"
+			state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param4"
+			state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param6"
+#			processPolicyError="${processPolicyError}${_ERROR_}: Policy insertion failed for both IPv4 and IPv6!\\n"
+#			processPolicyError="${processPolicyError}${_ERROR_}: iptables $param4\\n"
+#			processPolicyError="${processPolicyError}${_ERROR_}: iptables $param6\\n"
 		else
-			processPolicyError="${processPolicyError}${_ERROR_}: iptables $param4\\n"
+			processPolicyError='true'
+			state add 'errorSummary' 'errorPolicyProcessInsertionFailedIpv4' "$name"
+			state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param4"
+#			processPolicyError="${processPolicyError}${_ERROR_}: iptables $param4\\n"
 		fi
 	fi
 
@@ -1295,7 +1329,9 @@ policy_routing_nft() {
 	mark=$(eval echo "\$mark_${iface//-/_}")
 
 	if [ -z "$ipv6_enabled" ] && { is_ipv6 "$src_addr" || is_ipv6 "$dest_addr"; }; then
-		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$name' as IPv6 support is disabled\\n"
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessNoIpv6' "$name"
+#		processPolicyError="${processPolicyError}${_ERROR_}: Skipping IPv6 policy '$name' as IPv6 support is disabled\\n"
 		return 1
 	fi
 
@@ -1304,17 +1340,23 @@ policy_routing_nft() {
 	elif [ "$iface" = "ignore" ]; then
 		dest="return"
 	else
-		processPolicyError="${processPolicyError}${_ERROR_}: Unknown packet mark for ${iface}\\n"
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessUnknownFwmark' "$iface"
+#		processPolicyError="${processPolicyError}${_ERROR_}: Unknown packet mark for ${iface}\\n"
 		return 1
 	fi
 
 	if is_family_mismatch "$src_addr" "$dest_addr"; then 
-		processPolicyError="${processPolicyError}${_ERROR_}: Mismatched IP family between '$src_addr' and '$dest_addr' in policy '$name'\\n"
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessMismatchFamily' "${name}: '$laddr' '$raddr'"
+#		processPolicyError="${processPolicyError}${_ERROR_}: Mismatched IP family between '$src_addr' and '$dest_addr' in policy '$name'\\n"
 		return 1
 	fi
 
 	if [ -n "$proto" ] && ! is_supported_protocol "$proto"; then
-		processPolicyError="${processPolicyError}${_ERROR_}: Unknown protocol '$i' in policy '$name'\\n"
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessUnknownProtocol' "${name}: '$i'"
+#		processPolicyError="${processPolicyError}${_ERROR_}: Unknown protocol '$i' in policy '$name'\\n"
 		return 1
 	fi
 
@@ -1427,11 +1469,18 @@ policy_routing_nft() {
 	[ -z "$ipv6_enabled" ] && ipv6_error='1'
 	if [ "$ipv4_error" -eq '1' ] && [ "$ipv6_error" -eq '1' ]; then
 		if [ -n "$ipv6_enabled" ]; then
-			processPolicyError="${processPolicyError}${_ERROR_}: Policy insertion failed for both IPv4 and IPv6!\\n"
-			processPolicyError="${processPolicyError}${_ERROR_}: nft '$param4'\\n"
-			processPolicyError="${processPolicyError}${_ERROR_}: nft '$param6'\\n"
+			processPolicyError='true'
+			state add 'errorSummary' 'errorPolicyProcessInsertionFailed' "$name"
+			state add 'errorSummary' 'errorPolicyProcessCMD' "nft '$param4'"
+			state add 'errorSummary' 'errorPolicyProcessCMD' "nft '$param6'"
+#			processPolicyError="${processPolicyError}${_ERROR_}: Policy insertion failed for both IPv4 and IPv6!\\n"
+#			processPolicyError="${processPolicyError}${_ERROR_}: nft '$param4'\\n"
+#			processPolicyError="${processPolicyError}${_ERROR_}: nft '$param6'\\n"
 		else
-			processPolicyError="${processPolicyError}${_ERROR_}: nft '$param4'\\n"
+			processPolicyError='true'
+			state add 'errorSummary' 'errorPolicyProcessInsertionFailedIpv4' "$name"
+			state add 'errorSummary' 'errorPolicyProcessCMD' "nft '$param4'"
+#			processPolicyError="${processPolicyError}${_ERROR_}: nft '$param4'\\n"
 		fi
 	fi
 }
@@ -1440,7 +1489,7 @@ policy_process() {
 	local i j uid="$9"
 	if [ -z "$uid" ]; then # first non-recursive call
 		[ "$enabled" -gt 0 ] || return 0
-		unset processPolicyWarning
+#		unset processPolicyWarning
 		unset processPolicyError
 		uid="$1"
 		if is_nft; then
@@ -1476,12 +1525,12 @@ policy_process() {
 			ips 'flush' "$interface" "src" "mac" "$uid"
 		fi
 		policy_process "$name" "$interface" "$src_addr" "$src_port" "$dest_addr" "$dest_port" "$proto" "$chain" "$uid"
-		if [ -n "$processPolicyWarning" ]; then
-			state add 'warningSummary' 'warningPolicyProcess' "$processPolicyWarning"
-		fi
+#		if [ -n "$processPolicyWarning" ]; then
+#			state add 'warningSummary' 'warningPolicyProcess' "$processPolicyWarning"
+#		fi
 		if [ -n "$processPolicyError" ]; then
 			output_fail
-			state add 'errorSummary' 'errorPolicyProcess' "$processPolicyError"
+#			state add 'errorSummary' 'errorPolicyProcess' "$processPolicyError"
 		else
 			output_ok
 		fi
