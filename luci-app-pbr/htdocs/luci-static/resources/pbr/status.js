@@ -203,8 +203,8 @@ var status = baseclass.extend({
 			if (reply.errors && reply.errors.length) {
 				var textLabelsTable = {
 					errorConfigValidation: _("Config (%s) validation failure!").format('/etc/config/' + pkg.Name),
-					errorNoIpFull: _("%s binary cannot be found!").formate('ip-full'),
-					errorNoIptables: _("%s binary cannot be found!").formate('iptables'),
+					errorNoIpFull: _("%s binary cannot be found!").format('ip-full'),
+					errorNoIptables: _("%s binary cannot be found!").format('iptables'),
 					errorNoIpset: _("Resolver set support (%s) requires ipset, but ipset binary cannot be found!").format(uci.get(pkg.Name, 'config', 'resolver_set')),
 					errorNoNft: _("Resolver set support (%s) requires nftables, but nft binary cannot be found!").format(uci.get(pkg.Name, 'config', 'resolver_set')),
 					errorResolverNotSupported: _("Resolver set (%s) is not supported on this system!").format(uci.get(pkg.Name, 'config', 'resolver_set')),
