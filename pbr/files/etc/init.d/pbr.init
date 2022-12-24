@@ -136,6 +136,7 @@ get_text() {
 		errorPolicyProcessUnknownProtocol) r="Unknown protocol in policy %s";;
 		errorPolicyProcessInsertionFailed) r="Insertion failed for both IPv4 and IPv6 for policy %s";;
 		errorPolicyProcessInsertionFailedIpv4) r="Insertion failed for IPv4 for policy %s";;
+		errorInterfaceRoutingEmptyValues) r="Received empty tid/mark or interface name when setting up routing";;
 		warningResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system.";;
 		warningAGHVersionTooLow) r="Installed AdGuardHome (%s) doesn't support 'ipset_file' option.";;
 		warningPolicyProcessCMD) r="%s";;
@@ -264,7 +265,7 @@ is_service_running_nft() { [ -x "$nft" ] && [ -n "$(get_mark_nft_chains)" ]; }
 # is_service_running_nft() { [ -x "$nft" ] && [ -s "$nftPermFile" ]; }
 is_service_running() { if is_nft; then is_service_running_nft; else is_service_running_iptables; fi; }
 is_netifd_table() { local iface="$1"; [ "$(uci -q get "network.${iface}.ip4table")" = "${packageName}_${iface%6}" ]; }
-get_rt_tables_id() { local iface="$1"; grep "${packageName}_${iface}" '/etc/iproute2/rt_tables' | awk '{print $1;}'; }
+get_rt_tables_id() { local iface="$1"; grep "${ipTablePrefix}_${iface}\$" '/etc/iproute2/rt_tables' | awk '{print $1;}'; }
 get_rt_tables_next_id() { echo "$(($(sort -r -n '/etc/iproute2/rt_tables' | grep -o -E -m 1 "^[0-9]+")+1))"; }
 _check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
 is_config_enabled() {
@@ -1635,6 +1636,7 @@ interface_routing() {
 	local action="$1" tid="$2" mark="$3" iface="$4" gw4="$5" dev="$6" gw6="$7" dev6="$8" priority="$9"
 	local dscp s=0 i ipv4_error=1 ipv6_error=1
 	if [ -z "$tid" ] || [ -z "$mark" ] || [ -z "$iface" ]; then
+		state add 'errorSummary' 'errorInterfaceRoutingEmptyValues'
 		return 1
 	fi
 	case "$action" in
@@ -1758,7 +1760,7 @@ EOF
 			$ip_full rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
 			if ! is_netifd_table "$iface"; then
 				$ip_full route flush table "$tid" >/dev/null 2>&1
-				sed -i "/${ipTablePrefix}_${iface}/d" '/etc/iproute2/rt_tables'
+				sed -i "/${ipTablePrefix}_${iface}\$/d" '/etc/iproute2/rt_tables'
 				sync
 			fi
 			return "$s"

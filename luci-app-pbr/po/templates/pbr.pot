@@ -95,7 +95,7 @@ msgstr ""
 msgid "Default ICMP Interface"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:308
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:309
 msgid "Disable"
 msgstr ""
 
@@ -105,7 +105,7 @@ msgstr ""
 msgid "Disabled"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:304
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:305
 msgid "Disabling %s service"
 msgstr ""
 
@@ -127,7 +127,7 @@ msgstr ""
 msgid "Do not enforce policies when their gateway is down"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:297
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:298
 msgid "Enable"
 msgstr ""
 
@@ -138,7 +138,7 @@ msgstr ""
 msgid "Enabled"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:293
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:294
 msgid "Enabling %s service"
 msgstr ""
 
@@ -292,6 +292,10 @@ msgstr ""
 msgid "Protocol"
 msgstr ""
 
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:234
+msgid "Received empty tid/mark or interface name when setting up routing"
+msgstr ""
+
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:206
 msgid "Remote addresses / domains"
 msgstr ""
@@ -322,11 +326,11 @@ msgid ""
 "Resolver set support (%s) requires nftables, but nft binary cannot be found!"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:275
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:276
 msgid "Restart"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:271
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:272
 msgid "Restarting %s service"
 msgstr ""
 
@@ -360,11 +364,11 @@ msgstr ""
 msgid "Select Add for -A/add and Insert for -I/Insert."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:332
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:333
 msgid "Service Control"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:235
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:236
 msgid "Service Errors"
 msgstr ""
 
@@ -395,11 +399,11 @@ msgstr ""
 msgid "Skipping IPv6 policy '%s' as IPv6 support is disabled"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:264
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:265
 msgid "Start"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:260
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:261
 msgid "Starting %s service"
 msgstr ""
 
@@ -413,7 +417,7 @@ msgstr ""
 msgid "Starting (WAN) Table ID number for tables created by the service."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:286
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:287
 msgid "Stop"
 msgstr ""
 
@@ -425,7 +429,7 @@ msgstr ""
 msgid "Stopped (version: %s)"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:282
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:283
 msgid "Stopping %s service"
 msgstr ""
 
@@ -489,7 +493,7 @@ msgstr ""
 msgid "Unexpected exit or service termination: '%s'!"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:244
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:245
 msgid "Unknown Error!"
 msgstr ""
 
