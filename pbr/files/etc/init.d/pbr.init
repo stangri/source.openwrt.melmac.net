@@ -73,6 +73,7 @@ icmp_interface=
 ignored_interface=
 ipv6_enabled=
 nft_user_set_policy=
+nft_user_set_counter=
 procd_boot_delay=
 procd_reload_delay=
 resolver_set=
@@ -304,6 +305,7 @@ load_package_config() {
 	config_get      ignored_interface        'config' 'ignored_interface'
 	config_get_bool ipv6_enabled             'config' 'ipv6_enabled' '0'
 	config_get      nft_user_set_policy      'config' 'nft_user_set_policy' 'memory'
+	config_get_bool nft_user_set_counter     'config' 'nft_user_set_counter' '0'
 	config_get      procd_boot_delay         'config' 'procd_boot_delay' '0'
 	config_get      resolver_set             'config' 'resolver_set'
 	config_get      rule_create_option       'config' 'rule_create_option' 'add'
@@ -322,6 +324,9 @@ load_package_config() {
 	if is_nft; then
 		fw_maskXor="$(printf '%#x' "$((fw_mask ^ 0xffffffff))")"
 		fw_maskXor="${fw_maskXor:-0xff00ffff}"
+		if [ "$nft_user_set_counter" -eq '0' ]; then
+			unset nft_user_set_counter
+		fi
 	else
 		case $rule_create_option in
 			insert|-i|-I) rule_create_option='-I';;
@@ -598,8 +603,8 @@ nftset() {
 		create_user_set)
 			case "$type" in
 				ip|net)
-					nft4 add set inet "$nftTable" "$nftset4" "{ type ipv4_addr; counter; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv4_error=0
-					nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; counter; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv6_error=0
+					nft4 add set inet "$nftTable" "$nftset4" "{ type ipv4_addr; ${nft_user_set_counter:+counter;} flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv4_error=0
+					nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; ${nft_user_set_counter:+counter;} flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv6_error=0
 					case "$target" in
 						dst)
 							nft add rule inet "$nftTable" "${nftPrefix}_prerouting" ip daddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
@@ -612,8 +617,8 @@ nftset() {
 					esac
 					;;
 				mac)
-					nft4 add set inet "$nftTable" "$nftset4" "{ type ether_addr; counter; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv4_error=0
-					nft6 add set inet "$nftTable" "$nftset6" "{ type ether_addr; counter; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv6_error=0
+					nft4 add set inet "$nftTable" "$nftset4" "{ type ether_addr; ${nft_user_set_counter:+counter;} flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv4_error=0
+					nft6 add set inet "$nftTable" "$nftset6" "{ type ether_addr; ${nft_user_set_counter:+counter;} flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv6_error=0
 					nft add rule inet "$nftTable" "${nftPrefix}_prerouting" ether saddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
 					nft add rule inet "$nftTable" "${nftPrefix}_prerouting" ether saddr "@${nftset6}" goto "${nftPrefix}_mark_${mark}" && ipv6_error=0
 					;;
@@ -2391,7 +2396,8 @@ load_validate_config() {
 		'rule_create_option:or("", "add", "insert"):add' \
 		'procd_reload_delay:integer:0' \
 		'webui_supported_protocol:list(string)' \
-		'nft_user_set_policy:or("", "memory", "performance")'
+		'nft_user_set_policy:or("", "memory", "performance")'\
+		'nft_user_set_counter:bool:0'
 }
 
 # shellcheck disable=SC2120
