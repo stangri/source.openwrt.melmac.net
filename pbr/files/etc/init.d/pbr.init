@@ -582,24 +582,24 @@ nftset() {
 		create)
 			case "$type" in
 				ip|net)
-					nft4 add set inet "$nftTable" "$nftset4" "{ type ipv4_addr; flags interval; auto-merge; comment \"$comment\"; }" && ipv4_error=0
-					nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; flags interval; auto-merge; comment \"$comment\"; }" && ipv6_error=0
+					nft4 add set inet "$nftTable" "$nftset4" "{ type ipv4_addr; counter; flags interval; auto-merge; comment \"$comment\"; }" && ipv4_error=0
+					nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; counter; flags interval; auto-merge; comment \"$comment\"; }" && ipv6_error=0
 					;;
 				mac)
-					nft4 add set inet "$nftTable" "$nftset4" "{ type ether_addr; flags interval; auto-merge; comment \"$comment\"; }" && ipv4_error=0
-					nft6 add set inet "$nftTable" "$nftset6" "{ type ether_addr; flags interval; auto-merge; comment \"$comment\"; }" && ipv6_error=0
+					nft4 add set inet "$nftTable" "$nftset4" "{ type ether_addr; counter; flags interval; auto-merge; comment \"$comment\"; }" && ipv4_error=0
+					nft6 add set inet "$nftTable" "$nftset6" "{ type ether_addr; counter; flags interval; auto-merge; comment \"$comment\"; }" && ipv6_error=0
 					;;
 				esac
 		;;
 		create_dnsmasq_set)
-			nft4 add set inet "$nftTable" "$nftset4" "{ type ipv4_addr; flags interval; auto-merge; comment \"$comment\"; }" && ipv4_error=0
-			nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; flags interval; auto-merge; comment \"$comment\"; }" && ipv6_error=0
+			nft4 add set inet "$nftTable" "$nftset4" "{ type ipv4_addr; counter; flags interval; auto-merge; comment \"$comment\"; }" && ipv4_error=0
+			nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; counter; flags interval; auto-merge; comment \"$comment\"; }" && ipv6_error=0
 		;;
 		create_user_set)
 			case "$type" in
 				ip|net)
-					nft4 add set inet "$nftTable" "$nftset4" "{ type ipv4_addr; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv4_error=0
-					nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv6_error=0
+					nft4 add set inet "$nftTable" "$nftset4" "{ type ipv4_addr; counter; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv4_error=0
+					nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; counter; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv6_error=0
 					case "$target" in
 						dst)
 							nft add rule inet "$nftTable" "${nftPrefix}_prerouting" ip daddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
@@ -612,8 +612,8 @@ nftset() {
 					esac
 					;;
 				mac)
-					nft4 add set inet "$nftTable" "$nftset4" "{ type ether_addr; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv4_error=0
-					nft6 add set inet "$nftTable" "$nftset6" "{ type ether_addr; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv6_error=0
+					nft4 add set inet "$nftTable" "$nftset4" "{ type ether_addr; counter; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv4_error=0
+					nft6 add set inet "$nftTable" "$nftset6" "{ type ether_addr; counter; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv6_error=0
 					nft add rule inet "$nftTable" "${nftPrefix}_prerouting" ether saddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
 					nft add rule inet "$nftTable" "${nftPrefix}_prerouting" ether saddr "@${nftset6}" goto "${nftPrefix}_mark_${mark}" && ipv6_error=0
 					;;
