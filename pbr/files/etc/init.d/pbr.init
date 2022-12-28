@@ -72,6 +72,7 @@ fw_mask=
 icmp_interface=
 ignored_interface=
 ipv6_enabled=
+nft_user_set_policy=
 procd_boot_delay=
 procd_reload_delay=
 resolver_set=
@@ -102,7 +103,6 @@ processPolicyWarning=
 resolver_set_supported=
 nftPrevParam4=
 nftPrevParam6=
-
 
 get_text() {
 	local r
@@ -303,6 +303,7 @@ load_package_config() {
 	config_get      icmp_interface           'config' 'icmp_interface'
 	config_get      ignored_interface        'config' 'ignored_interface'
 	config_get_bool ipv6_enabled             'config' 'ipv6_enabled' '0'
+	config_get      nft_user_set_policy      'config' 'nft_user_set_policy' 'memory'
 	config_get      procd_boot_delay         'config' 'procd_boot_delay' '0'
 	config_get      resolver_set             'config' 'resolver_set'
 	config_get      rule_create_option       'config' 'rule_create_option' 'add'
@@ -597,8 +598,8 @@ nftset() {
 		create_user_set)
 			case "$type" in
 				ip|net)
-					nft4 add set inet "$nftTable" "$nftset4" "{ type ipv4_addr; flags interval; auto-merge; policy memory; comment \"$comment\"; }" && ipv4_error=0
-					nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; flags interval; auto-merge; policy memory; comment \"$comment\"; }" && ipv6_error=0
+					nft4 add set inet "$nftTable" "$nftset4" "{ type ipv4_addr; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv4_error=0
+					nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv6_error=0
 					case "$target" in
 						dst)
 							nft add rule inet "$nftTable" "${nftPrefix}_prerouting" ip daddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
@@ -611,8 +612,8 @@ nftset() {
 					esac
 					;;
 				mac)
-					nft4 add set inet "$nftTable" "$nftset4" "{ type ether_addr; flags interval; auto-merge; policy memory; comment \"$comment\"; }" && ipv4_error=0
-					nft6 add set inet "$nftTable" "$nftset6" "{ type ether_addr; flags interval; auto-merge; policy memory; comment \"$comment\"; }" && ipv6_error=0
+					nft4 add set inet "$nftTable" "$nftset4" "{ type ether_addr; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv4_error=0
+					nft6 add set inet "$nftTable" "$nftset6" "{ type ether_addr; flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv6_error=0
 					nft add rule inet "$nftTable" "${nftPrefix}_prerouting" ether saddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
 					nft add rule inet "$nftTable" "${nftPrefix}_prerouting" ether saddr "@${nftset6}" goto "${nftPrefix}_mark_${mark}" && ipv6_error=0
 					;;
@@ -2389,7 +2390,8 @@ load_validate_config() {
 		'wan_ip_rules_priority:uinteger:30000' \
 		'rule_create_option:or("", "add", "insert"):add' \
 		'procd_reload_delay:integer:0' \
-		'webui_supported_protocol:list(string)'
+		'webui_supported_protocol:list(string)' \
+		'nft_user_set_policy:or("", "memory", "performance")'
 }
 
 # shellcheck disable=SC2120
