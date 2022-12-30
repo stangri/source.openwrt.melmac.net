@@ -138,6 +138,7 @@ get_text() {
 		errorPolicyProcessInsertionFailed) r="Insertion failed for both IPv4 and IPv6 for policy %s";;
 		errorPolicyProcessInsertionFailedIpv4) r="Insertion failed for IPv4 for policy %s";;
 		errorInterfaceRoutingEmptyValues) r="Received empty tid/mark or interface name when setting up routing";;
+		errorFailedToResolve) r="Failed to resolve %s";;
 		warningResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system.";;
 		warningAGHVersionTooLow) r="Installed AdGuardHome (%s) doesn't support 'ipset_file' option.";;
 		warningPolicyProcessCMD) r="%s";;
@@ -278,6 +279,8 @@ is_config_enabled() {
 }
 # shellcheck disable=SC2016
 resolveip_to_ipt() { resolveip "$@" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d'; }
+resolveip_to_ipt4() { resolveip_to_ipt -4 "$@"; }
+resolveip_to_ipt6() { [ -n "$ipv6_enabled" ] && resolveip_to_ipt -6 "$@"; }
 # shellcheck disable=SC2016
 resolveip_to_nftset() { resolveip "$@" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d' | tr '\n' ' '; }
 resolveip_to_nftset4() { resolveip_to_nftset -4 "$@"; }
@@ -576,8 +579,12 @@ nftset() {
 				fi
 				[ -z "$param4" ] &&	param4="$(resolveip_to_nftset4 "$param")"
 				[ -z "$param6" ] &&	param6="$(resolveip_to_nftset6 "$param")"
-				nft4 add element inet "$nftTable" "$nftset4" "{ $param4 }" && ipv4_error=0
-				nft6 add element inet "$nftTable" "$nftset6" "{ $param6 }" && ipv6_error=0
+				if [ -z "$param4" ] &&	[ -z "$param6" ]; then
+					state add 'errorSummary' 'errorFailedToResolve' "$param"
+				else
+					nft4 add element inet "$nftTable" "$nftset4" "{ $param4 }" && ipv4_error=0
+					nft6 add element inet "$nftTable" "$nftset6" "{ $param6 }" && ipv6_error=0
+				fi
 			fi
 		;;
 		add_dnsmasq_element)
@@ -1219,8 +1226,14 @@ policy_routing_iptables() {
 					param4="$param4 -m set $negation --match-set ${ipsPrefix}_${iface}_4_${target}_${type}_${uid} $target"
 					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}_6_${target}_${type}_${uid} $target"
 				else
-					param4="$param4 $negation -s $(resolveip_to_ipt -4 "$value")"
-					param6="$param6 $negation -s $(resolveip_to_ipt -6 "$value")"
+					local resolvedIP4 resolvedIP6
+					resolvedIP4="$(resolveip_to_ipt4 "$value")"
+					resolvedIP6="$(resolveip_to_ipt6 "$value")"
+					if [ -z "$resolvedIP4" ] && [ -z "$resolvedIP6" ]; then
+						state add 'errorSummary' 'errorFailedToResolve' "$value"
+					fi
+					param4="$param4 $negation -s $resolvedIP4"
+					param6="$param6 $negation -s $resolvedIP6"
 				fi
 			fi
 		fi
@@ -1262,8 +1275,14 @@ policy_routing_iptables() {
 					param4="$param4 -m set $negation --match-set ${ipsPrefix}_${iface}_4_${target}_${type}_${uid} $target"
 					param6="$param6 -m set $negation --match-set ${ipsPrefix}_${iface}_6_${target}_${type}_${uid} $target"
 				else
-					param4="$param4 $negation -d $(resolveip_to_ipt -4 "$value")"
-					param6="$param6 $negation -d $(resolveip_to_ipt -6 "$value")"
+					local resolvedIP4 resolvedIP6
+					resolvedIP4="$(resolveip_to_ipt4 "$value")"
+					resolvedIP6="$(resolveip_to_ipt6 "$value")"
+					if [ -z "$resolvedIP4" ] && [ -z "$resolvedIP6" ]; then
+						state add 'errorSummary' 'errorFailedToResolve' "$value"
+					fi
+					param4="$param4 $negation -d $resolvedIP4"
+					param6="$param6 $negation -d $resolvedIP6"
 				fi
 			else
 				local target='dst' type='ip'
@@ -1407,8 +1426,14 @@ policy_routing_nft() {
 				param4="$param4 $ip4Flag daddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
 				param6="$param6 $ip6Flag daddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 			else
-				param4="$param4 $ip4Flag daddr $negation {$(resolveip_to_nftset4 "$value")}"
-				param6="$param6 $ip6Flag daddr $negation {$(resolveip_to_nftset6 "$value")}"
+				local resolvedIP4 resolvedIP6
+				resolvedIP4="$(resolveip_to_nftset4 "$value")"
+				resolvedIP6="$(resolveip_to_nftset6 "$value")"
+				if [ -z "$resolvedIP4" ] && [ -z "$resolvedIP6" ]; then
+					state add 'errorSummary' 'errorFailedToResolve' "$value"
+				fi
+				param4="$param4 $ip4Flag daddr $negation { $resolvedIP4 }"
+				param6="$param6 $ip6Flag daddr $negation { $resolvedIP6 }"
 			fi
 		else
 			local target='dst' type='ip'
