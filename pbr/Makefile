@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=1.0.1
-PKG_RELEASE:=10
+PKG_RELEASE:=11
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -15,7 +15,6 @@ define Package/pbr/default
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=VPN
-  PROVIDES:=pbr
   TITLE:=Policy Based Routing Service
   URL:=https://docs.openwrt.melmac.net/pbr/
   DEPENDS:=+ip-full +jshn +jsonfilter +resolveip
@@ -27,20 +26,24 @@ define Package/pbr
 $(call Package/pbr/default)
   TITLE+= with nft/nft set support
   DEPENDS+=+firewall4 +kmod-nft-core +kmod-nft-nat +nftables-json
-  PROVIDES:=vpnbypass vpn-policy-routing
+  PROVIDES:=pbr vpnbypass vpn-policy-routing
+  VARIANT:=nftables
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/pbr-iptables
 $(call Package/pbr/default)
   TITLE+= with iptables/ipset support
   DEPENDS+=+ipset +iptables +kmod-ipt-ipset +iptables-mod-ipopt
-  PROVIDES:=pbr vpnbypass vpn-policy-routing
+  PROVIDES:=pbr
+  VARIANT:=iptables
 endef
 
 define Package/pbr-netifd
 $(call Package/pbr/default)
   TITLE+= with netifd support
-  PROVIDES:=pbr vpnbypass vpn-policy-routing
+  PROVIDES:=pbr
+  VARIANT:=netifd
 endef
 
 define Package/pbr/description
@@ -127,8 +130,8 @@ define Package/pbr/prerm
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		uci -q delete firewall.pbr || true
-		echo "Stopping pbr service... "
-		/etc/init.d/pbr stop || true
+		echo -n "Stopping pbr service... "
+		/etc/init.d/pbr stop && echo "OK" || echo "FAIL"
 		echo -n "Removing rc.d symlink for pbr... "
 		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
 	fi
@@ -148,7 +151,7 @@ define Package/pbr-iptables/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
-		echo -n "Installing rc.d symlink for pbr... "
+		echo -n "Installing rc.d symlink for pbr-iptables... "
 		/etc/init.d/pbr enable && echo "OK" || echo "FAIL"
 	fi
 	exit 0
@@ -159,9 +162,9 @@ define Package/pbr-iptables/prerm
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		uci -q delete firewall.pbr || true
-		echo "Stopping pbr service... "
-		/etc/init.d/pbr stop || true
-		echo -n "Removing rc.d symlink for pbr... "
+		echo -n "Stopping pbr-iptables service... "
+		/etc/init.d/pbr stop && echo "OK" || echo "FAIL"
+		echo -n "Removing rc.d symlink for pbr-iptables... "
 		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
 	fi
 	exit 0
@@ -171,12 +174,8 @@ define Package/pbr-netifd/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
-		echo -n "Installing rc.d symlink for pbr... "
+		echo -n "Installing rc.d symlink for pbr-netifd... "
 		/etc/init.d/pbr enable && echo "OK" || echo "FAIL"
-	#	echo -n "Installing netifd support for pbr... "
-	#	/etc/init.d/pbr netifd install && echo "OK" || echo "FAIL"
-	#	echo -n "Restarting network... "
-	#	/etc/init.d/network restart && echo "OK" || echo "FAIL"
 	fi
 	exit 0
 endef
@@ -186,14 +185,10 @@ define Package/pbr-netifd/prerm
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		uci -q delete firewall.pbr || true
-		echo "Stopping pbr service... "
-		/etc/init.d/pbr stop || true
-	#	echo -n "Removing netifd support for pbr... "
-	#	/etc/init.d/pbr netifd remove && echo "OK" || echo "FAIL"
+		echo -n "Stopping pbr-netifd service... "
+		/etc/init.d/pbr stop && echo "OK" || echo "FAIL"
 		echo -n "Removing rc.d symlink for pbr... "
 		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
-	#	echo -n "Restarting network... "
-	#	/etc/init.d/network restart && echo "OK" || echo "FAIL"
 	fi
 	exit 0
 endef
