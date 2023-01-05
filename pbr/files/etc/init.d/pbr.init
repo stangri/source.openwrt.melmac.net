@@ -457,8 +457,8 @@ ips() {
 
 	case "$command" in
 		add)
-			ips4 -q -! add "$ipset4" comment "$comment" && ipv4_error=0
-			ips6 -q -! add "$ipset6" comment "$comment" && ipv6_error=0
+			ips4 -q -! add "$ipset4" ["$param"] comment "$comment" && ipv4_error=0
+			ips6 -q -! add "$ipset6" ["$param"] comment "$comment" && ipv6_error=0
 		;;
 		add_agh_element)
 			[ -n "$ipv6_enabled" ] || unset ipset6
