@@ -1,9 +1,9 @@
 ---
-name: "[vpn-policy-routing] Feature request"
+name: "[pbr] Feature request"
 about: Suggest an idea for this project
-title: "[vpn-policy-routing] Wish:"
+title: "[pbr] wish:"
 labels: ''
-assignees: ''
+assignees: stangri
 
 ---
 
