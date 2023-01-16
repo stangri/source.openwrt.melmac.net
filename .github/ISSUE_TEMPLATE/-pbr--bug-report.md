@@ -14,27 +14,27 @@ A clear and concise description of what the bug is.
 
 1. ```/etc/config/dhcp```
 
-   ```sh
+```sh
 
-   ```
+```
 
 2. ```/etc/config/network```
 
-   ```sh
+```sh
 
-   ```
+```
 
 3. ```/etc/config/firewall```
 
-   ```sh
+```sh
 
-   ```
+```
 
 4. ```/etc/config/pbr```
 
-   ```sh
+```sh
 
-   ```
+```
 
 **To Reproduce**
 Steps to reproduce the behavior:
@@ -46,16 +46,16 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**VPN Policy Routing run-time information**
+**Policy Routing run-time information**
 
 1. Output of ```/etc/init.d/pbr reload``` with ```verbosity``` set to 2:
 
-   ```sh
+```sh
 
-   ```
+```
 
-2. Output of ```/etc/init.d/pbr support```:
+2. Output of ```/etc/init.d/pbr status```:
 
-   ```sh
+```sh
 
-   ```
+```
