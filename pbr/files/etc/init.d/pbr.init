@@ -1971,6 +1971,11 @@ user_file_process() {
 	fi
 }
 
+boot() {
+	ubus -t 30 wait_for network.interface 2>/dev/null
+	rc_procd start_service 'on_boot'
+}
+
 on_firewall_reload() { 
 	if [ -z "$(ubus_get_status 'gateways')" ]; then # service is not running, do not start it on firewall reload
 		logger -t "$packageName" "Reload on firewall action aborted: service not running."
