@@ -5,60 +5,60 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=1.0.1
-PKG_RELEASE:=13
+PKG_RELEASE:=14
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/pbr/default
+define Package/pbr/Default
   SECTION:=net
   CATEGORY:=Network
-  SUBMENU:=VPN
+  SUBMENU:=Routing and Redirection
   TITLE:=Policy Based Routing Service
   URL:=https://docs.openwrt.melmac.net/pbr/
-  DEPENDS:=+ip-full +jshn +jsonfilter +resolveip
+  DEPENDS:=+ip-full +jshn +jsonfilter +libubus +resolveip
   CONFLICTS:=vpnbypass vpn-policy-routing
   PKGARCH:=all
 endef
 
 define Package/pbr
-$(call Package/pbr/default)
+$(call Package/pbr/Default)
   TITLE+= with nft/nft set support
-  DEPENDS+=+firewall4 +kmod-nft-core +kmod-nft-nat +nftables-json
-  PROVIDES:=pbr vpnbypass vpn-policy-routing
+  DEPENDS+=+kmod-nft-core +kmod-nft-nat +nftables-json
   VARIANT:=nftables
+  PROVIDES:=vpnbypass vpn-policy-routing
   DEFAULT_VARIANT:=1
 endef
 
 define Package/pbr-iptables
-$(call Package/pbr/default)
+$(call Package/pbr/Default)
   TITLE+= with iptables/ipset support
   DEPENDS+=+ipset +iptables +kmod-ipt-ipset +iptables-mod-ipopt
-  PROVIDES:=pbr
   VARIANT:=iptables
+  PROVIDES:=pbr
 endef
 
 define Package/pbr-netifd
-$(call Package/pbr/default)
+$(call Package/pbr/Default)
   TITLE+= with netifd support
-  PROVIDES:=pbr
   VARIANT:=netifd
+  PROVIDES:=pbr
 endef
 
 define Package/pbr/description
 This service enables policy-based routing for WAN interfaces and various VPN tunnels.
-This version supports OpenWrt with both fw3/ipset/iptables and fw4/nft.
+This version supports OpenWrt with both firewall3/ipset/iptables and firewall4/nft.
 endef
 
 define Package/pbr-iptables/description
 This service enables policy-based routing for WAN interfaces and various VPN tunnels.
-This version supports OpenWrt with fw3/ipset/iptables.
+This version supports OpenWrt with firewall3/ipset/iptables.
 endef
 
 define Package/pbr-netifd/description
 This service enables policy-based routing for WAN interfaces and various VPN tunnels.
-This version supports OpenWrt with both fw3/ipset/iptables and fw4/nft.
+This version supports OpenWrt with both firewall3/ipset/iptables and firewall4/nft.
 This version uses OpenWrt native netifd/tables to set up interfaces. This is WIP.
 endef
 
