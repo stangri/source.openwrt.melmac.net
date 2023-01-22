@@ -58,7 +58,8 @@ function getProviderName(value)
 		local p = p_func()
 		value = value:gsub('[%p%c%s]', '')
 		p.url_match = p.resolver_url:gsub('[%p%c%s]', '')
-		if value:match(p.url_match) then
+		p.provider_match = p.provider_domain:gsub('[%p%c%s]', '')
+		if (value:match(p.url_match)) or (value:find(p.provider_match)) then
 			return p.label
 		end
 	end
