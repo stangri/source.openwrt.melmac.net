@@ -1676,7 +1676,7 @@ interface_routing() {
 		create)
 			if is_netifd_table "$iface"; then
 				ipv4_error=0
-				$ip_full -4 rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
+				$ip_full rule del table "$tid" >/dev/null 2>&1
 				$ip_full -4 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
 				if is_nft; then
 					nft add chain inet "$nftTable" "${nftPrefix}_mark_${mark}" || ipv4_error=1 
@@ -1689,7 +1689,6 @@ interface_routing() {
 				fi
 				if [ -n "$ipv6_enabled" ]; then
 					ipv6_error=0
-					$ip_full -6 rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
 					$ip_full -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
 				fi
 			else
@@ -1699,8 +1698,8 @@ interface_routing() {
 					echo "$tid ${ipTablePrefix}_${iface}" >> '/etc/iproute2/rt_tables'
 					sync
 				fi
-				$ip_full -4 rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
-				$ip_full -4 route flush table "$tid" >/dev/null 2>&1
+				$ip_full rule del table "$tid" >/dev/null 2>&1
+				$ip_full route flush table "$tid" >/dev/null 2>&1
 				if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
 					ipv4_error=0
 					if [ -z "$gw4" ]; then
@@ -1732,8 +1731,6 @@ EOF
 				fi
 				if [ -n "$ipv6_enabled" ]; then
 					ipv6_error=0
-					$ip_full -6 rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
-					$ip_full -6 route flush table "$tid" >/dev/null 2>&1
 					if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne 0 ]; then
 						if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 							$ip_full -6 route add unreachable default table "$tid" || ipv6_error=1
@@ -1790,7 +1787,7 @@ EOF
 			return "$s"
 		;;
 		delete|destroy)
-			$ip_full rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
+			$ip_full rule del table "$tid" >/dev/null 2>&1
 			if ! is_netifd_table "$iface"; then
 				$ip_full route flush table "$tid" >/dev/null 2>&1
 				sed -i "/${ipTablePrefix}_${iface}\$/d" '/etc/iproute2/rt_tables'
@@ -1801,8 +1798,10 @@ EOF
 		reload_interface)
 			is_netifd_table "$iface" && return 0;
 			ipv4_error=0
-			$ip_full -4 rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
-			$ip_full -4 route flush table "$tid" >/dev/null 2>&1
+			$ip_full rule del table "$tid" >/dev/null 2>&1
+			if ! is_netifd_table "$iface"; then
+				$ip_full route flush table "$tid" >/dev/null 2>&1
+			fi
 			if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
 				if [ -z "$gw4" ]; then
 					$ip_full -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
@@ -1813,8 +1812,6 @@ EOF
 			fi
 			if [ -n "$ipv6_enabled" ]; then
 				ipv6_error=0
-				$ip_full -6 rule del fwmark "${mark}/${fw_mask}" table "$tid" >/dev/null 2>&1
-				$ip_full -6 route flush table "$tid" >/dev/null 2>&1
 				if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne 0 ]; then
 					if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 						$ip_full -6 route add unreachable default table "$tid" || ipv6_error=1
@@ -1984,10 +1981,17 @@ on_firewall_reload() {
 		rc_procd start_service 'on_firewall_reload' "$1"
 	fi
 }
-on_interface_reload() { rc_procd start_service 'on_interface_reload' "$1"; }
+on_interface_reload() { 
+	if [ -z "$(ubus_get_status 'gateways')" ]; then # service is not running, do not start it on firewall reload
+		logger -t "$packageName" "Reload on interface status aborted: service not running."
+		return 0;
+	else
+		rc_procd start_service 'on_interface_reload' "$1"
+	fi
+}
 
 start_service() {
-	local resolverStoredHash resolverNewHash i reloadedIface param="$1"
+	local resolverStoredHash resolverNewHash i param="$1" reloadedIface="$2"
 
 	load_environment 'on_start' "$(load_validate_config)" || return 1
 	is_wan_up || return 1
@@ -2001,8 +2005,12 @@ start_service() {
 			serviceStartTrigger='on_start'
 		;;
 		on_interface_reload)
-			serviceStartTrigger='on_interface_reload'
-			reloadedIface="$2"
+			if is_ovpn "$reloadedIface"; then
+				logger -t "$packageName" "Updated interface is an OpenVPN tunnel, restarting."
+				serviceStartTrigger='on_start'
+			else
+				serviceStartTrigger='on_interface_reload'
+			fi
 		;;
 		on_reload)
 			serviceStartTrigger='on_reload'
