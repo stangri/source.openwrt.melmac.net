@@ -1991,7 +1991,7 @@ on_interface_reload() {
 }
 
 start_service() {
-	local resolverStoredHash resolverNewHash i param="$1" reloadedIface="$2"
+	local resolverStoredHash resolverNewHash i param="$1" reloadedIface
 
 	load_environment 'on_start' "$(load_validate_config)" || return 1
 	is_wan_up || return 1
@@ -2005,9 +2005,11 @@ start_service() {
 			serviceStartTrigger='on_start'
 		;;
 		on_interface_reload)
+			reloadedIface="$2"
 			if is_ovpn "$reloadedIface"; then
 				logger -t "$packageName" "Updated interface is an OpenVPN tunnel, restarting."
 				serviceStartTrigger='on_start'
+				unset reloadedIface
 			else
 				serviceStartTrigger='on_interface_reload'
 			fi
