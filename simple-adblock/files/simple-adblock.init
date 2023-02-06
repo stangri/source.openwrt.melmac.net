@@ -113,7 +113,7 @@ get_text() {
 			r="dnsmasq nft set support is enabled in $packageName, but dnsmasq is either not installed or installed dnsmasq does not support nft set";;
 		errorNoNft) r="dnsmasq nft sets support is enabled in $packageName, but nft is not installed";;
 		errorMkdirFail) r="Unable to create directory for";;
-		errorNoWanGateway) r="The ${serviceName} service failed to discover WAN gateway!";;
+		errorNoWanGateway) r="The ${serviceName} failed to discover WAN gateway";;
 		errorOutputDirCreate) r="failed to create directory for %s file";;
 		errorOutputFileCreate) r="failed to create $outputFile file";;
 		errorFailDNSReload) r="failed to restart/reload DNS resolver";;

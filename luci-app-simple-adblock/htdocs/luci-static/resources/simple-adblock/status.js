@@ -177,7 +177,7 @@ var status = baseclass.extend({
 					errorNoDnsmasqNftset: _("dnsmasq nft set support is enabled, but dnsmasq is either not installed or installed dnsmasq does not support nft set"),
 					errorNoNft: _("dnsmasq nft sets support is enabled, but nft is not installed"),
 					errorMkdirFail: _("Unable to create directory for '%s'"),
-					errorNoWanGateway: _("The %s service failed to discover WAN gateway!").format(pkg.Name),
+					errorNoWanGateway: _("The %s failed to discover WAN gateway").format(pkg.Name),
 					errorOutputDirCreate: _("failed to create directory for %s file"),
 					errorOutputFileCreate: _("failed to create '%s' file").format(outputFile),
 					errorFailDNSReload: _("failed to restart/reload DNS resolver"),
