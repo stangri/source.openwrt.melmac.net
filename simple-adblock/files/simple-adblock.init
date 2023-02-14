@@ -194,7 +194,7 @@ output() {
 }
 
 load_environment() {
-	local i j wan_if wan_gw
+	local i j wan_if wan_gw wan_proto
 	local validation_result="$1" quiet="$2"
 
 	if [ "$validation_result" != '0' ]; then
@@ -407,8 +407,23 @@ load_environment() {
 	fi
 	cache 'test' && return 0 
 	cache 'test_gzip' && return 0
-	network_flush_cache; network_find_wan wan_if; network_get_gateway wan_gw "$wan_if";
+	network_flush_cache
+	network_find_wan wan_if
+	network_get_gateway wan_gw "$wan_if"
 	[ -n "$wan_gw" ] && return 0
+	wan_proto="$(uci -q get "network.${wan_if}.proto")"
+	if [ "$wan_proto" = 'pppoe' ]; then
+		local counter=0 timeout='10'
+		while [ "$counter" -le "$timeout" ]; do
+			network_flush_cache
+			network_find_wan wan_if
+			network_get_gateway wan_gw "$wan_if"
+			[ -n "$wan_gw" ] && return 0
+			counter=$((counter+1))
+			output 2 "Waiting for PPPoE WAN Connection...\\n"
+			sleep 1
+		done
+	fi
 	json add error "errorNoWanGateway"
 	output "${_ERROR_}: $(get_text 'errorNoWanGateway')!\\n"; return 1;
 }
