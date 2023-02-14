@@ -157,6 +157,10 @@ return view.extend({
 				_("URLs to lists of domains to be allowed."));
 			o.depends('dnsmasq_config_file_url', '');
 			o.addremove = true;
+			o = s.option(form.DynamicList, "blocked_adblockplus_url", _("Blocked AdBlockPlus-style URLs"),
+				_("URLs to lists of AdBlockPlus-style formatted domains to be blocked."));
+			o.depends('dnsmasq_config_file_url', '');
+			o.addremove = true;
 			o = s.option(form.DynamicList, "blocked_domain", _("Blocked Domains"),
 				_("Individual domains to be blocked."));
 			o.depends('dnsmasq_config_file_url', '');

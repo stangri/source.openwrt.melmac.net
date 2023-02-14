@@ -62,7 +62,8 @@ readonly sharedMemoryError="/dev/shm/$packageName-error"
 readonly sharedMemoryOutput="/dev/shm/$packageName-output"
 readonly hostsFilter='/localhost/d;/^#/d;/^[^0-9]/d;s/^0\.0\.0\.0.//;s/^127\.0\.0\.1.//;s/[[:space:]]*#.*$//;s/[[:cntrl:]]$//;s/[[:space:]]//g;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
 readonly domainsFilter='/^#/d;s/[[:space:]]*#.*$//;s/[[:space:]]*$//;s/[[:cntrl:]]$//;/[[:space:]]/d;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
-readonly dnsmasqOISDFilter='\|^server=/[[:alnum:]_.-].*/|!d'
+readonly adBlockPlusFilter='/^#/d;/^!/d;s/[[:space:]]*#.*$//;s/^||//;s/\^$//;s/[[:space:]]*$//;s/[[:cntrl:]]$//;/[[:space:]]/d;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
+readonly dnsmasqFileFilter='\|^server=/[[:alnum:]_.-].*/|!d'
 readonly _OK_='\033[0;32m\xe2\x9c\x93\033[0m'
 readonly _FAIL_='\033[0;31m\xe2\x9c\x97\033[0m'
 readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
@@ -196,6 +197,7 @@ output() {
 load_environment() {
 	local i j wan_if wan_gw wan_proto
 	local validation_result="$1" quiet="$2"
+	local counter wan_if_timeout='20' wan_gw_timeout='5'
 
 	if [ "$validation_result" != '0' ]; then
 		json add error "errorConfigValidationFail"
@@ -220,7 +222,8 @@ load_environment() {
 
 	if [ -n "$dnsmasq_config_file_url" ]; then
 		case "$dns" in
-			dnsmasq.conf) :;;
+			dnsmasq.conf)
+				:;;
 			*)
 				if [ -z "$quiet" ]; then
 					json add warning "warningExternalDnsmasqConfig"
@@ -407,23 +410,38 @@ load_environment() {
 	fi
 	cache 'test' && return 0 
 	cache 'test_gzip' && return 0
-	network_flush_cache
-	network_find_wan wan_if
-	network_get_gateway wan_gw "$wan_if"
-	[ -n "$wan_gw" ] && return 0
+
+	counter=0
+	while [ -z "$wan_if" ]; do
+		network_flush_cache
+		network_find_wan wan_if
+		if [ -n "$wan_if" ]; then
+			output 2 "WAN Interface found: '${wan_if}'\\n"
+			break
+		fi
+		if [ "$counter" -gt "$wan_if_timeout" ]; then
+			output 2 "WAN Interface timeout, assuming 'wan'\\n"
+			wan_if='wan'
+			break
+		fi
+		counter=$((counter+1))
+		output 2 "Waiting to discover WAN Interface...\\n"
+		sleep 1
+	done
+
+	counter=0
 	wan_proto="$(uci -q get "network.${wan_if}.proto")"
 	if [ "$wan_proto" = 'pppoe' ]; then
-		local counter=0 timeout='10'
-		while [ "$counter" -le "$timeout" ]; do
-			network_flush_cache
-			network_find_wan wan_if
-			network_get_gateway wan_gw "$wan_if"
-			[ -n "$wan_gw" ] && return 0
-			counter=$((counter+1))
-			output 2 "Waiting for PPPoE WAN Connection...\\n"
-			sleep 1
-		done
+		wan_gw_timeout=$((wan_gw_timeout+10))
 	fi
+	while [ "$counter" -le "$wan_gw_timeout" ]; do
+		network_flush_cache
+		network_get_gateway wan_gw "$wan_if"
+		[ -n "$wan_gw" ] && return 0
+		counter=$((counter+1))
+		output 2 "Waiting to discover $wan_if Gateway...\\n"
+		sleep 1
+	done
 	json add error "errorNoWanGateway"
 	output "${_ERROR_}: $(get_text 'errorNoWanGateway')!\\n"; return 1;
 }
@@ -570,7 +588,7 @@ json() {
 			case "$param" in
 				triggers)
 					curReload="$parallel_downloads $debug $download_timeout $allowed_domain $blocked_domain $allowed_domains_url \
-						$blocked_domains_url $blocked_hosts_url $dns $config_update_enabled $config_update_url \
+						$blocked_adblockplus_url $blocked_domains_url $blocked_hosts_url $dns $config_update_enabled $config_update_url \
 						$dnsmasq_config_file_url $curl_max_file_size $curl_retry"
 					curRestart="$compressed_cache $force_dns $led $force_dns_port"
 					if [ ! -s "$jsonFile" ]; then
@@ -604,7 +622,7 @@ json() {
 			case "$param" in
 				triggers) 
 					reload="$parallel_downloads $debug $download_timeout $allowed_domain $blocked_domain $allowed_domains_url \
-						$blocked_domains_url $blocked_hosts_url $dns $config_update_enabled $config_update_url \
+						$blocked_adblockplus_url $blocked_domains_url $blocked_hosts_url $dns $config_update_enabled $config_update_url \
 						$dnsmasq_config_file_url $curl_max_file_size $curl_retry"
 					restart="$compressed_cache $force_dns $led $force_dns_port"
 				;;
@@ -673,14 +691,22 @@ process_url() {
 	if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then return 1; fi
 	label="${1##*//}"; label="${label%%/*}";
 	case "$2" in
-		dnsmasq) label="Dnsmasq: $label"; filter="$dnsmasqOISDFilter";;
-		domains) label="Domains: $label"; filter="$domainsFilter";;
-		hosts) label="Hosts:   $label"; filter="$hostsFilter";;
+		adbp)    label="ADBPlus: $label"; filter="$adBlockPlusFilter"
+		;;
+		dnsmasq) label="Dnsmasq: $label"; filter="$dnsmasqFileFilter"
+		;;
+		domains) label="Domains: $label"; filter="$domainsFilter"
+		;;
+		hosts)   label="Hosts:   $label"; filter="$hostsFilter"
+		;;
 	esac
 	case "$3" in
-		allowed) type='Allowed'; D_TMP="$A_TMP";;
-		blocked) type='Blocked'; D_TMP="$B_TMP";;
-		file) type='File'; D_TMP="$B_TMP";;
+		allowed) type='Allowed'; D_TMP="$A_TMP"
+		;;
+		blocked) type='Blocked'; D_TMP="$B_TMP"
+		;;
+		file) type='File'; D_TMP="$B_TMP"
+		;;
 	esac
 	if [ "${1:0:5}" = "https" ] && [ -z "$isSSLSupported" ]; then
 		output 1 "$_FAIL_"
@@ -691,6 +717,7 @@ process_url() {
 	while [ -z "$R_TMP" ] || [ -e "$R_TMP" ]; do
 		R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
 	done
+# shellcheck disable=SC2086
 	if ! $dl_command "$1" $dl_flag "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 1 "$_FAIL_"
 		output 2 "[DL] $type $label $__FAIL__\\n"
@@ -770,6 +797,13 @@ download_lists() {
 			process_url "$hf" 'hosts' 'blocked' &
 		else
 			process_url "$hf" 'hosts' 'blocked'
+		fi
+	done
+	for hf in ${blocked_adblockplus_url}; do
+		if [ "$parallel_downloads" -gt 0 ]; then
+			process_url "$hf" 'adbp' 'blocked' &
+		else
+			process_url "$hf" 'adbp' 'blocked'
 		fi
 	done
 	for hf in ${blocked_domains_url}; do
@@ -1133,8 +1167,28 @@ adb_sizes() {
 	load_environment "$validation_result" 'quiet' || return 1
 
 	echo "# $(date)"
-	for i in $blocked_domains_url; do
+	for i in ${blocked_adblockplus_url}; do
 		[ "${i//melmac}" != "$i" ] && continue
+# shellcheck disable=SC2086
+		if $dl_command "$i" $dl_flag /tmp/sast 2>/dev/null && [ -s /tmp/sast ]; then
+			echo "# File size: $(du -sh /tmp/sast | $awk '{print $1}')"
+			if is_greater "$(du -sk /tmp/sast)" "500"; then
+				echo "# block-list too big for most routers"
+			elif is_greater "$(du -sk /tmp/sast)" "100"; then
+				echo "# block-list may be too big for some routers"
+			fi
+			rm -rf /tmp/sast
+			echo "  list blocked_adblockplus_url '$i'"
+			echo ""
+		else
+			echo "# site was down on last check"
+			echo "#  list blocked_adblockplus_url '$i'"
+			echo ""
+		fi
+	done
+	for i in ${blocked_domains_url}; do
+		[ "${i//melmac}" != "$i" ] && continue
+# shellcheck disable=SC2086
 		if $dl_command "$i" $dl_flag /tmp/sast 2>/dev/null && [ -s /tmp/sast ]; then
 			echo "# File size: $(du -sh /tmp/sast | $awk '{print $1}')"
 			if is_greater "$(du -sk /tmp/sast)" "500"; then
@@ -1151,7 +1205,8 @@ adb_sizes() {
 			echo ""
 		fi
 	done
-	for i in $blocked_hosts_url; do
+	for i in ${blocked_hosts_url}; do
+# shellcheck disable=SC2086
 		if $dl_command "$i" $dl_flag /tmp/sast 2>/dev/null && [ -s /tmp/sast ]; then
 			echo "# File size: $(du -sh /tmp/sast | $awk '{print $1}')"
 			if is_greater "$(du -sk /tmp/sast)" "500"; then
@@ -1506,6 +1561,7 @@ load_validate_config() {
 	local dns_instance
 	local allowed_domain
 	local allowed_domains_url
+	local blocked_adblockplus_url
 	local blocked_domain
 	local blocked_domains_url
 	local blocked_hosts_url
@@ -1534,6 +1590,7 @@ load_validate_config() {
 		'allowed_domain:list(string)' \
 		'allowed_domains_url:list(string)' \
 		'blocked_domain:list(string)' \
+		'blocked_adblockplus_url:list(string)' \
 		'blocked_domains_url:list(string)' \
 		'blocked_hosts_url:list(string)' \
 		'dnsmasq_config_file_url:string'

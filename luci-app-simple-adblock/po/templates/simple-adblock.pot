@@ -50,15 +50,19 @@ msgstr ""
 msgid "Basic Configuration"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:164
-msgid "Blocked Domain URLs"
-msgstr ""
-
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:160
-msgid "Blocked Domains"
+msgid "Blocked AdBlockPlus-style URLs"
 msgstr ""
 
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:168
+msgid "Blocked Domain URLs"
+msgstr ""
+
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:164
+msgid "Blocked Domains"
+msgstr ""
+
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:172
 msgid "Blocked Hosts URLs"
 msgstr ""
 
@@ -222,7 +226,7 @@ msgstr ""
 msgid "Individual domains to be allowed."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:161
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:165
 msgid "Individual domains to be blocked."
 msgstr ""
 
@@ -359,15 +363,19 @@ msgid ""
 "URL to the external dnsmasq config file, see the %sREADME%s for details."
 msgstr ""
 
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:161
+msgid "URLs to lists of AdBlockPlus-style formatted domains to be blocked."
+msgstr ""
+
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:157
 msgid "URLs to lists of domains to be allowed."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:165
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:169
 msgid "URLs to lists of domains to be blocked."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:169
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:173
 msgid "URLs to lists of hosts to be blocked."
 msgstr ""
 
