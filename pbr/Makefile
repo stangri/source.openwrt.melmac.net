@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
-PKG_VERSION:=1.0.1
-PKG_RELEASE:=21
+PKG_VERSION:=1.1.0
+PKG_RELEASE:=1
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -17,7 +17,7 @@ define Package/pbr/Default
   SUBMENU:=Routing and Redirection
   TITLE:=Policy Based Routing Service
   URL:=https://docs.openwrt.melmac.net/pbr/
-  DEPENDS:=+ip-full +jshn +jsonfilter +libubus +resolveip
+  DEPENDS:=+ip-full +jshn +jsonfilter +resolveip
   CONFLICTS:=vpnbypass vpn-policy-routing
   PKGARCH:=all
 endef
