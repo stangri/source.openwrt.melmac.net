@@ -7,6 +7,8 @@
 # ubus -v list luci.simple-adblock
 # ubus -S call luci.simple-adblock getInitList '{"name": "simple-adblock" }'
 # ubus -S call luci.simple-adblock getInitStatus '{"name": "simple-adblock" }'
+# ubus -S call luci.simple-adblock setInitAction '{"name": "simple-adblock", "action": "start" }'
+# ubus -S call luci.simple-adblock setInitAction '{"name": "simple-adblock", "action": "stop" }'
 # ubus -S call luci.simple-adblock getPlatformSupport '{"name": "simple-adblock" }'
 
 . /lib/functions.sh

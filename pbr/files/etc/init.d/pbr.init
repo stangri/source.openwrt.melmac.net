@@ -126,7 +126,7 @@ get_text() {
 		errorFailedSetup) r="Failed to set up '%s'!";;
 		errorFailedReload) r="Failed to reload '%s'!";;
 		errorUserFileNotFound) r="Custom user file '%s' not found or empty!";;
-		ererrorUserFileSyntax) r="Syntax error in custom user file '%s'!";;
+		errorUserFileSyntax) r="Syntax error in custom user file '%s'!";;
 		errorUserFileRunning) r="Error running custom user file '%s'!";;
 		errorUserFileNoCurl) r="Use of 'curl' is detected in custom user file '%s', but 'curl' isn't installed!";;
 		errorNoGateways) r="Failed to set up any gateway!";;
@@ -139,8 +139,9 @@ get_text() {
 		errorPolicyProcessInsertionFailedIpv4) r="Insertion failed for IPv4 for policy %s";;
 		errorInterfaceRoutingEmptyValues) r="Received empty tid/mark or interface name when setting up routing";;
 		errorFailedToResolve) r="Failed to resolve %s";;
-		warningResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system.";;
-		warningAGHVersionTooLow) r="Installed AdGuardHome (%s) doesn't support 'ipset_file' option.";;
+		errorInvalidOVPNConfig) r="Invalid OpenVPN config for %s interface";;
+		warningResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system";;
+		warningAGHVersionTooLow) r="Installed AdGuardHome (%s) doesn't support 'ipset_file' option";;
 		warningPolicyProcessCMD) r="%s";;
 		warningTorUnsetParams) r="Please unset 'src_addr', 'src_port' and 'dest_port' for policy '%s'";;
 		warningTorUnsetProto) r="Please unset 'proto' or set 'proto' to 'all' for policy '%s'";;
@@ -225,6 +226,7 @@ is_dslite() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:
 is_l2tp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "l2tp" ]; }
 is_oc() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:11}" = "openconnect" ]; }
 is_ovpn() { local dev; network_get_device dev "$1"; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
+is_valid_ovpn() { local dev_net dev_ovpn; dev_net="$(uci -q get "network.${1}.device")"; dev_ovpn="$(uci -q get "openvpn.${1}.dev")"; [ -n "$dev_net" ] && [ -n "$dev_ovpn" ] && [ "$dev_net" = "$dev_ovpn" ]; }
 is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "pptp" ]; }
 is_softether() { local dev; network_get_device dev "$1"; [ "${dev:0:4}" = "vpn_" ]; }
 is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
@@ -1873,6 +1875,10 @@ interface_process() {
 	is_wan6 "$iface" && return 0
 	[ $((ifaceMark)) -gt $((fw_mask)) ] && return 1
 
+	if is_ovpn "$iface" && ! is_valid_ovpn "$iface"; then
+		state add 'errorSummary' 'errorInvalidOVPNConfig' "$iface"
+	fi
+
 	network_get_device dev "$iface"
 	if is_wan "$iface" && [ -n "$wanIface6" ] && str_contains "$wanIface6" "$iface"; then
 		network_get_device dev6 "$wanIface6"
@@ -1949,7 +1955,7 @@ user_file_process() {
 		return 1
 	fi
 	if ! $shellBin -n "$path"; then
-		state add 'errorSummary' 'ererrorUserFileSyntax' "$path"
+		state add 'errorSummary' 'errorUserFileSyntax' "$path"
 		output_fail
 		return 1
 	fi

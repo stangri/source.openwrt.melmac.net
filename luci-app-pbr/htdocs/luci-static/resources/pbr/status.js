@@ -220,7 +220,7 @@ var status = baseclass.extend({
 					errorFailedSetup: _("Failed to set up '%s'!"),
 					errorFailedReload: _("Failed to reload '%s'!"),
 					errorUserFileNotFound: _("Custom user file '%s' not found or empty!"),
-					ererrorUserFileSyntax: _("Syntax error in custom user file '%s'!"),
+					errorUserFileSyntax: _("Syntax error in custom user file '%s'!"),
 					errorUserFileRunning: _("Error running custom user file '%s'!"),
 					errorUserFileNoCurl: _("Use of 'curl' is detected in custom user file '%s', but 'curl' isn't installed!"),
 					errorNoGateways: _("Failed to set up any gateway!"),
@@ -233,6 +233,7 @@ var status = baseclass.extend({
 					errorPolicyProcessInsertionFailedIpv4: _("Insertion failed for IPv4 for policy %s"),
 					errorInterfaceRoutingEmptyValues: _("Received empty tid/mark or interface name when setting up routing"),
 					errorFailedToResolve: _("Failed to resolve %s"),
+					errorInvalidOVPNConfig: _("Invalid OpenVPN config for %s interface"),
 				};
 				var errorsTitle = E('label', { class: 'cbi-value-title' }, _("Service Errors"));
 				var text = "";
