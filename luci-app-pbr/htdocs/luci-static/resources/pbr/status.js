@@ -181,6 +181,7 @@ var status = baseclass.extend({
 					warningTorUnsetProto: _("Please unset 'proto' or set 'proto' to 'all' for policy '%s'"),
 					warningTorUnsetChainIpt: _("Please unset 'chain' or set 'chain' to 'PREROUTING' for policy '%s'"),
 					warningTorUnsetChainNft: _("Please unset 'chain' or set 'chain' to 'prerouting' for policy '%s'"),
+					warningInvalidOVPNConfig: _("Invalid OpenVPN config for %s interface"),
 				};
 				var warningsTitle = E('label', { class: 'cbi-value-title' }, _("Service Warnings"));
 				var text = "";

@@ -246,6 +246,15 @@ is_ovpn() { local dev; network_get_device dev "$1"; [ "${dev:0:3}" = "tun" ] || 
 is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "pptp" ]; }
 is_softether() { local dev; network_get_device dev "$1"; [ "${dev:0:4}" = "vpn_" ]; }
 is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
+is_tor_running() {
+	local ret=0
+	if [ -s "/etc/tor/torrc" ]; then
+		json_load "$(ubus call service list "{ 'name': 'tor' }")"
+		json_select 'tor'; json_select 'instances'; json_select 'instance1';
+		json_get_var ret 'running'; json_cleanup
+	fi
+	if [ "$ret" = "0" ]; then return 1; else return 0; fi
+}
 is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
 is_tunnel() { is_dslite "$1" || is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_softether "$1" || is_tor "$1" || is_wg "$1"; }
 is_wan() { [ "$1" = "$wanIface4" ] || { [ "${1##wan}" != "$1" ] && [ "${1##wan6}" = "$1" ]; } || [ "${1%%wan}" != "$1" ]; }
@@ -283,6 +292,9 @@ get_supported_interfaces() {
 	pbr_find_iface wanIface4 'wan'
 	pbr_find_iface wanIface6 'wan6'
 	config_foreach _build_ifaces_supported 'interface'
+	if is_tor_running; then
+		ifacesSupported="$ifacesSupported tor"
+	fi
 	if [ "$webui_show_ignore_target" -eq "1" ]; then
 		ifacesSupported="$ifacesSupported ignore"
 	fi

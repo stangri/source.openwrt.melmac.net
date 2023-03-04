@@ -139,7 +139,7 @@ get_text() {
 		errorPolicyProcessInsertionFailedIpv4) r="Insertion failed for IPv4 for policy %s";;
 		errorInterfaceRoutingEmptyValues) r="Received empty tid/mark or interface name when setting up routing";;
 		errorFailedToResolve) r="Failed to resolve %s";;
-		errorInvalidOVPNConfig) r="Invalid OpenVPN config for %s interface";;
+		warningInvalidOVPNConfig) r="Invalid OpenVPN config for %s interface";;
 		warningResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system";;
 		warningAGHVersionTooLow) r="Installed AdGuardHome (%s) doesn't support 'ipset_file' option";;
 		warningPolicyProcessCMD) r="%s";;
@@ -230,7 +230,7 @@ is_valid_ovpn() { local dev_net dev_ovpn; dev_net="$(uci -q get "network.${1}.de
 is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "pptp" ]; }
 is_softether() { local dev; network_get_device dev "$1"; [ "${dev:0:4}" = "vpn_" ]; }
 is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
-is_tor_running() { 
+is_tor_running() {
 	local ret=0
 	if [ -s "/etc/tor/torrc" ]; then
 		json_load "$(ubus call service list "{ 'name': 'tor' }")"
@@ -1876,7 +1876,7 @@ interface_process() {
 	[ $((ifaceMark)) -gt $((fw_mask)) ] && return 1
 
 	if is_ovpn "$iface" && ! is_valid_ovpn "$iface"; then
-		state add 'errorSummary' 'errorInvalidOVPNConfig' "$iface"
+		state add 'warningSummary' 'warningInvalidOVPNConfig' "$iface"
 	fi
 
 	network_get_device dev "$iface"
@@ -2438,9 +2438,9 @@ load_validate_config() {
 		'verbosity:range(0,2):1' \
 		"wan_mark:regex('0x[A-Fa-f0-9]{8}'):0x010000" \
 		"fw_mask:regex('0x[A-Fa-f0-9]{8}'):0xff0000" \
-		'icmp_interface:or("","ignore", uci("network", "@interface"))' \
-		'ignored_interface:list(uci("network", "@interface"))' \
-		'supported_interface:list(uci("network", "@interface"))' \
+		'icmp_interface:or("", "tor", uci("network", "@interface"))' \
+		'ignored_interface:list(or("tor", uci("network", "@interface")))' \
+		'supported_interface:list(or("tor", uci("network", "@interface")))' \
 		'boot_timeout:integer:30' \
 		'wan_ip_rules_priority:uinteger:30000' \
 		'rule_create_option:or("", "add", "insert"):add' \
@@ -2464,7 +2464,7 @@ load_validate_policy() {
 	uci_load_validate "$packageName" 'policy' "$1" "${2}${3:+ $3}" \
 		'name:string:Untitled' \
 		'enabled:bool:1' \
-		'interface:or(uci("network", "@interface"),"ignore"):wan' \
+		'interface:or("ignore", "tor", uci("network", "@interface")):wan' \
 		'proto:or(string)' \
 		'chain:or("", "forward", "input", "output", "prerouting", "postrouting", "FORWARD", "INPUT", "OUTPUT", "PREROUTING", "POSTROUTING"):prerouting' \
 		'src_addr:list(neg(or(host,network,macaddr,string)))' \
