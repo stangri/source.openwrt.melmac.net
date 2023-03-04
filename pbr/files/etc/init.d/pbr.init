@@ -225,7 +225,8 @@ pbr_get_gateway6() {
 is_dslite() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:6}" = "dslite" ]; }
 is_l2tp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "l2tp" ]; }
 is_oc() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:11}" = "openconnect" ]; }
-is_ovpn() { local dev; network_get_device dev "$1"; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
+# is_ovpn() { local dev; network_get_device dev "$1"; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
+is_ovpn() { local dev; dev="$(uci -q get "network.${1}.dev")"; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
 is_valid_ovpn() { local dev_net dev_ovpn; dev_net="$(uci -q get "network.${1}.device")"; dev_ovpn="$(uci -q get "openvpn.${1}.dev")"; [ -n "$dev_net" ] && [ -n "$dev_ovpn" ] && [ "$dev_net" = "$dev_ovpn" ]; }
 is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "pptp" ]; }
 is_softether() { local dev; network_get_device dev "$1"; [ "${dev:0:4}" = "vpn_" ]; }
