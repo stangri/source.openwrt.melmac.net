@@ -1597,8 +1597,8 @@ interface_process_tor_iptables() {
 		destroy)
 			for i in $chainsList; do
 				i="$(str_to_upper "$i")"
-				ipt -t nat -D "${i}" -m mark --mark "0x0/${fw_mask}" -j "${nftPrefix}_${i}"
-				ipt -t nat -F "${nftPrefix}_${i}"; ipt -t nat -X "${nftPrefix}_${i}";
+				ipt -t nat -D "${i}" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
+				ipt -t nat -F "${iptPrefix}_${i}"; ipt -t nat -X "${iptPrefix}_${i}";
 			done
 			;;
 		create)
@@ -1607,18 +1607,19 @@ interface_process_tor_iptables() {
 			trafficPort="$(grep -m1 TransPort /etc/tor/torrc | awk -F: '{print $2}')"
 			dnsPort="${dnsPort:-9053}"; trafficPort="${trafficPort:-9040}"; 
 			for i in $chainsList; do
-				ipt -t nat -N "${nftPrefix}_${i}"
-				ipt -t nat -A "$i" -m mark --mark "0x0/${fw_mask}" -j "${nftPrefix}_${i}"
+				i="$(str_to_upper "$i")"
+				ipt -t nat -N "${iptPrefix}_${i}"
+				ipt -t nat -A "$i" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
 			done
 			if resolver 'create_resolver_set' "$iface" 'dst' 'ip' && ips 'flush' "$iface" 'dst' 'ip'; then
 				set_name4="${ipsPrefix}_${iface}_4_dst_ip"
 				for i in $chainsList; do
-					i="$(str_to_lower "$i")"
-					ipt -t nat -I "${nftPrefix}_${i}" -p udp -m udp --dport 53 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
-					ipt -t nat -I "${nftPrefix}_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$trafficPort" -m comment --comment "TorHTTP-TCP" || s=1
-					ipt -t nat -I "${nftPrefix}_${i}" -p udp -m udp --dport 80 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$trafficPort" -m comment --comment "TorHTTP-UDP" || s=1
-					ipt -t nat -I "${nftPrefix}_${i}" -p tcp -m tcp --dport 443 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$trafficPort" -m comment --comment "TorHTTPS-TCP" || s=1
-					ipt -t nat -I "${nftPrefix}_${i}" -p udp -m udp --dport 443 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$trafficPort" -m comment --comment "TorHTTPS-UDP" || s=1
+					i="$(str_to_upper "$i")"
+					ipt -t nat -I "${iptPrefix}_${i}" -p udp -m udp --dport 53 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$dnsPort" -m comment --comment "TorDNS-UDP" || s=1
+					ipt -t nat -I "${iptPrefix}_${i}" -p tcp -m tcp --dport 80 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$trafficPort" -m comment --comment "TorHTTP-TCP" || s=1
+					ipt -t nat -I "${iptPrefix}_${i}" -p udp -m udp --dport 80 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$trafficPort" -m comment --comment "TorHTTP-UDP" || s=1
+					ipt -t nat -I "${iptPrefix}_${i}" -p tcp -m tcp --dport 443 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$trafficPort" -m comment --comment "TorHTTPS-TCP" || s=1
+					ipt -t nat -I "${iptPrefix}_${i}" -p udp -m udp --dport 443 -m set --match-set "${set_name4}" dst -j REDIRECT --to-ports "$trafficPort" -m comment --comment "TorHTTPS-UDP" || s=1
 				done
 			else
 				s=1
@@ -1639,6 +1640,8 @@ interface_process_tor_nft() {
 	local s=0 iface="$1" action="$2"
 	local displayText set_name4 set_name6
 	local dnsPort trafficPort
+	local torChain='dstnat'
+	local i
 	case "$action" in
 		reload)
 			displayText="${iface}/53->${dnsPort}/80,443->${trafficPort}"
@@ -1654,16 +1657,19 @@ interface_process_tor_nft() {
 			if resolver 'create_resolver_set' "$iface" 'dst' 'ip' && nftset 'flush' "$iface" 'dst' 'ip'; then
 				set_name4="${nftPrefix}_${iface}_4_dst_ip"
 				set_name6="${nftPrefix}_${iface}_6_dst_ip"
-				nft add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv4 udp daddr "@${set_name4}" dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv4" || s=1
-				nft add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv4 tcp daddr "@${set_name4}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv4" || s=1
-				nft add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv4 udp daddr "@${set_name4}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv4" || s=1
-				nft add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv4 tcp daddr "@${set_name4}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv4" || s=1
-				nft add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv4 udp daddr "@${set_name4}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv4" || s=1
-				nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv6 udp daddr "@${set_name6}" dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv6" || s=1
-				nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv6 tcp daddr "@${set_name6}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv6" || s=1
-				nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv6 udp daddr "@${set_name6}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv6" || s=1
-				nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv6 tcp daddr "@${set_name6}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv6" || s=1
-				nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv6 udp daddr "@${set_name6}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv6" || s=1
+				for i in $chainsList; do
+					i="$(str_to_lower "$i")"
+					nft add rule inet "$nftTable" "${nftPrefix}_${i}" meta nfproto ipv4 udp daddr "@${set_name4}" dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv4" || s=1
+					nft add rule inet "$nftTable" "${nftPrefix}_${i}" meta nfproto ipv4 tcp daddr "@${set_name4}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv4" || s=1
+					nft add rule inet "$nftTable" "${nftPrefix}_${i}" meta nfproto ipv4 udp daddr "@${set_name4}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv4" || s=1
+					nft add rule inet "$nftTable" "${nftPrefix}_${i}" meta nfproto ipv4 tcp daddr "@${set_name4}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv4" || s=1
+					nft add rule inet "$nftTable" "${nftPrefix}_${i}" meta nfproto ipv4 udp daddr "@${set_name4}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv4" || s=1
+					nft6 add rule inet "$nftTable" "${nftPrefix}_${i}" meta nfproto ipv6 udp daddr "@${set_name6}" dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv6" || s=1
+					nft6 add rule inet "$nftTable" "${nftPrefix}_${i}" meta nfproto ipv6 tcp daddr "@${set_name6}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv6" || s=1
+					nft6 add rule inet "$nftTable" "${nftPrefix}_${i}" meta nfproto ipv6 udp daddr "@${set_name6}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv6" || s=1
+					nft6 add rule inet "$nftTable" "${nftPrefix}_${i}" meta nfproto ipv6 tcp daddr "@${set_name6}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv6" || s=1
+					nft6 add rule inet "$nftTable" "${nftPrefix}_${i}" meta nfproto ipv6 udp daddr "@${set_name6}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv6" || s=1
+				done
 			else
 				s=1
 			fi
