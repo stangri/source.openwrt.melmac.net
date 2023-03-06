@@ -226,8 +226,8 @@ is_dslite() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:
 is_l2tp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "l2tp" ]; }
 is_oc() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:11}" = "openconnect" ]; }
 # is_ovpn() { local dev; network_get_device dev "$1"; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
-is_ovpn() { local dev; dev="$(uci -q get "network.${1}.dev")"; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
-is_valid_ovpn() { local dev_net dev_ovpn; dev_net="$(uci -q get "network.${1}.device")"; dev_ovpn="$(uci -q get "openvpn.${1}.dev")"; [ -n "$dev_net" ] && [ -n "$dev_ovpn" ] && [ "$dev_net" = "$dev_ovpn" ]; }
+is_ovpn() { local dev; dev="$(uci -q get "network.${1}.device")"; [ -z "$dev" ] && dev="$(uci -q get "network.${1}.dev")"; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
+is_valid_ovpn() { local dev_net dev_ovpn; dev_net="$(uci -q get "network.${1}.device")"; [ -z "$dev_net" ] && dev_net="$(uci -q get "network.${1}.dev")"; dev_ovpn="$(uci -q get "openvpn.${1}.dev")"; [ -n "$dev_net" ] && [ -n "$dev_ovpn" ] && [ "$dev_net" = "$dev_ovpn" ]; }
 is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "pptp" ]; }
 is_softether() { local dev; network_get_device dev "$1"; [ "${dev:0:4}" = "vpn_" ]; }
 is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
@@ -1168,18 +1168,18 @@ policy_routing_iptables() {
 		return 1
 	fi
 
-	if [ -z "$proto" ]; then
-		if [ -n "$lport" ] || [ -n "$rport" ]; then 
-			proto='tcp udp'
-		else
-			proto='all'
-		fi
-	fi
-
 	if is_family_mismatch "$laddr" "$raddr"; then 
 		processPolicyError='true'
 		state add 'errorSummary' 'errorPolicyProcessMismatchFamily' "${name}: '$laddr' '$raddr'"
 		return 1
+	fi
+
+	if [ -z "$proto" ]; then
+		if [ -n "${lport}${rport}" ]; then 
+			proto='tcp udp'
+		else
+			proto='all'
+		fi
 	fi
 
 	for i in $proto; do
@@ -1343,7 +1343,8 @@ policy_routing_iptables() {
 	done
 }
 policy_routing_nft() {
-	local mark param4 param6 i negation value dest nftInsertOption='add'
+	local mark i nftInsertOption='add'
+	local param4 param6 proto_i negation value dest
 	local ip4Flag='ip' ip6Flag='ip6'
 	local name="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain uid="$9"
 	proto="$(str_to_lower "$7")"
@@ -1373,137 +1374,148 @@ policy_routing_nft() {
 		return 1
 	fi
 
-	if [ -n "$proto" ] && ! is_supported_protocol "$proto"; then
-		processPolicyError='true'
-		state add 'errorSummary' 'errorPolicyProcessUnknownProtocol' "${name}: '$i'"
-		return 1
-	fi
-
-	if [ -n "$src_addr" ]; then
-		if [ "${src_addr:0:1}" = "!" ]; then
-			negation='!='; value="${src_addr:1}"
+	if [ -z "$proto" ]; then
+		if [ -n "${src_port}${dest_port}" ]; then 
+			proto='tcp udp'
 		else
-			unset negation; value="$src_addr";
-		fi
-		if is_phys_dev "$value"; then
-			param4="$param4 iifname $negation ${value:1}"
-			param6="$param6 iifname $negation ${value:1}"
-		elif is_mac_address "$value"; then
-			local target='src' type='mac'
-			if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
-				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-				param4="$param4 ether saddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="$param6 ether saddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
-			else
-				param4="$param4 ether saddr $negation $value"
-				param6="$param6 ether saddr $negation $value"
-			fi
-		else
-			local target='src' type='ip'
-			if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
-				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-				param4="$param4 $ip4Flag saddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="$param6 $ip6Flag saddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
-			else
-				param4="$param4 $ip4Flag saddr $negation $value"
-				param6="$param6 $ip6Flag saddr $negation $value"
-			fi
+			proto='all'
 		fi
 	fi
 
-	if [ -n "$dest_addr" ]; then 
-		if [ "${dest_addr:0:1}" = "!" ]; then
-			negation='!='; value="${dest_addr:1}"
-		else
-			unset negation; value="$dest_addr";
+	for proto_i in $proto; do
+		unset param4
+		unset param6
+		if [ "$proto_i" = 'all' ]; then
+			unset proto_i
+		elif ! is_supported_protocol "$proto_i"; then
+			processPolicyError='true'
+			state add 'errorSummary' 'errorPolicyProcessUnknownProtocol' "${name}: '$proto_i'"
+			return 1
 		fi
-		if is_phys_dev "$value"; then
-			param4="$param4 oifname $negation ${value:1}"
-			param6="$param6 oifname $negation ${value:1}"
-		elif is_domain "$value"; then
-			local target='dst' type='ip'
-			if resolver 'create_resolver_set' "$iface" "$target" "$type" "$uid" "$name" && \
-				resolver 'add_resolver_element' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-				param4="$param4 $ip4Flag daddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="$param6 $ip6Flag daddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
-			elif nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
-				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-				param4="$param4 $ip4Flag daddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="$param6 $ip6Flag daddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+
+		if [ -n "$src_addr" ]; then
+			if [ "${src_addr:0:1}" = "!" ]; then
+				negation='!='; value="${src_addr:1}"
 			else
-				local resolvedIP4 resolvedIP6
-				resolvedIP4="$(resolveip_to_nftset4 "$value")"
-				resolvedIP6="$(resolveip_to_nftset6 "$value")"
-				if [ -z "$resolvedIP4" ] && [ -z "$resolvedIP6" ]; then
-					state add 'errorSummary' 'errorFailedToResolve' "$value"
+				unset negation; value="$src_addr";
+			fi
+			if is_phys_dev "$value"; then
+				param4="$param4 iifname $negation ${value:1}"
+				param6="$param6 iifname $negation ${value:1}"
+			elif is_mac_address "$value"; then
+				local target='src' type='mac'
+				if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
+					nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
+					param4="$param4 ether saddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+					param6="$param6 ether saddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				else
+					param4="$param4 ether saddr $negation $value"
+					param6="$param6 ether saddr $negation $value"
 				fi
-				param4="$param4 $ip4Flag daddr $negation { $resolvedIP4 }"
-				param6="$param6 $ip6Flag daddr $negation { $resolvedIP6 }"
-			fi
-		else
-			local target='dst' type='ip'
-			if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
-				nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-				param4="$param4 $ip4Flag daddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-				param6="$param6 $ip6Flag daddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 			else
-				param4="$param4 $ip4Flag daddr $negation $value"
-				param6="$param6 $ip6Flag daddr $negation $value"
+				local target='src' type='ip'
+				if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
+					nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
+					param4="$param4 $ip4Flag saddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+					param6="$param6 $ip6Flag saddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				else
+					param4="$param4 $ip4Flag saddr $negation $value"
+					param6="$param6 $ip6Flag saddr $negation $value"
+				fi
 			fi
 		fi
-	fi
 
-	if [ -n "${src_port}${dest_port}" ]; then
-		proto="${proto:-tcp}"
-	fi
-
-	if [ -n "$src_port" ]; then
-		if [ "${src_port:0:1}" = "!" ]; then
-			negation='!='; value="${src_port:1}"
-		else
-			unset negation; value="$src_port";
+		if [ -n "$dest_addr" ]; then 
+			if [ "${dest_addr:0:1}" = "!" ]; then
+				negation='!='; value="${dest_addr:1}"
+			else
+				unset negation; value="$dest_addr";
+			fi
+			if is_phys_dev "$value"; then
+				param4="$param4 oifname $negation ${value:1}"
+				param6="$param6 oifname $negation ${value:1}"
+			elif is_domain "$value"; then
+				local target='dst' type='ip'
+				if resolver 'create_resolver_set' "$iface" "$target" "$type" "$uid" "$name" && \
+					resolver 'add_resolver_element' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
+					param4="$param4 $ip4Flag daddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+					param6="$param6 $ip6Flag daddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				elif nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
+					nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
+					param4="$param4 $ip4Flag daddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+					param6="$param6 $ip6Flag daddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				else
+					local resolvedIP4 resolvedIP6
+					resolvedIP4="$(resolveip_to_nftset4 "$value")"
+					resolvedIP6="$(resolveip_to_nftset6 "$value")"
+					if [ -z "$resolvedIP4" ] && [ -z "$resolvedIP6" ]; then
+						state add 'errorSummary' 'errorFailedToResolve' "$value"
+					fi
+					param4="$param4 $ip4Flag daddr $negation { $resolvedIP4 }"
+					param6="$param6 $ip6Flag daddr $negation { $resolvedIP6 }"
+				fi
+			else
+				local target='dst' type='ip'
+				if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
+					nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
+					param4="$param4 $ip4Flag daddr $negation @${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+					param6="$param6 $ip6Flag daddr $negation @${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				else
+					param4="$param4 $ip4Flag daddr $negation $value"
+					param6="$param6 $ip6Flag daddr $negation $value"
+				fi
+			fi
 		fi
-		param4="$param4 ${proto:+$proto }sport $negation {$(ports_to_nftset "$value")}"
-		param6="$param6 ${proto:+$proto }sport $negation {$(ports_to_nftset "$value")}"
-	fi
 
-	if [ -n "$dest_port" ]; then
-		if [ "${dest_port:0:1}" = "!" ]; then
-			negation='!='; value="${dest_port:1}"
-		else
-			unset negation; value="$dest_port";
+		if [ -n "$src_port" ]; then
+			if [ "${src_port:0:1}" = "!" ]; then
+				negation='!='; value="${src_port:1}"
+			else
+				unset negation; value="$src_port";
+			fi
+			param4="$param4 ${proto_i:+$proto_i }sport $negation {$(ports_to_nftset "$value")}"
+			param6="$param6 ${proto_i:+$proto_i }sport $negation {$(ports_to_nftset "$value")}"
 		fi
-		param4="$param4 ${proto:+$proto }dport $negation {$(ports_to_nftset "$value")}"
-		param6="$param6 ${proto:+$proto }dport $negation {$(ports_to_nftset "$value")}"
-	fi
 
-	param4="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} $param4 $dest comment \"$name\""
-	param6="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} $param6 $dest comment \"$name\""
-
-	local ipv4_error='0' ipv6_error='0'
-	if [ "$nftPrevParam4" != "$param4" ]; then
-		nft4 "$param4" || ipv4_error='1'
-		nftPrevParam4="$param4"
-	fi
-	if [ "$nftPrevParam6" != "$param6" ]; then
-		nft6 "$param6" || ipv6_error='1'
-		nftPrevParam6="$param6"
-	fi
-
-# nft6 returns true if IPv6 support is not enabled
-	[ -z "$ipv6_enabled" ] && ipv6_error='1'
-	if [ "$ipv4_error" -eq '1' ] && [ "$ipv6_error" -eq '1' ]; then
-		if [ -n "$ipv6_enabled" ]; then
-			processPolicyError='true'
-			state add 'errorSummary' 'errorPolicyProcessInsertionFailed' "$name"
-			state add 'errorSummary' 'errorPolicyProcessCMD' "nft '$param4'"
-			state add 'errorSummary' 'errorPolicyProcessCMD' "nft '$param6'"
-		else
-			processPolicyError='true'
-			state add 'errorSummary' 'errorPolicyProcessInsertionFailedIpv4' "$name"
-			state add 'errorSummary' 'errorPolicyProcessCMD' "nft '$param4'"
+		if [ -n "$dest_port" ]; then
+			if [ "${dest_port:0:1}" = "!" ]; then
+				negation='!='; value="${dest_port:1}"
+			else
+				unset negation; value="$dest_port";
+			fi
+			param4="$param4 ${proto_i:+$proto_i }dport $negation {$(ports_to_nftset "$value")}"
+			param6="$param6 ${proto_i:+$proto_i }dport $negation {$(ports_to_nftset "$value")}"
 		fi
-	fi
+
+		param4="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} $param4 $dest comment \"$name\""
+		param6="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} $param6 $dest comment \"$name\""
+
+		local ipv4_error='0' ipv6_error='0'
+		if [ "$nftPrevParam4" != "$param4" ]; then
+			nft4 "$param4" || ipv4_error='1'
+			nftPrevParam4="$param4"
+		fi
+		if [ "$nftPrevParam6" != "$param6" ]; then
+			nft6 "$param6" || ipv6_error='1'
+			nftPrevParam6="$param6"
+		fi
+
+	# nft6 returns true if IPv6 support is not enabled
+		[ -z "$ipv6_enabled" ] && ipv6_error='1'
+		if [ "$ipv4_error" -eq '1' ] && [ "$ipv6_error" -eq '1' ]; then
+			if [ -n "$ipv6_enabled" ]; then
+				processPolicyError='true'
+				state add 'errorSummary' 'errorPolicyProcessInsertionFailed' "$name"
+				state add 'errorSummary' 'errorPolicyProcessCMD' "nft '$param4'"
+				state add 'errorSummary' 'errorPolicyProcessCMD' "nft '$param6'"
+			else
+				processPolicyError='true'
+				state add 'errorSummary' 'errorPolicyProcessInsertionFailedIpv4' "$name"
+				state add 'errorSummary' 'errorPolicyProcessCMD' "nft '$param4'"
+			fi
+		fi
+
+	done
 }
 
 policy_process() {
@@ -1642,16 +1654,16 @@ interface_process_tor_nft() {
 			if resolver 'create_resolver_set' "$iface" 'dst' 'ip' && nftset 'flush' "$iface" 'dst' 'ip'; then
 				set_name4="${nftPrefix}_${iface}_4_dst_ip"
 				set_name6="${nftPrefix}_${iface}_6_dst_ip"
-				nft add rule inet "$nftTable" meta nfproto ipv4 udp daddr "@${set_name4}" dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv4" || s=1
-				nft add rule inet "$nftTable" meta nfproto ipv4 tcp daddr "@${set_name4}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv4" || s=1
-				nft add rule inet "$nftTable" meta nfproto ipv4 udp daddr "@${set_name4}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv4" || s=1
-				nft add rule inet "$nftTable" meta nfproto ipv4 tcp daddr "@${set_name4}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv4" || s=1
-				nft add rule inet "$nftTable" meta nfproto ipv4 udp daddr "@${set_name4}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv4" || s=1
-				nft6 add rule inet "$nftTable" meta nfproto ipv6 udp daddr "@${set_name6}" dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv6" || s=1
-				nft6 add rule inet "$nftTable" meta nfproto ipv6 tcp daddr "@${set_name6}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv6" || s=1
-				nft6 add rule inet "$nftTable" meta nfproto ipv6 udp daddr "@${set_name6}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv6" || s=1
-				nft6 add rule inet "$nftTable" meta nfproto ipv6 tcp daddr "@${set_name6}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv6" || s=1
-				nft6 add rule inet "$nftTable" meta nfproto ipv6 udp daddr "@${set_name6}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv6" || s=1
+				nft add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv4 udp daddr "@${set_name4}" dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv4" || s=1
+				nft add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv4 tcp daddr "@${set_name4}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv4" || s=1
+				nft add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv4 udp daddr "@${set_name4}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv4" || s=1
+				nft add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv4 tcp daddr "@${set_name4}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv4" || s=1
+				nft add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv4 udp daddr "@${set_name4}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv4" || s=1
+				nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv6 udp daddr "@${set_name6}" dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv6" || s=1
+				nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv6 tcp daddr "@${set_name6}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv6" || s=1
+				nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv6 udp daddr "@${set_name6}" dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv6" || s=1
+				nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv6 tcp daddr "@${set_name6}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv6" || s=1
+				nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" meta nfproto ipv6 udp daddr "@${set_name6}" dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv6" || s=1
 			else
 				s=1
 			fi
@@ -1881,8 +1893,10 @@ interface_process() {
 	fi
 
 	network_get_device dev "$iface"
+	[ -z "$dev" ] && network_get_physdev dev "$iface"
 	if is_wan "$iface" && [ -n "$wanIface6" ] && str_contains "$wanIface6" "$iface"; then
 		network_get_device dev6 "$wanIface6"
+		[ -z "$dev6" ] && network_get_physdev dev6 "$wanIface6"
 	fi
 
 	[ -z "$dev6" ] && dev6="$dev"
