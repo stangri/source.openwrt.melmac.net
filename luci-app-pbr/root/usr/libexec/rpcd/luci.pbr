@@ -273,20 +273,28 @@ pbr_find_iface() {
 	fi
 	eval "$1"='${iface:-$i}'
 }
+_find_firewall_wan_zone() { [ "$(uci -q get "firewall.${1}.name")" = "wan" ] && firewallWanZone="$1"; }
 _build_ifaces_all() { ifacesAll="${ifacesAll}${1} "; }
-_build_ifaces_supported() { is_supported_interface "$1" && ifacesSupported="${ifacesSupported}${1} "; }
+_build_ifaces_supported() { is_supported_interface "$1" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${1} "; }
 get_supported_interfaces() {
 	local name i
 	name="$(basename "$1")"
 	name="${name:-$packageName}" 
+	local firewallWanZone
 	local ifacesAll ifacesSupported
 	local webui_show_ignore_target
 	local ignored_interface supported_interface
 	local wanIface4 wanIface6
-	config_load "$name"
+	config_load "$packageName"
 	config_get_bool webui_show_ignore_target 'config' 'webui_show_ignore_target' '0'
 	config_get ignored_interface             'config' 'ignored_interface'
 	config_get supported_interface           'config' 'supported_interface'
+	local i
+	config_load 'firewall'
+	config_foreach _find_firewall_wan_zone 'zone'
+	for i in $(uci -q get "firewall.${firewallWanZone}.network"); do
+		is_supported_interface "$i" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${i} "
+	done
 	config_load 'network'
 	config_foreach _build_ifaces_all 'interface'
 	pbr_find_iface wanIface4 'wan'

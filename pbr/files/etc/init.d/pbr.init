@@ -96,6 +96,7 @@ ifaceTableID=
 ifacePriority=
 ifacesAll=
 ifacesSupported=
+firewallWanZone=
 wanGW4=
 wanGW6=
 serviceStartTrigger=
@@ -191,8 +192,9 @@ is_present() { command -v "$1" >/dev/null 2>&1; }
 is_installed() { [ -s "/usr/lib/opkg/info/${1}.control" ]; }
 is_variant_installed() { [ "$(echo /usr/lib/opkg/info/"${1}"*.control)" != "/usr/lib/opkg/info/${1}*.control" ]; }
 is_nft() { [ -x "$nft" ] && ! str_contains "$resolver_set" 'ipset' && "$nft" list chains inet | grep -q "${nftPrefix}_prerouting"; }
+_find_firewall_wan_zone() { [ "$(uci -q get "firewall.${1}.name")" = "wan" ] && firewallWanZone="$1"; }
 _build_ifaces_all() { ifacesAll="${ifacesAll}${1} "; }
-_build_ifaces_supported() { is_supported_interface "$1" && ifacesSupported="${ifacesSupported}${1} "; }
+_build_ifaces_supported() { is_supported_interface "$1" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${1} "; }
 pbr_find_iface() {
 	local iface i param="$2"
 	[ "$param" = 'wan6' ] || param='wan'
@@ -373,6 +375,12 @@ load_environment() {
 }
 
 load_network() {
+	local i
+	config_load 'firewall'
+	config_foreach _find_firewall_wan_zone 'zone'
+	for i in $(uci -q get "firewall.${firewallWanZone}.network"); do
+		is_supported_interface "$i" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${i} "
+	done
 	config_load 'network'
 	[ -z "$ifacesAll" ] && config_foreach _build_ifaces_all 'interface'
 	[ -z "$ifacesSupported" ] && config_foreach _build_ifaces_supported 'interface'
