@@ -376,14 +376,17 @@ load_environment() {
 
 load_network() {
 	local i
-	config_load 'firewall'
-	config_foreach _find_firewall_wan_zone 'zone'
-	for i in $(uci -q get "firewall.${firewallWanZone}.network"); do
-		is_supported_interface "$i" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${i} "
-	done
 	config_load 'network'
 	[ -z "$ifacesAll" ] && config_foreach _build_ifaces_all 'interface'
-	[ -z "$ifacesSupported" ] && config_foreach _build_ifaces_supported 'interface'
+	if [ -z "$ifacesSupported" ]; then
+		config_load 'firewall'
+		config_foreach _find_firewall_wan_zone 'zone'
+		for i in $(uci -q get "firewall.${firewallWanZone}.network"); do
+			is_supported_interface "$i" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${i} "
+		done
+		config_load 'network'
+		config_foreach _build_ifaces_supported 'interface'
+	fi
 	pbr_find_iface wanIface4 'wan'
 	[ -n "$ipv6_enabled" ] && pbr_find_iface wanIface6 'wan6'
 	[ -n "$wanIface4" ] && network_get_gateway wanGW4 "$wanIface4"
@@ -827,7 +830,7 @@ resolver() {
 						return 1
 					fi
 					if [ -n "$agh" ] && [ -s "$aghConfigFile" ]; then
-						agh_version="$($agh --version | sed 's|AdGuard Home, version v\(.*\)|\1|')"
+						agh_version="$($agh --version | sed 's|AdGuard Home, version v\(.*\)|\1|' | sed 's|-.*||')"
 						if is_greater_or_equal "$agh_version" '0.107.13'; then
 							resolver_set_supported='true'
 							return 0

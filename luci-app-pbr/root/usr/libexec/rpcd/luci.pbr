@@ -158,7 +158,7 @@ check_unbound() { command -v unbound >/dev/null 2>&1; }
 check_agh_ipset() {
 	check_ipset || return 1
 	check_agh || return 1
-	is_greater_or_equal "$($agh --version | sed 's|AdGuard Home, version v\(.*\)|\1|')" '0.107.13'
+	is_greater_or_equal "$($agh --version | sed 's|AdGuard Home, version v\(.*\)|\1|' | sed 's|-.*||')" '0.107.13'
 }
 check_dnsmasq_ipset() {
 	local o;
@@ -299,7 +299,15 @@ get_supported_interfaces() {
 	config_foreach _build_ifaces_all 'interface'
 	pbr_find_iface wanIface4 'wan'
 	pbr_find_iface wanIface6 'wan6'
-	config_foreach _build_ifaces_supported 'interface'
+	if [ -z "$ifacesSupported" ]; then
+		config_load 'firewall'
+		config_foreach _find_firewall_wan_zone 'zone'
+		for i in $(uci -q get "firewall.${firewallWanZone}.network"); do
+			is_supported_interface "$i" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${i} "
+		done
+		config_load 'network'
+		config_foreach _build_ifaces_supported 'interface'
+	fi
 	if is_tor_running; then
 		ifacesSupported="$ifacesSupported tor"
 	fi
