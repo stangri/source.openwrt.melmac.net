@@ -432,6 +432,7 @@ load_environment() {
 	# Prefer curl because it supports the file:// scheme.
 	if is_present 'curl'; then
 		dl_command="curl --silent --insecure"
+		dl_command="${dl_command}${curl_additional_param:+ $curl_additional_param}"
 		dl_command="${dl_command}${curl_max_file_size:+ --max-filesize $curl_max_file_size}"
 		dl_command="${dl_command}${curl_retry:+ --retry $curl_retry}"
 		dl_command="${dl_command}${download_timeout:+ --connect-timeout $download_timeout}"
@@ -613,7 +614,7 @@ json() {
 				triggers)
 					curReload="$parallel_downloads $debug $download_timeout $allowed_domain $blocked_domain $allowed_domains_url \
 						$blocked_adblockplus_url $blocked_domains_url $blocked_hosts_url $dns $config_update_enabled $config_update_url \
-						$dnsmasq_config_file_url $curl_max_file_size $curl_retry"
+						$dnsmasq_config_file_url $curl_additional_param $curl_max_file_size $curl_retry"
 					curRestart="$compressed_cache $force_dns $led $force_dns_port"
 					if [ ! -s "$jsonFile" ]; then
 						ret='on_boot'
@@ -647,7 +648,7 @@ json() {
 				triggers) 
 					reload="$parallel_downloads $debug $download_timeout $allowed_domain $blocked_domain $allowed_domains_url \
 						$blocked_adblockplus_url $blocked_domains_url $blocked_hosts_url $dns $config_update_enabled $config_update_url \
-						$dnsmasq_config_file_url $curl_max_file_size $curl_retry"
+						$dnsmasq_config_file_url $curl_additional_param $curl_max_file_size $curl_retry"
 					restart="$compressed_cache $force_dns $led $force_dns_port"
 				;;
 				*)
@@ -1574,6 +1575,7 @@ load_validate_config() {
 	local config_update_enabled
 	local config_update_url
 	local download_timeout
+	local curl_additional_param
 	local curl_max_file_size
 	local curl_retry
 	local verbosity
@@ -1603,7 +1605,8 @@ load_validate_config() {
 		'config_update_enabled:bool:0' \
 		'config_update_url:string:https://cdn.jsdelivr.net/gh/openwrt/packages/net/simple-adblock/files/simple-adblock.conf.update' \
 		'download_timeout:range(1,60):20' \
-		'curl_max_file_size:uinteger' \
+		'curl_additional_param:or("", string)' \
+		'curl_max_file_size:or("", uinteger)' \
 		'curl_retry:range(0,30):3' \
 		'verbosity:range(0,2):2' \
 		'procd_trigger_wan6:bool:0' \
