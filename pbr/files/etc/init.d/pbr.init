@@ -123,7 +123,7 @@ get_text() {
 		errorPolicyNoSrcDest) r="Policy '%s' has no source/destination parameters!";;
 		errorPolicyNoInterface) r="Policy '%s' has no assigned interface!";;
 		errorPolicyUnknownInterface) r="Policy '%s' has an unknown interface!";;
-		errorPolicyProcessCMD) r="%s";;
+		errorPolicyProcessCMD) r="'%s'!";;
 		errorFailedSetup) r="Failed to set up '%s'!";;
 		errorFailedReload) r="Failed to reload '%s'!";;
 		errorUserFileNotFound) r="Custom user file '%s' not found or empty!";;
@@ -131,23 +131,24 @@ get_text() {
 		errorUserFileRunning) r="Error running custom user file '%s'!";;
 		errorUserFileNoCurl) r="Use of 'curl' is detected in custom user file '%s', but 'curl' isn't installed!";;
 		errorNoGateways) r="Failed to set up any gateway!";;
-		errorResolver) r="Resolver %s";;
-		errorPolicyProcessNoIpv6) r="Skipping IPv6 policy '%s' as IPv6 support is disabled";;
-		errorPolicyProcessUnknownFwmark) r="Unknown packet mark for interface '%s'";;
-		errorPolicyProcessMismatchFamily) r="Mismatched IP family between in policy %s";;
-		errorPolicyProcessUnknownProtocol) r="Unknown protocol in policy %s";;
-		errorPolicyProcessInsertionFailed) r="Insertion failed for both IPv4 and IPv6 for policy %s";;
-		errorPolicyProcessInsertionFailedIpv4) r="Insertion failed for IPv4 for policy %s";;
-		errorInterfaceRoutingEmptyValues) r="Received empty tid/mark or interface name when setting up routing";;
-		errorFailedToResolve) r="Failed to resolve %s";;
-		warningInvalidOVPNConfig) r="Invalid OpenVPN config for %s interface";;
-		warningResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system";;
-		warningAGHVersionTooLow) r="Installed AdGuardHome (%s) doesn't support 'ipset_file' option";;
-		warningPolicyProcessCMD) r="%s";;
-		warningTorUnsetParams) r="Please unset 'src_addr', 'src_port' and 'dest_port' for policy '%s'";;
-		warningTorUnsetProto) r="Please unset 'proto' or set 'proto' to 'all' for policy '%s'";;
-		warningTorUnsetChainIpt) r="Please unset 'chain' or set 'chain' to 'PREROUTING' for policy '%s'";;
-		warningTorUnsetChainNft) r="Please unset 'chain' or set 'chain' to 'prerouting' for policy '%s'";;
+		errorResolver) r="Resolver '%s'!";;
+		errorPolicyProcessNoIpv6) r="Skipping IPv6 policy '%s' as IPv6 support is disabled!";;
+		errorPolicyProcessUnknownFwmark) r="Unknown packet mark for interface '%s'!";;
+		errorPolicyProcessMismatchFamily) r="Mismatched IP family between in policy '%s'!";;
+		errorPolicyProcessUnknownProtocol) r="Unknown protocol in policy '%s'!";;
+		errorPolicyProcessInsertionFailed) r="Insertion failed for both IPv4 and IPv6 for policy '%s'!";;
+		errorPolicyProcessInsertionFailedIpv4) r="Insertion failed for IPv4 for policy '%s'!";;
+		errorInterfaceRoutingEmptyValues) r="Received empty tid/mark or interface name when setting up routing!";;
+		errorFailedToResolve) r="Failed to resolve '%s'!";;
+		warningInvalidOVPNConfig) r="Invalid OpenVPN config for '%s' interface.";;
+		warningResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system.";;
+		warningAGHVersionTooLow) r="Installed AdGuardHome ('%s') doesn't support 'ipset_file' option.";;
+		warningPolicyProcessCMD) r="'%s'";;
+		warningTorUnsetParams) r="Please unset 'src_addr', 'src_port' and 'dest_port' for policy '%s'.";;
+		warningTorUnsetProto) r="Please unset 'proto' or set 'proto' to 'all' for policy '%s'.";;
+		warningTorUnsetChainIpt) r="Please unset 'chain' or set 'chain' to 'PREROUTING' for policy '%s'.";;
+		warningTorUnsetChainNft) r="Please unset 'chain' or set 'chain' to 'prerouting' for policy '%s'.";;
+		warningOutdatedWebUIApp) r="The WebUI application is outdated (version %s), please update it.";;
 	esac
 	echo "$r"
 }
@@ -303,6 +304,7 @@ get_nft_sets() { [ -x "$nft" ] && "$nft" list table inet "$nftTable" 2>/dev/null
 is_ipset_type_supported() { ipset help hash:"$1" >/dev/null 2>&1; }
 ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.status.${1}"; }
 ubus_get_iface() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.interfaces[@.name='${1}']${2:+.$2}"; }
+opkg_get_version() { grep -m1 -A1 "$1" '/usr/lib/opkg/status' | grep -m1 'Version: ' | sed 's|Version: \(.*\)|\1|'; }
 
 load_package_config() {
 	config_load "$packageName"
@@ -369,8 +371,10 @@ load_environment() {
 			fi
 		fi
 		resolver 'check_support'
+		if is_greater "$(opkg_get_version "$packageName")" "$(opkg_get_version "luci-app-${packageName}")"; then
+			state add 'warningSummary' 'warningOutdatedWebUIApp' "$(opkg_get_version "luci-app-${packageName}")"
+		fi
 	fi
-
 	load_network "$param"
 }
 
@@ -738,6 +742,8 @@ state() {
 			eval "$param"='${line:+$line#}${value}${extras:+ $extras}'
 		;;
 		json)
+			json_init
+			json_add_object "$packageName"
 			case "$param" in
 				errorSummary)
 					json_add_array 'errors';;
@@ -761,6 +767,8 @@ $(eval echo "\$$param" | tr \# \\n)
 EOF
 			fi
 			json_close_array
+			json_close_object
+			json_dump
 		;;
 		print)
 			[ -z "$(eval echo "\$$param")" ] && return 0
