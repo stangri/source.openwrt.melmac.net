@@ -112,7 +112,7 @@ get_init_status() {
 	name="$(basename "$1")"
 	name="${name:-$packageName}" 
 	local errors warnings ports dns outputFile outputCache outputGzip
-	local i
+	local i j
 	errors="$(ubus_get_status errors)"
 	warnings="$(ubus_get_status warnings)"
 	ports="$(ubus_get_ports)"
@@ -157,6 +157,10 @@ get_init_status() {
 	json_add_object  "$name"
 	json_add_boolean 'enabled' "$(is_enabled "$name")"
 	i="$(json 'get' 'status')"
+	j="$(ubus_get_status 'status')"
+	if [ "$i" = 'statusSuccess' ] && [ "$i" != "$j" ]; then
+		i='statusStopped'
+	fi
 	json_add_string 'status' "$i"
 	if [ "$i" = 'statusSuccess' ]; then
 		json_add_boolean 'running' '1'
