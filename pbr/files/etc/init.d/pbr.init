@@ -371,9 +371,6 @@ load_environment() {
 			fi
 		fi
 		resolver 'check_support'
-		if is_greater "$(opkg_get_version "$packageName")" "$(opkg_get_version "luci-app-${packageName}")"; then
-			state add 'warningSummary' 'warningOutdatedWebUIApp' "$(opkg_get_version "luci-app-${packageName}")"
-		fi
 	fi
 	load_network "$param"
 }

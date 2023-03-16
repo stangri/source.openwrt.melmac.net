@@ -138,9 +138,6 @@ EOF
 				error_id="$line"
 				unset error_extra
 			fi
-			if [ "$error_id" = 'warningOutdatedWebUIApp' ] && is_greater "$(opkg_get_version "luci-app-${name}")" "$error_extra"; then
-				continue
-			fi
 			json_add_object
 			json_add_string 'id' "$error_id"
 			json_add_string 'extra' "$error_extra"
@@ -148,6 +145,12 @@ EOF
 		done <<EOF
 $(echo "$warnings" | tr \# \\n)
 EOF
+	fi
+	if is_greater "$(opkg_get_version "${name}")" "$(opkg_get_version "luci-app-${name}")"; then
+		json_add_object
+		json_add_string 'id' 'warningOutdatedWebUIApp'
+		json_add_string 'extra' "$(opkg_get_version "luci-app-${name}")"
+		json_close_object
 	fi
 	json_close_array
 	json_close_object
