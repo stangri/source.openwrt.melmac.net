@@ -38,7 +38,6 @@ readonly packageConfigFile="/etc/config/${packageName}"
 readonly nftTempFile="/var/run/${packageName}.nft"
 #readonly nftPermFile="/etc/nftables.d/table-post/30-pbr.nft"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
-readonly sharedMemoryOutput="/dev/shm/$packageName-output"
 readonly _OK_='\033[0;32m\xe2\x9c\x93\033[0m'
 readonly _FAIL_='\033[0;31m\xe2\x9c\x97\033[0m'
 readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
@@ -174,6 +173,7 @@ output() {
 # Can take a single parameter (text) to be output at any verbosity
 # Or target verbosity level and text to be output at specifc verbosity
 	local msg memmsg logmsg
+	local sharedMemoryOutput="/dev/shm/$packageName-output"
 	verbosity="${verbosity:-2}"
 	if [ "$#" -ne 1 ]; then
 		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; else return 0; fi
