@@ -132,15 +132,15 @@ EOF
 	if [ -n "$warnings" ]; then
 		while read -r line; do
 			if str_contains "$line" ' '; then
-				error_id="${line% *}"
-				error_extra="${line#* }"
+				warning_id="${line% *}"
+				warning_extra="${line#* }"
 			else
-				error_id="$line"
-				unset error_extra
+				warning_id="$line"
+				unset warning_extra
 			fi
 			json_add_object
-			json_add_string 'id' "$error_id"
-			json_add_string 'extra' "$error_extra"
+			json_add_string 'id' "$warning_id"
+			json_add_string 'extra' "$warning_extra"
 			json_close_object
 		done <<EOF
 $(echo "$warnings" | tr \# \\n)
@@ -298,24 +298,17 @@ get_supported_interfaces() {
 	config_get ignored_interface             'config' 'ignored_interface'
 	config_get supported_interface           'config' 'supported_interface'
 	local i
+	config_load 'network'
+	config_foreach _build_ifaces_all 'interface'
+	pbr_find_iface wanIface4 'wan'
+	pbr_find_iface wanIface6 'wan6'
 	config_load 'firewall'
 	config_foreach _find_firewall_wan_zone 'zone'
 	for i in $(uci -q get "firewall.${firewallWanZone}.network"); do
 		is_supported_interface "$i" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${i} "
 	done
 	config_load 'network'
-	config_foreach _build_ifaces_all 'interface'
-	pbr_find_iface wanIface4 'wan'
-	pbr_find_iface wanIface6 'wan6'
-	if [ -z "$ifacesSupported" ]; then
-		config_load 'firewall'
-		config_foreach _find_firewall_wan_zone 'zone'
-		for i in $(uci -q get "firewall.${firewallWanZone}.network"); do
-			is_supported_interface "$i" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${i} "
-		done
-		config_load 'network'
-		config_foreach _build_ifaces_supported 'interface'
-	fi
+	config_foreach _build_ifaces_supported 'interface'
 	if is_tor_running; then
 		ifacesSupported="$ifacesSupported tor"
 	fi
