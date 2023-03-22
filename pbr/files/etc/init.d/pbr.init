@@ -2018,7 +2018,7 @@ boot() {
 }
 
 on_firewall_reload() { 
-	if [ -e "$packageLockFile" ]; then # service is is stopped, do not start it on firewall reload
+	if [ -e "$packageLockFile" ]; then # service is stopped, do not start it on firewall reload
 		logger -t "$packageName" "Reload on firewall action aborted: service is stopped."
 		return 0
 	else
@@ -2026,7 +2026,7 @@ on_firewall_reload() {
 	fi
 }
 on_interface_reload() { 
-	if [ -e "$packageLockFile" ]; then # service is is stopped, do not start it on interface change
+	if [ -e "$packageLockFile" ]; then # service is stopped, do not start it on interface change
 		logger -t "$packageName" "Reload on interface change aborted: service is stopped."
 		return 0
 	else
