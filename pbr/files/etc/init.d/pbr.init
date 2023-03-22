@@ -35,6 +35,7 @@ readonly packageName='pbr'
 readonly serviceName="$packageName $PKG_VERSION"
 readonly serviceTrapSignals='exit SIGHUP SIGQUIT SIGKILL'
 readonly packageConfigFile="/etc/config/${packageName}"
+readonly packageLockFile="/var/run/${packageName}.lock"
 readonly nftTempFile="/var/run/${packageName}.nft"
 #readonly nftPermFile="/etc/nftables.d/table-post/30-pbr.nft"
 readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
@@ -348,30 +349,35 @@ load_package_config() {
 load_environment() {
 	local param="$1" validation_result="$2"
 	load_package_config
-
-	if [ "$param" = 'on_start' ]; then
-		if [ -n "$validation_result" ] && [ "$validation_result" != '0' ]; then
-			output "${_ERROR_}: The $packageName config validation failed!\\n"
-			output "Please check if the '$packageConfigFile' contains correct values for config options.\\n"
-			state add 'errorSummary' 'errorConfigValidation'
-			return 1
-		fi
-		if [ "$enabled" -eq 0 ]; then
-			state add 'errorSummary' 'errorServiceDisabled'
-			return 1
-		fi
-		if [ ! -x "$ip_full" ]; then
-			state add 'errorSummary' 'errorNoIpFull'
-			return 1
-		fi
-		if ! is_nft; then
-			if [ -z "$iptables" ] || [ ! -x "$iptables" ]; then
-				state add 'errorSummary' 'errorNoIptables'
+	case "$param" in
+		on_start)
+			if [ -n "$validation_result" ] && [ "$validation_result" != '0' ]; then
+				output "${_ERROR_}: The $packageName config validation failed!\\n"
+				output "Please check if the '$packageConfigFile' contains correct values for config options.\\n"
+				state add 'errorSummary' 'errorConfigValidation'
 				return 1
 			fi
-		fi
-		resolver 'check_support'
-	fi
+			if [ "$enabled" -eq 0 ]; then
+				state add 'errorSummary' 'errorServiceDisabled'
+				return 1
+			fi
+			if [ ! -x "$ip_full" ]; then
+				state add 'errorSummary' 'errorNoIpFull'
+				return 1
+			fi
+			if ! is_nft; then
+				if [ -z "$iptables" ] || [ ! -x "$iptables" ]; then
+					state add 'errorSummary' 'errorNoIptables'
+					return 1
+				fi
+			fi
+			rm -f "$packageLockFile"
+			resolver 'check_support'
+		;;
+		on_stop)
+			touch "$packageLockFile"
+		;;
+	esac
 	load_network "$param"
 }
 
@@ -2012,17 +2018,17 @@ boot() {
 }
 
 on_firewall_reload() { 
-	if [ -z "$(ubus_get_status 'gateways')" ]; then # service is not running, do not start it on firewall reload
-		logger -t "$packageName" "Reload on firewall action aborted: service not running."
-		return 0;
+	if [ -e "$packageLockFile" ]; then # service is is stopped, do not start it on firewall reload
+		logger -t "$packageName" "Reload on firewall action aborted: service is stopped."
+		return 0
 	else
 		rc_procd start_service 'on_firewall_reload' "$1"
 	fi
 }
 on_interface_reload() { 
-	if [ -z "$(ubus_get_status 'gateways')" ]; then # service is not running, do not start it on firewall reload
-		logger -t "$packageName" "Reload on interface status aborted: service not running."
-		return 0;
+	if [ -e "$packageLockFile" ]; then # service is is stopped, do not start it on interface change
+		logger -t "$packageName" "Reload on interface change aborted: service is stopped."
+		return 0
 	else
 		rc_procd start_service 'on_interface_reload' "$1"
 	fi
