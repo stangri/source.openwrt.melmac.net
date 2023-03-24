@@ -25,15 +25,15 @@ msgstr ""
 msgid "Advanced Configuration"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:156
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:163
 msgid "Allowed Domain URLs"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:152
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:159
 msgid "Allowed Domains"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:146
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:153
 msgid "Allowed and Blocked Lists Management"
 msgstr ""
 
@@ -50,19 +50,19 @@ msgstr ""
 msgid "Basic Configuration"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:160
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:167
 msgid "Blocked AdBlockPlus-style URLs"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:168
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:175
 msgid "Blocked Domain URLs"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:164
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:171
 msgid "Blocked Domains"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:172
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:179
 msgid "Blocked Hosts URLs"
 msgstr ""
 
@@ -102,14 +102,23 @@ msgstr ""
 msgid "DNS resolution option, see the %sREADME%s for details."
 msgstr ""
 
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:139
+msgid "Directory for compressed cache file"
+msgstr ""
+
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:140
+msgid ""
+"Directory for compressed cache file of block-list in the persistent memory."
+msgstr ""
+
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/simple-adblock/status.js:269
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:37
 #: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:39
 msgid "Disable"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:141
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:143
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:148
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:150
 msgid "Disable Debugging"
 msgstr ""
 
@@ -117,7 +126,7 @@ msgstr ""
 msgid "Disabling %s service"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:147
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:154
 msgid "Dnsmasq Config File URL"
 msgstr ""
 
@@ -148,12 +157,12 @@ msgstr ""
 msgid "Enable"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:139
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:142
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:146
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:149
 msgid "Enable Debugging"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:140
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:147
 msgid "Enables debug output to /tmp/simple-adblock.log."
 msgstr ""
 
@@ -218,11 +227,11 @@ msgid ""
 "on timeout/fail."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:153
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:160
 msgid "Individual domains to be allowed."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:165
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:172
 msgid "Individual domains to be blocked."
 msgstr ""
 
@@ -350,24 +359,24 @@ msgstr ""
 msgid "Suppress output"
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:148
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:155
 msgid ""
 "URL to the external dnsmasq config file, see the %sREADME%s for details."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:161
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:168
 msgid "URLs to lists of AdBlockPlus-style formatted domains to be blocked."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:157
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:164
 msgid "URLs to lists of domains to be allowed."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:169
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:176
 msgid "URLs to lists of domains to be blocked."
 msgstr ""
 
-#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:173
+#: applications/luci-app-simple-adblock/htdocs/luci-static/resources/view/simple-adblock/overview.js:180
 msgid "URLs to lists of hosts to be blocked."
 msgstr ""
 
