@@ -71,7 +71,7 @@ json() {
 get_init_list() {
 	local name
 	name="$(basename "$1")"
-	name="${name:-$packageName}" 
+	name="${name:-$packageName}"
 	json_init
 	json_add_object "$name"
 	json_add_boolean 'enabled' "$(is_enabled "$name")"
@@ -88,7 +88,7 @@ get_init_list() {
 set_init_action() {
 	local name action="$2" cmd
 	name="$(basename "$1")"
-	name="${name:-$packageName}" 
+	name="${name:-$packageName}"
 	if [ ! -f "/etc/init.d/$name" ]; then
 		print_json_string 'error' 'Init script not found!'
 		return
@@ -111,7 +111,7 @@ set_init_action() {
 get_init_status() {
 	local name
 	name="$(basename "$1")"
-	name="${name:-$packageName}"	
+	name="${name:-$packageName}"
 	local errors warnings ports dns outputFile outputCache outputGzip
 	local i j
 # shellcheck disable=SC2034
@@ -269,7 +269,7 @@ check_dnsmasq_nftset() {
 get_platform_support() {
 	local name
 	name="$(basename "$1")"
-	name="${name:-$packageName}" 
+	name="${name:-$packageName}"
 	json_init
 	json_add_object "$name"
 	if check_ipset; then
