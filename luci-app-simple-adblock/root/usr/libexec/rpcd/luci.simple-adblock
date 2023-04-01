@@ -47,7 +47,7 @@ print_json_string() { json_init; json_add_string "$1" "$2"; json_dump; json_clea
 logger() { /usr/bin/logger -t "$packageName" "$@"; }
 ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances.main.data.${1}"; }
 ubus_get_ports() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances.main.data.firewall.*.dest_port"; }
-sanitize_dir() { readlink -fn "$1"; }
+sanitize_dir() { [ -d "$(readlink -fn "$1")" ] && readlink -fn "$1"; }
 json() {
 # shellcheck disable=SC2034
 	local action="$1" param="$2" value="$3" i
