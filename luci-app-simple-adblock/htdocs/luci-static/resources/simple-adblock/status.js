@@ -283,9 +283,9 @@ var status = baseclass.extend({
 						btn_stop.disabled = true;
 						break;
 					default:
-						btn_start.disabled = true;
+						btn_start.disabled = false;
 						btn_action.disabled = true;
-						btn_stop.disabled = true;
+						btn_stop.disabled = false;
 						btn_enable.disabled = true;
 						btn_disable.disabled = true;
 					break;
