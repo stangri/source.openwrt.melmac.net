@@ -46,6 +46,8 @@ readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
 readonly ip_full='/usr/libexec/ip-full'
+# shellcheck disable=SC2155
+readonly ip_bin="$(command -v ip)"
 readonly ipTablePrefix='pbr'
 # shellcheck disable=SC2155
 readonly iptables="$(command -v iptables)"
@@ -214,7 +216,7 @@ pbr_get_gateway() {
 	network_get_gateway gw "$iface" true
 	if [ -z "$gw" ] || [ "$gw" = '0.0.0.0' ]; then
 #		gw="$(ubus call "network.interface.${iface}" status | jsonfilter -e "@.route[0].nexthop")"
-		gw="$($ip_full -4 a list dev "$dev" 2>/dev/null | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
+		gw="$($ip_bin -4 a list dev "$dev" 2>/dev/null | grep inet | awk '{print $2}' | awk -F "/" '{print $1}')"
 	fi
 	eval "$1"='$gw'
 }
@@ -222,7 +224,7 @@ pbr_get_gateway6() {
 	local iface="$2" dev="$3" gw
 	network_get_gateway6 gw "$iface" true
 	if [ -z "$gw" ] || [ "$gw" = '::/0' ] || [ "$gw" = '::0/0' ] || [ "$gw" = '::' ]; then
-		gw="$($ip_full -6 a list dev "$dev" 2>/dev/null | grep inet6 | awk '{print $2}')"
+		gw="$($ip_bin -6 a list dev "$dev" 2>/dev/null | grep inet6 | awk '{print $2}')"
 	fi
 	eval "$1"='$gw'
 }
@@ -265,7 +267,7 @@ is_domain() { ! is_ipv6 "$1" && str_contains "$1" '[a-zA-Z]'; }
 is_phys_dev() { [ "${1:0:1}" = "@" ] && ip l show | grep -E -q "^\\d+\\W+${1:1}"; }
 dnsmasq_kill() { killall -q -s HUP dnsmasq; }
 dnsmasq_restart() { output 3 'Restarting dnsmasq '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
-is_default_dev() { [ "$1" = "$($ip_full -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
+is_default_dev() { [ "$1" = "$($ip_bin -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
 is_supported_iface_dev() { local n dev; for n in $ifacesSupported; do network_get_device dev "$n"; [ "$1" = "$dev" ] && return 0; done; return 1; }
 is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
 is_service_running_iptables() { [ -x "$iptables" ] && "$iptables" -t mangle -L | grep -q "${iptPrefix}_PREROUTING" >/dev/null 2>&1; }
@@ -361,7 +363,7 @@ load_environment() {
 				state add 'errorSummary' 'errorServiceDisabled'
 				return 1
 			fi
-			if [ ! -x "$ip_full" ]; then
+			if [ ! -x "$ip_bin" ]; then
 				state add 'errorSummary' 'errorNoIpFull'
 				return 1
 			fi
@@ -1714,8 +1716,8 @@ interface_routing() {
 		create)
 			if is_netifd_table "$iface"; then
 				ipv4_error=0
-				$ip_full rule del table "$tid" >/dev/null 2>&1
-				$ip_full -4 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
+				$ip_bin rule del table "$tid" >/dev/null 2>&1
+				$ip_bin -4 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
 				if is_nft; then
 					nft add chain inet "$nftTable" "${nftPrefix}_mark_${mark}" || ipv4_error=1 
 					nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} counter mark set mark and ${fw_maskXor} xor ${mark}" || ipv4_error=1
@@ -1727,7 +1729,7 @@ interface_routing() {
 				fi
 				if [ -n "$ipv6_enabled" ]; then
 					ipv6_error=0
-					$ip_full -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
+					$ip_bin -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
 				fi
 			else
 				if ! grep -q "$tid ${ipTablePrefix}_${iface}" '/etc/iproute2/rt_tables'; then
@@ -1736,14 +1738,14 @@ interface_routing() {
 					echo "$tid ${ipTablePrefix}_${iface}" >> '/etc/iproute2/rt_tables'
 					sync
 				fi
-				$ip_full rule del table "$tid" >/dev/null 2>&1
-				$ip_full route flush table "$tid" >/dev/null 2>&1
+				$ip_bin rule del table "$tid" >/dev/null 2>&1
+				$ip_bin route flush table "$tid" >/dev/null 2>&1
 				if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
 					ipv4_error=0
 					if [ -z "$gw4" ]; then
-						$ip_full -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
+						$ip_bin -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 					else
-						$ip_full -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+						$ip_bin -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 					fi
 # shellcheck disable=SC2086
 					while read -r i; do
@@ -1751,12 +1753,12 @@ interface_routing() {
 						i="$(echo "$i" | sed 's/ onlink$//')"
 						idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
 						if ! is_supported_iface_dev "$idev"; then
-							$ip_full -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
+							$ip_bin -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
 						fi
 					done << EOF
-					$($ip_full -4 route list table main)
+					$($ip_bin -4 route list table main)
 EOF
-					$ip_full -4 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
+					$ip_bin -4 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
 					if is_nft; then
 						nft add chain inet "$nftTable" "${nftPrefix}_mark_${mark}" || ipv4_error=1 
 						nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} counter mark set mark and ${fw_maskXor} xor ${mark}" || ipv4_error=1
@@ -1771,21 +1773,21 @@ EOF
 					ipv6_error=0
 					if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne 0 ]; then
 						if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
-							$ip_full -6 route add unreachable default table "$tid" || ipv6_error=1
-						elif $ip_full -6 route list table main | grep -q " dev $dev6 "; then
+							$ip_bin -6 route add unreachable default table "$tid" || ipv6_error=1
+						elif $ip_bin -6 route list table main | grep -q " dev $dev6 "; then
 							while read -r i; do
 								i="$(echo "$i" | sed 's/ linkdown$//')"
 								i="$(echo "$i" | sed 's/ onlink$//')"
-								$ip_full -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+								$ip_bin -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 							done << EOF
-							$($ip_full -6 route list table main | grep " dev $dev6 ")
+							$($ip_bin -6 route list table main | grep " dev $dev6 ")
 EOF
 						else
-							$ip_full -6 route add "$($ip_full -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
-							$ip_full -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							$ip_bin -6 route add "$($ip_bin -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							$ip_bin -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 						fi
 					fi
-					$ip_full -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
+					$ip_bin -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
 				fi
 			fi
 			if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
@@ -1825,9 +1827,9 @@ EOF
 			return "$s"
 		;;
 		delete|destroy)
-			$ip_full rule del table "$tid" >/dev/null 2>&1
+			$ip_bin rule del table "$tid" >/dev/null 2>&1
 			if ! is_netifd_table "$iface"; then
-				$ip_full route flush table "$tid" >/dev/null 2>&1
+				$ip_bin route flush table "$tid" >/dev/null 2>&1
 				sed -i "/${ipTablePrefix}_${iface}\$/d" '/etc/iproute2/rt_tables'
 				sync
 			fi
@@ -1836,35 +1838,35 @@ EOF
 		reload_interface)
 			is_netifd_table "$iface" && return 0;
 			ipv4_error=0
-			$ip_full rule del table "$tid" >/dev/null 2>&1
+			$ip_bin rule del table "$tid" >/dev/null 2>&1
 			if ! is_netifd_table "$iface"; then
-				$ip_full route flush table "$tid" >/dev/null 2>&1
+				$ip_bin route flush table "$tid" >/dev/null 2>&1
 			fi
 			if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
 				if [ -z "$gw4" ]; then
-					$ip_full -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
+					$ip_bin -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 				else
-					$ip_full -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+					$ip_bin -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 				fi
-				$ip_full rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
+				$ip_bin rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
 			fi
 			if [ -n "$ipv6_enabled" ]; then
 				ipv6_error=0
 				if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne 0 ]; then
 					if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
-						$ip_full -6 route add unreachable default table "$tid" || ipv6_error=1
-					elif $ip_full -6 route list table main | grep -q " dev $dev6 "; then
+						$ip_bin -6 route add unreachable default table "$tid" || ipv6_error=1
+					elif $ip_bin -6 route list table main | grep -q " dev $dev6 "; then
 						while read -r i; do
-							$ip_full -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							$ip_bin -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 						done << EOF
-						$($ip_full -6 route list table main | grep " dev $dev6 ")
+						$($ip_bin -6 route list table main | grep " dev $dev6 ")
 EOF
 					else
-						$ip_full -6 route add "$($ip_full -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
-						$ip_full -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+						$ip_bin -6 route add "$($ip_bin -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+						$ip_bin -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 					fi
 				fi
-				$ip_full -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
+				$ip_bin -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
 			fi
 			if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
 				s=0
@@ -2292,8 +2294,8 @@ status_service_nft() {
 	fi
 	if [ -n "$wanIface6" ]; then
 		network_get_device dev6 "$wanIface6"
-		wanGW6=$($ip_full -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
-		[ "$wanGW6" = "default" ] && wanGW6=$($ip_full -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
+		wanGW6=$($ip_bin -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
+		[ "$wanGW6" = "default" ] && wanGW6=$($ip_bin -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
 	fi
 	while [ "${1:0:1}" = "-" ]; do param="${1//-/}"; eval "set_$param=1"; shift; done
 	[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
@@ -2332,9 +2334,9 @@ status_service_nft() {
 	tableCount="$(grep -c "${packageName}_" /etc/iproute2/rt_tables)" || tableCount=0
 	wan_tid=$(($(get_rt_tables_next_id)-tableCount))
 	i=0; while [ $i -lt "$tableCount" ]; do 
-		echo "IPv4 table $((wan_tid + i)) route: $($ip_full -4 route show table $((wan_tid + i)) | grep default)"
+		echo "IPv4 table $((wan_tid + i)) route: $($ip_bin -4 route show table $((wan_tid + i)) | grep default)"
 		echo "IPv4 table $((wan_tid + i)) rule(s):"
-		$ip_full -4 rule list table "$((wan_tid + i))"
+		$ip_bin -4 rule list table "$((wan_tid + i))"
 		i=$((i + 1))
 	done
 }
@@ -2349,8 +2351,8 @@ status_service_iptables() {
 	fi
 	if [ -n "$wanIface6" ]; then
 		network_get_device dev6 "$wanIface6"
-		wanGW6=$($ip_full -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
-		[ "$wanGW6" = "default" ] && wanGW6=$($ip_full -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
+		wanGW6=$($ip_bin -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
+		[ "$wanGW6" = "default" ] && wanGW6=$($ip_bin -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
 	fi
 	while [ "${1:0:1}" = "-" ]; do param="${1//-/}"; eval "set_$param=1"; shift; done
 	[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
@@ -2376,15 +2378,15 @@ status_service_iptables() {
 		if [ -n "$set_d" ]; then ip rule list; fi
 		wan_tid=$(($(get_rt_tables_next_id)-tableCount))
 		i=0; while [ $i -lt "$tableCount" ]; do 
-			echo "IPv4 table $((wan_tid + i)) route: $($ip_full -4 route show table $((wan_tid + i)) | grep default)"
+			echo "IPv4 table $((wan_tid + i)) route: $($ip_bin -4 route show table $((wan_tid + i)) | grep default)"
 			echo "IPv4 table $((wan_tid + i)) rule(s):"
-			$ip_full -4 rule list table "$((wan_tid + i))"
+			$ip_bin -4 rule list table "$((wan_tid + i))"
 			i=$((i + 1))
 		done
 
 		if [ -n "$ipv6_enabled" ]; then
 			i=0; while [ $i -lt "$tableCount" ]; do
-				$ip_full -6 route show table $((wan_tid + i)) | while read -r param; do
+				$ip_bin -6 route show table $((wan_tid + i)) | while read -r param; do
 					echo "IPv6 Table $((wan_tid + i)): $param"
 				done
 				i=$((i + 1))
