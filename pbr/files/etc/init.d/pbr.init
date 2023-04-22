@@ -1349,19 +1349,18 @@ policy_routing_iptables() {
 			ipt6 "$param6" || ipv6_error='1'
 		fi
 
-# ipt6 returns true if IPv6 support is not enabled
-	[ -z "$ipv6_enabled" ] && ipv6_error='1'
-	if [ "$ipv4_error" -eq '1' ] && [ "$ipv6_error" -eq '1' ]; then
-		if [ -n "$ipv6_enabled" ]; then
-			processPolicyError='true'
-			state add 'errorSummary' 'errorPolicyProcessInsertionFailed' "$name"
-			state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param4"
-			state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param6"
-		else
-			processPolicyError='true'
-			state add 'errorSummary' 'errorPolicyProcessInsertionFailedIpv4' "$name"
-			state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param4"
-		fi
+	if [ -n "$ipv6_enabled" ] && [ "$ipv4_error" -eq '1' ] && [ "$ipv6_error" -eq '1' ]; then
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessInsertionFailed' "$name"
+		state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param4"
+		state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param6"
+		logger -t "$packageName" "iptables $param4"
+		logger -t "$packageName" "iptables $param6"
+	elif [ -z "$ipv6_enabled" ] && [ "$ipv4_error" -eq '1' ]; then
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessInsertionFailedIpv4' "$name"
+		state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param4"
+		logger -t "$packageName" "iptables $param4"
 	fi
 
 	done
@@ -1914,7 +1913,7 @@ interface_process() {
 	[ $((ifaceMark)) -gt $((fw_mask)) ] && return 1
 
 	if is_ovpn "$iface" && ! is_valid_ovpn "$iface"; then
-		state add 'warningSummary' 'warningInvalidOVPNConfig' "$iface"
+		: || state add 'warningSummary' 'warningInvalidOVPNConfig' "$iface"
 	fi
 
 	network_get_device dev "$iface"
