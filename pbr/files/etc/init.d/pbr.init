@@ -1354,13 +1354,13 @@ policy_routing_iptables() {
 		state add 'errorSummary' 'errorPolicyProcessInsertionFailed' "$name"
 		state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param4"
 		state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param6"
-		logger -t "$packageName" "iptables $param4"
-		logger -t "$packageName" "iptables $param6"
+		logger -t "$packageName" "ERROR: iptables $param4"
+		logger -t "$packageName" "ERROR: iptables $param6"
 	elif [ -z "$ipv6_enabled" ] && [ "$ipv4_error" -eq '1' ]; then
 		processPolicyError='true'
 		state add 'errorSummary' 'errorPolicyProcessInsertionFailedIpv4' "$name"
 		state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param4"
-		logger -t "$packageName" "iptables $param4"
+		logger -t "$packageName" "ERROR: iptables $param4"
 	fi
 
 	done
@@ -1523,20 +1523,19 @@ policy_routing_nft() {
 			nftPrevParam6="$param6"
 		fi
 
-	# nft6 returns true if IPv6 support is not enabled
-		[ -z "$ipv6_enabled" ] && ipv6_error='1'
-		if [ "$ipv4_error" -eq '1' ] && [ "$ipv6_error" -eq '1' ]; then
-			if [ -n "$ipv6_enabled" ]; then
-				processPolicyError='true'
-				state add 'errorSummary' 'errorPolicyProcessInsertionFailed' "$name"
-				state add 'errorSummary' 'errorPolicyProcessCMD' "nft '$param4'"
-				state add 'errorSummary' 'errorPolicyProcessCMD' "nft '$param6'"
-			else
-				processPolicyError='true'
-				state add 'errorSummary' 'errorPolicyProcessInsertionFailedIpv4' "$name"
-				state add 'errorSummary' 'errorPolicyProcessCMD' "nft '$param4'"
-			fi
-		fi
+	if [ -n "$ipv6_enabled" ] && [ "$ipv4_error" -eq '1' ] && [ "$ipv6_error" -eq '1' ]; then
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessInsertionFailed' "$name"
+		state add 'errorSummary' 'errorPolicyProcessCMD' "nft $param4"
+		state add 'errorSummary' 'errorPolicyProcessCMD' "nft $param6"
+		logger -t "$packageName" "ERROR: nft $param4"
+		logger -t "$packageName" "ERROR: nft $param6"
+	elif [ -z "$ipv6_enabled" ] && [ "$ipv4_error" -eq '1' ]; then
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessInsertionFailedIpv4' "$name"
+		state add 'errorSummary' 'errorPolicyProcessCMD' "nft $param4"
+		logger -t "$packageName" "ERROR: nft $param4"
+	fi
 
 	done
 }
