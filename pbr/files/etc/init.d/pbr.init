@@ -224,7 +224,7 @@ pbr_get_gateway6() {
 	local iface="$2" dev="$3" gw
 	network_get_gateway6 gw "$iface" true
 	if [ -z "$gw" ] || [ "$gw" = '::/0' ] || [ "$gw" = '::0/0' ] || [ "$gw" = '::' ]; then
-		gw="$($ip_bin -6 a list dev "$dev" 2>/dev/null | grep inet6 | awk '{print $2}')"
+		gw="$($ip_bin -6 a list dev "$dev" 2>/dev/null | grep inet6 | grep 'scope global' | awk '{print $2}')"
 	fi
 	eval "$1"='$gw'
 }
