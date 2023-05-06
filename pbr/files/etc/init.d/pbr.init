@@ -163,7 +163,7 @@ output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
 # shellcheck disable=SC2317
 str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
 str_replace() { echo "${1//$2/$3}"; }
-str_contains() { [ -n "$1" ] &&[ -n "$2" ] && [ "${1//$2}" != "$1" ]; }
+str_contains() { [ -n "$1" ] && [ -n "$2" ] && [ "${1//$2}" != "$1" ]; }
 is_greater() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 is_greater_or_equal() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" = "$2"; }
 str_contains_word() { echo "$1" | grep -q -w "$2"; }
