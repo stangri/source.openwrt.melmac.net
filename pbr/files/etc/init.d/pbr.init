@@ -1776,7 +1776,8 @@ EOF
 							while read -r i; do
 								i="$(echo "$i" | sed 's/ linkdown$//')"
 								i="$(echo "$i" | sed 's/ onlink$//')"
-								$ip_bin -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+								# shellcheck disable=SC2086
+								$ip_bin -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
 							done << EOF
 							$($ip_bin -6 route list table main | grep " dev $dev6 ")
 EOF
@@ -1855,7 +1856,8 @@ EOF
 						$ip_bin -6 route add unreachable default table "$tid" || ipv6_error=1
 					elif $ip_bin -6 route list table main | grep -q " dev $dev6 "; then
 						while read -r i; do
-							$ip_bin -6 route add "$i" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							# shellcheck disable=SC2086
+							$ip_bin -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
 						done << EOF
 						$($ip_bin -6 route list table main | grep " dev $dev6 ")
 EOF
@@ -2335,6 +2337,11 @@ status_service_nft() {
 		echo "IPv4 table $((wan_tid + i)) route: $($ip_bin -4 route show table $((wan_tid + i)) | grep default)"
 		echo "IPv4 table $((wan_tid + i)) rule(s):"
 		$ip_bin -4 rule list table "$((wan_tid + i))"
+		if [ -n "$ipv6_enabled" ]; then
+			echo "IPv6 table $((wan_tid + i)) route: $($ip_bin -6 route show table $((wan_tid + i)) | grep default)"
+			echo "IPv6 table $((wan_tid + i)) rule(s):"
+			$ip_bin -6 route show table $((wan_tid + i))
+		fi
 		i=$((i + 1))
 	done
 }
