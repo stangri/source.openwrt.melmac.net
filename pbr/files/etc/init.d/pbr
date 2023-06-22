@@ -1773,6 +1773,7 @@ EOF
 						if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 							$ip_bin -6 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv6_error=1
 						elif $ip_bin -6 route list table main | grep -q " dev $dev6 "; then
+							$ip_bin -6 route add default via "$gw6" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 							while read -r i; do
 								i="$(echo "$i" | sed 's/ linkdown$//')"
 								i="$(echo "$i" | sed 's/ onlink$//')"
