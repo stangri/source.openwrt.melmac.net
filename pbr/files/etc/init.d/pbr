@@ -306,7 +306,7 @@ get_ipsets() { [ -x "$(command -v ipset)" ] && ipset list | grep "${ipsPrefix}_"
 get_nft_sets() { [ -x "$nft" ] && "$nft" list table inet "$nftTable" 2>/dev/null | grep 'set' | grep "${nftPrefix}_" | awk '{ print $2 }'; }
 is_ipset_type_supported() { ipset help hash:"$1" >/dev/null 2>&1; }
 ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.status.${1}"; }
-ubus_get_iface() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.interfaces[@.name='${1}']${2:+.$2}"; }
+ubus_get_interface() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.gateways[@.name='${1}']${2:+.$2}"; }
 opkg_get_version() { grep -m1 -A1 "Package: $1$" '/usr/lib/opkg/status' | grep -m1 'Version: ' | sed 's|Version: \(.*\)|\1|'; }
 
 load_package_config() {
@@ -1931,6 +1931,8 @@ interface_process() {
 	[ -z "$ifacePriority" ] && ifacePriority="$wan_ip_rules_priority"
 
 	if [ "$action" = 'pre-init' ]; then
+		pbr_get_gateway6 gw6 "$iface" "$dev6"
+		[ -n "$gw6" ] && ipv6_enabled=1
 		[ -z "$ifaceTableID" ] && ifaceTableID="$(get_rt_tables_non_pbr_next_id)"
 		eval "pre_init_mark_${iface//-/_}"='$ifaceMark'
 		eval "pre_init_priority_${iface//-/_}"='$ifacePriority'
@@ -2075,10 +2077,10 @@ start_service() {
 			tid="$(get_rt_tables_id "$reloadedIface")"
 			pre_init_tid="$(eval echo "\$pre_init_tid_${reloadedIface//-/_}")"
 			if [ "$tid" = "$pre_init_tid" ]; then
-				logger -t "$packageName" "Updated interface TID: ${tid}; Pre-Init TID: ${pre_init_tid}. Reloading..."
+#				logger -t "$packageName" "Updated interface $reloadedIface TID: ${tid}; Pre-Init TID: ${pre_init_tid}. Reloading..."
 				serviceStartTrigger='on_interface_reload'
 			else
-				logger -t "$packageName" "Updated interface TID: ${tid}; Pre-Init TID: ${pre_init_tid}. Restarting..."
+#				logger -t "$packageName" "Updated interface $reloadedIface TID: ${tid}; Pre-Init TID: ${pre_init_tid}. Restarting..."
 				serviceStartTrigger='on_start'
 				unset reloadedIface
 			fi
@@ -2108,19 +2110,19 @@ start_service() {
 	elif ! is_service_running; then
 		serviceStartTrigger='on_start'
 		unset reloadedIface
-	elif [ -z "$(ubus_get_status gateway)" ]; then
+	elif [ -z "$(ubus_get_status gateways)" ]; then
 		serviceStartTrigger='on_start'
 		unset reloadedIface
-	elif [ "$serviceStartTrigger" = 'on_interface_reload' ] && \
-			 [ -z "$(ubus_get_interface "$reloadedIface" 'gateway_4')" ] && \
-			 [ -z "$(ubus_get_interface "$reloadedIface" 'gateway_6')" ]; then
-		serviceStartTrigger='on_start'
-		unset reloadedIface
+#	elif [ "$serviceStartTrigger" = 'on_interface_reload' ] && \
+#			 [ -z "$(ubus_get_interface "$reloadedIface" 'gateway_ipv4')" ] && \
+#			 [ -z "$(ubus_get_interface "$reloadedIface" 'gateway_ipv6')" ]; then
+#		serviceStartTrigger='on_start'
+#		unset reloadedIface
 	else
 		serviceStartTrigger="${serviceStartTrigger:-on_start}"
 	fi
 
-	procd_open_instance "main"
+	procd_open_instance 'main'
 	procd_set_param command /bin/true
 	procd_set_param stdout 1
 	procd_set_param stderr 1
@@ -2237,9 +2239,9 @@ start_service() {
 
 service_started() {
 	if is_nft; then
-		[ -n "$gatewaySummary" ] && output "$serviceName (nft) started with gateways:\\n${gatewaySummary}"
+		[ -n "$gatewaySummary" ] && output "$serviceName (nft mode) started with gateways:\\n${gatewaySummary}"
 	else
-		[ -n "$gatewaySummary" ] && output "$serviceName (iptables) started with gateways:\\n${gatewaySummary}"
+		[ -n "$gatewaySummary" ] && output "$serviceName (iptables mode) started with gateways:\\n${gatewaySummary}"
 	fi
 	state print 'errorSummary'
 	state print 'warningSummary'
