@@ -1,11 +1,11 @@
-# Copyright 2017-2022 Stan Grishin (stangri@melmac.ca)
+# Copyright 2017-2023 Stan Grishin (stangri@melmac.ca)
 # This is free software, licensed under the GNU General Public License v3.
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=1.1.1
-PKG_RELEASE:=12
+PKG_RELEASE:=20
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
