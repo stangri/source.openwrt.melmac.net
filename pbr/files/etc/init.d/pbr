@@ -2078,7 +2078,9 @@ on_firewall_reload() {
 		logger -t "$packageName" "Reload on firewall action aborted: service is stopped."
 		return 0
 	else
-		if ! nft_file 'exists'; then
+		if nft_file 'exists'; then
+			logger -t "$packageName" "Reusing the fw4 nft file."
+		else
 			rc_procd start_service 'on_firewall_reload' "$1"
 		fi
 	fi
