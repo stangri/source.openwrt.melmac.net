@@ -224,7 +224,7 @@ nft_file() {
 		install)
 #			[ -n "$nft_file_support" ] || return 1
 			[ -s "$nftTempFile" ] || return 1
-			output "Installing nft file "
+			output "Installing fw4 nft file "
 #			if $nft -f "$nftTempFile"; then
 			if cp -f "$nftTempFile" "$nftPermFile"; then
 				output_okn
