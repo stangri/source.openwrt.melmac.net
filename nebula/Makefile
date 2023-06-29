@@ -1,4 +1,4 @@
-# Copyright 2023 Stan Grishin (stangri@melmac.ca)
+# Copyright 2021-2023 Stan Grishin (stangri@melmac.ca)
 # This is free software, licensed under the MIT License.
 
 include $(TOPDIR)/rules.mk
