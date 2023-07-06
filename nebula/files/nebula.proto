@@ -5,8 +5,6 @@ readonly PKG_VERSION='dev-test'
 readonly PROG=/usr/sbin/nebula
 readonly packageName='nebula-proto'
 
-# https://github.com/openwrt/openwrt/blob/fbf1835f46addf25a752a16be40d8f5617be3112/package/network/utils/umbim/files/lib/netifd/proto/mbim.sh
-
 [ -x "$PROG" ] || { log "Main nebula executable '/usr/sbin/nebula' not found"; exit 1; }
 
 [ -n "$INCLUDE_ONLY" ] || {
