@@ -137,6 +137,9 @@ var status = baseclass.extend({
 					if (reply.running_iptables) {
 						text = _("Running (version: %s using iptables)").format(reply.version);
 					}
+					else if (reply.running_nft_file) {
+						text = _("Running (version: %s using fw4 nft file)").format(reply.version);
+					}
 					else if (reply.running_nft) {
 						text = _("Running (version: %s using nft)").format(reply.version);
 					}
@@ -213,7 +216,7 @@ var status = baseclass.extend({
 					errorServiceDisabled: _("The %s service is currently disabled").format(pkg.Name),
 					errorNoWanGateway: _("The %s service failed to discover WAN gateway").format(pkg.Name),
 					errorIpsetNameTooLong: _("The ipset name '%s' is longer than allowed 31 characters"),
-					errorNftsetNameTooLong: _("The nft set name '%s' is longer than allowed 31 characters"),
+					errorNftsetNameTooLong: _("The nft set name '%s' is longer than allowed 255 characters"),
 					errorUnexpectedExit: _("Unexpected exit or service termination: '%s'"),
 					errorPolicyNoSrcDest: _("Policy '%s' has no source/destination parameters"),
 					errorPolicyNoInterface: _("Policy '%s' has no assigned interface"),
@@ -226,16 +229,17 @@ var status = baseclass.extend({
 					errorUserFileRunning: _("Error running custom user file '%s'"),
 					errorUserFileNoCurl: _("Use of 'curl' is detected in custom user file '%s', but 'curl' isn't installed"),
 					errorNoGateways: _("Failed to set up any gateway"),
-					errorResolver: _("Resolver %s"),
+					errorResolver: _("Resolver '%s'"),
 					errorPolicyProcessNoIpv6: _("Skipping IPv6 policy '%s' as IPv6 support is disabled"),
 					errorPolicyProcessUnknownFwmark: _("Unknown packet mark for interface '%s'"),
-					errorPolicyProcessMismatchFamily: _("Mismatched IP family between in policy %s"),
-					errorPolicyProcessUnknownProtocol: _("Unknown protocol in policy %s"),
-					errorPolicyProcessInsertionFailed: _("Insertion failed for both IPv4 and IPv6 for policy %s"),
-					errorPolicyProcessInsertionFailedIpv4: _("Insertion failed for IPv4 for policy %s"),
+					errorPolicyProcessMismatchFamily: _("Mismatched IP family between in policy '%s'"),
+					errorPolicyProcessUnknownProtocol: _("Unknown protocol in policy '%s'"),
+					errorPolicyProcessInsertionFailed: _("Insertion failed for both IPv4 and IPv6 for policy '%s'"),
+					errorPolicyProcessInsertionFailedIpv4: _("Insertion failed for IPv4 for policy '%s'"),
 					errorInterfaceRoutingEmptyValues: _("Received empty tid/mark or interface name when setting up routing"),
-					errorFailedToResolve: _("Failed to resolve %s"),
-					errorInvalidOVPNConfig: _("Invalid OpenVPN config for %s interface"),
+					errorFailedToResolve: _("Failed to resolve '%s'"),
+					errorInvalidOVPNConfig: _("Invalid OpenVPN config for '%s' interface"),
+					errorNftFileInstall: _("Failed to install fw4 nft file '%s'"),
 				};
 				var errorsTitle = E('label', { class: 'cbi-value-title' }, _("Service Errors"));
 				var text = "";

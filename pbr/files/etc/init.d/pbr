@@ -130,7 +130,7 @@ get_text() {
 		errorServiceDisabled) r="The ${packageName} service is currently disabled!";;
 		errorNoWanGateway) r="The ${serviceName} service failed to discover WAN gateway!";;
 		errorIpsetNameTooLong) r="The ipset name '%s' is longer than allowed 31 characters!";;
-		errorNftsetNameTooLong) r="The nft set name '%s' is longer than allowed 31 characters!";;
+		errorNftsetNameTooLong) r="The nft set name '%s' is longer than allowed 255 characters!";;
 		errorUnexpectedExit) r="Unexpected exit or service termination: '%s'!";;
 		errorPolicyNoSrcDest) r="Policy '%s' has no source/destination parameters!";;
 		errorPolicyNoInterface) r="Policy '%s' has no assigned interface!";;
@@ -152,6 +152,7 @@ get_text() {
 		errorPolicyProcessInsertionFailedIpv4) r="Insertion failed for IPv4 for policy '%s'!";;
 		errorInterfaceRoutingEmptyValues) r="Received empty tid/mark or interface name when setting up routing!";;
 		errorFailedToResolve) r="Failed to resolve '%s'!";;
+		errorNftFileInstall) r="Failed to install fw4 nft file '%s'!";;
 		warningInvalidOVPNConfig) r="Invalid OpenVPN config for '%s' interface.";;
 		warningResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system.";;
 		warningAGHVersionTooLow) r="Installed AdGuardHome ('%s') doesn't support 'ipset_file' option.";;
@@ -620,6 +621,7 @@ nft_file() {
 				cp -f "$nftTempFile" "$nftPermFile"; then
 				output_okn
 			else
+				state add 'errorSummary' 'errorNftFileInstall' "$nftTempFile"
 				output_failn
 			fi
 		;;

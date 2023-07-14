@@ -23,9 +23,11 @@ readonly agh="$(command -v AdGuardHome)"
 readonly aghConfigFile='/etc/adguardhome.yaml'
 # shellcheck disable=SC2155
 readonly nft="$(command -v nft)"
+readonly nftPermFile="/usr/share/nftables.d/ruleset-post/30-${packageName}.nft"
 
 is_enabled() { uci -q get "${1}.config.enabled"; }
 is_running_iptables() { iptables -t mangle -L | grep -q PBR_PREROUTING >/dev/null 2>&1; }
+is_running_nft_file() { [ -s "$nftPermFile" ]; }
 is_running_nft() { "$nft" list table inet fw4 | grep chain | grep -q pbr_mark_ >/dev/null 2>&1; }
 is_running() { is_running_iptables || is_running_nft; }
 get_version() { grep -m1 -A2 -w "^Package: $1$" /usr/lib/opkg/status | sed -n 's/Version: //p'; }
@@ -106,6 +108,11 @@ get_init_status() {
 		json_add_boolean 'running_nft' '1'
 	else
 		json_add_boolean 'running_nft' '0'
+	fi
+	if is_running_nft_file "$name"; then
+		json_add_boolean 'running_nft_file' '1'
+	else
+		json_add_boolean 'running_nft_file' '0'
 	fi
 	json_add_string 'version' "$version"
 	json_add_string 'gateways' "$gateways"
