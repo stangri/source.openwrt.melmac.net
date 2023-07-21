@@ -1,8 +1,24 @@
 {
-	"name": "AdGuard-Standard",
-	"label":_("AdGuard (Standard)"),
-	"resolver_url": "https://dns.adguard.com/dns-query",
+	"title": "AdGuard",
+	"template": "https://dns{option}.adguard.com/dns-query",
 	"bootstrap_dns": "176.103.130.130,176.103.130.131",
 	"help_link": "https://adguard.com/en/adguard-dns/overview.html",
-	"help_link_text": "AdGuard.com"
+	"params": {
+		"option": {
+			"description": "Variant",
+			"type": "select",
+			"regex": "(-family|)",
+			"options": [
+				{
+					"value": "-family",
+					"description": "Family Filter"
+				},
+				{
+					"value": "",
+					"description": "Standard"
+				}
+			],
+			"default": ""
+		}
+	}
 }
