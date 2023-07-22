@@ -331,7 +331,7 @@ load_package_config() {
 	config_get      icmp_interface           'config' 'icmp_interface'
 	config_get      ignored_interface        'config' 'ignored_interface'
 	config_get_bool ipv6_enabled             'config' 'ipv6_enabled' '0'
-	config_get_bool nft_file_support         'config' 'nft_file_support' '0'
+	config_get_bool nft_file_support         'config' 'nft_file_support' '1'
 	config_get      nft_user_set_policy      'config' 'nft_user_set_policy' 'memory'
 	config_get_bool nft_user_set_counter     'config' 'nft_user_set_counter' '0'
 	config_get      procd_boot_delay         'config' 'procd_boot_delay' '0'
