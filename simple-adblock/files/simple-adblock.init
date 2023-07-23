@@ -530,10 +530,14 @@ dns() {
 
 			case "$dns" in
 				dnsmasq.addnhosts|dnsmasq.servers)
+					chmod 660 "$outputFile"
+					chown root:dnsmasq "$outputFile"
 					param=dnsmasq_restart
 					output_text='Reloading dnsmasq'
 				;;
 				dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset)
+					chmod 660 "$outputFile"
+					chown root:dnsmasq "$outputFile"
 					param=dnsmasq_restart
 					output_text='Restarting dnsmasq'
 				;;
@@ -688,7 +692,7 @@ cache() {
 	local R_TMP
 	case "$1" in
 		create|backup)
-			[ -s "$outputFile" ] && { mv -f "$outputFile" "$outputCache"; true > "$outputFile"; } >/dev/null 2>/dev/null
+			[ -s "$outputFile" ] && { mv -f "$outputFile" "$outputCache"; } >/dev/null 2>/dev/null
 			return $?
 		;;
 		restore|use)
