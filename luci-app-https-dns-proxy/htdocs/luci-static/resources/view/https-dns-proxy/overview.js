@@ -52,7 +52,7 @@ return view.extend({
 			s = m.section(form.NamedSection, 'config', pkg.Name, _("Configuration"));
 
 			o = s.option(form.ListValue, "dnsmasq_config_update", _("Update DNSMASQ Config on Start/Stop"),
-				_("If update option is selected, the 'DNS forwardings' section of %sDHCP and DNS%s will be automatically updated to use selected DoH providers (%smore information%s).").format("<a href=\"" + dispatcher.build_url("admin/network/dhcp") + "\">", "</a>", "<a href=\"" + pkg.URL + "#default-settings" + "\" target=\"_blank\">", "</a>"));
+				_("If update option is selected, the 'DNS forwardings' section of %sDHCP and DNS%s will be automatically updated to use selected DoH providers (%smore information%s).").format("<a href=\"" + L.url("admin", "network", "dhcp") + "\">", "</a>", "<a href=\"" + pkg.URL + "#default-settings" + "\" target=\"_blank\">", "</a>"));
 			o.value('*', _("Update all configs"));
 			o.value('-', _("Do not update configs"));
 			o.default = "*";
