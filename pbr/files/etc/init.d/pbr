@@ -632,7 +632,7 @@ nft_file() {
 }
 nft() { [ -x "$nft" ] && [ -n "$*" ] && { nft_file 'add_command' "$@" || "$nft" "$@" >/dev/null 2>&1;} }
 nft4() { nft "$@"; }
-nft6() { [ -n "$ipv6_enabled" ] || return 1; nft "$@"; }
+nft6() { [ -n "$ipv6_enabled" ] || return 0; nft "$@"; }
 nftset() {
 	local command="$1" iface="$2" target="${3:-dst}" type="${4:-ip}" uid="$5" comment="$6" param="$7" mark="$7"
 	local nftset4 nftset6 i param4 param6
