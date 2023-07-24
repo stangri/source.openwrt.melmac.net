@@ -388,7 +388,12 @@ load_environment() {
 				state add 'errorSummary' 'errorNoIpFull'
 				return 1
 			fi
-			if ! is_nft; then
+			if is_nft; then
+				if [ "$(uci -q get firewall.defaults.auto_includes)" = '0' ]; then
+					uci -q del firewall.defaults.auto_includes
+					uci commit firewall
+				fi
+			else
 				if [ -z "$iptables" ] || [ ! -x "$iptables" ]; then
 					state add 'errorSummary' 'errorNoIptables'
 					return 1
@@ -606,6 +611,7 @@ nft_file() {
 			for i in "$nftTempFile" "$nftPermFile"; do 
 				mkdir -p "${i%/*}"
 			done
+			[ -n "$nft_file_support" ] || return 1
 			{ echo '#!/usr/sbin/nft -f'; echo ''; } > "$nftTempFile"
 		;;
 		delete|rm|remove)
@@ -618,6 +624,7 @@ nft_file() {
 			[ -s "$nftPermFile" ] && return 0 || return 1
 		;;
 		install)
+			[ -n "$nft_file_support" ] || return 1
 			[ -s "$nftTempFile" ] || return 1
 			output "Installing fw4 nft file "
 			if nft_call -c -f "$nftTempFile" && \
@@ -661,13 +668,13 @@ nftset() {
 					param4="$(ipv4_leases_to_nftset "$param")"
 					param6="$(ipv6_leases_to_nftset "$param")"
 				fi
-				[ -z "$param4" ] &&	param4="$(resolveip_to_nftset4 "$param")"
-				[ -z "$param6" ] &&	param6="$(resolveip_to_nftset6 "$param")"
+				[ -z "$param4" ] && param4="$(resolveip_to_nftset4 "$param")"
+				[ -z "$param6" ] && param6="$(resolveip_to_nftset6 "$param")"
 				if [ -z "$param4" ] && [ -z "$param6" ]; then
 					state add 'errorSummary' 'errorFailedToResolve' "$param"
 				else
-					nft4 add element inet "$nftTable" "$nftset4" "{ $param4 }" && ipv4_error=0
-					nft6 add element inet "$nftTable" "$nftset6" "{ $param6 }" && ipv6_error=0
+					[ -n "$param4" ] && nft4 add element inet "$nftTable" "$nftset4" "{ $param4 }" && ipv4_error=0
+					[ -n "$param6" ] && nft6 add element inet "$nftTable" "$nftset6" "{ $param6 }" && ipv6_error=0
 				fi
 			fi
 		;;
@@ -2303,7 +2310,12 @@ start_service() {
 service_started() {
 	if nft_file 'exists'; then
 		procd_set_config_changed firewall
-		[ -n "$gatewaySummary" ] && output "$serviceName (fw4 nft file mode) started with gateways:\\n${gatewaySummary}"
+		if nft_file 'exists'; then
+			[ -n "$gatewaySummary" ] && output "$serviceName (fw4 nft file mode) started with gateways:\\n${gatewaySummary}"
+		else
+			output "$serviceName FAILED TO START in fw4 nft file mode!!!"
+			output "Check the output of nft -c -f $nftTempFile"
+		fi
 	elif is_nft; then
 		[ -n "$gatewaySummary" ] && output "$serviceName (nft mode) started with gateways:\\n${gatewaySummary}"
 	else
@@ -2345,7 +2357,7 @@ service_triggers() {
 stop_service() {
 	local i nft_file_mode
 	load_environment 'on_stop'
-	is_service_running || return 0
+	! is_service_running && [ "$(get_rt_tables_next_id)" = "$(get_rt_tables_non_pbr_next_id)" ] && return 0
 	traffic_killswitch 'insert'
 	if nft_file 'exists'; then
 		nft_file_mode=1
