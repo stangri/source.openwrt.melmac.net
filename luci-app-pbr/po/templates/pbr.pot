@@ -360,22 +360,6 @@ msgid ""
 "See the %sREADME%s for details."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:141
-msgid "Running (version: %s using fw4 nft file)"
-msgstr ""
-
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:138
-msgid "Running (version: %s using iptables)"
-msgstr ""
-
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:144
-msgid "Running (version: %s using nft)"
-msgstr ""
-
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:147
-msgid "Running (version: %s)"
-msgstr ""
-
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:75
 msgid "See the %sREADME%s for details."
 msgstr ""
@@ -439,14 +423,6 @@ msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:295
 msgid "Stop"
-msgstr ""
-
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:155
-msgid "Stopped (Disabled)"
-msgstr ""
-
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:152
-msgid "Stopped (version: %s)"
 msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:291
@@ -545,6 +521,30 @@ msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:71
 msgid "Verbose output"
+msgstr ""
+
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:141
+msgid "Version %s - Running using fw4 nft file."
+msgstr ""
+
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:138
+msgid "Version %s - Running using iptables."
+msgstr ""
+
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:144
+msgid "Version %s - Running using nft."
+msgstr ""
+
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:147
+msgid "Version %s - Running."
+msgstr ""
+
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:155
+msgid "Version %s - Stopped (Disabled)."
+msgstr ""
+
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:152
+msgid "Version %s - Stopped."
 msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:153

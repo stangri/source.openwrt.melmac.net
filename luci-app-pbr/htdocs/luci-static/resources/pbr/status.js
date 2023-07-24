@@ -135,24 +135,24 @@ var status = baseclass.extend({
 			if (reply.version) {
 				if (reply.running) {
 					if (reply.running_iptables) {
-						text = _("Running (version: %s using iptables)").format(reply.version);
+						text = _("Version %s - Running using iptables.").format(reply.version);
 					}
 					else if (reply.running_nft_file) {
-						text = _("Running (version: %s using fw4 nft file)").format(reply.version);
+						text = _("Version %s - Running using fw4 nft file.").format(reply.version);
 					}
 					else if (reply.running_nft) {
-						text = _("Running (version: %s using nft)").format(reply.version);
+						text = _("Version %s - Running using nft.").format(reply.version);
 					}
 					else {
-						text = _("Running (version: %s)").format(reply.version);
+						text = _("Version %s - Running.").format(reply.version);
 					}
 				}
 				else {
 					if (reply.enabled) {
-						text = _("Stopped (version: %s)").format(reply.version);
+						text = _("Version %s - Stopped.").format(reply.version);
 					}
 					else {
-						text = _("Stopped (Disabled)");
+						text = _("Version %s - Stopped (Disabled).").format(reply.version);
 					}
 				}
 			}
