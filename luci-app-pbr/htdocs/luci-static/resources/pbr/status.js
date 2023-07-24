@@ -240,6 +240,9 @@ var status = baseclass.extend({
 					errorFailedToResolve: _("Failed to resolve '%s'"),
 					errorInvalidOVPNConfig: _("Invalid OpenVPN config for '%s' interface"),
 					errorNftFileInstall: _("Failed to install fw4 nft file '%s'"),
+					errorNoDownloadWithSecureReload: _("Policy '%s' refers to URL which can't be downloaded in 'secure_reload' mode!"),
+					errorDownloadUrlNoHttps: _("Failed to download '%s', HTTPS is not supported!"),
+					errorDownloadUrl: _("Failed to download '%s'!"),
 				};
 				var errorsTitle = E('label', { class: 'cbi-value-title' }, _("Service Errors"));
 				var text = "";

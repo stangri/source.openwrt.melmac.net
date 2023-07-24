@@ -147,6 +147,9 @@ get_text() {
 		errorInterfaceRoutingEmptyValues) r="Received empty tid/mark or interface name when setting up routing!";;
 		errorFailedToResolve) r="Failed to resolve '%s'!";;
 		errorNftFileInstall) r="Failed to install fw4 nft file '%s'!";;
+		errorDownloadUrlNoHttps) r="Failed to download '%s', HTTPS is not supported!";;
+		errorDownloadUrl) r="Failed to download '%s'!";;
+		errorNoDownloadWithSecureReload) r="Policy '%s' refers to URL which can't be downloaded in 'secure_reload' mode!";;
 		warningInvalidOVPNConfig) r="Invalid OpenVPN config for '%s' interface.";;
 		warningResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system.";;
 		warningAGHVersionTooLow) r="Installed AdGuardHome ('%s') doesn't support 'ipset_file' option.";;
@@ -169,8 +172,6 @@ output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
 str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
 str_replace() { echo "${1//$2/$3}"; }
 str_contains() { [ -n "$1" ] && [ -n "$2" ] && [ "${1//$2}" != "$1" ]; }
-is_greater() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
-is_greater_or_equal() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" = "$2"; }
 str_contains_word() { echo "$1" | grep -q -w "$2"; }
 str_to_lower() { echo "$1" | tr 'A-Z' 'a-z'; }
 str_to_upper() { echo "$1" | tr 'a-z' 'A-Z'; }
@@ -197,9 +198,6 @@ output() {
 		printf "%b" "$msg" >> "$sharedMemoryOutput"
 	fi
 }
-is_present() { command -v "$1" >/dev/null 2>&1; }
-is_installed() { grep -q "Provides: ${1}" /usr/lib/opkg/status; }
-is_nft() { [ -x "$nft" ] && ! str_contains "$resolver_set" 'ipset' && "$nft" list chains inet | grep -q "${nftPrefix}_prerouting"; }
 _find_firewall_wan_zone() { [ "$(uci -q get "firewall.${1}.name")" = "wan" ] && firewallWanZone="$1"; }
 _build_ifaces_all() { ifacesAll="${ifacesAll}${1} "; }
 _build_ifaces_supported() { is_supported_interface "$1" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${1} "; }
@@ -237,14 +235,49 @@ pbr_get_gateway6() {
 	fi
 	eval "$1"='$gw'
 }
+
+_check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
+is_config_enabled() {
+	local cfg="$1" _cfg_enabled=1
+	[ -n "$1" ] || return 1
+	config_load "$packageName"
+	config_foreach _check_config "$cfg"
+	return "$_cfg_enabled"
+}
+is_default_dev() { [ "$1" = "$($ip_bin -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
+is_domain() { ! is_ipv6 "$1" && str_contains "$1" '[a-zA-Z]'; }
 is_dslite() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:6}" = "dslite" ]; }
+is_family_mismatch() { ( is_ipv4_netmask "${1//!}" && is_ipv6 "${2//!}" ) || ( is_ipv6 "${1//!}" && is_ipv4_netmask "${2//!}" ); }
+is_greater() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
+is_greater_or_equal() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" = "$2"; }
+is_ignored_interface() { str_contains_word "$ignored_interface" "$1"; }
+is_ignore_target() { [ "$(str_to_lower "$1")" = 'ignore' ]; }
+is_installed() { grep -q "Provides: ${1}" /usr/lib/opkg/status; }
+is_ipset_type_supported() { ipset help hash:"$1" >/dev/null 2>&1; }
+is_nft_mode() { [ -x "$nft" ] && ! str_contains "$resolver_set" 'ipset' && "$nft" list chains inet | grep -q "${nftPrefix}_prerouting"; }
+is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; }
+is_ipv6() { ! is_mac_address "$1" && str_contains "$1" ":"; }
+is_ipv6_global() { [ "${1:0:4}" = "2001" ]; }
+is_ipv6_link_local() { [ "${1:0:4}" = "fe80" ]; }
+is_ipv6_unique_local() { [ "${1:0:2}" = "fc" ] || [ "${1:0:2}" = "fd" ]; }
+is_list() { str_contains "$1" "," || str_contains "$1" " "; }
+is_ipv4_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
 is_l2tp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "l2tp" ]; }
+is_mac_address() { expr "$1" : '[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]$' >/dev/null; }
+is_netifd_table() { local iface="$1"; [ "$(uci -q get "network.${iface}.ip4table")" = "${packageName}_${iface%6}" ]; }
 is_oc() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:11}" = "openconnect" ]; }
-# is_ovpn() { local dev; network_get_device dev "$1"; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
 is_ovpn() { local dev; dev="$(uci -q get "network.${1}.device")"; [ -z "$dev" ] && dev="$(uci -q get "network.${1}.dev")"; [ "${dev:0:3}" = "tun" ] || [ "${dev:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${dev}/tun_flags" ]; }
-is_valid_ovpn() { local dev_net dev_ovpn; dev_net="$(uci -q get "network.${1}.device")"; [ -z "$dev_net" ] && dev_net="$(uci -q get "network.${1}.dev")"; dev_ovpn="$(uci -q get "openvpn.${1}.dev")"; [ -n "$dev_net" ] && [ -n "$dev_ovpn" ] && [ "$dev_net" = "$dev_ovpn" ]; }
+is_ovpn_valid() { local dev_net dev_ovpn; dev_net="$(uci -q get "network.${1}.device")"; [ -z "$dev_net" ] && dev_net="$(uci -q get "network.${1}.dev")"; dev_ovpn="$(uci -q get "openvpn.${1}.dev")"; [ -n "$dev_net" ] && [ -n "$dev_ovpn" ] && [ "$dev_net" = "$dev_ovpn" ]; }
+is_phys_dev() { [ "${1:0:1}" = "@" ] && ip l show | grep -E -q "^\\d+\\W+${1:1}"; }
+is_present() { command -v "$1" >/dev/null 2>&1; }
+is_service_running() { if is_nft_mode; then is_service_running_nft; else is_service_running_iptables; fi; }
+is_service_running_iptables() { [ -x "$iptables" ] && "$iptables" -t mangle -L | grep -q "${iptPrefix}_PREROUTING" >/dev/null 2>&1; }
+is_service_running_nft() { [ -x "$nft" ] && [ -n "$(get_mark_nft_chains)" ]; }
+is_supported_iface_dev() { local n dev; for n in $ifacesSupported; do network_get_device dev "$n"; [ "$1" = "$dev" ] && return 0; done; return 1; }
+is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
 is_pptp() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:4}" = "pptp" ]; }
 is_softether() { local dev; network_get_device dev "$1"; [ "${dev:0:4}" = "vpn_" ]; }
+is_supported_interface() { str_contains_word "$supported_interface" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; } || is_ignore_target "$1"; }
 is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
 is_tor_running() {
 	local ret=0
@@ -258,47 +291,21 @@ is_tor_running() {
 	json_cleanup
 	if [ "$ret" = "0" ]; then return 1; else return 0; fi
 }
-is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
 is_tunnel() { is_dslite "$1" || is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_softether "$1" || is_tor "$1" || is_wg "$1"; }
+is_url() { is_url_file "$1" || is_url_dl "$1"; }
+is_url_dl() { is_url_ftp "$1" || is_url_http "$1" || is_url_https "$1"; }
+is_url_file() { [ "$1" != "${1#file://}" ];}
+is_url_ftp() { [ "$1" != "${1#ftp://}" ];}
+is_url_http() { [ "$1" != "${1#http://}" ];}
+is_url_https() { [ "$1" != "${1#https://}" ];}
 is_wan() { [ "$1" = "$wanIface4" ] || { [ "${1##wan}" != "$1" ] && [ "${1##wan6}" = "$1" ]; } || [ "${1%%wan}" != "$1" ]; }
 is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ] || [ "${1/#wan6}" != "$1" ] || [ "${1/%wan6}" != "$1" ]; }
-is_ignored_interface() { str_contains_word "$ignored_interface" "$1"; }
-is_supported_interface() { str_contains_word "$supported_interface" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; } || is_ignore_target "$1"; }
-is_ignore_target() { [ "$(str_to_lower "$1")" = 'ignore' ]; }
-is_mac_address() { expr "$1" : '[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]$' >/dev/null; }
-is_ipv4() { expr "$1" : '[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; }
-is_ipv6() { ! is_mac_address "$1" && str_contains "$1" ":"; }
-is_family_mismatch() { ( is_ipv4_netmask "${1//!}" && is_ipv6 "${2//!}" ) || ( is_ipv6 "${1//!}" && is_ipv4_netmask "${2//!}" ); }
-is_ipv6_link_local() { [ "${1:0:4}" = "fe80" ]; }
-is_ipv6_unique_local() { [ "${1:0:2}" = "fc" ] || [ "${1:0:2}" = "fd" ]; }
-is_ipv6_global() { [ "${1:0:4}" = "2001" ]; }
-# is_ipv6_global() { is_ipv6 "$1" && ! is_ipv6_link_local "$1" && ! is_ipv6_link_local "$1"; }
-is_list() { str_contains "$1" "," || str_contains "$1" " "; }
-is_ipv4_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
-is_domain() { ! is_ipv6 "$1" && str_contains "$1" '[a-zA-Z]'; }
-is_phys_dev() { [ "${1:0:1}" = "@" ] && ip l show | grep -E -q "^\\d+\\W+${1:1}"; }
+is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
 dnsmasq_kill() { killall -q -s HUP dnsmasq; }
 dnsmasq_restart() { output 3 'Restarting dnsmasq '; if /etc/init.d/dnsmasq restart >/dev/null 2>&1; then output_okn; else output_failn; fi; }
-is_default_dev() { [ "$1" = "$($ip_bin -4 r | grep -m1 'dev' | grep -Eso 'dev [^ ]*' | awk '{print $2}')" ]; }
-is_supported_iface_dev() { local n dev; for n in $ifacesSupported; do network_get_device dev "$n"; [ "$1" = "$dev" ] && return 0; done; return 1; }
-is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
-is_service_running_iptables() { [ -x "$iptables" ] && "$iptables" -t mangle -L | grep -q "${iptPrefix}_PREROUTING" >/dev/null 2>&1; }
-is_service_running_nft() { [ -x "$nft" ] && [ -n "$(get_mark_nft_chains)" ]; }
-# atomic
-# is_service_running_nft() { [ -x "$nft" ] && [ -s "$nftPermFile" ]; }
-is_service_running() { if is_nft; then is_service_running_nft; else is_service_running_iptables; fi; }
-is_netifd_table() { local iface="$1"; [ "$(uci -q get "network.${iface}.ip4table")" = "${packageName}_${iface%6}" ]; }
 get_rt_tables_id() { local iface="$1"; grep "${ipTablePrefix}_${iface}\$" '/etc/iproute2/rt_tables' | awk '{print $1;}'; }
 get_rt_tables_next_id() { echo "$(($(sort -r -n '/etc/iproute2/rt_tables' | grep -o -E -m 1 "^[0-9]+")+1))"; }
 get_rt_tables_non_pbr_next_id() { echo "$(($(grep -v "${ipTablePrefix}_" '/etc/iproute2/rt_tables' | sort -r -n  | grep -o -E -m 1 "^[0-9]+")+1))"; }
-_check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
-is_config_enabled() {
-	local cfg="$1" _cfg_enabled=1
-	[ -n "$1" ] || return 1
-	config_load "$packageName"
-	config_foreach _check_config "$cfg"
-	return "$_cfg_enabled"
-}
 # shellcheck disable=SC2016
 resolveip_to_ipt() { resolveip "$@" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d'; }
 resolveip_to_ipt4() { resolveip_to_ipt -4 "$@"; }
@@ -317,10 +324,46 @@ get_mark_ipt_chains() { [ -n "$(command -v iptables-save)" ] && iptables-save | 
 get_mark_nft_chains() { [ -x "$nft" ] && "$nft" list table inet "$nftTable" 2>/dev/null | grep chain | grep "${nftPrefix}_mark_" | awk '{ print $2 }'; }
 get_ipsets() { [ -x "$(command -v ipset)" ] && ipset list | grep "${ipsPrefix}_" | awk '{ print $2 }'; }
 get_nft_sets() { [ -x "$nft" ] && "$nft" list table inet "$nftTable" 2>/dev/null | grep 'set' | grep "${nftPrefix}_" | awk '{ print $2 }'; }
-is_ipset_type_supported() { ipset help hash:"$1" >/dev/null 2>&1; }
 ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.status.${1}"; }
 ubus_get_interface() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@.${packageName}.instances.main.data.gateways[@.name='${1}']${2:+.$2}"; }
 opkg_get_version() { grep -m1 -A1 "Package: $1$" '/usr/lib/opkg/status' | grep -m1 'Version: ' | sed 's|Version: \(.*\)|\1|'; }
+process_url() {
+	local url="$1"
+	local dl_command dl_https_supported dl_temp_file
+	if is_present 'curl'; then
+		dl_command="curl --silent --insecure"
+		dl_flag="-o"
+	elif is_present '/usr/libexec/wget-ssl'; then
+		dl_command="/usr/libexec/wget-ssl --no-check-certificate -q"
+		dl_flag="-O"
+	elif is_present wget && wget --version 2>/dev/null | grep -q "+https"; then
+		dl_command="wget --no-check-certificate -q"
+		dl_flag="-O"
+	else
+		dl_command="uclient-fetch --no-check-certificate -q"
+		dl_flag="-O"
+	fi
+	if curl --version 2>/dev/null | grep -q "https" \
+		|| wget --version 2>/dev/null | grep -q "+https" \
+		|| grep -q "libustream-mbedtls" /usr/lib/opkg/status \
+		|| grep -q "libustream-openssl" /usr/lib/opkg/status \
+		|| grep -q "libustream-wolfssl" /usr/lib/opkg/status; then
+		dl_https_supported=1
+	else
+		unset dl_https_supported
+	fi
+	while [ -z "$dl_temp_file" ] || [ -e "$dl_temp_file" ]; do
+		dl_temp_file="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
+	done
+	if is_url_https && [ -z "$dl_https_supported" ]; then
+		state add 'errorSummary' 'errorDownloadUrlNoHttps' "$url"
+	elif $dl_command "$url" "$dl_flag" "$dl_temp_file" 2>/dev/null; then
+		cat "$dl_temp_file"
+	else
+		state add 'errorSummary' 'errorDownloadUrl' "$url"
+	fi
+	rm -f "$dl_temp_file"
+}
 
 load_package_config() {
 	local param="$1"
@@ -355,7 +398,7 @@ load_package_config() {
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
 	mkdir -p "${dnsmasqFile%/*}"
-	if is_nft; then
+	if is_nft_mode; then
 		fw_maskXor="$(printf '%#x' "$((fw_mask ^ 0xffffffff))")"
 		fw_maskXor="${fw_maskXor:-0xff00ffff}"
 		if [ "$nft_user_set_counter" -eq '0' ]; then
@@ -388,7 +431,7 @@ load_environment() {
 				state add 'errorSummary' 'errorNoIpFull'
 				return 1
 			fi
-			if is_nft; then
+			if is_nft_mode; then
 				if [ "$(uci -q get firewall.defaults.auto_includes)" = '0' ]; then
 					uci -q del firewall.defaults.auto_includes
 					uci commit firewall
@@ -1152,7 +1195,7 @@ traffic_killswitch() {
 			network_get_subnet lan_subnet "${procd_lan_interface:-lan}"
 			network_get_physdev wan_device "${wanIface4:-wan}"
 			network_get_physdev wan6_device "${wanIface6:-wan6}"
-			if is_nft; then
+			if is_nft_mode; then
 				nft_call add chain inet "$nftTable" "${nftPrefix}_killswitch" '{ type filter hook forward priority 0; policy accept; }' || s=1
 				nft_call add rule inet "$nftTable" "${nftPrefix}_killswitch" oifname "$wan_device" ip saddr "$lan_subnet" counter reject || s=1
 				nft_call add rule inet "$nftTable" "${nftPrefix}_killswitch" oifname "$wan6_device" ip saddr "$lan_subnet" counter reject
@@ -1172,7 +1215,7 @@ traffic_killswitch() {
 			if [ -n "$secure_reload" ] && ! nft_file 'enabled'; then
 				output 3 'Deactivating traffic killswitch '
 			fi
-			if is_nft; then
+			if is_nft_mode; then
 				nft_call flush chain inet "$nftTable" "${nftPrefix}_killswitch" || s=1
 				nft_call delete chain inet "$nftTable" "${nftPrefix}_killswitch" || s=1
 			else
@@ -1193,7 +1236,7 @@ traffic_killswitch() {
 	esac
 }
 
-policy_routing_tor() { if is_nft; then policy_routing_tor_nft "$@"; else policy_routing_tor_iptables "$@"; fi; }
+policy_routing_tor() { if is_nft_mode; then policy_routing_tor_nft "$@"; else policy_routing_tor_iptables "$@"; fi; }
 policy_routing_tor_iptables() {
 	local comment="$1" iface="$2" src_addr="$3" src_port="$4" dest_addr="$5" dest_port="$6" proto chain uid="$9"
 	proto="$(str_to_lower "$7")"
@@ -1237,7 +1280,7 @@ policy_routing_tor_nft() {
 	return 0
 }
 
-policy_routing() { if is_nft; then policy_routing_nft "$@"; else policy_routing_iptables "$@"; fi; }
+policy_routing() { if is_nft_mode; then policy_routing_nft "$@"; else policy_routing_iptables "$@"; fi; }
 policy_routing_iptables() {
 	local mark param4 param6 i negation value dest ipInsertOption="-A"
 	local ip4error='1' ip6error='1'
@@ -1618,7 +1661,7 @@ policy_process() {
 		[ "$enabled" -gt 0 ] || return 0
 		unset processPolicyError
 		uid="$1"
-		if is_nft; then
+		if is_nft_mode; then
 			chain="$(str_to_lower "$chain")"
 		else
 			chain="$(str_to_upper "$chain")"
@@ -1660,7 +1703,15 @@ policy_process() {
 		elif str_contains "$proto" '[ ;\{\}]'; then
 			for i in $(str_extras_to_space "$proto"); do [ -n "$i" ] && policy_process "$name" "$interface" "$src_addr" "$src_port" "$dest_addr" "$dest_port" "$i" "$chain" "$uid"; done
 		else
-			if is_tor "$interface"; then
+			if [ -n "$secure_reload" ] && { is_url_dl "$src_addr" || is_url_dl "$dest_addr"; }; then
+				state add 'errorSummary' 'errorNoDownloadWithSecureReload' "$name"
+			elif is_url "$src_addr"; then
+				src_addr="$(process_url "$src_addr")"
+				[ -n "$src_addr" ] && policy_process "$name" "$interface" "$src_addr" "$src_port" "$dest_addr" "$dest_port" "$proto" "$chain" "$uid"
+			elif is_url "$dest_addr"; then
+				dest_addr="$(process_url "$dest_addr")"
+				[ -n "$dest_addr" ] && policy_process "$name" "$interface" "$src_addr" "$src_port" "$dest_addr" "$dest_port" "$proto" "$chain" "$uid"
+			elif is_tor "$interface"; then
 				policy_routing_tor "$name" "$interface" "$src_addr" "$src_port" "$dest_addr" "$dest_port" "$proto" "$chain" "$uid"
 			else
 				policy_routing "$name" "$interface" "$src_addr" "$src_port" "$dest_addr" "$dest_port" "$proto" "$chain" "$uid"
@@ -1669,7 +1720,7 @@ policy_process() {
 	fi
 }
 
-interface_process_tor() { if is_nft; then interface_process_tor_nft "$@"; else interface_process_tor_iptables "$@"; fi; }
+interface_process_tor() { if is_nft_mode; then interface_process_tor_nft "$@"; else interface_process_tor_iptables "$@"; fi; }
 interface_process_tor_iptables() {
 	local s=0 iface="$1" action="$2"
 	local displayText set_name4 set_name6
@@ -1780,7 +1831,7 @@ interface_routing() {
 				ipv4_error=0
 				$ip_bin rule del table "$tid" >/dev/null 2>&1
 				$ip_bin -4 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
-				if is_nft; then
+				if is_nft_mode; then
 					nft add chain inet "$nftTable" "${nftPrefix}_mark_${mark}" || ipv4_error=1 
 					nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} counter mark set mark and ${fw_maskXor} xor ${mark}" || ipv4_error=1
 					nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} return" || ipv4_error=1
@@ -1821,7 +1872,7 @@ interface_routing() {
 					$($ip_bin -4 route list table main)
 EOF
 					$ip_bin -4 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
-					if is_nft; then
+					if is_nft_mode; then
 						nft add chain inet "$nftTable" "${nftPrefix}_mark_${mark}" || ipv4_error=1 
 						nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} counter mark set mark and ${fw_maskXor} xor ${mark}" || ipv4_error=1
 						nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} return" || ipv4_error=1
@@ -1856,7 +1907,7 @@ EOF
 			fi
 			if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
 				dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
-				if is_nft; then
+				if is_nft_mode; then
 					if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
 						nft add rule inet "$nftTable" "${nftPrefix}_prerouting ip dscp ${dscp} goto ${nftPrefix}_mark_${mark}" || s=1
 					fi
@@ -1877,7 +1928,7 @@ EOF
 			return "$s"
 		;;
 		create_user_set)
-			if is_nft; then
+			if is_nft_mode; then
 				nftset 'create_user_set' "$iface" 'dst' 'ip' 'user' '' "$mark" || s=1
 				nftset 'create_user_set' "$iface" 'src' 'ip' 'user' '' "$mark" || s=1
 				nftset 'create_user_set' "$iface" 'src' 'mac' 'user' '' "$mark" || s=1
@@ -1979,7 +2030,7 @@ interface_process() {
 	is_wan6 "$iface" && return 0
 	[ $((ifaceMark)) -gt $((fw_mask)) ] && return 1
 
-	if is_ovpn "$iface" && ! is_valid_ovpn "$iface"; then
+	if is_ovpn "$iface" && ! is_ovpn_valid "$iface"; then
 		: || state add 'warningSummary' 'warningInvalidOVPNConfig' "$iface"
 	fi
 
@@ -2212,7 +2263,7 @@ start_service() {
 			cleanup_main_chains
 			cleanup_sets
 			nft_file 'create'
-			if ! is_nft; then
+			if ! is_nft_mode; then
 				for i in $chainsList; do
 					i="$(str_to_upper "$i")"
 					ipt -t mangle -N "${iptPrefix}_${i}"
@@ -2255,7 +2306,7 @@ start_service() {
 			cleanup_marking_chains
 			cleanup_rt_tables
 			nft_file 'create'
-			if ! is_nft; then
+			if ! is_nft_mode; then
 				for i in $chainsList; do
 					i="$(str_to_upper "$i")"
 					ipt -t mangle -N "${iptPrefix}_${i}"
@@ -2316,7 +2367,7 @@ service_started() {
 			output "$serviceName FAILED TO START in fw4 nft file mode!!!"
 			output "Check the output of nft -c -f $nftTempFile"
 		fi
-	elif is_nft; then
+	elif is_nft_mode; then
 		[ -n "$gatewaySummary" ] && output "$serviceName (nft mode) started with gateways:\\n${gatewaySummary}"
 	else
 		[ -n "$gatewaySummary" ] && output "$serviceName (iptables mode) started with gateways:\\n${gatewaySummary}"
@@ -2382,7 +2433,7 @@ stop_service() {
 	if [ "$enabled" -ne 0 ]; then
 		if [ -n "$nft_file_mode" ]; then
 			output "$serviceName (fw4 nft file mode) stopped "; output_okn;
-		elif is_nft; then
+		elif is_nft_mode; then
 			output "$serviceName (nft mode) stopped "; output_okn;
 		else
 			output "$serviceName (iptables mode) stopped "; output_okn;
@@ -2393,7 +2444,7 @@ stop_service() {
 status_service() {
 	local _SEPARATOR_='============================================================'
 	load_environment 'on_status'
-	if is_nft; then
+	if is_nft_mode; then
 		status_service_nft "$@"
 	else
 		status_service_iptables "$@"
