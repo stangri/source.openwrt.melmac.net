@@ -1,4 +1,4 @@
-// Copyright 2022 Stan Grishin <stangri@melmac.ca>
+// Copyright 2023 Stan Grishin <stangri@melmac.ca>
 // This code wouldn't have been possible without help from [@vsviridov](https://github.com/vsviridov)
 
 "require ui";
@@ -102,37 +102,42 @@ var RPC = {
 var status = baseclass.extend({
 	render: function () {
 		return Promise.all([
-			L.resolveDefault(getInitStatus(), {}),
-			L.resolveDefault(getRuntime(), {}),
+			L.resolveDefault(getInitStatus(pkg.Name), {}),
+			L.resolveDefault(getProviders(pkg.Name), {}),
+			L.resolveDefault(getRuntime(pkg.Name), {}),
 		]).then(function (data) {
-			var replyStatus = data[0];
-			var replyRuntime = data[1];
-			var reply;
 			var text;
 
-			if (replyStatus && replyStatus[pkg.Name]) {
-				reply = replyStatus[pkg.Name];
-			}
-			else {
-				reply = {
+			var reply = {
+				status: data[0] && data[0][pkg.Name] || {
 					enabled: null,
 					running: null,
+					force_dns_active: null,
 					version: null,
-				};
+				},
+				providers: data[1] && data[1][pkg.Name] || { providers: [] },
+				runtime: data[2] && data[2][pkg.Name] || { instances: [] },
 			}
 
 			var header = E('h2', {}, _("HTTPS DNS Proxy - Status"));
 			var statusTitle = E('label', { class: 'cbi-value-title' }, _("Service Status"));
-			if (reply.version) {
-				if (reply.running) {
-						text = _("Running (version: %s)").format(reply.version);
+			if (reply.status.version) {
+				if (reply.status.running) {
+					text = _("Version %s - Running.").format(reply.status.version);
+					if (reply.status.force_dns_active) {
+						text += "<br />" + _("Force DNS ports:");
+						reply.status.force_dns_ports.forEach(element => {
+							text += " " + element;
+						});
+						text += ".";
 					}
+				}
 				else {
-					if (reply.enabled) {
-						text = _("Stopped (version: %s)").format(reply.version);
+					if (reply.status.enabled) {
+						text = _("Version %s - Stopped.").format(reply.status.version);
 					}
 					else {
-						text = _("Stopped (Disabled)");
+						text = _("Version %s - Stopped (Disabled).").format(reply.status.version);
 					}
 				}
 			}
@@ -143,9 +148,87 @@ var status = baseclass.extend({
 			var statusField = E('div', { class: 'cbi-value-field' }, statusText);
 			var statusDiv = E('div', { class: 'cbi-value' }, [statusTitle, statusField]);
 
+			var instancesDiv = [];
+			if (reply.runtime.instances) {
+				var instancesTitle = E('label', { class: 'cbi-value-title' }, _("Service Instances"));
+				text = _("See the %sREADME%s for details.").format(
+					"<a href=\"" + pkg.URL + "#a-word-about-default-routing \" target=\"_blank\">", "</a>")
+				var instancesDescr = E('div', { class: 'cbi-value-description' }, "");
+
+				text=""
+				Object.values(reply.runtime.instances).forEach(element => {
+					var rFlag
+					var aFlag
+					var pFlag
+					var r
+					var a
+					var p
+					var name
+					var option
+					element.command.forEach(param => {
+						if (rFlag) {
+							r = param
+							rFlag = null
+						}
+						if (aFlag) {
+							a = param
+							aFlag = null
+						}
+						if (pFlag) {
+							p = param
+							pFlag = null
+						}
+						if (param === "-r") rFlag = true;
+						if (param === "-a") aFlag = true;
+						if (param === "-p") pFlag = true;
+					});
+
+					function templateToRegexp(template) {
+						return RegExp('^' + template.split(/(\{\w+\})/g).map(part => {
+							let placeholder = part.match(/^\{(\w+)\}$/);
+							if (placeholder)
+								return `(?<${placeholder[1]}>.*?)`;
+							else
+								return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+						}).join('') + '$');
+					}
+
+					reply.providers.forEach(prov => {
+						let regexp = templateToRegexp(prov.template);
+						if (regexp.test(r)) {
+							name = _(prov.title);
+							let match = r.match(regexp);
+							if (match[1]) {
+								if (prov.params.option.options) {
+									prov.params.option.options.forEach(opt => {
+										if (opt.value === match[1]){
+											option = _(opt.description);
+										}
+									})
+									name += " (" + option + ")" 
+								}
+								else {
+									name += " (" + match[1] + ")" 
+								}
+							}
+						}
+					});
+
+					if ( a === "127.0.0.1" ) {
+						text += _("%s%s%s proxy on port %s.%s").format("<strong>", name, "</strong>", p, "<br />");
+					}
+					else {
+						text += _("%s%s%s proxy at %s on port %s.%s").format("<strong>", name, "</strong>", a, p, "<br />");
+					}
+				});
+
+				var instancesText = E('div', {}, text);
+				var instancesField = E('div', { class: 'cbi-value-field' }, [instancesText, instancesDescr]);
+				instancesDiv = E('div', { class: 'cbi-value' }, [instancesTitle, instancesField]);
+			}
+
 			var btn_gap = E('span', {}, '&#160;&#160;');
 			var btn_gap_long = E('span', {}, '&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;');
-
 			var btn_start = E('button', {
 				'class': 'btn cbi-button cbi-button-apply',
 				disabled: true,
@@ -201,10 +284,10 @@ var status = baseclass.extend({
 				}
 			}, _('Disable'));
 
-			if (reply.enabled) {
+			if (reply.status.enabled) {
 				btn_enable.disabled = true;
 				btn_disable.disabled = false;
-				if (reply.running) {
+				if (reply.status.running) {
 					btn_start.disabled = true;
 					btn_action.disabled = false;
 					btn_stop.disabled = false;
@@ -226,14 +309,14 @@ var status = baseclass.extend({
 			var buttonsTitle = E('label', { class: 'cbi-value-title' }, _("Service Control"))
 			var buttonsText = E('div', {}, [btn_start, btn_gap, btn_action, btn_gap, btn_stop, btn_gap_long, btn_enable, btn_gap, btn_disable]);
 			var buttonsField = E('div', { class: 'cbi-value-field' }, buttonsText);
-			if (reply.version) {
+			if (reply.status.version) {
 				var buttonsDiv = E('div', { class: 'cbi-value' }, [buttonsTitle, buttonsField]);
 			}
 			else {
 				var buttonsDiv = [];
 			}
 
-			return E('div', {}, [header, statusDiv]);
+			return E('div', {}, [header, statusDiv, instancesDiv, buttonsDiv]);
 		});
 	},
 });

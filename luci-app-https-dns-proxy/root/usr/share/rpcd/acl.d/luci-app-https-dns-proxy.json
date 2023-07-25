@@ -7,10 +7,12 @@
 					"getInitList",
 					"getInitStatus",
 					"getPlatformSupport",
+					"getProviders",
 					"getRuntime"
 				]
 			},
 			"uci": [
+				"dnsmasq",
 				"https-dns-proxy"
 			]
 		},

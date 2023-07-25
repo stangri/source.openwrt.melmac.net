@@ -22,6 +22,7 @@ is_running() { [ "$(ubus call service list "{ 'name': '$1' }" | jsonfilter -q -e
 get_version() { grep -m1 -A2 -w "^Package: $1$" /usr/lib/opkg/status | sed -n 's/Version: //p'; }
 check_http2() { grep -q 'Provides: libnghttp2' /usr/lib/opkg/status; }
 check_http3() { grep -q 'Provides: libnghttp3' /usr/lib/opkg/status; }
+ubus_get_ports() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances[*].data.firewall.*.dest_port"; }
 logger() { /usr/bin/logger -t "$packageName" "$@"; }
 print_json_bool() { json_init; json_add_boolean "$1" "$2"; json_dump; json_cleanup; }
 
@@ -46,9 +47,11 @@ get_init_list() {
 
 get_init_status() {
 	local name
+	local i ports
+	local version
 	name="$(basename "$1")"
 	name="${name:-$packageName}" 
-	local version
+	ports="$(ubus_get_ports)"
 	[ -z "$version" ] && version="$(get_version "$name")"
 	json_init
 	json_add_object  "$name"
@@ -61,6 +64,14 @@ get_init_status() {
 		json_add_boolean 'running' '1'
 	else
 		json_add_boolean 'running' '0'
+	fi
+	if [ -n "$ports" ]; then
+		json_add_boolean 'force_dns_active' '1'
+		json_add_array 'force_dns_ports'
+			for i in $ports; do json_add_int '' "$i"; done
+		json_close_array
+	else
+		json_add_boolean 'force_dns_active' '0'
 	fi
 	json_add_string 'version' "$version"
 	json_close_array
@@ -92,12 +103,12 @@ get_platform_support() {
 
 get_providers() {
 	local f
-	echo '{"https-dns-proxy":{"providers":['
+	echo '{"https-dns-proxy":['
 	for f in "$providersDir"/*; do
 		cat "$f"
 		echo ','
 	done
-	echo ']}}'
+	echo ']}'
 }
 
 get_runtime() {	ubus call service list "{ 'verbose': true, 'name': '$1' }"; }

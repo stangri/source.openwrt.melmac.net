@@ -22,8 +22,8 @@ return view.extend({
 
 	render: function () {
 		return Promise.all([
-			L.resolveDefault(hdp.getPlatformSupport(), {}),
-			L.resolveDefault(hdp.getProviders(), {}),
+			L.resolveDefault(hdp.getPlatformSupport(pkg.Name), {}),
+			L.resolveDefault(hdp.getProviders(pkg.Name), {}),
 		]).then(function (data) {
 			var replyPlatform;
 			var replyProviders;
@@ -47,10 +47,11 @@ return view.extend({
 			}
 
 			status = new hdp.status();
-			m = new form.Map(pkg.Name, _("HTTPS DNS Proxy Settings"));
+			m = new form.Map(pkg.Name, _("HTTPS DNS Proxy - Configuration"));
 
-			s = m.section(form.NamedSection, 'config', pkg.Name, _("Configuration"));
+			s = m.section(form.NamedSection, 'config', pkg.Name);
 
+// TODO: list individual dnsmasq instances in the drop-down
 			o = s.option(form.ListValue, "dnsmasq_config_update", _("Update DNSMASQ Config on Start/Stop"),
 				_("If update option is selected, the 'DNS forwardings' section of %sDHCP and DNS%s will be automatically updated to use selected DoH providers (%smore information%s).").format("<a href=\"" + L.url("admin", "network", "dhcp") + "\">", "</a>", "<a href=\"" + pkg.URL + "#default-settings" + "\" target=\"_blank\">", "</a>"));
 			o.value('*', _("Update all configs"));
@@ -76,6 +77,8 @@ return view.extend({
 			o.value("1", _("Force Router DNS server to all local devices"));
 			o.depends('force_dns', '1');
 			o.default = "1";
+
+// TODO: add grid for editing instances
 
 			return Promise.all([status.render(), m.render()]);
 		})
