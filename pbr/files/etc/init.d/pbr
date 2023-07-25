@@ -150,6 +150,7 @@ get_text() {
 		errorDownloadUrlNoHttps) r="Failed to download '%s', HTTPS is not supported!";;
 		errorDownloadUrl) r="Failed to download '%s'!";;
 		errorNoDownloadWithSecureReload) r="Policy '%s' refers to URL which can't be downloaded in 'secure_reload' mode!";;
+		errorFileSchemaRequiresCurl) r="The file:// schema requires curl, but it's not detected on this system!";;
 		warningInvalidOVPNConfig) r="Invalid OpenVPN config for '%s' interface.";;
 		warningResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system.";;
 		warningAGHVersionTooLow) r="Installed AdGuardHome ('%s') doesn't support 'ipset_file' option.";;
@@ -159,6 +160,7 @@ get_text() {
 		warningTorUnsetChainIpt) r="Please unset 'chain' or set 'chain' to 'PREROUTING' for policy '%s'.";;
 		warningTorUnsetChainNft) r="Please unset 'chain' or set 'chain' to 'prerouting' for policy '%s'.";;
 		warningOutdatedWebUIApp) r="The WebUI application is outdated (version %s), please update it.";;
+		warningBadNftCallsInUserFile) r="Incomatible nft calls detected in user include file, disabling fw4 nft file support.";;
 	esac
 	echo "$r"
 }
@@ -236,6 +238,18 @@ pbr_get_gateway6() {
 	eval "$1"='$gw'
 }
 
+# shellcheck disable=SC2016
+is_bad_user_file_nft_call() { grep -q '"\$nft" list' "$1" || grep '"\$nft" -f' "$1";}
+_check_user_files_for_bad_nft_calls() {
+	local cfg="$1"
+	local en path
+	config_get_bool en   "$cfg" 'enabled' 1
+	config_get      path "$cfg" 'path'
+	[ "$en" -eq 0 ] && return 0
+	[ -z "$path" ] && return 0
+	[ -s "$path" ] || return 0
+	is_bad_user_file_nft_call "$path" && user_file_check_result='bad'
+}
 _check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
 is_config_enabled() {
 	local cfg="$1" _cfg_enabled=1
@@ -330,6 +344,7 @@ opkg_get_version() { grep -m1 -A1 "Package: $1$" '/usr/lib/opkg/status' | grep -
 process_url() {
 	local url="$1"
 	local dl_command dl_https_supported dl_temp_file
+# TODO: check for FILE schema and missing curl
 	if is_present 'curl'; then
 		dl_command="curl --silent --insecure"
 		dl_flag="-o"
@@ -355,7 +370,9 @@ process_url() {
 	while [ -z "$dl_temp_file" ] || [ -e "$dl_temp_file" ]; do
 		dl_temp_file="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
 	done
-	if is_url_https && [ -z "$dl_https_supported" ]; then
+	if is_url_file "$url" && ! is_present 'curl'; then
+		state add 'errorSummary' 'errorFileSchemaRequiresCurl' "$url"
+	elif is_url_https "$url" && [ -z "$dl_https_supported" ]; then
 		state add 'errorSummary' 'errorDownloadUrlNoHttps' "$url"
 	elif $dl_command "$url" "$dl_flag" "$dl_temp_file" 2>/dev/null; then
 		cat "$dl_temp_file"
@@ -367,6 +384,7 @@ process_url() {
 
 load_package_config() {
 	local param="$1"
+	local user_file_check_result
 	config_load "$packageName"
 	config_get      boot_timeout             'config' 'boot_timeout' '30'
 	config_get_bool enabled                  'config' 'enabled' '0'
@@ -393,17 +411,18 @@ load_package_config() {
 	wan_mark="0x${wan_mark}"
 	[ -n "$ipv6_enabled" ] && [ "$ipv6_enabled" -eq 0 ] && unset ipv6_enabled
 	[ -n "$nft_file_support" ] && [ "$nft_file_support" -eq 0 ] && unset nft_file_support
+	[ -n "$nft_user_set_counter" ] && [ "$nft_user_set_counter" -eq 0 ] && unset nft_user_set_counter
 	[ -n "$secure_reload" ] && [ "$secure_reload" -eq 0 ] && unset secure_reload
+	config_foreach _check_user_files_for_bad_nft_calls 'include'
+	[ -n "$user_file_check_result" ] && unset nft_file_support
 	[ -n "$nft_file_support" ] && unset secure_reload
+	is_config_enabled 'include' && unset secure_reload
 	. /lib/functions/network.sh
 	. /usr/share/libubox/jshn.sh
 	mkdir -p "${dnsmasqFile%/*}"
 	if is_nft_mode; then
 		fw_maskXor="$(printf '%#x' "$((fw_mask ^ 0xffffffff))")"
 		fw_maskXor="${fw_maskXor:-0xff00ffff}"
-		if [ "$nft_user_set_counter" -eq '0' ]; then
-			unset nft_user_set_counter
-		fi
 	else
 		case $rule_create_option in
 			insert|-i|-I) rule_create_option='-I';;

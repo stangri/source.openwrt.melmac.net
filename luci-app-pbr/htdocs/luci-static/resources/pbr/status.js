@@ -188,6 +188,7 @@ var status = baseclass.extend({
 					warningTorUnsetChainNft: _("Please unset 'chain' or set 'chain' to 'prerouting' for policy '%s'"),
 					warningInvalidOVPNConfig: _("Invalid OpenVPN config for %s interface"),
 					warningOutdatedWebUIApp: _("The WebUI application is outdated (version %s), please update it"),
+					warningBadNftCallsInUserFile: _("Incomatible nft calls detected in user include file, disabling fw4 nft file support."),
 				};
 				var warningsTitle = E('label', { class: 'cbi-value-title' }, _("Service Warnings"));
 				var text = "";
@@ -245,6 +246,7 @@ var status = baseclass.extend({
 					errorNoDownloadWithSecureReload: _("Policy '%s' refers to URL which can't be downloaded in 'secure_reload' mode!"),
 					errorDownloadUrlNoHttps: _("Failed to download '%s', HTTPS is not supported!"),
 					errorDownloadUrl: _("Failed to download '%s'!"),
+					errorFileSchemaRequiresCurl: _("The file:// schema requires curl, but it's not detected on this system!"),
 				};
 				var errorsTitle = E('label', { class: 'cbi-value-title' }, _("Service Errors"));
 				var text = "";
