@@ -107,7 +107,6 @@ var status = baseclass.extend({
 			L.resolveDefault(getRuntime(pkg.Name), {}),
 		]).then(function (data) {
 			var text;
-
 			var reply = {
 				status: data[0] && data[0][pkg.Name] || {
 					enabled: null,
@@ -183,7 +182,6 @@ var status = baseclass.extend({
 						if (param === "-a") aFlag = true;
 						if (param === "-p") pFlag = true;
 					});
-
 					function templateToRegexp(template) {
 						return RegExp('^' + template.split(/(\{\w+\})/g).map(part => {
 							let placeholder = part.match(/^\{(\w+)\}$/);
@@ -193,7 +191,6 @@ var status = baseclass.extend({
 								return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 						}).join('') + '$');
 					}
-
 					reply.providers.forEach(prov => {
 						let regexp = templateToRegexp(prov.template);
 						if (! found && regexp.test(r)) {
@@ -215,7 +212,6 @@ var status = baseclass.extend({
 							}
 						}
 					});
-
 					if ( a === "127.0.0.1" ) {
 						text += _("%s%s%s proxy on port %s.%s").format("<strong>", name, "</strong>", p, "<br />");
 					}
@@ -223,7 +219,6 @@ var status = baseclass.extend({
 						text += _("%s%s%s proxy at %s on port %s.%s").format("<strong>", name, "</strong>", a, p, "<br />");
 					}
 				});
-
 				var instancesText = E('div', {}, text);
 				var instancesField = E('div', { class: 'cbi-value-field' }, [instancesText, instancesDescr]);
 				instancesDiv = E('div', { class: 'cbi-value' }, [instancesTitle, instancesField]);
