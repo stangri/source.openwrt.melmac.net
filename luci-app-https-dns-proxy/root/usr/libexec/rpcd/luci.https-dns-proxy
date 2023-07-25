@@ -108,6 +108,7 @@ get_providers() {
 		cat "$f"
 		echo ','
 	done
+	echo '{ "name": "Custom", "template": "{url}", "params": { "url": { "type": "text", }, }, },'
 	echo ']}'
 }
 
