@@ -133,26 +133,28 @@ var status = baseclass.extend({
 			var header = E('h2', {}, _("Policy Based Routing - Status"));
 			var statusTitle = E('label', { class: 'cbi-value-title' }, _("Service Status"));
 			if (reply.version) {
+				text = _("Version %s").format(reply.version) + " - ";
 				if (reply.running) {
+					text += _("Running");
 					if (reply.running_iptables) {
-						text = _("Version %s - Running using iptables.").format(reply.version);
+						text += " (" + _("iptables mode") + ").";
 					}
 					else if (reply.running_nft_file) {
-						text = _("Version %s - Running using fw4 nft file.").format(reply.version);
+						text += " (" + _("fw4 nft file mode") + ").";
 					}
 					else if (reply.running_nft) {
-						text = _("Version %s - Running using nft.").format(reply.version);
+						text += " (" + _("nft mode") + ").";
 					}
 					else {
-						text = _("Version %s - Running.").format(reply.version);
+						text += (".");
 					}
 				}
 				else {
 					if (reply.enabled) {
-						text = _("Version %s - Stopped.").format(reply.version);
+						text += _("Stopped.");
 					}
 					else {
-						text = _("Version %s - Stopped (Disabled).").format(reply.version);
+						text += _("Stopped (Disabled).");
 					}
 				}
 			}
