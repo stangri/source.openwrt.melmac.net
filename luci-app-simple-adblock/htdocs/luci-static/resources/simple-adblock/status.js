@@ -79,7 +79,7 @@ var RPC = {
 var status = baseclass.extend({
 	render: function () {
 		return Promise.all([
-			L.resolveDefault(getInitStatus(), {}),
+			L.resolveDefault(getInitStatus(pkg.Name), {}),
 		]).then(function (data) {
 			var replyStatus = data[0];
 			var text ="";

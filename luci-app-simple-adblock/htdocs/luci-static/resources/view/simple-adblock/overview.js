@@ -21,7 +21,7 @@ return view.extend({
 
 	render: function () {
 		return Promise.all([
-			L.resolveDefault(adb.getPlatformSupport(), {}),
+			L.resolveDefault(adb.getPlatformSupport(pkg.Name), {}),
 		]).then(function (data) {
 			var replyPlatform = data[0];
 			var status, m, s, o;
