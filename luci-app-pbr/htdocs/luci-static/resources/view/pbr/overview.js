@@ -22,8 +22,8 @@ return view.extend({
 
 	render: function () {
 		return Promise.all([
-			L.resolveDefault(pbr.getInterfaces(), {}),
-			L.resolveDefault(pbr.getPlatformSupport(), {}),
+			L.resolveDefault(pbr.getInterfaces(pkg.Name), {}),
+			L.resolveDefault(pbr.getPlatformSupport(pkg.Name), {}),
 		]).then(function (data) {
 			var arrInterfaces;
 			var replyPlatform;

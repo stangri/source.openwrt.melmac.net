@@ -106,8 +106,8 @@ var RPC = {
 var status = baseclass.extend({
 	render: function () {
 		return Promise.all([
-			L.resolveDefault(getInitStatus(), {}),
-//			L.resolveDefault(getGateways(), {}),
+			L.resolveDefault(getInitStatus(pkg.Name), {}),
+//			L.resolveDefault(getGateways(pkg.Name), {}),
 		]).then(function (data) {
 //			var replyStatus = data[0];
 //			var replyGateways = data[1];
