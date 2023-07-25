@@ -165,6 +165,7 @@ var status = baseclass.extend({
 					var p
 					var name
 					var option
+					var found
 					element.command.forEach(param => {
 						if (rFlag) {
 							r = param
@@ -195,11 +196,12 @@ var status = baseclass.extend({
 
 					reply.providers.forEach(prov => {
 						let regexp = templateToRegexp(prov.template);
-						if (regexp.test(r)) {
+						if (! found && regexp.test(r)) {
+							found = true;
 							name = _(prov.title);
 							let match = r.match(regexp);
 							if (match[1]) {
-								if (prov.params.option.options) {
+								if (prov.params && prov.params.option && prov.params.option.options) {
 									prov.params.option.options.forEach(opt => {
 										if (opt.value === match[1]){
 											option = _(opt.description);

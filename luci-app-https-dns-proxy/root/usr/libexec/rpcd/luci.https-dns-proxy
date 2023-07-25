@@ -108,11 +108,11 @@ get_providers() {
 		cat "$f"
 		echo ','
 	done
-	echo '{ "name": "Custom", "template": "{url}", "params": { "url": { "type": "text", }, }, },'
+	echo '{ "title": "Custom", "template": "{url}", "params": { "url": { "type": "text", }, }, },'
 	echo ']}'
 }
 
-get_runtime() {	ubus call service list "{ 'verbose': true, 'name': '$1' }"; }
+get_runtime() { ubus call service list "{ 'verbose': true, 'name': '$1' }"; }
 
 set_init_action() {
 	local name="$1" action="$2" cmd
