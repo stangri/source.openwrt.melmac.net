@@ -34,6 +34,7 @@ return view.extend({
 				providers: data[1] && data[1][pkg.Name] || { providers: [] },
 			};
 			var status, m, s, o;
+			var text;
 
 			status = new hdp.status();
 
@@ -80,16 +81,72 @@ return view.extend({
 			o.depends('force_dns', '1');
 			o.default = "1";
 
-			s = m.section(form.GridSection, 'https-dns-proxy', _('Instances Grid'));
+			text = "";
+			if (!reply.platform.http2_support)
+				text += _("Please note that %s is not supported on this system (%smore information%s).").format("<i>HTTP/2</i>", "<a href=\"" + pkg.URL + "#http2-support" + "\" target=\"_blank\">", "</a>") + "<br />";
+			if (!reply.platform.http3_support)
+				text += _("Please note that %s is not supported on this system (%smore information%s).").format("<i>HTTP/3 (QUIC)</i>", "<a href=\"" + pkg.URL + "#http3-quic-support" + "\" target=\"_blank\">", "</a>") + "<br />";
+
+			s = m.section(form.GridSection, 'https-dns-proxy', _('HTTPS DNS Proxy - Instances'), text);
 			s.rowcolors = true;
 			s.sortable = true;
 			s.anonymous = true;
 			s.addremove = true;
 
 			o = s.option(form.Value, "resolver_url", _("Resolver"));
-			o = s.option(form.Value, "param", _("Option"));
+			o = s.option(form.DummyValue, "_dummy", _("Option"));
+			o.default = "";
+			o.optional = true;
+			o = s.option(form.Value, "bootstrap_dns", _("Bootstrap DNS"));
+			o.default = "";
+			o.modalonly = true;
+			o.optional = false;
 			o = s.option(form.Value, "listen_addr", _("Listen Address"));
+			o.default = "";
+			o.optional = true;
 			o = s.option(form.Value, "listen_addr", _("Listen Port"));
+			o.default = "";
+			o.optional = true;
+			o = s.option(form.Value, "user", _("User"));
+			o.default = "";
+			o.modalonly = true;
+			o.optional = true;
+			o = s.option(form.Value, "group", _("Group"));
+			o.default = "";
+			o.modalonly = true;
+			o.optional = true;
+			o = s.option(form.Value, "dscp_codepoint", _("DSCP Codepoint"));
+			o.default = "";
+			o.modalonly = true;
+			o.optional = true;
+			o = s.option(form.Value, "verbosity", _("Logging Verbosity"));
+			o.default = "";
+			o.modalonly = true;
+			o.optional = true;
+			o = s.option(form.Value, "logfile", _("Logging File Path"));
+			o.default = "";
+			o.modalonly = true;
+			o.optional = true;
+			o = s.option(form.Value, "polling_interval", _("Polling Interval"));
+			o.default = "";
+			o.modalonly = true;
+			o.optional = true;
+			o = s.option(form.Value, "proxy_server", _("Proxy Server"));
+			o.default = "";
+			o.modalonly = true;
+			o.optional = true;
+			o = s.option(form.ListValue, "use_http1", _("Use HTTP/1"));
+			o.default = "0";
+			o.modalonly = true;
+			o.optional = true;
+			o.value("0", _("Use negotiated HTTP version"));
+			o.value("1", _("Force use of HTTP/1"));
+			o = s.option(form.ListValue, "use_ipv6_resolvers_only", _("Use IPv6 resolvers"));
+			o.default = "0";
+			o.modalonly = true;
+			o.optional = true;
+			o.value("0", _("Use any family DNS resolvers"));
+			o.value("1", _("Force use of IPv6 DNS resolvers"));
 
 			return Promise.all([status.render(), m.render()]);
 		})
