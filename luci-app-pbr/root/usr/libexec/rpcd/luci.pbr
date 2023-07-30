@@ -24,6 +24,8 @@ readonly aghConfigFile='/etc/adguardhome.yaml'
 # shellcheck disable=SC2155
 readonly nft="$(command -v nft)"
 readonly nftPermFile="/usr/share/nftables.d/ruleset-post/30-${packageName}.nft"
+readonly torConfigFile='/etc/tor/torrc'
+readonly xrayIfacePrefix='xray_'
 
 is_enabled() { uci -q get "${1}.config.enabled"; }
 is_running_iptables() { iptables -t mangle -L | grep -q PBR_PREROUTING >/dev/null 2>&1; }
@@ -263,11 +265,14 @@ is_softether() { local dev; network_get_device dev "$1"; [ "${dev:0:4}" = "vpn_"
 is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
 is_tor_running() {
 	local ret=0
-	if [ -s "/etc/tor/torrc" ]; then
-		json_load "$(ubus call service list "{ 'name': 'tor' }")"
-		json_select 'tor'; json_select 'instances'; json_select 'instance1';
-		json_get_var ret 'running'; json_cleanup
-	fi
+	is_ignored_interface 'tor' && return 1
+	[ -s "$torConfigFile" ] || return 1
+	json_load "$(ubus call service list "{ 'name': 'tor' }")" >/dev/null || return 1
+	json_select 'tor' >/dev/null || return 1
+	json_select 'instances' >/dev/null || return 1
+	json_select 'instance1' >/dev/null || return 1
+	json_get_var ret 'running' >/dev/null || return 1
+	json_cleanup
 	if [ "$ret" = "0" ]; then return 1; else return 0; fi
 }
 is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
@@ -275,7 +280,9 @@ is_tunnel() { is_dslite "$1" || is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is
 is_wan() { [ "$1" = "$wanIface4" ] || { [ "${1##wan}" != "$1" ] && [ "${1##wan6}" = "$1" ]; } || [ "${1%%wan}" != "$1" ]; }
 is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ] || [ "${1/#wan6}" != "$1" ] || [ "${1/%wan6}" != "$1" ]; }
 is_ignored_interface() { str_contains_word "$ignored_interface" "$1"; }
-is_supported_interface() { str_contains_word "$supported_interface" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; } || is_ignore_target "$1"; }
+is_supported_interface() { str_contains_word "$supported_interface" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; } || is_ignore_target "$1" || is_xray "$1"; }
+is_xray() { [ -n "$(get_xray_traffic_port "$1")" ]; }
+get_xray_traffic_port() { local i="${1//$xrayIfacePrefix}"; [ "$i" = "$1" ] && unset i; echo "$i"; }
 pbr_find_iface() {
 	local iface i param="$2"
 	[ "$param" = 'wan6' ] || param='wan'
