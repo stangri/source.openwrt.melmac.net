@@ -25,22 +25,11 @@ return view.extend({
 			L.resolveDefault(pbr.getInterfaces(pkg.Name), {}),
 			L.resolveDefault(pbr.getPlatformSupport(pkg.Name), {}),
 		]).then(function (data) {
-			var arrInterfaces;
-			var replyPlatform;
+
 			var status, m, s, o;
-
-			if (data[0] && data[0][pkg.Name] && data[0][pkg.Name].interfaces) {
-				arrInterfaces = data[0][pkg.Name].interfaces;
-			}
-			else {
-				arrInterfaces = ["wan"];
-			}
-
-			if (data[1] && data[1][pkg.Name]) {
-				replyPlatform = data[1][pkg.Name];
-			}
-			else {
-				replyPlatform = {
+			var reply = {
+				interfaces: data[0] && data[0][pkg.Name] && data[0][pkg.Name].interfaces || { interfaces: ["wan"] },
+				platform: data[1] && data[1][pkg.Name] || {
 					ipset_installed: null,
 					nft_installed: null,
 					adguardhome_installed: null,
@@ -49,8 +38,8 @@ return view.extend({
 					adguardhome_ipset_support: null,
 					dnsmasq_ipset_support: null,
 					dnsmasq_nftset_support: null,
-				};
-			}
+				},
+			};
 
 			status = new pbr.status();
 			m = new form.Map(pkg.Name, _("Policy Based Routing - Configuration"));
@@ -79,37 +68,37 @@ return view.extend({
 			o.default = "1";
 
 			var text = "";
-			if (replyPlatform.adguardhome_ipset_support === null) {
+			if (reply.platform.adguardhome_ipset_support === null) {
 				text += _("The %s support is unknown.").format("<i>adguardhome.ipset</i>") + "<br />"
 			}
-			else if (!(replyPlatform.adguardhome_ipset_support)) {
+			else if (!(reply.platform.adguardhome_ipset_support)) {
 				text += _("The %s is not supported on this system.").format("<i>adguardhome.ipset</i>") + "<br />"
 			}
-			if (replyPlatform.dnsmasq_ipset_support === null) {
+			if (reply.platform.dnsmasq_ipset_support === null) {
 				text += _("The %s support is unknown.").format("<i>dnsmasq.ipset</i>") + "<br />"
 			}
-			else if (!(replyPlatform.dnsmasq_ipset_support)) {
+			else if (!(reply.platform.dnsmasq_ipset_support)) {
 				text += _("The %s is not supported on this system.").format("<i>dnsmasq.ipset</i>") + "<br />"
 			}
-			if (replyPlatform.dnsmasq_nftset_support === null) {
+			if (reply.platform.dnsmasq_nftset_support === null) {
 				text += _("The %s support is unknown.").format("<i>dnsmasq.nftset</i>") + "<br />"
 			}
-			else if (!(replyPlatform.dnsmasq_nftset_support)) {
+			else if (!(reply.platform.dnsmasq_nftset_support)) {
 				text += _("The %s is not supported on this system.").format("<i>dnsmasq.nftset</i>") + "<br />"
 			}
 			text += _("Please check the %sREADME%s before changing this option.").format(
 				"<a href=\"" + pkg.URL + "#use-resolvers-set-support\" target=\"_blank\">", "</a>");
 			o = s.taboption("tab_basic", form.ListValue, "resolver_set", _("Use resolver set support for domains"), text);
 			o.value("none", _("Disabled"));
-			if (replyPlatform.adguardhome_ipset_support) {
+			if (reply.platform.adguardhome_ipset_support) {
 				o.value("adguardhome.ipset", _("AdGuardHome ipset"));
 				o.default = ("adguardhome.ipset", _("AdGuardHome ipset"));
 			}
-			if (replyPlatform.dnsmasq_ipset_support) {
+			if (reply.platform.dnsmasq_ipset_support) {
 				o.value("dnsmasq.ipset", _("Dnsmasq ipset"));
 				o.default = ("dnsmasq.ipset", _("Dnsmasq ipset"));
 			}
-			if (replyPlatform.dnsmasq_nftset_support) {
+			if (reply.platform.dnsmasq_nftset_support) {
 				o.value("dnsmasq.nftset", _("Dnsmasq nft set"));
 				o.default = ("dnsmasq.nftset", _("Dnsmasq nft set"));
 			}
@@ -137,7 +126,7 @@ return view.extend({
 			o = s.taboption("tab_advanced", form.ListValue, "icmp_interface", _("Default ICMP Interface"),
 				_("Force the ICMP protocol interface."));
 			o.value("", _("No Change"));
-			arrInterfaces.forEach(element => {
+			reply.interfaces.forEach(element => {
 				if (element.toLowerCase() !== "ignore") {
 					o.value(element);
 				}
@@ -240,7 +229,7 @@ return view.extend({
 			o.rmempty = true;
 
 			o = s.option(form.ListValue, "interface", _("Interface"));
-			arrInterfaces.forEach(element => {
+			reply.interfaces.forEach(element => {
 				o.value(element);
 			});
 			o.datatype = "network";
@@ -249,7 +238,7 @@ return view.extend({
 			s = m.section(form.NamedSection, 'config', pkg.Name, _("DSCP Tagging"),
 				_("Set DSCP tags (in range between 1 and 63) for specific interfaces. See the %sREADME%s for details.").format(
 					"<a href=\"" + pkg.URL + "#dscp-tag-based-policies" + "\" target=\"_blank\">", "</a>"));
-			arrInterfaces.forEach(element => {
+			reply.interfaces.forEach(element => {
 				if (element.toLowerCase() !== "ignore") {
 					o = s.option(form.Value, element + "_dscp", element.toUpperCase() + " " + _("DSCP Tag"));
 					o.datatype = "and(uinteger, min(1), max(63))";

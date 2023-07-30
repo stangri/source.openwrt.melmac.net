@@ -323,12 +323,11 @@ get_supported_interfaces() {
 	done
 	config_load 'network'
 	config_foreach _build_ifaces_supported 'interface'
-	if is_tor_running; then
-		ifacesSupported="$ifacesSupported tor"
-	fi
-	if [ "$webui_show_ignore_target" -eq "1" ]; then
-		ifacesSupported="$ifacesSupported ignore"
-	fi
+	is_tor_running && ifacesSupported="$ifacesSupported tor"
+	for i in $supported_interface; do
+		is_xray "$i" && ifacesSupported="$ifacesSupported $i"
+	done
+	[ "$webui_show_ignore_target" -eq "1" ] && ifacesSupported="$ifacesSupported ignore"
 	json_init
 	json_add_object "$name"
 	json_add_array 'interfaces'
