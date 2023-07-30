@@ -1513,7 +1513,7 @@ policy_routing_nft() {
 	local mark i nftInsertOption='add'
 	local param4 param6 proto_i negation value dest
 	local ip4Flag='ip' ip6Flag='ip6'
-	local name="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain uid="$9"
+	local name="$1" iface="$2" src_addr="$3" src_port="$4" dest_addr="$5" dest_port="$6" proto chain uid="$9"
 	proto="$(str_to_lower "$7")"
 	chain="$(str_to_lower "$8")"
 	chain="${chain:-prerouting}"
@@ -1526,11 +1526,16 @@ policy_routing_nft() {
 	fi
 
 	if is_xray "$iface"; then
-		dest="tproxy to: $(get_xray_traffic_port "$iface") accept"
+		unset dest_port
+		[ -z "$src_port" ] && src_port='0-65535'
+		dest4="tproxy ip to: $(get_xray_traffic_port "$iface") accept"
+		dest6="tproxy ip6 to: $(get_xray_traffic_port "$iface") accept"
 	elif [ -n "$mark" ]; then
-		dest="goto ${nftPrefix}_mark_${mark}"
+		dest4="goto ${nftPrefix}_mark_${mark}"
+		dest6="goto ${nftPrefix}_mark_${mark}"
 	elif [ "$iface" = "ignore" ]; then
-		dest="return"
+		dest4="return"
+		dest6="return"
 	else
 		processPolicyError='true'
 		state add 'errorSummary' 'errorPolicyProcessUnknownFwmark' "$iface"
@@ -1539,7 +1544,7 @@ policy_routing_nft() {
 
 	if is_family_mismatch "$src_addr" "$dest_addr"; then 
 		processPolicyError='true'
-		state add 'errorSummary' 'errorPolicyProcessMismatchFamily' "${name}: '$laddr' '$raddr'"
+		state add 'errorSummary' 'errorPolicyProcessMismatchFamily' "${name}: '$src_addr' '$dest_addr'"
 		return 1
 	fi
 
@@ -1656,8 +1661,8 @@ policy_routing_nft() {
 			param6="$param6 ${proto_i:+$proto_i }dport $negation {$(ports_to_nftset "$value")}"
 		fi
 
-		param4="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} $param4 $dest comment \"$name\""
-		param6="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} $param6 $dest comment \"$name\""
+		param4="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} $param4 $dest4 comment \"$name\""
+		param6="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} $param6 $dest6 comment \"$name\""
 
 		local ipv4_error='0' ipv6_error='0'
 		if [ "$policy_routing_nft_prev_param4" != "$param4" ]; then
@@ -2691,7 +2696,7 @@ load_validate_config() {
 		'fw_mask:regex("[A-Fa-f0-9]{8}"):ff0000' \
 		'icmp_interface:or("", tor, uci("network", "@interface"))' \
 		'ignored_interface:list(or(tor, uci("network", "@interface")))' \
-		'supported_interface:list(or(tor, uci("network", "@interface")))' \
+		'supported_interface:list(or(ignore, tor, regex("xray_.*"), uci("network", "@interface")))' \
 		'boot_timeout:integer:30' \
 		'procd_lan_interface:string' \
 		'procd_wan_interface:string' \
@@ -2719,7 +2724,7 @@ load_validate_policy() {
 	uci_load_validate "$packageName" 'policy' "$1" "${2}${3:+ $3}" \
 		'name:string:Untitled' \
 		'enabled:bool:1' \
-		'interface:or("ignore", "tor", uci("network", "@interface")):wan' \
+		'interface:or("ignore", "tor", regex("xray_.*"), uci("network", "@interface")):wan' \
 		'proto:or(string)' \
 		'chain:or("", "forward", "input", "output", "prerouting", "postrouting", "FORWARD", "INPUT", "OUTPUT", "PREROUTING", "POSTROUTING"):prerouting' \
 		'src_addr:list(neg(or(host,network,macaddr,string)))' \
