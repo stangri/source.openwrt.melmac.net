@@ -1312,7 +1312,7 @@ policy_routing_tor_nft() {
 
 policy_routing() { if is_nft_mode; then policy_routing_nft "$@"; else policy_routing_iptables "$@"; fi; }
 policy_routing_iptables() {
-	local mark param4 param6 i negation value dest ipInsertOption="-A"
+	local mark param4 param6 i negation value dest4 dest6 ipInsertOption="-A"
 	local ip4error='1' ip6error='1'
 	local name="$1" iface="$2" laddr="$3" lport="$4" raddr="$5" rport="$6" proto chain uid="$9"
 	proto="$(str_to_lower "$7")"
@@ -1326,10 +1326,18 @@ policy_routing_iptables() {
 		return 1
 	fi
 
-	if [ -n "$mark" ]; then
-		dest="-g ${iptPrefix}_MARK_${mark}"
+	if is_xray "$iface"; then
+		unset rport
+		[ -z "$lport" ] && lport='0-52,54-65535'
+		proto='tcp udp'
+		dest4="-j TPROXY --on-ip 0.0.0.0 --on-port $(get_xray_traffic_port "$iface")"
+		dest6="-j TPROXY --on-ip :: --on-port $(get_xray_traffic_port "$iface")"
+	elif [ -n "$mark" ]; then
+		dest4="-g ${iptPrefix}_MARK_${mark}"
+		dest6="-g ${iptPrefix}_MARK_${mark}"
 	elif [ "$iface" = "ignore" ]; then
-		dest="-j RETURN"
+		dest4="-j RETURN"
+		dest6="-j RETURN"
 	else
 		processPolicyError='true'
 		state add 'errorSummary' 'errorPolicyProcessUnknownFwmark' "$iface"
@@ -1352,15 +1360,15 @@ policy_routing_iptables() {
 
 	for i in $proto; do
 		if [ "$i" = 'all' ]; then
-			param4="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest"
-			param6="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest"
+			param4="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest4"
+			param6="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest6"
 		elif ! is_supported_protocol "$i"; then
 			processPolicyError='true'
 			state add 'errorSummary' 'errorPolicyProcessUnknownProtocol' "${name}: '$i'"
 			return 1
 		else
-			param4="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest -p $i"
-			param6="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest -p $i"
+			param4="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest4 -p $i"
+			param6="-t mangle ${ipInsertOption} ${iptPrefix}_${chain} $dest6 -p $i"
 		fi
 
 		if [ -n "$laddr" ]; then
