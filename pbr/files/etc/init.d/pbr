@@ -1519,7 +1519,7 @@ policy_routing_iptables() {
 }
 policy_routing_nft() {
 	local mark i nftInsertOption='add'
-	local param4 param6 proto_i negation value dest
+	local param4 param6 proto_i negation value dest4 dest6
 	local ip4Flag='ip' ip6Flag='ip6'
 	local name="$1" iface="$2" src_addr="$3" src_port="$4" dest_addr="$5" dest_port="$6" proto chain uid="$9"
 	proto="$(str_to_lower "$7")"
