@@ -1527,7 +1527,7 @@ policy_routing_nft() {
 
 	if is_xray "$iface"; then
 		unset dest_port
-		[ -z "$src_port" ] && src_port='0-65535'
+		[ -z "$src_port" ] && src_port='0-52,54-65535'
 		dest4="tproxy ip to: $(get_xray_traffic_port "$iface") accept"
 		dest6="tproxy ip6 to: $(get_xray_traffic_port "$iface") accept"
 	elif [ -n "$mark" ]; then
