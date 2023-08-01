@@ -48,7 +48,7 @@ if [ -s '/etc/config/vpn-policy-routing' ] && [ ! -s '/etc/config/pbr-opkg' ] \
 	output "Migrating vpn-policy-routing config file."
 	if mv '/etc/config/pbr' '/etc/config/pbr-opkg' \
 		&& sed 's/vpn-policy-routing/pbr/g' /etc/config/vpn-policy-routing > /etc/config/pbr \
-		&& uci set vpn-policy-routing.config.enabled=0 &&uci commit vpn-policy-routing; then
+		&& uci set vpn-policy-routing.config.enabled=0 && uci commit vpn-policy-routing; then
 			output_okn
 		else
 			output_failn
