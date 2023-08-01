@@ -1,19 +1,58 @@
 #!/bin/sh
-# shellcheck disable=SC1091,SC3037,SC3043
+# shellcheck disable=SC1091,SC3037,SC3043,SC2317
 
+readonly packageName='pbr'
+readonly _OK_='\033[0;32m\xe2\x9c\x93\033[0m'
+readonly _FAIL_='\033[0;31m\xe2\x9c\x97\033[0m'
 readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
+readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
+readonly _ERROR_='\033[0;31mERROR\033[0m'
+readonly _WARNING_='\033[0;33mWARNING\033[0m'
+output() {
+# Can take a single parameter (text) to be output at any verbosity
+# Or target verbosity level and text to be output at specifc verbosity
+	local msg memmsg logmsg
+	local sharedMemoryOutput="/dev/shm/$packageName-output"
+	verbosity="${verbosity:-2}"
+	if [ "$#" -ne 1 ]; then
+		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; else return 0; fi
+	fi
+	[ -t 1 ] && printf "%b" "$1"
+	msg="$1";
+	if [ "$(printf "%b" "$msg" | wc -l)" -gt 0 ]; then
+		[ -s "$sharedMemoryOutput" ] && memmsg="$(cat "$sharedMemoryOutput")"
+		logmsg="$(printf "%b" "${memmsg}${msg}" | sed 's/\x1b\[[0-9;]*m//g')"
+		logger -t "${packageName:-service}" "$(printf "%b" "$logmsg")"
+		rm -f "$sharedMemoryOutput"
+	else
+		printf "%b" "$msg" >> "$sharedMemoryOutput"
+	fi
+}
+output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
+output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
+output_fail() { s=1; output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
+output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
 
 # Transition from vpn-policy-routing
-if [ -s '/etc/config/vpn-policy-routing' ] && [ ! -s '/etc/config/pbr-opkg' ]; then
+if [ -s '/etc/config/vpn-policy-routing' ] && [ ! -s '/etc/config/pbr-opkg' ] \
+	&& [ "$(uci get pbr.config.enabled)" = '0' ]; then
 	if [ -x '/etc/init.d/vpn-policy-routing' ]; then
-		echo "Stopping and disabling vpn-policy-routing."
-		/etc/init.d/vpn-policy-routing stop
-		/etc/init.d/vpn-policy-routing disable
+		output "Stopping and disabling vpn-policy-routing."
+		if /etc/init.d/vpn-policy-routing stop \
+			&& /etc/init.d/vpn-policy-routing disable; then
+			output_okn
+		else
+			output_failn
+		fi
 	fi
-	echo "Migrating vpn-policy-routing config file."
-	mv '/etc/config/pbr' '/etc/config/pbr-opkg'
-	sed 's/vpn-policy-routing/pbr/g' /etc/config/vpn-policy-routing > /etc/config/pbr
-	uci set vpn-policy-routing.config.enabled=0; uci commit vpn-policy-routing;
+	output "Migrating vpn-policy-routing config file."
+	if mv '/etc/config/pbr' '/etc/config/pbr-opkg' \
+		&& sed 's/vpn-policy-routing/pbr/g' /etc/config/vpn-policy-routing > /etc/config/pbr \
+		&& uci set vpn-policy-routing.config.enabled=0 &&uci commit vpn-policy-routing; then
+			output_okn
+		else
+			output_failn
+		fi
 fi
 
 # Transition from older versions of pbr
