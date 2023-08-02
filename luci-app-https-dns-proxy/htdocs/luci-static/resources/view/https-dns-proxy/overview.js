@@ -102,36 +102,43 @@ return view.extend({
 			s.anonymous = true;
 			s.addremove = true;
 
-
 			s.sectiontitle = function(section_id) {
-				return _("Test");
-			};
-
-			o = s.option(form.Value, "resolver_url", _("Resolver"));
-			v = s.option(form.DummyValue, "_dummy", _("Option"));
-			v.default = "";
-			v.optional = true;
-			reply.providers.forEach(prov => {
-				let regexp = pkg.templateToRegexp(prov.template);
-				if (! found && regexp.test(r)) {
-					found = true;
-					name = _(prov.title);
-					let match = r.match(regexp);
-					if (match[1]) {
-						if (prov.params && prov.params.option && prov.params.option.options) {
-							prov.params.option.options.forEach(opt => {
-								if (opt.value === match[1]){
-									option = _(opt.description);
+				var provText;
+				var found;
+				reply.providers.forEach(prov => {
+					let regexp = pkg.templateToRegexp(prov.template);
+					let r = uci.get(pkg.Name, section_id, "resolver_url");
+					var option;
+					if (! found && r && regexp.test(r)) {
+						found = true;
+						provText = _(prov.title);
+						if (r != "undefined") {
+							let match = r.match(regexp);
+							if (match[1]) {
+								if (prov.params && prov.params.option && prov.params.option.options) {
+									prov.params.option.options.forEach(opt => {
+										if (opt.value === match[1]){
+											option = _(opt.description);
+										}
+									})
+									provText += " (" + option + ")";
 								}
-							})
-							name += " (" + option + ")";
-						}
-						else {
-							name += " (" + match[1] + ")";
+								else {
+									provText += " (" + match[1] + ")";
+								}
+							}
 						}
 					}
-				}
-			});
+				});
+				return provText || _("Unknown");
+			};
+
+			o = s.option(form.DummyValue, "resolver_url", _("Resolver"));
+			o.modalonly = true;
+			v = s.option(form.DummyValue, "_dummy", _("Option"));
+			v.modalonly = true;
+			v.default = "";
+			v.optional = true;
 
 			o = s.option(form.Value, "bootstrap_dns", _("Bootstrap DNS"));
 			o.default = "";
@@ -153,11 +160,11 @@ return view.extend({
 			o.default = "";
 			o.optional = true;
 			o.placeholder = n + 5053;
-			o = s.option(form.Value, "user", _("User"));
+			o = s.option(form.Value, "user", _("Run As User"));
 			o.default = "";
 			o.modalonly = true;
 			o.optional = true;
-			o = s.option(form.Value, "group", _("Group"));
+			o = s.option(form.Value, "group", _("Run As Group"));
 			o.default = "";
 			o.modalonly = true;
 			o.optional = true;
