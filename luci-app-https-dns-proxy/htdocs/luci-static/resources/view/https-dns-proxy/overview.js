@@ -10,7 +10,16 @@
 
 var pkg = {
 	get Name() { return 'https-dns-proxy'; },
-	get URL() { return 'https://docs.openwrt.melmac.net/' + pkg.Name + '/'; }
+	get URL() { return 'https://docs.openwrt.melmac.net/' + pkg.Name + '/'; },
+	templateToRegexp: function(template) {
+		return RegExp('^' + template.split(/(\{\w+\})/g).map(part => {
+			let placeholder = part.match(/^\{(\w+)\}$/);
+			if (placeholder)
+				return `(?<${placeholder[1]}>.*?)`;
+			else
+				return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		}).join('') + '$');
+	}
 };
 
 return view.extend({
@@ -33,7 +42,7 @@ return view.extend({
 				},
 				providers: data[1] && data[1][pkg.Name] || { providers: [] },
 			};
-			var status, m, s, o;
+			var status, m, s, o, v;
 			var text;
 
 			status = new hdp.status();
@@ -93,20 +102,57 @@ return view.extend({
 			s.anonymous = true;
 			s.addremove = true;
 
+
+			s.sectiontitle = function(section_id) {
+				return _("Test");
+			};
+
 			o = s.option(form.Value, "resolver_url", _("Resolver"));
-			o = s.option(form.DummyValue, "_dummy", _("Option"));
-			o.default = "";
-			o.optional = true;
+			v = s.option(form.DummyValue, "_dummy", _("Option"));
+			v.default = "";
+			v.optional = true;
+			reply.providers.forEach(prov => {
+				let regexp = pkg.templateToRegexp(prov.template);
+				if (! found && regexp.test(r)) {
+					found = true;
+					name = _(prov.title);
+					let match = r.match(regexp);
+					if (match[1]) {
+						if (prov.params && prov.params.option && prov.params.option.options) {
+							prov.params.option.options.forEach(opt => {
+								if (opt.value === match[1]){
+									option = _(opt.description);
+								}
+							})
+							name += " (" + option + ")";
+						}
+						else {
+							name += " (" + match[1] + ")";
+						}
+					}
+				}
+			});
+
 			o = s.option(form.Value, "bootstrap_dns", _("Bootstrap DNS"));
 			o.default = "";
 			o.modalonly = true;
 			o.optional = false;
 			o = s.option(form.Value, "listen_addr", _("Listen Address"));
+			o.datatype = "ipaddr";
 			o.default = "";
 			o.optional = true;
-			o = s.option(form.Value, "listen_addr", _("Listen Port"));
+			o.placeholder = "127.0.0.1";
+			var n = 0;
+			var sections = uci.sections(pkg.Name, pkg.Name);
+			sections.forEach(element => {
+//				if (element[".name"] === section_id) return false;
+				n+=1;
+			});
+			o = s.option(form.Value, "listen_port", _("Listen Port"));
+			o.datatype = "port";
 			o.default = "";
 			o.optional = true;
+			o.placeholder = n + 5053;
 			o = s.option(form.Value, "user", _("User"));
 			o.default = "";
 			o.modalonly = true;
@@ -116,10 +162,12 @@ return view.extend({
 			o.modalonly = true;
 			o.optional = true;
 			o = s.option(form.Value, "dscp_codepoint", _("DSCP Codepoint"));
+			o.datatype = "and(uinteger, range(0,63))";
 			o.default = "";
 			o.modalonly = true;
 			o.optional = true;
 			o = s.option(form.Value, "verbosity", _("Logging Verbosity"));
+			o.datatype = "and(uinteger, range(0,4))";
 			o.default = "";
 			o.modalonly = true;
 			o.optional = true;
@@ -128,6 +176,7 @@ return view.extend({
 			o.modalonly = true;
 			o.optional = true;
 			o = s.option(form.Value, "polling_interval", _("Polling Interval"));
+			o.datatype = "and(uinteger, range(5,3600))";
 			o.default = "";
 			o.modalonly = true;
 			o.optional = true;

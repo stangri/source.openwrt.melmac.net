@@ -9,7 +9,16 @@
 
 var pkg = {
 	get Name() { return 'https-dns-proxy'; },
-	get URL() { return 'https://docs.openwrt.melmac.net/' + pkg.Name + '/'; }
+	get URL() { return 'https://docs.openwrt.melmac.net/' + pkg.Name + '/'; },
+	templateToRegexp: function(template) {
+		return RegExp('^' + template.split(/(\{\w+\})/g).map(part => {
+			let placeholder = part.match(/^\{(\w+)\}$/);
+			if (placeholder)
+				return `(?<${placeholder[1]}>.*?)`;
+			else
+				return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		}).join('') + '$');
+	}
 };
 
 var getInitList = rpc.declare({
@@ -182,17 +191,8 @@ var status = baseclass.extend({
 						if (param === "-a") aFlag = true;
 						if (param === "-p") pFlag = true;
 					});
-					function templateToRegexp(template) {
-						return RegExp('^' + template.split(/(\{\w+\})/g).map(part => {
-							let placeholder = part.match(/^\{(\w+)\}$/);
-							if (placeholder)
-								return `(?<${placeholder[1]}>.*?)`;
-							else
-								return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-						}).join('') + '$');
-					}
 					reply.providers.forEach(prov => {
-						let regexp = templateToRegexp(prov.template);
+						let regexp = pkg.templateToRegexp(prov.template);
 						if (! found && regexp.test(r)) {
 							found = true;
 							name = _(prov.title);
