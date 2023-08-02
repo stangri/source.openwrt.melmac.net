@@ -10,7 +10,7 @@
 var pkg = {
 	get Name() { return 'https-dns-proxy'; },
 	get URL() { return 'https://docs.openwrt.melmac.net/' + pkg.Name + '/'; },
-	templateToRegexp: function(template) {
+	templateToRegexp: function (template) {
 		return RegExp('^' + template.split(/(\{\w+\})/g).map(part => {
 			let placeholder = part.match(/^\{(\w+)\}$/);
 			if (placeholder)
@@ -163,60 +163,45 @@ var status = baseclass.extend({
 					"<a href=\"" + pkg.URL + "#a-word-about-default-routing \" target=\"_blank\">", "</a>")
 				var instancesDescr = E('div', { class: 'cbi-value-description' }, "");
 
-				text=""
+				text = ""
 				Object.values(reply.runtime.instances).forEach(element => {
-					var rFlag
-					var aFlag
-					var pFlag
-					var r
-					var a
-					var p
+					var resolver
+					var address
+					var port
 					var name
 					var option
 					var found
-					element.command.forEach(param => {
-						if (rFlag) {
-							r = param
-							rFlag = null
-						}
-						if (aFlag) {
-							a = param
-							aFlag = null
-						}
-						if (pFlag) {
-							p = param
-							pFlag = null
-						}
-						if (param === "-r") rFlag = true;
-						if (param === "-a") aFlag = true;
-						if (param === "-p") pFlag = true;
+					element.command.forEach((param, index, arr) => {
+						if (param === "-r") resolver = arr[index + 1];
+						if (param === "-a") address = arr[index + 1];
+						if (param === "-p") port = arr[index + 1];
 					});
 					reply.providers.forEach(prov => {
 						let regexp = pkg.templateToRegexp(prov.template);
-						if (! found && regexp.test(r)) {
+						if (!found && regexp.test(resolver)) {
 							found = true;
 							name = _(prov.title);
-							let match = r.match(regexp);
+							let match = resolver.match(regexp);
 							if (match[1]) {
 								if (prov.params && prov.params.option && prov.params.option.options) {
 									prov.params.option.options.forEach(opt => {
-										if (opt.value === match[1]){
+										if (opt.value === match[1]) {
 											option = _(opt.description);
 										}
 									})
-									name += " (" + option + ")" 
+									name += " (" + option + ")"
 								}
 								else {
-									name += " (" + match[1] + ")" 
+									name += " (" + match[1] + ")"
 								}
 							}
 						}
 					});
-					if ( a === "127.0.0.1" ) {
-						text += _("%s%s%s proxy on port %s.%s").format("<strong>", name, "</strong>", p, "<br />");
+					if (address === "127.0.0.1") {
+						text += _("%s%s%s proxy on port %s.%s").format("<strong>", name, "</strong>", port, "<br />");
 					}
 					else {
-						text += _("%s%s%s proxy at %s on port %s.%s").format("<strong>", name, "</strong>", a, p, "<br />");
+						text += _("%s%s%s proxy at %s on port %s.%s").format("<strong>", name, "</strong>", address, port, "<br />");
 					}
 				});
 				var instancesText = E('div', {}, text);

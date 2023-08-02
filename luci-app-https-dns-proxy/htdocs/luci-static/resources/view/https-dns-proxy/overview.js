@@ -11,7 +11,7 @@
 var pkg = {
 	get Name() { return 'https-dns-proxy'; },
 	get URL() { return 'https://docs.openwrt.melmac.net/' + pkg.Name + '/'; },
-	templateToRegexp: function(template) {
+	templateToRegexp: function (template) {
 		return RegExp('^' + template.split(/(\{\w+\})/g).map(part => {
 			let placeholder = part.match(/^\{(\w+)\}$/);
 			if (placeholder)
@@ -102,30 +102,29 @@ return view.extend({
 			s.anonymous = true;
 			s.addremove = true;
 
-			s.sectiontitle = function(section_id) {
+			s.sectiontitle = function (section_id) {
 				var provText;
 				var found;
 				reply.providers.forEach(prov => {
-					let regexp = pkg.templateToRegexp(prov.template);
-					let r = uci.get(pkg.Name, section_id, "resolver_url");
 					var option;
-					if (! found && r && regexp.test(r)) {
+					let regexp = pkg.templateToRegexp(prov.template);
+					let resolver = uci.get(pkg.Name, section_id, "resolver_url");
+					resolver = (resolver === "undefined") ? null : resolver;
+					if (!found && resolver && regexp.test(resolver)) {
 						found = true;
 						provText = _(prov.title);
-						if (r != "undefined") {
-							let match = r.match(regexp);
-							if (match[1]) {
-								if (prov.params && prov.params.option && prov.params.option.options) {
-									prov.params.option.options.forEach(opt => {
-										if (opt.value === match[1]){
-											option = _(opt.description);
-										}
-									})
-									provText += " (" + option + ")";
-								}
-								else {
-									provText += " (" + match[1] + ")";
-								}
+						let match = resolver.match(regexp);
+						if (match[1]) {
+							if (prov.params && prov.params.option && prov.params.option.options) {
+								prov.params.option.options.forEach(opt => {
+									if (opt.value === match[1]) {
+										option = _(opt.description);
+									}
+								})
+								provText += " (" + option + ")";
+							}
+							else {
+								provText += " (" + match[1] + ")";
 							}
 						}
 					}
@@ -152,8 +151,8 @@ return view.extend({
 			var n = 0;
 			var sections = uci.sections(pkg.Name, pkg.Name);
 			sections.forEach(element => {
-//				if (element[".name"] === section_id) return false;
-				n+=1;
+				//				if (element[".name"] === section_id) return false;
+				n += 1;
 			});
 			o = s.option(form.Value, "listen_port", _("Listen Port"));
 			o.datatype = "port";
