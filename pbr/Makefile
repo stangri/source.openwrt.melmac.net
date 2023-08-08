@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=1.1.2
-PKG_RELEASE:=21
+PKG_RELEASE:=22
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -133,7 +133,7 @@ define Package/pbr/prerm
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		uci -q delete firewall.pbr || true
 		echo "Stopping pbr service... "
-		/etc/init.d/pbr stop && echo "OK" || echo "FAIL"
+		/etc/init.d/pbr stop quiet && echo "OK" || echo "FAIL"
 		echo -n "Removing rc.d symlink for pbr... "
 		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
 	fi
@@ -165,7 +165,7 @@ define Package/pbr-iptables/prerm
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		uci -q delete firewall.pbr || true
 		echo "Stopping pbr-iptables service... "
-		/etc/init.d/pbr stop && echo "OK" || echo "FAIL"
+		/etc/init.d/pbr stop quiet && echo "OK" || echo "FAIL"
 		echo -n "Removing rc.d symlink for pbr-iptables... "
 		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
 	fi
@@ -188,7 +188,7 @@ define Package/pbr-netifd/prerm
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		uci -q delete firewall.pbr || true
 		echo "Stopping pbr-netifd service... "
-		/etc/init.d/pbr stop && echo "OK" || echo "FAIL"
+		/etc/init.d/pbr stop quiet && echo "OK" || echo "FAIL"
 		echo -n "Removing rc.d symlink for pbr... "
 		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
 	fi
