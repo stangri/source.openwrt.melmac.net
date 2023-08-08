@@ -198,7 +198,7 @@ output() {
 	if [ "$#" -ne 1 ]; then
 		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; else return 0; fi
 	fi
-	[ -t 1 ] && [ "$verbosity" -ne '0' ] && printf "%b" "$1"
+	[ -t 1 ] && [ "$verbosity" -ne 0 ] && printf "%b" "$1"
 	msg="${1//$serviceName /service }";
 	if [ "$(printf "%b" "$msg" | wc -l)" -gt 0 ]; then
 		[ -s "$sharedMemoryOutput" ] && memmsg="$(cat "$sharedMemoryOutput")"
