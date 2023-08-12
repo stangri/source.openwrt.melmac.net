@@ -30,7 +30,7 @@ output() {
 }
 output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
 output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
-output_fail() { s=1; output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
+output_fail() { output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
 
 # Transition from vpn-policy-routing
@@ -49,10 +49,10 @@ if [ -s '/etc/config/vpn-policy-routing' ] && [ ! -s '/etc/config/pbr-opkg' ] \
 	if mv '/etc/config/pbr' '/etc/config/pbr-opkg' \
 		&& sed 's/vpn-policy-routing/pbr/g' /etc/config/vpn-policy-routing > /etc/config/pbr \
 		&& uci set vpn-policy-routing.config.enabled=0 && uci commit vpn-policy-routing; then
-			output_okn
-		else
-			output_failn
-		fi
+		output_okn
+	else
+		output_failn
+	fi
 fi
 
 # Transition from older versions of pbr

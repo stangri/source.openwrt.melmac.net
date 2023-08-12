@@ -171,7 +171,7 @@ get_text() {
 version() { echo "$PKG_VERSION"; }
 output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
 output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
-output_fail() { s=1; output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
+output_fail() { output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
 # shellcheck disable=SC2317
 str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
@@ -1541,7 +1541,7 @@ policy_routing_nft() {
 
 	if is_xray "$iface"; then
 		unset dest_port
-		[ -z "$src_port" ] && src_port='0-52,54-65535'
+		[ -z "$src_port" ] && src_port='0-65535'
 		dest4="tproxy ip to: $(get_xray_traffic_port "$iface") accept"
 		dest6="tproxy ip6 to: $(get_xray_traffic_port "$iface") accept"
 	elif [ -n "$mark" ]; then
