@@ -88,6 +88,10 @@ outputGzip=
 outputCache=
 awk='awk'
 load_environment_flag=
+allowed_domains_url=
+blocked_adblockplus_url=
+blocked_domains_url=
+blocked_hosts_url=
 
 debug() { local i j; for i in "$@"; do eval "j=\$$i"; echo "${i}: ${j} "; done; }
 
@@ -252,11 +256,12 @@ load_network() {
 
 append_url() {
 	local cfg="$1" var="$2"
-	local en url
+	local en url prev
 	config_get en "$1" enabled '1'
 	config_get url "$1" url
 	if [ "$en" = '1' ]; then
-		printf -v "$var" '%s %s' "$(eval echo "\$$var")" "$url"
+		prev="$(eval echo "\$$var") $url"
+		eval "$var=\$prev"
 	fi
 }
 
@@ -1663,11 +1668,7 @@ load_validate_config() {
 	local dns
 	local dns_instance
 	local allowed_domain
-	local allowed_domains_url
-	local blocked_adblockplus_url
 	local blocked_domain
-	local blocked_domains_url
-	local blocked_hosts_url
 	local dnsmasq_config_file_url
 	uci_load_validate "$packageName" "$packageName" "$1" "${2}${3:+ $3}" \
 		'enabled:bool:0' \
