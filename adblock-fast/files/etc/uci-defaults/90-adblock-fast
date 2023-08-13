@@ -101,6 +101,7 @@ if [ -s '/etc/config/simple-adblock' ] \
 	for i in allowed_domains_url blocked_adblockplus_url blocked_domains_url \
 		blocked_hosts_url; do
 		output "Migrating simple-adblock ${i} "
+		while uci -q del "adblock-fast.@${i/_url/_file}[-1]"; do :; done
 		for j in $(uci -q get simple-adblock.config.${i}); do
 			uci add adblock-fast "${i/_url/_file}" >/dev/null 2>&1
 			uci set "adblock-fast.@${i/_url/_file}[-1].url=$j"

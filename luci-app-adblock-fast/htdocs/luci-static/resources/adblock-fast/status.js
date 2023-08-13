@@ -124,7 +124,7 @@ var status = baseclass.extend({
 							text += statusTable[reply.status] + ".";
 						}
 						else {
-							text += statusTable[reply.status] + _("disabled") + "."
+							text += statusTable[reply.status] + " (" + _("Disabled") + ")."
 						}
 						if (reply.outputCacheExists) {
 							text += "<br />" + _("Cache file found.");

@@ -35,69 +35,69 @@ config adblock-fast 'config'
 
 config blocked_adblockplus_file
 	option url 'https://big.oisd.nl/'
-	option enabled '1'
+	option enabled '0'
 	option size '6149397'
 
 config blocked_domains_file
 	option url 'https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/data/combined_disguised_trackers_justdomains.txt'
-	option enabled '1'
+	option enabled '0'
 	option size '8370035'
 
 config blocked_domains_file
 	option url 'https://cdn.jsdelivr.net/gh/kboghdady/youTube_ads_4_pi-hole/black.list'
-	option enabled '1'
+	option enabled '0'
 	option size '553006'
 
 config blocked_domains_file
 	option url 'https://cdn.jsdelivr.net/gh/bongochong/CombinedPrivacyBlockLists/NoFormatting/cpbl-ctld.txt'
-	option enabled '1'
+	option enabled '0'
 	option size '2608152'
 
 config blocked_domains_file
 	option url 'https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/data/combined_disguised_ads_justdomains.txt'
-	option enabled '1'
+	option enabled '0'
 	option size '242510'
 
 config blocked_domains_file
 	option url 'https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/data/combined_disguised_clickthroughs_justdomains.txt'
-	option enabled '1'
+	option enabled '0'
 	option size '408053'
 
 config blocked_domains_file
 	option url 'https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/data/combined_disguised_microsites_justdomains.txt'
-	option enabled '1'
+	option enabled '0'
 	option size '121908'
 
 config blocked_hosts_file
 	option url 'https://adaway.org/hosts.txt'
-	option enabled '1'
+	option enabled '0'
 	option size '243454'
 
 config blocked_hosts_file
 	option url 'https://cdn.jsdelivr.net/gh/hoshsadiq/adblock-nocoin-list/hosts.txt'
-	option enabled '1'
+	option enabled '0'
 	option size '11149'
 
 config blocked_hosts_file
 	option url 'https://pgl.yoyo.org/as/serverlist.php?hostformat=hosts&showintro=1&mimetype=plaintext'
-	option enabled '1'
+	option enabled '0'
 
 config blocked_hosts_file
 	option url 'https://winhelp2002.mvps.org/hosts.txt'
-	option enabled '1'
+	option enabled '0'
 	option size '334861'
 
 config blocked_hosts_file
 	option url 'https://someonewhocares.org/hosts/hosts'
-	option enabled '1'
+	option enabled '0'
 	option size '347410'
 
 config blocked_hosts_file
 	option url 'http://sysctl.org/cameleon/hosts'
-	option enabled '1'
+	option enabled '0'
 	option size '638545'
 
 config blocked_hosts_file
 	option url 'https://cdn.jsdelivr.net/gh/StevenBlack/hosts/hosts'
-	option enabled '1'
+	option enabled '0'
 	option size '6720160'

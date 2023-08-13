@@ -165,54 +165,50 @@ return view.extend({
 			o.depends('dnsmasq_config_file_url', '');
 			o.addremove = true;
 
-			s = m.section(form.GridSection, 'allowed_domains_url',
+			s = m.section(form.GridSection, 'allowed_domains_file',
 				_("Allowed Domain URLs"),
 				_("URLs to lists of domains to be allowed."));
 			s.rowcolors = true;
 			s.sortable = true;
 			s.anonymous = true;
 			s.addremove = true;
-			s.depends('dnsmasq_config_file_url', '');
-			o = s.option(form.FlagValue, "enabled");
+			o = s.option(form.Flag, "enabled");
 			o.default = '1';
 			o.editable = true;
 			o = s.option(form.Value, "url");
 			o.editable = true;
-			s = m.section(form.GridSection, 'blocked_adblockplus_url',
+			s = m.section(form.GridSection, 'blocked_adblockplus_file',
 				_("Blocked AdBlockPlus-style URLs"),
 				_("URLs to lists of AdBlockPlus-style formatted domains to be blocked."));
 			s.rowcolors = true;
 			s.sortable = true;
 			s.anonymous = true;
 			s.addremove = true;
-			s.depends('dnsmasq_config_file_url', '');
-			o = s.option(form.FlagValue, "enabled");
+			o = s.option(form.Flag, "enabled");
 			o.default = '1';
 			o.editable = true;
 			o = s.option(form.Value, "url");
 			o.editable = true;
-			s = m.section(form.GridSection, 'blocked_domains_url',
+			s = m.section(form.GridSection, 'blocked_domains_file',
 				_("Blocked Domain URLs"),
 				_("URLs to lists of domains to be blocked."));
 			s.rowcolors = true;
 			s.sortable = true;
 			s.anonymous = true;
 			s.addremove = true;
-			s.depends('dnsmasq_config_file_url', '');
-			o = s.option(form.FlagValue, "enabled");
+			o = s.option(form.Flag, "enabled");
 			o.default = '1';
 			o.editable = true;
 			o = s.option(form.Value, "url");
 			o.editable = true;
-			s = m.section(form.GridSection, 'blocked_hosts_url',
+			s = m.section(form.GridSection, 'blocked_hosts_file',
 				_("Blocked Hosts URLs"),
 				_("URLs to lists of hosts to be blocked."));
 			s.rowcolors = true;
 			s.sortable = true;
 			s.anonymous = true;
 			s.addremove = true;
-			s.depends('dnsmasq_config_file_url', '');
-			o = s.option(form.FlagValue, "enabled");
+			o = s.option(form.Flag, "enabled");
 			o.default = '1';
 			o.editable = true;
 			o = s.option(form.Value, "url");
