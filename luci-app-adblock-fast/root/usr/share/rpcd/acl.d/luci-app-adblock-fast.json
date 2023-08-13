@@ -1,0 +1,27 @@
+{
+	"luci-app-adblock-fast": {
+		"description": "Grant UCI and file access for luci-app-adblock-fast",
+		"read": {
+			"ubus": {
+				"luci.adblock-fast": [
+					"getInitList",
+					"getInitStatus",
+					"getPlatformSupport"
+				]
+			},
+			"uci": [
+				"adblock-fast"
+			]
+		},
+		"write": {
+			"uci": [
+				"adblock-fast"
+			],
+			"ubus": {
+				"luci.adblock-fast": [
+					"setInitAction"
+				]
+			}
+		}
+	}
+}
