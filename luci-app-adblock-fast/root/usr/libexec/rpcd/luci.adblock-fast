@@ -95,8 +95,7 @@ get_file_sizes() {
 	json_add_object "$name"
 	json_add_array 'sizes'
 	config_load "$name"
-	for i in allowed_domains_file blocked_adblockplus_file blocked_domains_file \
-		blocked_hosts_file; do
+	for i in allowed_file blocked_file; do
 		config_foreach get_section_size "$i"
 	done
 	json_close_array

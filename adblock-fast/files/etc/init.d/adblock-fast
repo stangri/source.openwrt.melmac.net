@@ -267,6 +267,7 @@ detect_file_type() {
 	local file="$1"
 	if [ "$(head -1 "$file")" = '[Adblock Plus]' ]; then
 		echo 'adBlockPlus'
+	# TODO: add IPv6 local addresses
 	elif grep -q '0.0.0.0' "$file" || grep -q '127.0.0.1' "$file"; then
 		echo 'hosts'
 	elif grep -q '^server=' "$file"; then
@@ -675,9 +676,10 @@ json() {
 		get)
 			case "$param" in
 				triggers)
-					curReload="$parallel_downloads $debug $download_timeout $allowed_domain $blocked_domain $allowed_domains_url \
-						$blocked_adblockplus_url $blocked_domains_url $blocked_hosts_url $dns $config_update_enabled $config_update_url \
-						$dnsmasq_config_file_url $curl_additional_param $curl_max_file_size $curl_retry"
+					curReload="$parallel_downloads $debug $download_timeout \
+						$allowed_domain $blocked_domain $allowed_url $blocked_url $dns \
+						$config_update_enabled $config_update_url $dnsmasq_config_file_url \
+						$curl_additional_param $curl_max_file_size $curl_retry"
 					curRestart="$compressed_cache $compressed_cache_dir $force_dns $led $force_dns_port"
 					if [ ! -s "$jsonFile" ]; then
 						ret='on_boot'
@@ -709,9 +711,10 @@ json() {
 		set)
 			case "$param" in
 				triggers) 
-					reload="$parallel_downloads $debug $download_timeout $allowed_domain $blocked_domain $allowed_domains_url \
-						$blocked_adblockplus_url $blocked_domains_url $blocked_hosts_url $dns $config_update_enabled $config_update_url \
-						$dnsmasq_config_file_url $curl_additional_param $curl_max_file_size $curl_retry"
+					reload="$parallel_downloads $debug $download_timeout $allowed_domain \
+					$blocked_domain $allowed_url $blocked_url $dns $config_update_enabled \
+					$config_update_url $dnsmasq_config_file_url $curl_additional_param \
+					$curl_max_file_size $curl_retry"
 					restart="$compressed_cache $compressed_cache_dir $force_dns $led $force_dns_port"
 				;;
 				*)
@@ -1243,59 +1246,7 @@ adb_sizes() {
 	load_environment "$validation_result" 'quiet' || return 1
 
 	echo "# $(date)"
-	for i in ${blocked_adblockplus_url}; do
-		[ "${i//melmac}" != "$i" ] && continue
-		if $dl_command "$i" "$dl_flag" /tmp/sast 2>/dev/null && [ -s /tmp/sast ]; then
-			echo "# File size: $(du -sh /tmp/sast | $awk '{print $1}')"
-			if is_greater "$(du -sk /tmp/sast)" "500"; then
-				echo "# block-list too big for most routers"
-			elif is_greater "$(du -sk /tmp/sast)" "100"; then
-				echo "# block-list may be too big for some routers"
-			fi
-			rm -rf /tmp/sast
-			echo "  list blocked_adblockplus_url '$i'"
-			echo ""
-		else
-			echo "# site was down on last check"
-			echo "#  list blocked_adblockplus_url '$i'"
-			echo ""
-		fi
-	done
-	for i in ${blocked_domains_url}; do
-		[ "${i//melmac}" != "$i" ] && continue
-		if $dl_command "$i" "$dl_flag" /tmp/sast 2>/dev/null && [ -s /tmp/sast ]; then
-			echo "# File size: $(du -sh /tmp/sast | $awk '{print $1}')"
-			if is_greater "$(du -sk /tmp/sast)" "500"; then
-				echo "# block-list too big for most routers"
-			elif is_greater "$(du -sk /tmp/sast)" "100"; then
-				echo "# block-list may be too big for some routers"
-			fi
-			rm -rf /tmp/sast
-			echo "  list blocked_domains_url '$i'"
-			echo ""
-		else
-			echo "# site was down on last check"
-			echo "#  list blocked_domains_url '$i'"
-			echo ""
-		fi
-	done
-	for i in ${blocked_hosts_url}; do
-		if $dl_command "$i" "$dl_flag" /tmp/sast 2>/dev/null && [ -s /tmp/sast ]; then
-			echo "# File size: $(du -sh /tmp/sast | $awk '{print $1}')"
-			if is_greater "$(du -sk /tmp/sast)" "500"; then
-				echo "# block-list too big for most routers"
-			elif is_greater "$(du -sk /tmp/sast)" "100"; then
-				echo "# block-list may be too big for some routers"
-			fi
-			rm -rf /tmp/sast
-			echo "  list blocked_hosts_url '$i'"
-			echo ""
-		else
-			echo "# site was down on last check"
-			echo "#  list blocked_hosts_url '$i'"
-			echo ""
-		fi
-	done
+# TODO: add sizes to config
 }
 
 # shellcheck disable=SC2120

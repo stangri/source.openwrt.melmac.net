@@ -21,8 +21,16 @@ msgstr ""
 msgid "AdBlock-Fast - Status"
 msgstr ""
 
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:342
+msgid "AdBlock-Fast: Allowed Lists File URLs"
+msgstr ""
+
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:307
-msgid "AdBlock-Fast: Allowed and Blocked Lists Management"
+msgid "AdBlock-Fast: Allowed and Blocked Domains Management"
+msgstr ""
+
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:369
+msgid "AdBlock-Fast: Blocked Lists File URLs"
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:69
@@ -45,10 +53,6 @@ msgstr ""
 msgid "Allowed Domains"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:342
-msgid "Allowed Lists File URLs"
-msgstr ""
-
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:271
 msgid ""
 "Attempt to create a compressed cache of block-list in the persistent memory."
@@ -64,10 +68,6 @@ msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:333
 msgid "Blocked Domains"
-msgstr ""
-
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:367
-msgid "Blocked Lists File URLs"
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:133
@@ -312,7 +312,7 @@ msgid "Simultaneous processing"
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:353
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:378
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:380
 msgid "Size: %s"
 msgstr ""
 
@@ -369,12 +369,12 @@ msgstr ""
 msgid "URLs to file(s) containing lists to be allowed."
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:368
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:370
 msgid "URLs to file(s) containing lists to be blocked."
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:347
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:372
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:374
 msgid "Unknown"
 msgstr ""
 
