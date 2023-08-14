@@ -66,7 +66,7 @@ return view.extend({
       var status, m, s, o;
 
       status = new adb.status();
-      m = new form.Map(pkg.Name, _("Simple AdBlock - Configuration"));
+      m = new form.Map(pkg.Name, _("AdBlock-Fast: Configuration"));
       s = m.section(form.NamedSection, "config", pkg.Name);
       s.tab("tab_basic", _("Basic Configuration"));
       s.tab("tab_advanced", _("Advanced Configuration"));
@@ -304,7 +304,7 @@ return view.extend({
         form.NamedSection,
         "config",
         "adblock-fast",
-        _("Allowed and Blocked Lists Management")
+        _("AdBlock-Fast: Allowed and Blocked Lists Management")
       );
       o = s.option(
         form.Value,
@@ -338,9 +338,9 @@ return view.extend({
 
       s = m.section(
         form.GridSection,
-        "allowed_domains_file",
-        _("Allowed Domain URLs"),
-        _("URLs to lists of domains to be allowed.")
+        "allowed_file",
+        _("Allowed Lists File URLs"),
+        _("URLs to file(s) containing lists to be allowed.")
       );
       s.sectiontitle = function (section_id) {
         let url = uci.get(pkg.Name, section_id, "url");
@@ -363,9 +363,9 @@ return view.extend({
       o.editable = true;
       s = m.section(
         form.GridSection,
-        "blocked_adblockplus_file",
-        _("Blocked AdBlockPlus-style URLs"),
-        _("URLs to lists of AdBlockPlus-style formatted domains to be blocked.")
+        "blocked_file",
+        _("Blocked Lists File URLs"),
+        _("URLs to file(s) containing lists to be blocked.")
       );
       s.sectiontitle = function (section_id) {
         let url = uci.get(pkg.Name, section_id, "url");
@@ -386,57 +386,8 @@ return view.extend({
       o.editable = true;
       o = s.option(form.Value, "url");
       o.editable = true;
-      s = m.section(
-        form.GridSection,
-        "blocked_domains_file",
-        _("Blocked Domain URLs"),
-        _("URLs to lists of domains to be blocked.")
-      );
-      s.sectiontitle = function (section_id) {
-        let url = uci.get(pkg.Name, section_id, "url");
-        let ret = _("Unknown");
-        reply.sizes.forEach((element) => {
-          if (element.url === url) {
-            ret = (element.size === 0) ? ret : pkg.humanFileSize(element.size);
-          }
-        });
-        return _("Size: %s").format(ret);
-      };
-      s.rowcolors = true;
-      s.sortable = true;
-      s.anonymous = true;
-      s.addremove = true;
-      o = s.option(form.Flag, "enabled");
-      o.default = "1";
-      o.editable = true;
-      o = s.option(form.Value, "url");
-      o.editable = true;
-      s = m.section(
-        form.GridSection,
-        "blocked_hosts_file",
-        _("Blocked Hosts URLs"),
-        _("URLs to lists of hosts to be blocked.")
-      );
-      s.sectiontitle = function (section_id) {
-        let url = uci.get(pkg.Name, section_id, "url");
-        let ret = _("Unknown");
-        reply.sizes.forEach((element) => {
-          if (element.url === url) {
-            ret = (element.size === 0) ? ret : pkg.humanFileSize(element.size);
-          }
-        });
-        return _("Size: %s").format(ret);
-      };
-      s.rowcolors = true;
-      s.sortable = true;
-      s.anonymous = true;
-      s.addremove = true;
-      o = s.option(form.Flag, "enabled");
-      o.default = "1";
-      o.editable = true;
-      o = s.option(form.Value, "url");
-      o.editable = true;
-      return Promise.all([status.render(), m.render()]);
+
+			return Promise.all([status.render(), m.render()]);
     });
   },
 });

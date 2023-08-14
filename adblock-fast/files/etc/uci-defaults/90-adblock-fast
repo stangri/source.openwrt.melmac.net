@@ -103,10 +103,17 @@ if [ -s '/etc/config/simple-adblock' ] \
 		output "Migrating simple-adblock ${i} "
 		while uci -q del "adblock-fast.@${i/_url/_file}[-1]"; do :; done
 		for j in $(uci -q get simple-adblock.config.${i}); do
-			uci add adblock-fast "${i/_url/_file}" >/dev/null 2>&1
-			uci set "adblock-fast.@${i/_url/_file}[-1].url=$j"
-#			uci set "adblock-fast.@${i/_url/_file}[-1].size=$(get_url_filesize "$j")"
-			uci set "adblock-fast.@${i/_url/_file}[-1].enabled=1"
+			if [ "$i" = 'allowed_domains_url' ]; then
+				uci add adblock-fast 'allowed_file' >/dev/null 2>&1
+				uci set "adblock-fast.@allowed_file[-1].url=$j"
+#				uci set "adblock-fast.@allowed_file[-1].size=$(get_url_filesize "$j")"
+				uci set "adblock-fast.@allowed_file[-1].enabled=1"
+			else
+				uci add adblock-fast "blocked_file" >/dev/null 2>&1
+				uci set "adblock-fast.@blocked_file[-1].url=$j"
+#				uci set "adblock-fast.@blocked_file[-1].size=$(get_url_filesize "$j")"
+				uci set "adblock-fast.@blocked_file[-1].enabled=1"
+			fi
 		done
 		output_okn
 	done

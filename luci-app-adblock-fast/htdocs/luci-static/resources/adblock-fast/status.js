@@ -117,7 +117,7 @@ var status = baseclass.extend({
           statusSuccess: _("Active"),
         };
 
-        var header = E("h2", {}, _("Simple AdBlock - Status"));
+        var header = E("h2", {}, _("AdBlock-Fast - Status"));
         var statusTitle = E(
           "label",
           { class: "cbi-value-title" },

@@ -88,10 +88,8 @@ outputGzip=
 outputCache=
 awk='awk'
 load_environment_flag=
-allowed_domains_url=
-blocked_adblockplus_url=
-blocked_domains_url=
-blocked_hosts_url=
+allowed_url=
+blocked_url=
 
 debug() { local i j; for i in "$@"; do eval "j=\$$i"; echo "${i}: ${j} "; done; }
 
@@ -262,6 +260,19 @@ append_url() {
 	if [ "$en" = '1' ]; then
 		prev="$(eval echo "\$$var") $url"
 		eval "$var=\$prev"
+	fi
+}
+
+detect_file_type() {
+	local file="$1"
+	if [ "$(head -1 "$file")" = '[Adblock Plus]' ]; then
+		echo 'adBlockPlus'
+	elif grep -q '0.0.0.0' "$file" || grep -q '127.0.0.1' "$file"; then
+		echo 'hosts'
+	elif grep -q '^server=' "$file"; then
+		echo 'dnsmasqFile'
+	else
+		echo 'domains'
 	fi
 }
 
@@ -493,10 +504,8 @@ load_environment() {
 		unset isSSLSupported
 	fi
 	config_load "$packageName"
-	config_foreach append_url 'allowed_domains_file' 'allowed_domains_url'
-	config_foreach append_url 'blocked_adblockplus_file' 'blocked_adblockplus_url'
-	config_foreach append_url 'blocked_domains_file' 'blocked_domains_url'
-	config_foreach append_url 'blocked_hosts_file' 'blocked_hosts_url'
+	config_foreach append_url 'allowed_file' 'allowed_url'
+	config_foreach append_url 'blocked_file' 'blocked_url'
 	load_environment_flag=1
 	cache 'test' && return 0 
 	cache 'test_gzip' && return 0
@@ -768,19 +777,11 @@ cache() {
 
 process_url() {
 	local label type D_TMP R_TMP
-	if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then return 1; fi
-	label="${1##*//}"; label="${label%%/*}";
+	if [ -z "$1" ] || [ -z "$2" ]; then return 1; fi
+	label="${1##*//}"
+	label="${label%%/*}"
+	label="File: $label"
 	case "$2" in
-		adbp)    label="ADBPlus: $label"; filter="$adBlockPlusFilter"
-		;;
-		dnsmasq) label="Dnsmasq: $label"; filter="$dnsmasqFileFilter"
-		;;
-		domains) label="Domains: $label"; filter="$domainsFilter"
-		;;
-		hosts)   label="Hosts:   $label"; filter="$hostsFilter"
-		;;
-	esac
-	case "$3" in
 		allowed) type='Allowed'; D_TMP="$A_TMP"
 		;;
 		blocked) type='Blocked'; D_TMP="$B_TMP"
@@ -802,15 +803,22 @@ process_url() {
 		output 2 "[DL] $type $label $__FAIL__\\n"
 		echo "errorDownloadingList|${1}" >> "$sharedMemoryError"
 	else
+		format="$(detect_file_type "$R_TMP")"
+		case "$format" in
+			adBlockPlus) filter="$adBlockPlusFilter";;
+			dnsmasqFile) filter="$dnsmasqFileFilter";;
+			domains) filter="$domainsFilter";;
+			hosts) filter="$hostsFilter";;
+		esac
 		sed -i "$filter" "$R_TMP"
 		if [ ! -s "$R_TMP" ]; then
 			output 1 "$_FAIL_"
-			output 2 "[DL] $type $label $__FAIL__\\n"
+			output 2 "[DL] $type $label ($format) $__FAIL__\\n"
 			echo "errorParsingList|${1}" >> "$sharedMemoryError"
 		else
 			cat "${R_TMP}" >> "$D_TMP"
 			output 1 "$_OK_"
-			output 2 "[DL] $type $label $__OK__\\n"
+			output 2 "[DL] $type $label ($format) $__OK__\\n"
 		fi
 	fi
 	rm -f "$R_TMP"
@@ -835,8 +843,7 @@ download_dnsmasq_file() {
 	touch $A_TMP; touch $B_TMP;
 	output 1 'Downloading dnsmasq file '
 	rm -f "$sharedMemoryError"
-	process_url "$dnsmasq_config_file_url" 'dnsmasq' 'file'
-#	output 1 '\n'
+	process_url "$dnsmasq_config_file_url" 'file'
 	if [ -s "$sharedMemoryError" ]; then
 		while IFS= read -r line; do
 			json add error "$line"
@@ -871,32 +878,18 @@ download_lists() {
 	touch $A_TMP; touch $B_TMP;
 	output 1 'Downloading lists '
 	rm -f "$sharedMemoryError"
-	for hf in ${blocked_hosts_url}; do
+	for hf in ${blocked_url}; do
 		if [ "$parallel_downloads" -gt 0 ]; then
-			process_url "$hf" 'hosts' 'blocked' &
+			process_url "$hf" 'blocked' &
 		else
-			process_url "$hf" 'hosts' 'blocked'
+			process_url "$hf" 'blocked'
 		fi
 	done
-	for hf in ${blocked_adblockplus_url}; do
+	for hf in ${allowed_url}; do
 		if [ "$parallel_downloads" -gt 0 ]; then
-			process_url "$hf" 'adbp' 'blocked' &
+			process_url "$hf" 'allowed' &
 		else
-			process_url "$hf" 'adbp' 'blocked'
-		fi
-	done
-	for hf in ${blocked_domains_url}; do
-		if [ "$parallel_downloads" -gt 0 ]; then
-			process_url "$hf" 'domains' 'blocked' &
-		else
-			process_url "$hf" 'domains' 'blocked'
-		fi
-	done
-	for hf in ${allowed_domains_url}; do
-		if [ "$parallel_downloads" -gt 0 ]; then
-			process_url "$hf" 'domains' 'allowed' &
-		else
-			process_url "$hf" 'domains' 'allowed'
+			process_url "$hf" 'allowed'
 		fi
 	done
 	wait
