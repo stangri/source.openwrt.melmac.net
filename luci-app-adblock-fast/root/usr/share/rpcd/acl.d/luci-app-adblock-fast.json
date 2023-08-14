@@ -4,6 +4,7 @@
 		"read": {
 			"ubus": {
 				"luci.adblock-fast": [
+					"getFileSizes",
 					"getInitList",
 					"getInitStatus",
 					"getPlatformSupport"

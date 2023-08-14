@@ -5,11 +5,12 @@
 # TechRef: https://openwrt.org/docs/techref/rpcd
 # TESTS
 # ubus -v list luci.adblock-fast
+# ubus -S call luci.adblock-fast getFileSizes '{"name": "adblock-fast" }'
 # ubus -S call luci.adblock-fast getInitList '{"name": "adblock-fast" }'
 # ubus -S call luci.adblock-fast getInitStatus '{"name": "adblock-fast" }'
+# ubus -S call luci.adblock-fast getPlatformSupport '{"name": "adblock-fast" }'
 # ubus -S call luci.adblock-fast setInitAction '{"name": "adblock-fast", "action": "start" }'
 # ubus -S call luci.adblock-fast setInitAction '{"name": "adblock-fast", "action": "stop" }'
-# ubus -S call luci.adblock-fast getPlatformSupport '{"name": "adblock-fast" }'
 
 . /lib/functions.sh
 . /lib/functions/network.sh
@@ -43,6 +44,7 @@ str_to_upper() { echo "$1" | tr 'a-z' 'A-Z'; }
 is_enabled() { uci -q get "${1}.config.enabled"; }
 get_version() { grep -m1 -A2 -w "^Package: $1$" /usr/lib/opkg/status | sed -n 's/Version: //p'; }
 print_json_bool() { json_init; json_add_boolean "$1" "$2"; json_dump; json_cleanup; }
+print_json_int() { json_init; json_add_int "$1" "$2"; json_dump; json_cleanup; }
 print_json_string() { json_init; json_add_string "$1" "$2"; json_dump; json_cleanup; }
 logger() { /usr/bin/logger -t "$packageName" "$@"; }
 ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances.main.data.${1}"; }
@@ -70,11 +72,37 @@ json() {
 }
 get_url_filesize() {
 	local url="$1" size size_command
-	[ -n "$1" ] || return 0
-	is_present 'curl' || return 0
+	[ -n "$url" ] || { print_json_int 'size' '0'; return 0; }
+	is_present 'curl' || { print_json_int 'size' '0'; return 0; }
 	size_command='curl --silent --insecure --fail --head --request GET'
 	size="$($size_command "$url" | grep -i 'content-length:' | awk '{print $2}'; )"
 	echo "$size"
+}
+
+get_section_size() {
+	local url size
+	config_get url "$1" 'url'
+	size="$(get_url_filesize "$url")"
+	json_add_object
+	json_add_string 'url' "$url"
+	json_add_int 'size' "$size"
+	json_close_object
+}
+
+get_file_sizes() {
+	local name="$1" i
+	json_init
+	json_add_object "$name"
+	json_add_array 'sizes'
+	config_load "$name"
+	for i in allowed_domains_file blocked_adblockplus_file blocked_domains_file \
+		blocked_hosts_file; do
+		config_foreach get_section_size "$i"
+	done
+	json_close_array
+	json_close_object
+	json_dump
+	json_cleanup
 }
 
 get_init_list() {
@@ -322,6 +350,9 @@ get_platform_support() {
 case "$1" in
 	list)
 		json_init
+		json_add_object "getFileSizes"
+			json_add_string 'name' 'name'
+		json_close_object
 		json_add_object "getInitList"
 			json_add_string 'name' 'name'
 		json_close_object
@@ -340,6 +371,13 @@ case "$1" in
 		;;
 	call)
 		case "$2" in
+			getFileSizes)
+				read -r input
+				json_load "$input"
+				json_get_var name 'name'
+				json_cleanup
+				get_file_sizes "$name"
+				;;
 			getInitList)
 				read -r input
 				json_load "$input"
