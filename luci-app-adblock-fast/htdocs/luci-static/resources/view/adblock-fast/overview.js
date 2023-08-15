@@ -107,35 +107,6 @@ return view.extend({
 			o.value("1", _("Force Router DNS server to all local devices"));
 			o.default = ("1", _("Force Router DNS server to all local devices"));
 
-			o = s.taboption(
-				"tab_basic",
-				form.ListValue,
-				"dns_instance",
-				_("Use AdBlocking on this DNSMASQ Instance(s)"),
-				_(
-					"You can limit the AdBlocking to a specific dnsmasq instance(s) (%smore information%s)."
-				).format(
-					'<a href="' + pkg.URL + "#dns_instance" + '" target="_blank">',
-					"</a>"
-				)
-			);
-			o.value("*", _("Update all configs"));
-			var sections = uci.sections("dhcp", "dnsmasq");
-			sections.forEach((element) => {
-				var description;
-				var key;
-				if (element[".name"] === uci.resolveSID("dhcp", element[".name"])) {
-					key = element[".index"];
-					description = "dnsmasq[" + element[".index"] + "]";
-				} else {
-					key = element[".name"];
-					description = element[".name"];
-				}
-				o.value(key, _("Update %s only").format(description));
-			});
-			o.value("-", _("Do not update configs"));
-			o.default = "*";
-
 			if (reply.platform.leds.length) {
 				o = s.taboption(
 					"tab_basic",
@@ -243,6 +214,37 @@ return view.extend({
 				)
 			);
 			o.depends("dns", "dnsmasq.config_file");
+
+			o = s.taboption(
+				"tab_advanced",
+				form.ListValue,
+				"dnsmasq_instance",
+				_("Use AdBlocking on the dnsmasq instance(s)"),
+				_(
+					"You can limit the AdBlocking to a specific dnsmasq instance(s) (%smore information%s)."
+				).format(
+					'<a href="' + pkg.URL + "#dnsmasq_instance" + '" target="_blank">',
+					"</a>"
+				)
+			);
+			o.value("*", _("AdBlock on all instances"));
+			var sections = uci.sections("dhcp", "dnsmasq");
+			sections.forEach((element) => {
+				var description;
+				var key;
+				if (element[".name"] === uci.resolveSID("dhcp", element[".name"])) {
+					key = element[".index"];
+					description = "dnsmasq[" + element[".index"] + "]";
+				} else {
+					key = element[".name"];
+					description = element[".name"];
+				}
+				o.value(key, _("AdBlock on %s only").format(description));
+			});
+			o.value("-", _("No AdBlock on dnsmasq"));
+			o.default = "*";
+			o.depends("dns", "dnsmasq.addnhosts");
+			o.depends("dns", "dnsmasq.servers");
 
 			o = s.taboption(
 				"tab_advanced",

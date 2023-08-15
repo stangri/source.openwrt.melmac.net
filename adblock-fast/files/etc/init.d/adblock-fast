@@ -597,10 +597,10 @@ dns() {
 			fi
 
 			config_load 'dhcp'
-			if [ "$dns_instance" = "*" ]; then
+			if [ "$dnsmasq_instance" = "*" ]; then
 				config_foreach resolver 'dnsmasq' "$dns"
-			elif [ -n "$dns_instance" ]; then
-				for i in $dns_instance; do
+			elif [ -n "$dnsmasq_instance" ]; then
+				for i in $dnsmasq_instance; do
 					resolver "@dnsmasq[$i]" "$dns" || resolver "$i" "$dns"
 				done
 			fi
@@ -1674,7 +1674,7 @@ load_validate_config() {
 	local procd_boot_wan_timeout
 	local led
 	local dns
-	local dns_instance
+	local dnsmasq_instance
 	local allowed_domain
 	local blocked_domain
 	local dnsmasq_config_file_url
@@ -1702,7 +1702,7 @@ load_validate_config() {
 		'procd_boot_wan_timeout:integer:60' \
 		'led:or("", "none", file, device, string)' \
 		'dns:or("dnsmasq.addnhosts", "dnsmasq.conf", "dnsmasq.ipset", "dnsmasq.nftset", "dnsmasq.servers", "unbound.adb_list"):dnsmasq.servers' \
-		'dns_instance:or(list(integer, string)):0' \
+		'dnsmasq_instance:or(list(integer, string)):0' \
 		'allowed_domain:list(string)' \
 		'blocked_domain:list(string)' \
 		'dnsmasq_config_file_url:string'
