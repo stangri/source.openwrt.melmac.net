@@ -97,6 +97,6 @@ load_validate_config() {
 	local unbound_service
 	uci_load_validate "$packageName" "$packageName" "$1" "${2}${3:+ $3}" \
 		'enabled:bool:0' \
-		'dnsmasq_service:or(list(string, "")):""' \
-		'unbound_service:or(list(string, "")):""'
+		'dnsmasq_service:list(or(string, "")):""' \
+		'unbound_service:list(or(string, "")):""'
 }

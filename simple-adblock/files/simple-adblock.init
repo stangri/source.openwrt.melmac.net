@@ -1661,7 +1661,7 @@ load_validate_config() {
 		'procd_boot_wan_timeout:integer:60' \
 		'led:or("", "none", file, device, string)' \
 		'dns:or("dnsmasq.addnhosts", "dnsmasq.conf", "dnsmasq.ipset", "dnsmasq.nftset", "dnsmasq.servers", "unbound.adb_list"):dnsmasq.servers' \
-		'dns_instance:or(list(integer, string)):0' \
+		'dns_instance:list(or(integer, string)):0' \
 		'allowed_domain:list(string)' \
 		'allowed_domains_url:list(string)' \
 		'blocked_domain:list(string)' \
