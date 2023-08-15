@@ -42,8 +42,8 @@ get_url_filesize() {
 	[ -n "$1" ] || return 0
 	is_present 'curl' || return 0
 	size_command='curl --silent --insecure --fail --head --request GET'
-	size="$($size_command "$url" | grep -i 'content-length:' | awk '{print $2}'; )"
-	echo "$size"
+	size="$($size_command "$url" | grep -Po '^[cC]ontent-[lL]ength: \K\w+')"
+	echo -en "$size"
 }
 
 # Transition from simple-adblock
@@ -98,21 +98,19 @@ if [ -s '/etc/config/simple-adblock' ] \
 	done
 	output_okn
 
+	while uci -q del "adblock-fast.@file_url[-1]"; do :; done
 	for i in allowed_domains_url blocked_adblockplus_url blocked_domains_url \
 		blocked_hosts_url; do
 		output "Migrating simple-adblock ${i} "
-		while uci -q del "adblock-fast.@${i/_domains_url/_file}[-1]"; do :; done
 		for j in $(uci -q get simple-adblock.config.${i}); do
+			uci add adblock-fast 'file_url' >/dev/null 2>&1
+			uci set "adblock-fast.@file_url[-1].url=$j"
+			uci set "adblock-fast.@file_url[-1].size=$(get_url_filesize "$j")"
+			uci set "adblock-fast.@file_url[-1].enabled=1"
 			if [ "$i" = 'allowed_domains_url' ]; then
-				uci add adblock-fast 'allowed_file' >/dev/null 2>&1
-				uci set "adblock-fast.@allowed_file[-1].url=$j"
-#				uci set "adblock-fast.@allowed_file[-1].size=$(get_url_filesize "$j")"
-				uci set "adblock-fast.@allowed_file[-1].enabled=1"
+				uci set "adblock-fast.@file_url[-1].action=allow"
 			else
-				uci add adblock-fast "blocked_file" >/dev/null 2>&1
-				uci set "adblock-fast.@blocked_file[-1].url=$j"
-#				uci set "adblock-fast.@blocked_file[-1].size=$(get_url_filesize "$j")"
-				uci set "adblock-fast.@blocked_file[-1].enabled=1"
+				uci set "adblock-fast.@file_url[-1].action=block"
 			fi
 		done
 		output_okn

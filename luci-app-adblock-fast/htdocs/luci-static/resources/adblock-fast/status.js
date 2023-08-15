@@ -15,9 +15,9 @@ var pkg = {
 	},
 };
 
-var getFileSizes = rpc.declare({
+var getFileUrlFilesizes = rpc.declare({
 	object: "luci." + pkg.Name,
-	method: "getFileSizes",
+	method: "getFileUrlFilesizes",
 	params: ["name", "url"],
 });
 
@@ -469,6 +469,6 @@ RPC.on("setInitAction", function (reply) {
 
 return L.Class.extend({
 	status: status,
-	getFileSizes: getFileSizes,
+	getFileUrlFilesizes: getFileUrlFilesizes,
 	getPlatformSupport: getPlatformSupport,
 });

@@ -5,7 +5,7 @@
 # TechRef: https://openwrt.org/docs/techref/rpcd
 # TESTS
 # ubus -v list luci.adblock-fast
-# ubus -S call luci.adblock-fast getFileSizes '{"name": "adblock-fast" }'
+# ubus -S call luci.adblock-fast getFileUrlFilesizes '{"name": "adblock-fast" }'
 # ubus -S call luci.adblock-fast getInitList '{"name": "adblock-fast" }'
 # ubus -S call luci.adblock-fast getInitStatus '{"name": "adblock-fast" }'
 # ubus -S call luci.adblock-fast getPlatformSupport '{"name": "adblock-fast" }'
@@ -70,6 +70,7 @@ json() {
 		;;
 	esac
 }
+
 get_url_filesize() {
 	local url="$1" size size_command
 	[ -n "$url" ] || { print_json_int 'size' '0'; return 0; }
@@ -79,25 +80,24 @@ get_url_filesize() {
 	echo "$size"
 }
 
-get_section_size() {
+_get_file_url_size() {
 	local url size
 	config_get url "$1" 'url'
-	size="$(get_url_filesize "$url")"
+	config_get size "$1" 'size'
+	[ -n "$size" ] || size="$(get_url_filesize "$url")"
 	json_add_object
 	json_add_string 'url' "$url"
 	json_add_int 'size' "$size"
 	json_close_object
 }
 
-get_file_sizes() {
+get_file_url_filesizes() {
 	local name="$1" i
 	json_init
 	json_add_object "$name"
 	json_add_array 'sizes'
 	config_load "$name"
-	for i in allowed_file blocked_file; do
-		config_foreach get_section_size "$i"
-	done
+	config_foreach _get_file_url_size 'file_url'
 	json_close_array
 	json_close_object
 	json_dump
@@ -349,7 +349,7 @@ get_platform_support() {
 case "$1" in
 	list)
 		json_init
-		json_add_object "getFileSizes"
+		json_add_object "getFileUrlFilesizes"
 			json_add_string 'name' 'name'
 		json_close_object
 		json_add_object "getInitList"
@@ -370,12 +370,12 @@ case "$1" in
 		;;
 	call)
 		case "$2" in
-			getFileSizes)
+			getFileUrlFilesizes)
 				read -r input
 				json_load "$input"
 				json_get_var name 'name'
 				json_cleanup
-				get_file_sizes "$name"
+				get_file_url_filesizes "$name"
 				;;
 			getInitList)
 				read -r input

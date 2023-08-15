@@ -1,7 +1,7 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:218
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:222
 msgid "%s is currently disabled"
 msgstr ""
 
@@ -17,24 +17,20 @@ msgstr ""
 msgid "AdBlock Fast"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:120
-msgid "AdBlock-Fast - Status"
-msgstr ""
-
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:342
-msgid "AdBlock-Fast: Allowed Lists File URLs"
-msgstr ""
-
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:307
-msgid "AdBlock-Fast: Allowed and Blocked Domains Management"
-msgstr ""
-
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:369
-msgid "AdBlock-Fast: Blocked Lists File URLs"
+msgid "AdBlock-Fast - Allowed and Blocked Domains Management"
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:69
-msgid "AdBlock-Fast: Configuration"
+msgid "AdBlock-Fast - Configuration"
+msgstr ""
+
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:342
+msgid "AdBlock-Fast - Lists URLs"
+msgstr ""
+
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:120
+msgid "AdBlock-Fast - Status"
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:211
@@ -47,6 +43,10 @@ msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:72
 msgid "Advanced Configuration"
+msgstr ""
+
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:362
+msgid "Allow"
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:325
@@ -66,6 +66,11 @@ msgstr ""
 msgid "Basic Configuration"
 msgstr ""
 
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:363
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:364
+msgid "Block"
+msgstr ""
+
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:333
 msgid "Blocked Domains"
 msgstr ""
@@ -74,7 +79,7 @@ msgstr ""
 msgid "Blocking %s domains (with %s)."
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:155
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:159
 msgid "Cache file found."
 msgstr ""
 
@@ -82,7 +87,7 @@ msgstr ""
 msgid "Compressed cache file created."
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:157
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:161
 msgid "Compressed cache file found."
 msgstr ""
 
@@ -115,7 +120,7 @@ msgid ""
 "Directory for compressed cache file of block-list in the persistent memory."
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:391
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:395
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:81
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:83
 msgid "Disable"
@@ -126,11 +131,11 @@ msgstr ""
 msgid "Disable Debugging"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:152
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:155
 msgid "Disabled"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:385
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:389
 msgid "Disabling %s service"
 msgstr ""
 
@@ -160,8 +165,9 @@ msgstr ""
 msgid "Downloading lists"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:372
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:376
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:82
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:359
 msgid "Enable"
 msgstr ""
 
@@ -174,7 +180,7 @@ msgstr ""
 msgid "Enables debug output to /tmp/adblock-fast.log."
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:366
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:370
 msgid "Enabling %s service"
 msgstr ""
 
@@ -190,7 +196,7 @@ msgstr ""
 msgid "Force DNS ports:"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:334
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:338
 msgid "Force Re-Download"
 msgstr ""
 
@@ -207,7 +213,7 @@ msgstr ""
 msgid "Force Router DNS server to all local devices"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:328
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:332
 msgid "Force re-downloading %s block lists"
 msgstr ""
 
@@ -257,7 +263,7 @@ msgstr ""
 msgid "Let local devices use their own DNS servers if set"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:171
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:175
 msgid "Not installed or not found"
 msgstr ""
 
@@ -291,11 +297,11 @@ msgstr ""
 msgid "Restarting"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:428
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:432
 msgid "Service Control"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:277
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:281
 msgid "Service Errors"
 msgstr ""
 
@@ -303,7 +309,7 @@ msgstr ""
 msgid "Service Status"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:193
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:197
 msgid "Service Warnings"
 msgstr ""
 
@@ -312,7 +318,6 @@ msgid "Simultaneous processing"
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:353
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:380
 msgid "Size: %s"
 msgstr ""
 
@@ -320,7 +325,7 @@ msgstr ""
 msgid "Some output"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:315
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:319
 msgid "Start"
 msgstr ""
 
@@ -328,11 +333,11 @@ msgstr ""
 msgid "Starting"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:309
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:313
 msgid "Starting %s service"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:353
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:357
 msgid "Stop"
 msgstr ""
 
@@ -344,7 +349,7 @@ msgstr ""
 msgid "Stopped"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:347
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:351
 msgid "Stopping %s service"
 msgstr ""
 
@@ -360,21 +365,24 @@ msgstr ""
 msgid "Suppress output"
 msgstr ""
 
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:361
+msgid "Type"
+msgstr ""
+
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:365
+msgid "URL"
+msgstr ""
+
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:314
 msgid ""
 "URL to the external dnsmasq config file, see the %sREADME%s for details."
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:343
-msgid "URLs to file(s) containing lists to be allowed."
-msgstr ""
-
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:370
-msgid "URLs to file(s) containing lists to be blocked."
+msgid "URLs to file(s) containing lists to be allowed or blocked."
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:347
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:374
 msgid "Unknown"
 msgstr ""
 
@@ -396,7 +404,7 @@ msgstr ""
 msgid "Warning"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:216
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:220
 msgid "config (%s) validation failure!"
 msgstr ""
 
@@ -412,13 +420,13 @@ msgstr ""
 msgid "dnsmasq ipset"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:222
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:226
 msgid ""
 "dnsmasq ipset support is enabled, but dnsmasq is either not installed or "
 "installed dnsmasq does not support ipset"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:225
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:229
 msgid ""
 "dnsmasq ipset support is enabled, but ipset is either not installed or "
 "installed ipset does not support '%s' type"
@@ -428,13 +436,13 @@ msgstr ""
 msgid "dnsmasq nft set"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:228
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:232
 msgid ""
 "dnsmasq nft set support is enabled, but dnsmasq is either not installed or "
 "installed dnsmasq does not support nft set"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:231
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:235
 msgid "dnsmasq nft sets support is enabled, but nft is not installed"
 msgstr ""
 
@@ -443,91 +451,91 @@ msgstr ""
 msgid "dnsmasq servers file"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:241
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:245
 msgid "failed to access shared memory"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:237
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:241
 msgid "failed to create '%s' file"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:259
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:263
 msgid "failed to create block-list or restart DNS resolver"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:250
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:254
 msgid "failed to create compressed cache"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:236
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:240
 msgid "failed to create directory for %s file"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:271
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:275
 msgid "failed to create output/cache/gzip file directory"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:266
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:270
 msgid "failed to download"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:264
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:268
 msgid "failed to download Config Update file"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:245
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:249
 msgid "failed to format data file"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:254
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:258
 msgid "failed to move '%s' to '%s'"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:247
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:251
 msgid "failed to move temporary data file to '%s'"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:243
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:247
 msgid "failed to optimize data file"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:268
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:272
 msgid "failed to parse"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:267
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:271
 msgid "failed to parse Config Update file"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:244
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:248
 msgid "failed to process allow-list"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:262
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:266
 msgid "failed to reload/restart DNS resolver"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:252
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:256
 msgid "failed to remove temporary files"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:240
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:244
 msgid "failed to restart/reload DNS resolver"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:242
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:246
 msgid "failed to sort data file"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:261
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:265
 msgid "failed to stop %s"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:253
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:257
 msgid "failed to unpack compressed cache"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:269
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:273
 msgid "no HTTPS/SSL support on device"
 msgstr ""
 
@@ -535,11 +543,11 @@ msgstr ""
 msgid "none"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:187
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:191
 msgid "some recommended packages are missing"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:234
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:238
 msgid "the %s failed to discover WAN gateway"
 msgstr ""
 
@@ -547,7 +555,7 @@ msgstr ""
 msgid "unbound adblock list"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:184
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:188
 msgid ""
 "use of external dnsmasq config file detected, please set '%s' option to '%s'"
 msgstr ""

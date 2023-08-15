@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 # Copyright 2017-2022 Stan Grishin (stangri@melmac.ca)
-# shellcheck disable=SC1091,SC2016,SC3043,SC3045,SC3057,SC3060
+# shellcheck disable=SC1091,SC2016,SC3037,SC3043,SC3045,SC3057,SC3060
 
 # shellcheck disable=SC2034
 START=94
@@ -65,6 +65,7 @@ readonly hostsFilter='/localhost/d;/^#/d;/^[^0-9]/d;s/^0\.0\.0\.0.//;s/^127\.0\.
 readonly domainsFilter='/^#/d;s/[[:space:]]*#.*$//;s/[[:space:]]*$//;s/[[:cntrl:]]$//;/[[:space:]]/d;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
 readonly adBlockPlusFilter='/^#/d;/^!/d;s/[[:space:]]*#.*$//;s/^||//;s/\^$//;s/[[:space:]]*$//;s/[[:cntrl:]]$//;/[[:space:]]/d;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
 readonly dnsmasqFileFilter='\|^server=/[[:alnum:]_.-].*/|!d'
+readonly dnsmasq2FileFilter='\|^local=/[[:alnum:]_.-].*/|!d'
 readonly _OK_='\033[0;32m\xe2\x9c\x93\033[0m'
 readonly _FAIL_='\033[0;31m\xe2\x9c\x97\033[0m'
 readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
@@ -254,12 +255,16 @@ load_network() {
 
 append_url() {
 	local cfg="$1" var="$2"
-	local en url prev
-	config_get en "$1" enabled '1'
-	config_get url "$1" url
+	local en action url
+	config_get en "$cfg" enabled '1'
+	config_get action "$cfg" action 'block'
+	config_get url "$cfg" url
 	if [ "$en" = '1' ]; then
-		prev="$(eval echo "\$$var") $url"
-		eval "$var=\$prev"
+		if [ "$action" = 'allow' ]; then
+			allowed_url="${allowed_url:+$allowed_url }${url}"
+		else
+			blocked_url="${blocked_url:+$blocked_url }${url}"
+		fi
 	fi
 }
 
@@ -268,10 +273,13 @@ detect_file_type() {
 	if [ "$(head -1 "$file")" = '[Adblock Plus]' ]; then
 		echo 'adBlockPlus'
 	# TODO: add IPv6 local addresses
-	elif grep -q '0.0.0.0' "$file" || grep -q '127.0.0.1' "$file"; then
+	elif grep -q ':: ' "$file" || grep -q '::1' "$file" || \
+		grep -q '0.0.0.0' "$file" || grep -q '127.0.0.1' "$file"; then
 		echo 'hosts'
 	elif grep -q '^server=' "$file"; then
 		echo 'dnsmasqFile'
+	elif grep -q '^local=' "$file"; then
+		echo 'dnsmasq2File'
 	else
 		echo 'domains'
 	fi
@@ -505,8 +513,7 @@ load_environment() {
 		unset isSSLSupported
 	fi
 	config_load "$packageName"
-	config_foreach append_url 'allowed_file' 'allowed_url'
-	config_foreach append_url 'blocked_file' 'blocked_url'
+	config_foreach append_url 'file_url'
 	load_environment_flag=1
 	cache 'test' && return 0 
 	cache 'test_gzip' && return 0
@@ -520,15 +527,22 @@ load_environment() {
 
 get_url_filesize() {
 	local url="$1" size size_command
-	[ -n "$1" ] || return 0
+	[ -n "$url" ] || return 0
 	is_present 'curl' || return 0
 	size_command='curl --silent --insecure --fail --head --request GET'
-	size_command="${size_command}${curl_additional_param:+ $curl_additional_param}"
-	size_command="${size_command}${curl_max_file_size:+ --max-filesize $curl_max_file_size}"
-	size_command="${size_command}${curl_retry:+ --retry $curl_retry}"
-	size_command="${size_command}${download_timeout:+ --connect-timeout $download_timeout}"
-	size="$($size_command "$url" | grep -i 'content-length:' | awk '{print $2}'; )"
-	echo "$size"
+	size="$($size_command "$url" | grep -Po '^[cC]ontent-[lL]ength: \K\w+')"
+	echo -en "$size"
+}
+
+get_local_filesize() {
+	local file="$1" size
+	[ -f "$file" ] || return 0
+	if is_present stat; then
+		size="$(stat -c%s "$file")"
+	elif is_present wc; then
+		size="$(wc -c < "$file")"
+	fi
+	echo -en "$size"
 }
 
 resolver() {
@@ -680,7 +694,8 @@ json() {
 						$allowed_domain $blocked_domain $allowed_url $blocked_url $dns \
 						$config_update_enabled $config_update_url $dnsmasq_config_file_url \
 						$curl_additional_param $curl_max_file_size $curl_retry"
-					curRestart="$compressed_cache $compressed_cache_dir $force_dns $led $force_dns_port"
+					curRestart="$compressed_cache $compressed_cache_dir $force_dns $led \
+						$force_dns_port"
 					if [ ! -s "$jsonFile" ]; then
 						ret='on_boot'
 					elif [ "$curReload" != "$reload" ]; then
@@ -711,11 +726,12 @@ json() {
 		set)
 			case "$param" in
 				triggers) 
-					reload="$parallel_downloads $debug $download_timeout $allowed_domain \
-					$blocked_domain $allowed_url $blocked_url $dns $config_update_enabled \
-					$config_update_url $dnsmasq_config_file_url $curl_additional_param \
-					$curl_max_file_size $curl_retry"
-					restart="$compressed_cache $compressed_cache_dir $force_dns $led $force_dns_port"
+					reload="$parallel_downloads $debug $download_timeout \
+						$allowed_domain $blocked_domain $allowed_url $blocked_url $dns \
+						$config_update_enabled $config_update_url $dnsmasq_config_file_url \
+						$curl_additional_param $curl_max_file_size $curl_retry"
+					restart="$compressed_cache $compressed_cache_dir $force_dns $led \
+						$force_dns_port"
 				;;
 				*)
 					eval "$param"='${value}${extras:+|$extras}';;
@@ -778,16 +794,29 @@ cache() {
 	esac
 }
 
-process_url() {
+process_file_url() {
+	local cfg="$1" en url action size new_size
 	local label type D_TMP R_TMP
-	if [ -z "$1" ] || [ -z "$2" ]; then return 1; fi
-	label="${1##*//}"
+	if [ -n "$cfg" ] && [ -z "${2}${3}" ]; then
+		config_get en "$cfg" enabled '1'
+		config_get action "$cfg" action 'block'
+		config_get url "$cfg" url
+		config_get size "$cfg" size
+	else
+		url="$2"
+		action="$3"
+	fi
+
+	[ "$enabled" = '1' ] || return 0
+	[ -n "$url" ] || return 1
+
+	label="${url##*//}"
 	label="${label%%/*}"
 	label="File: $label"
-	case "$2" in
-		allowed) type='Allowed'; D_TMP="$A_TMP"
+	case "$action" in
+		allow) type='Allowed'; D_TMP="$A_TMP"
 		;;
-		blocked) type='Blocked'; D_TMP="$B_TMP"
+		block) type='Blocked'; D_TMP="$B_TMP"
 		;;
 		file) type='File'; D_TMP="$B_TMP"
 		;;
@@ -801,15 +830,20 @@ process_url() {
 	while [ -z "$R_TMP" ] || [ -e "$R_TMP" ]; do
 		R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
 	done
-	if ! $dl_command "$1" "$dl_flag" "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
+	if ! $dl_command "$url" "$dl_flag" "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
 		output 1 "$_FAIL_"
 		output 2 "[DL] $type $label $__FAIL__\\n"
-		echo "errorDownloadingList|${1}" >> "$sharedMemoryError"
+		echo "errorDownloadingList|${url}" >> "$sharedMemoryError"
 	else
+		[ -n "$cfg" ] && new_size="$(get_local_filesize "$R_TMP")"
+		if [ -n "$new_size" ] && [ "$size" != "$new_size" ]; then
+			uci set "${packageName}.${cfg}.size=$size"
+		fi
 		format="$(detect_file_type "$R_TMP")"
 		case "$format" in
 			adBlockPlus) filter="$adBlockPlusFilter";;
 			dnsmasqFile) filter="$dnsmasqFileFilter";;
+			dnsmasq2File) filter="$dnsmasq2FileFilter";;
 			domains) filter="$domainsFilter";;
 			hosts) filter="$hostsFilter";;
 		esac
@@ -846,7 +880,7 @@ download_dnsmasq_file() {
 	touch $A_TMP; touch $B_TMP;
 	output 1 'Downloading dnsmasq file '
 	rm -f "$sharedMemoryError"
-	process_url "$dnsmasq_config_file_url" 'file'
+	process_file_url "" "$dnsmasq_config_file_url" 'file'
 	if [ -s "$sharedMemoryError" ]; then
 		while IFS= read -r line; do
 			json add error "$line"
@@ -881,22 +915,16 @@ download_lists() {
 	touch $A_TMP; touch $B_TMP;
 	output 1 'Downloading lists '
 	rm -f "$sharedMemoryError"
-	for hf in ${blocked_url}; do
-		if [ "$parallel_downloads" -gt 0 ]; then
-			process_url "$hf" 'blocked' &
-		else
-			process_url "$hf" 'blocked'
-		fi
-	done
-	for hf in ${allowed_url}; do
-		if [ "$parallel_downloads" -gt 0 ]; then
-			process_url "$hf" 'allowed' &
-		else
-			process_url "$hf" 'allowed'
-		fi
-	done
+	config_load "$packageName"
+	if [ "$parallel_downloads" -gt 0 ]; then
+		config_foreach process_file_url 'file_url' &
+	else
+		config_foreach process_file_url 'file_url'
+	fi
 	wait
+	[ -n "$(uci changes "$packageName")" ] && uci commit "$packageName"
 	output 1 '\n'
+
 	if [ -s "$sharedMemoryError" ]; then
 		while IFS= read -r line; do
 			json add error "$line"
@@ -1240,13 +1268,26 @@ adb_config_update() {
 	return 0
 }
 
+_config_add_url_size() {
+	local cfg="$1" url size
+	config_get url "$cfg" url
+	size="$(get_url_filesize "$url")"
+	output "$url${size:+: $size} "
+	if [ -n "$size" ]; then
+		uci set "${packageName}.${cfg}.size=$size"
+		output_okn
+	else
+		output_failn
+	fi
+}
+
 adb_sizes() {
 	local i
 	local validation_result="$3"
 	load_environment "$validation_result" 'quiet' || return 1
-
-	echo "# $(date)"
-# TODO: add sizes to config
+	config_load "$packageName"
+	config_foreach _config_add_url_size 'file_url'
+	uci commit "$packageName"
 }
 
 # shellcheck disable=SC2120

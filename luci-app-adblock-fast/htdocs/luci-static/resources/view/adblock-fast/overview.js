@@ -47,7 +47,7 @@ return view.extend({
 
 	render: function () {
 		return Promise.all([
-			L.resolveDefault(adb.getFileSizes(pkg.Name), {}),
+			L.resolveDefault(adb.getFileUrlFilesizes(pkg.Name), {}),
 			L.resolveDefault(adb.getPlatformSupport(pkg.Name), {}),
 		]).then(function (data) {
 			var reply = {
@@ -338,9 +338,9 @@ return view.extend({
 
 			s = m.section(
 				form.GridSection,
-				"allowed_file",
-				_("AdBlock-Fast - Allowed Lists File URLs"),
-				_("URLs to file(s) containing lists to be allowed.")
+				"file_url",
+				_("AdBlock-Fast - Lists URLs"),
+				_("URLs to file(s) containing lists to be allowed or blocked.")
 			);
 			s.sectiontitle = function (section_id) {
 				let url = uci.get(pkg.Name, section_id, "url");
@@ -356,38 +356,13 @@ return view.extend({
 			s.sortable = true;
 			s.anonymous = true;
 			s.addremove = true;
-			o = s.option(form.Flag, "enabled");
+			o = s.option(form.Flag, "enabled", _("Enable"));
 			o.default = "1";
-			o.editable = true;
-			o = s.option(form.Value, "url");
-			o.editable = true;
-			o.optional = false;
-
-			s = m.section(
-				form.GridSection,
-				"blocked_file",
-				_("AdBlock-Fast - Blocked Lists File URLs"),
-				_("URLs to file(s) containing lists to be blocked.")
-			);
-			s.sectiontitle = function (section_id) {
-				let url = uci.get(pkg.Name, section_id, "url");
-				let ret = _("Unknown");
-				reply.sizes.forEach((element) => {
-					if (element.url === url) {
-						ret = element.size === 0 ? ret : pkg.humanFileSize(element.size);
-					}
-				});
-				return _("Size: %s").format(ret);
-			};
-			s.rowcolors = true;
-			s.sortable = true;
-			s.anonymous = true;
-			s.addremove = true;
-			o = s.option(form.Flag, "enabled");
-			o.default = "1";
-			o.editable = true;
-			o = s.option(form.Value, "url");
-			o.editable = true;
+			o = s.option(form.ListValue, "action", _("Type"));
+			o.value("allow", _("Allow"));
+			o.value("block", _("Block"));
+			o.default = ("block", _("Block"));
+			o = s.option(form.Value, "url", _("URL"));
 			o.optional = false;
 
 			return Promise.all([status.render(), m.render()]);
