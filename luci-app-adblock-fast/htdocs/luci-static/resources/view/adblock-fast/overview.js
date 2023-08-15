@@ -42,7 +42,7 @@ var pkg = {
 
 return view.extend({
 	load: function () {
-		return Promise.all([uci.load(pkg.Name)]);
+		return Promise.all([uci.load(pkg.Name), uci.load("dhcp")]);
 	},
 
 	render: function () {
@@ -106,6 +106,35 @@ return view.extend({
 			o.value("0", _("Let local devices use their own DNS servers if set"));
 			o.value("1", _("Force Router DNS server to all local devices"));
 			o.default = ("1", _("Force Router DNS server to all local devices"));
+
+			o = s.taboption(
+				"tab_basic",
+				form.ListValue,
+				"dns_instance",
+				_("Use AdBlocking on this DNSMASQ Instance(s)"),
+				_(
+					"You can limit the AdBlocking to a specific dnsmasq instance(s) (%smore information%s)."
+				).format(
+					'<a href="' + pkg.URL + "#dns_instance" + '" target="_blank">',
+					"</a>"
+				)
+			);
+			o.value("*", _("Update all configs"));
+			var sections = uci.sections("dhcp", "dnsmasq");
+			sections.forEach((element) => {
+				var description;
+				var key;
+				if (element[".name"] === uci.resolveSID("dhcp", element[".name"])) {
+					key = element[".index"];
+					description = "dnsmasq[" + element[".index"] + "]";
+				} else {
+					key = element[".name"];
+					description = element[".name"];
+				}
+				o.value(key, _("Update %s only").format(description));
+			});
+			o.value("-", _("Do not update configs"));
+			o.default = "*";
 
 			if (reply.platform.leds.length) {
 				o = s.taboption(
@@ -187,6 +216,7 @@ return view.extend({
 			if (reply.platform.dnsmasq_installed) {
 				o.value("dnsmasq.addnhosts", _("dnsmasq additional hosts"));
 				o.value("dnsmasq.conf", _("dnsmasq config"));
+				o.value("dnsmasq.config_file", _("dnsmasq config file url"));
 				if (reply.platform.dnsmasq_ipset_support) {
 					o.value("dnsmasq.ipset", _("dnsmasq ipset"));
 				}
@@ -199,6 +229,20 @@ return view.extend({
 				o.value("unbound.adb_list", _("unbound adblock list"));
 			}
 			o.default = ("dnsmasq.servers", _("dnsmasq servers file"));
+
+			o = s.taboption(
+				"tab_advanced",
+				form.Value,
+				"dnsmasq_config_file_url",
+				_("Dnsmasq Config File URL"),
+				_(
+					"URL to the external dnsmasq config file, see the %sREADME%s for details."
+				).format(
+					'<a href="' + pkg.URL + '#dnsmasq_config_file_url" target="_blank">',
+					"</a>"
+				)
+			);
+			o.depends("dns", "dnsmasq.config_file");
 
 			o = s.taboption(
 				"tab_advanced",
@@ -306,17 +350,6 @@ return view.extend({
 				"adblock-fast",
 				_("AdBlock-Fast - Allowed and Blocked Domains Management")
 			);
-			o = s.option(
-				form.Value,
-				"dnsmasq_config_file_url",
-				_("Dnsmasq Config File URL"),
-				_(
-					"URL to the external dnsmasq config file, see the %sREADME%s for details."
-				).format(
-					'<a href="' + pkg.URL + '#dnsmasq_config_file_url" target="_blank">',
-					"</a>"
-				)
-			);
 			o.addremove = true;
 			o.rmempty = true;
 			o = s.option(
@@ -325,7 +358,7 @@ return view.extend({
 				_("Allowed Domains"),
 				_("Individual domains to be allowed.")
 			);
-			o.depends("dnsmasq_config_file_url", "");
+			//			o.depends("dnsmasq_config_file_url", "");
 			o.addremove = true;
 			o = s.option(
 				form.DynamicList,
@@ -333,13 +366,12 @@ return view.extend({
 				_("Blocked Domains"),
 				_("Individual domains to be blocked.")
 			);
-			o.depends("dnsmasq_config_file_url", "");
 			o.addremove = true;
 
 			s = m.section(
 				form.GridSection,
 				"file_url",
-				_("AdBlock-Fast - Lists URLs"),
+				_("AdBlock-Fast - File URLs"),
 				_("URLs to file(s) containing lists to be allowed or blocked.")
 			);
 			s.sectiontitle = function (section_id) {
@@ -359,15 +391,12 @@ return view.extend({
 			o = s.option(form.Flag, "enabled", _("Enable"));
 			o.editable = true;
 			o.default = "1";
-			o.depends("dnsmasq_config_file_url", "");
 			o = s.option(form.ListValue, "action", _("Action"));
 			o.value("allow", _("Allow"));
 			o.value("block", _("Block"));
 			o.default = "block";
-			o.depends("dnsmasq_config_file_url", "");
 			o = s.option(form.Value, "url", _("URL"));
 			o.optional = false;
-			o.depends("dnsmasq_config_file_url", "");
 
 			return Promise.all([status.render(), m.render()]);
 		});

@@ -11,7 +11,8 @@
 				]
 			},
 			"uci": [
-				"adblock-fast"
+				"adblock-fast",
+				"dhcp"
 			]
 		},
 		"write": {

@@ -40,6 +40,7 @@ readonly dnsmasqConfFile="/tmp/dnsmasq.d/${packageName}"
 readonly dnsmasqConfCache="/var/run/${packageName}/dnsmasq.conf.cache"
 readonly dnsmasqConfGzip="${packageName}.dnsmasq.conf.gz"
 readonly dnsmasqConfFilter='s|^|local=/|;s|$|/|'
+readonly dnsmasqConfigFile="/tmp/dnsmasq.d/${packageName}.config"
 readonly dnsmasqIpsetFile="/tmp/dnsmasq.d/${packageName}.ipset"
 readonly dnsmasqIpsetCache="/var/run/${packageName}/dnsmasq.ipset.cache"
 readonly dnsmasqIpsetGzip="${packageName}.dnsmasq.ipset.gz"
@@ -388,6 +389,7 @@ load_environment() {
 				outputFilterIPv6="$dnsmasqAddnhostsFilterIPv6"
 			fi
 			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "${compressed_cache_dir}/${dnsmasqConfGzip}"
+			rm -f "$dnsmasqConfigFile"
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
@@ -399,6 +401,16 @@ load_environment() {
 			outputCache="$dnsmasqConfCache"
 			outputGzip="${compressed_cache_dir}/${dnsmasqConfGzip}"
 			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "${compressed_cache_dir}/${dnsmasqAddnhostsGzip}"
+			rm -f "$dnsmasqConfigFile"
+			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
+			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
+			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
+			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
+		;;
+		dnsmasq.config_file)
+			outputFile="$dnsmasqConfigFile"
+			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "${compressed_cache_dir}/${dnsmasqAddnhostsGzip}"
+			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "${compressed_cache_dir}/${dnsmasqConfGzip}"
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
@@ -411,6 +423,7 @@ load_environment() {
 			outputGzip="${compressed_cache_dir}/${dnsmasqIpsetGzip}"
 			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "${compressed_cache_dir}/${dnsmasqAddnhostsGzip}"
 			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "${compressed_cache_dir}/${dnsmasqConfGzip}"
+			rm -f "$dnsmasqConfigFile"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
@@ -426,6 +439,7 @@ load_environment() {
 			outputGzip="${compressed_cache_dir}/${dnsmasqNftsetGzip}"
 			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "${compressed_cache_dir}/${dnsmasqAddnhostsGzip}"
 			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "${compressed_cache_dir}/${dnsmasqConfGzip}"
+			rm -f "$dnsmasqConfigFile"
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
@@ -437,6 +451,7 @@ load_environment() {
 			outputGzip="${compressed_cache_dir}/${dnsmasqServersGzip}"
 			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "${compressed_cache_dir}/${dnsmasqAddnhostsGzip}"
 			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "${compressed_cache_dir}/${dnsmasqConfGzip}"
+			rm -f "$dnsmasqConfigFile"
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
@@ -448,6 +463,7 @@ load_environment() {
 			outputGzip="$unboundGzip"
 			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "${compressed_cache_dir}/${dnsmasqAddnhostsGzip}"
 			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "${compressed_cache_dir}/${dnsmasqConfGzip}"
+			rm -f "$dnsmasqConfigFile"
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
@@ -554,7 +570,7 @@ resolver() {
 			fi
 			uci_add_list_if_new 'dhcp' "$cfg" 'addnhosts' "$dnsmasqAddnhostsFile"
 		;;
-		cleanup|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|unbound.adb_list)
+		cleanup|dnsmasq.conf|dnsmasq.config_file|dnsmasq.ipset|dnsmasq.nftset|unbound.adb_list)
 			uci_remove_list 'dhcp' "$cfg" 'addnhosts' "$dnsmasqAddnhostsFile"
 			if [ "$(uci_get 'dhcp' "$cfg" 'serversfile')" = "$dnsmasqServersFile" ]; then
 				uci_remove 'dhcp' "$cfg" 'serversfile'
@@ -804,7 +820,7 @@ _process_file_url() {
 
 process_file_url() {
 	local cfg="$1" en url action size new_size
-	local label type D_TMP R_TMP
+	local label type D_TMP R_TMP filter
 	if [ -n "$cfg" ] && [ -z "${2}${3}" ]; then
 		config_get en "$cfg" enabled '1'
 		config_get action "$cfg" action 'block'
@@ -850,12 +866,12 @@ process_file_url() {
 		format="$(detect_file_type "$R_TMP")"
 		case "$format" in
 			adBlockPlus) filter="$adBlockPlusFilter";;
-			dnsmasqFile) filter="$dnsmasqFileFilter";;
-			dnsmasq2File) filter="$dnsmasq2FileFilter";;
+#			dnsmasqFile) filter="$dnsmasqFileFilter";;
+#			dnsmasq2File) filter="$dnsmasq2FileFilter";;
 			domains) filter="$domainsFilter";;
 			hosts) filter="$hostsFilter";;
 		esac
-		sed -i "$filter" "$R_TMP"
+		[ -n "$filter" ] && sed -i "$filter" "$R_TMP"
 		if [ ! -s "$R_TMP" ]; then
 			output 1 "$_FAIL_"
 			output 2 "[DL] $type $label ($format) $__FAIL__\\n"
@@ -895,7 +911,7 @@ download_dnsmasq_file() {
 		done < "$sharedMemoryError"
 		rm -f "$sharedMemoryError"
 	fi
-	output 2 'Creating dnsmasq file '
+	output 2 'Moving dnsmasq file '
 	if mv "$B_TMP" "$outputFile"; then
 		output 2 "$__OK__\\n"
 	else
@@ -1376,7 +1392,7 @@ adb_start() {
 			output 3 "Starting $serviceName...\\n"
 			json set status "statusStarting"
 		fi
-		if [ -n "$dnsmasq_config_file_url" ]; then
+		if [ "$dns" = 'dnsmasq.config_file' ] && [ -n "$dnsmasq_config_file_url" ]; then
 			download_dnsmasq_file
 		else
 			download_lists
