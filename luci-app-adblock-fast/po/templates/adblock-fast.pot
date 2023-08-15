@@ -9,7 +9,7 @@ msgstr ""
 msgid "%s is not installed or not found"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:362
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:363
 msgid "Action"
 msgstr ""
 
@@ -49,7 +49,7 @@ msgstr ""
 msgid "Advanced Configuration"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:363
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:364
 msgid "Allow"
 msgstr ""
 
@@ -70,7 +70,7 @@ msgstr ""
 msgid "Basic Configuration"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:364
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:365
 msgid "Block"
 msgstr ""
 
@@ -368,7 +368,7 @@ msgstr ""
 msgid "Suppress output"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:366
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:368
 msgid "URL"
 msgstr ""
 

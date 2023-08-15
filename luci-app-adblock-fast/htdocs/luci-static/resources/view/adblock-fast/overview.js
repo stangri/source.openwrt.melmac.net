@@ -359,12 +359,15 @@ return view.extend({
 			o = s.option(form.Flag, "enabled", _("Enable"));
 			o.editable = true;
 			o.default = "1";
+			o.depends("dnsmasq_config_file_url", "");
 			o = s.option(form.ListValue, "action", _("Action"));
 			o.value("allow", _("Allow"));
 			o.value("block", _("Block"));
 			o.default = "block";
+			o.depends("dnsmasq_config_file_url", "");
 			o = s.option(form.Value, "url", _("URL"));
 			o.optional = false;
+			o.depends("dnsmasq_config_file_url", "");
 
 			return Promise.all([status.render(), m.render()]);
 		});
