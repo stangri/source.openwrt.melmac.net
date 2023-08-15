@@ -357,11 +357,12 @@ return view.extend({
 			s.anonymous = true;
 			s.addremove = true;
 			o = s.option(form.Flag, "enabled", _("Enable"));
+			o.editable = true;
 			o.default = "1";
-			o = s.option(form.ListValue, "action", _("Type"));
+			o = s.option(form.ListValue, "action", _("Action"));
 			o.value("allow", _("Allow"));
 			o.value("block", _("Block"));
-			o.default = ("block", _("Block"));
+			o.default = "block";
 			o = s.option(form.Value, "url", _("URL"));
 			o.optional = false;
 

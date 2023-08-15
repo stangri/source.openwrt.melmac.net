@@ -794,6 +794,14 @@ cache() {
 	esac
 }
 
+_process_file_url() {
+	if [ "$parallel_downloads" -gt 0 ]; then
+		process_file_url "$1" &
+	else
+		process_file_url "$1"
+	fi
+}
+
 process_file_url() {
 	local cfg="$1" en url action size new_size
 	local label type D_TMP R_TMP
@@ -916,11 +924,7 @@ download_lists() {
 	output 1 'Downloading lists '
 	rm -f "$sharedMemoryError"
 	config_load "$packageName"
-	if [ "$parallel_downloads" -gt 0 ]; then
-		config_foreach process_file_url 'file_url' &
-	else
-		config_foreach process_file_url 'file_url'
-	fi
+	config_foreach _process_file_url 'file_url'
 	wait
 	[ -n "$(uci changes "$packageName")" ] && uci commit "$packageName"
 	output 1 '\n'

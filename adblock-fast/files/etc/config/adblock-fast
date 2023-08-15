@@ -33,58 +33,86 @@ config adblock-fast 'config'
 	option procd_boot_wan_timeout '60'
 	option verbosity '2'
 
-config blocked_file
+config file_url
 	option url 'https://cdn.jsdelivr.net/gh/hoshsadiq/adblock-nocoin-list/hosts.txt'
-	option enabled '0'
+	option size '11149'
+	option action 'block'
+	option enable '0'
 
-config blocked_file
-	option url 'https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/data/combined_disguised_microsites_justdomains.txt'
-	option enabled '0'
-
-config blocked_file
-	option url 'https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/data/combined_disguised_ads_justdomains.txt'
-	option enabled '0'
-
-config blocked_file
-	option url 'https://adaway.org/hosts.txt'
-	option enabled '0'
-
-config blocked_file
-	option url 'https://winhelp2002.mvps.org/hosts.txt'
-	option enabled '0'
-
-config blocked_file
-	option url 'https://someonewhocares.org/hosts/hosts'
-	option enabled '0'
-
-config blocked_file
-	option url 'https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/data/combined_disguised_clickthroughs_justdomains.txt'
-	option enabled '0'
-
-config blocked_file
-	option url 'https://cdn.jsdelivr.net/gh/kboghdady/youTube_ads_4_pi-hole/black.list'
-	option enabled '0'
-
-config blocked_file
-	option url 'http://sysctl.org/cameleon/hosts'
-	option enabled '0'
-
-config blocked_file
-	option url 'https://cdn.jsdelivr.net/gh/bongochong/CombinedPrivacyBlockLists/NoFormatting/cpbl-ctld.txt'
-	option enabled '0'
-
-config blocked_file
-	option url 'https://big.oisd.nl/'
-	option enabled '0'
-
-config blocked_file
-	option url 'https://cdn.jsdelivr.net/gh/StevenBlack/hosts/hosts'
-	option enabled '0'
-
-config blocked_file
-	option url 'https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/data/combined_disguised_trackers_justdomains.txt'
-	option enabled '0'
-
-config blocked_file
+config file_url
 	option url 'https://pgl.yoyo.org/as/serverlist.php?hostformat=hosts&showintro=1&mimetype=plaintext'
-	option enabled '0'
+	option size '99588'
+	option action 'block'
+	option enable '0'
+
+config file_url
+	option url 'https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/data/combined_disguised_microsites_justdomains.txt'
+	option size '123275'
+	option action 'block'
+	option enable '0'
+
+config file_url
+	option url 'https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/data/combined_disguised_ads_justdomains.txt'
+	option size '222595'
+	option action 'block'
+	option enable '0'
+
+config file_url
+	option url 'https://adaway.org/hosts.txt'
+	option size '243454'
+	option action 'block'
+	option enable '0'
+
+config file_url
+	option url 'https://winhelp2002.mvps.org/hosts.txt'
+	option size '334861'
+	option action 'block'
+	option enable '0'
+
+config file_url
+	option url 'https://someonewhocares.org/hosts/hosts'
+	option size '347410'
+	option action 'block'
+	option enable '0'
+
+config file_url
+	option url 'https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/data/combined_disguised_clickthroughs_justdomains.txt'
+	option size '362170'
+	option action 'block'
+	option enable '0'
+
+config file_url
+	option url 'https://cdn.jsdelivr.net/gh/kboghdady/youTube_ads_4_pi-hole/black.list'
+	option size '553006'
+	option action 'block'
+	option enable '0'
+
+config file_url
+	option url 'http://sysctl.org/cameleon/hosts'
+	option size '638545'
+	option action 'block'
+	option enable '0'
+
+config file_url
+	option url 'https://cdn.jsdelivr.net/gh/bongochong/CombinedPrivacyBlockLists/NoFormatting/cpbl-ctld.txt'
+	option size '2608152'
+	option action 'block'
+	option enable '0'
+
+config file_url
+	option url 'https://big.oisd.nl/'
+	option size '6163363'
+	option action 'block'
+	option enable '0'
+
+config file_url
+	option url 'https://cdn.jsdelivr.net/gh/StevenBlack/hosts/hosts'
+	option size '6770929'
+	option action 'block'
+	option enable '0'
+
+config file_url
+	option url 'https://raw.githubusercontent.com/AdguardTeam/cname-trackers/master/data/combined_disguised_trackers_justdomains.txt'
+	option size '6241707'
+	option action 'block'
+	option enable '0'
