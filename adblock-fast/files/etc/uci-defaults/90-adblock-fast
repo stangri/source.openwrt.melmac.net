@@ -1,5 +1,6 @@
 #!/bin/sh
-#shellcheck disable=SC1091,SC2015,SC3037,SC3043,SC2317,SC3060
+# Copyright 2023 MOSSDeF, Stan Grishin (stangri@melmac.ca)
+# shellcheck disable=SC1091,SC2015,SC3037,SC3043,SC2317,SC3060
 
 readonly packageName='adblock-fast'
 readonly _OK_='\033[0;32m\xe2\x9c\x93\033[0m'
