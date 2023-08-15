@@ -854,7 +854,8 @@ process_file_url() {
 	while [ -z "$R_TMP" ] || [ -e "$R_TMP" ]; do
 		R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
 	done
-	if ! $dl_command "$url" "$dl_flag" "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
+	if [ -z "$url" ] || ! $dl_command "$url" "$dl_flag" "$R_TMP" 2>/dev/null || \
+		[ ! -s "$R_TMP" ]; then
 		output 1 "$_FAIL_"
 		output 2 "[DL] $type $label $__FAIL__\\n"
 		echo "errorDownloadingList|${url}" >> "$sharedMemoryError"
@@ -904,7 +905,7 @@ download_dnsmasq_file() {
 	touch $A_TMP; touch $B_TMP;
 	output 1 'Downloading dnsmasq file '
 	rm -f "$sharedMemoryError"
-	process_file_url "" "$dnsmasq_config_file_url" 'file'
+	process_file_url '' "$dnsmasq_config_file_url" 'file'
 	if [ -s "$sharedMemoryError" ]; then
 		while IFS= read -r line; do
 			json add error "$line"
@@ -1392,7 +1393,7 @@ adb_start() {
 			output 3 "Starting $serviceName...\\n"
 			json set status "statusStarting"
 		fi
-		if [ "$dns" = 'dnsmasq.config_file' ] && [ -n "$dnsmasq_config_file_url" ]; then
+		if [ "$dns" = 'dnsmasq.config_file' ]; then
 			download_dnsmasq_file
 		else
 			download_lists
