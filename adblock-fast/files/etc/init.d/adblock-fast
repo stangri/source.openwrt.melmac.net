@@ -811,6 +811,11 @@ cache() {
 }
 
 _process_file_url() {
+	if [ "$2" != '0' ]; then
+		json add error "errorConfigValidationFail"
+		output "${_ERROR_}: $(get_text 'errorConfigValidationFail')!\\n"
+		output "Please check if the '$packageConfigFile' contains correct values for config options.\\n"
+	fi
 	if [ "$parallel_downloads" -gt 0 ]; then
 		process_file_url "$1" &
 	else
@@ -819,14 +824,9 @@ _process_file_url() {
 }
 
 process_file_url() {
-	local cfg="$1" en url action size new_size
+	local cfg="$1" new_size
 	local label type D_TMP R_TMP filter
-	if [ -n "$cfg" ] && [ -z "${2}${3}" ]; then
-		config_get en "$cfg" enabled '1'
-		config_get action "$cfg" action 'block'
-		config_get url "$cfg" url
-		config_get size "$cfg" size
-	else
+	if [ -z "$cfg" ] || [ -n "${2}${3}" ]; then
 		url="$2"
 		action="$3"
 	fi
@@ -941,7 +941,7 @@ download_lists() {
 	output 1 'Downloading lists '
 	rm -f "$sharedMemoryError"
 	config_load "$packageName"
-	config_foreach _process_file_url 'file_url'
+	config_foreach load_validate_file_url_section 'file_url' _process_file_url
 	wait
 	if [ -n "$(uci changes "$packageName")" ]; then 
 		output 2 "Saving updated file size(s) "
@@ -1648,6 +1648,14 @@ status_service() { load_validate_config 'config' adb_status "''"; }
 stop_service() { load_validate_config 'config' adb_stop "'$*'"; }
 pause() { load_validate_config 'config' adb_pause "'$*'"; }
 version() { echo "$PKG_VERSION"; }
+
+load_validate_file_url_section() {
+	uci_load_validate "$packageName" "$packageName" "$1" "$2" \
+		'enabled:bool:1' \
+		'action:or("allow", "block"):block' \
+		'size:or(uinteger, "")' \
+		'url:string'
+}
 
 load_validate_config() {
 	. /lib/functions/network.sh

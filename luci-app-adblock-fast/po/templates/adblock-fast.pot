@@ -30,15 +30,15 @@ msgid "AdBlock on all instances"
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:353
-msgid "AdBlock-Fast - Allowed and Blocked Domains Management"
+msgid "AdBlock-Fast - Allowed and Blocked Domains"
+msgstr ""
+
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:376
+msgid "AdBlock-Fast - Allowed and Blocked Lists URLs"
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:69
 msgid "AdBlock-Fast - Configuration"
-msgstr ""
-
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:376
-msgid "AdBlock-Fast - File URLs"
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:120

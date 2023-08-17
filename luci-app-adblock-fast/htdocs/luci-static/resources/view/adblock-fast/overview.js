@@ -63,68 +63,14 @@ return view.extend({
 					leds: [],
 				},
 			};
-			var status, m, s, o;
+			var status, m, s1, s2, s3, o;
 
 			status = new adb.status();
 			m = new form.Map(pkg.Name, _("AdBlock-Fast - Configuration"));
-			s = m.section(form.NamedSection, "config", pkg.Name);
-			s.tab("tab_basic", _("Basic Configuration"));
-			s.tab("tab_advanced", _("Advanced Configuration"));
+			s1 = m.section(form.NamedSection, "config", pkg.Name);
+			s1.tab("tab_basic", _("Basic Configuration"));
+			s1.tab("tab_advanced", _("Advanced Configuration"));
 
-			o = s.taboption(
-				"tab_basic",
-				form.ListValue,
-				"config_update_enabled",
-				_("Automatic Config Update"),
-				_("Perform config update before downloading the block/allow-lists.")
-			);
-			o.value("0", _("Disable"));
-			o.value("1", _("Enable"));
-			o.default = ("0", _("Disable"));
-
-			o = s.taboption(
-				"tab_basic",
-				form.ListValue,
-				"verbosity",
-				_("Output Verbosity Setting"),
-				_("Controls system log and console output verbosity.")
-			);
-			o.value("0", _("Suppress output"));
-			o.value("1", _("Some output"));
-			o.value("2", _("Verbose output"));
-			o.default = ("2", _("Verbose output"));
-
-			o = s.taboption(
-				"tab_basic",
-				form.ListValue,
-				"force_dns",
-				_("Force Router DNS"),
-				_(
-					"Forces Router DNS use on local devices, also known as DNS Hijacking."
-				)
-			);
-			o.value("0", _("Let local devices use their own DNS servers if set"));
-			o.value("1", _("Force Router DNS server to all local devices"));
-			o.default = ("1", _("Force Router DNS server to all local devices"));
-
-			if (reply.platform.leds.length) {
-				o = s.taboption(
-					"tab_basic",
-					form.ListValue,
-					"led",
-					_("LED to indicate status"),
-					_(
-						"Pick the LED not already used in %sSystem LED Configuration%s."
-					).format(
-						'<a href="' + L.url("admin", "system", "leds") + '">',
-						"</a>"
-					)
-				);
-				o.value("", _("none"));
-				reply.platform.leds.forEach((element) => {
-					o.value(element);
-				});
-			}
 			var text = _(
 				"DNS resolution option, see the %sREADME%s for details."
 			).format(
@@ -177,8 +123,8 @@ return view.extend({
 					);
 			}
 
-			o = s.taboption(
-				"tab_advanced",
+			o = s1.taboption(
+				"tab_basic",
 				form.ListValue,
 				"dns",
 				_("DNS Service"),
@@ -201,8 +147,8 @@ return view.extend({
 			}
 			o.default = ("dnsmasq.servers", _("dnsmasq servers file"));
 
-			o = s.taboption(
-				"tab_advanced",
+			o = s1.taboption(
+				"tab_basic",
 				form.Value,
 				"dnsmasq_config_file_url",
 				_("Dnsmasq Config File URL"),
@@ -215,8 +161,8 @@ return view.extend({
 			);
 			o.depends("dns", "dnsmasq.config_file");
 
-			o = s.taboption(
-				"tab_advanced",
+			o = s1.taboption(
+				"tab_basic",
 				form.ListValue,
 				"dnsmasq_instance",
 				_("Use AdBlocking on the dnsmasq instance(s)"),
@@ -246,7 +192,61 @@ return view.extend({
 			o.depends("dns", "dnsmasq.addnhosts");
 			o.depends("dns", "dnsmasq.servers");
 
-			o = s.taboption(
+			o = s1.taboption(
+				"tab_basic",
+				form.ListValue,
+				"force_dns",
+				_("Force Router DNS"),
+				_(
+					"Forces Router DNS use on local devices, also known as DNS Hijacking."
+				)
+			);
+			o.value("0", _("Let local devices use their own DNS servers if set"));
+			o.value("1", _("Force Router DNS server to all local devices"));
+			o.default = ("1", _("Force Router DNS server to all local devices"));
+
+			o = s1.taboption(
+				"tab_basic",
+				form.ListValue,
+				"verbosity",
+				_("Output Verbosity Setting"),
+				_("Controls system log and console output verbosity.")
+			);
+			o.value("0", _("Suppress output"));
+			o.value("1", _("Some output"));
+			o.value("2", _("Verbose output"));
+			o.default = ("2", _("Verbose output"));
+
+			if (reply.platform.leds.length) {
+				o = s1.taboption(
+					"tab_basic",
+					form.ListValue,
+					"led",
+					_("LED to indicate status"),
+					_(
+						"Pick the LED not already used in %sSystem LED Configuration%s."
+					).format(
+						'<a href="' + L.url("admin", "system", "leds") + '">',
+						"</a>"
+					)
+				);
+				o.value("", _("none"));
+				reply.platform.leds.forEach((element) => {
+					o.value(element);
+				});
+			}
+			o = s1.taboption(
+				"tab_advanced",
+				form.ListValue,
+				"config_update_enabled",
+				_("Automatic Config Update"),
+				_("Perform config update before downloading the block/allow-lists.")
+			);
+			o.value("0", _("Disable"));
+			o.value("1", _("Enable"));
+			o.default = ("0", _("Disable"));
+
+			o = s1.taboption(
 				"tab_advanced",
 				form.ListValue,
 				"ipv6_enabled",
@@ -260,7 +260,7 @@ return view.extend({
 			o.default = ("", _("Do not add IPv6 entries"));
 			o.rmempty = true;
 
-			o = s.taboption(
+			o = s1.taboption(
 				"tab_advanced",
 				form.Value,
 				"download_timeout",
@@ -270,7 +270,7 @@ return view.extend({
 			o.default = "20";
 			o.datatype = "range(1,60)";
 
-			o = s.taboption(
+			o = s1.taboption(
 				"tab_advanced",
 				form.Value,
 				"curl_max_file_size",
@@ -283,7 +283,7 @@ return view.extend({
 			o.datatype = "uinteger";
 			o.rmempty = true;
 
-			o = s.taboption(
+			o = s1.taboption(
 				"tab_advanced",
 				form.Value,
 				"curl_retry",
@@ -295,7 +295,7 @@ return view.extend({
 			o.default = "3";
 			o.datatype = "range(0,30)";
 
-			o = s.taboption(
+			o = s1.taboption(
 				"tab_advanced",
 				form.ListValue,
 				"parallel_downloads",
@@ -308,7 +308,7 @@ return view.extend({
 			o.value("1", _("Use simultaneous processing"));
 			o.default = ("1", _("Use simultaneous processing"));
 
-			o = s.taboption(
+			o = s1.taboption(
 				"tab_advanced",
 				form.ListValue,
 				"compressed_cache",
@@ -321,7 +321,7 @@ return view.extend({
 			o.value("1", _("Store compressed cache"));
 			o.default = ("0", _("Do not store compressed cache"));
 
-			o = s.taboption(
+			o = s1.taboption(
 				"tab_advanced",
 				form.Value,
 				"compressed_cache_dir",
@@ -335,7 +335,7 @@ return view.extend({
 			o.default = "/etc";
 			o.depends("compressed_cache", "1");
 
-			o = s.taboption(
+			o = s1.taboption(
 				"tab_advanced",
 				form.ListValue,
 				"debug",
@@ -346,59 +346,70 @@ return view.extend({
 			o.value("1", _("Enable Debugging"));
 			o.default = ("0", _("Disable Debugging"));
 
-			s = m.section(
-				form.NamedSection,
-				"config",
-				"adblock-fast",
-				_("AdBlock-Fast - Allowed and Blocked Domains Management")
-			);
-			o.addremove = true;
-			o.rmempty = true;
-			o = s.option(
-				form.DynamicList,
-				"allowed_domain",
-				_("Allowed Domains"),
-				_("Individual domains to be allowed.")
-			);
-			//			o.depends("dnsmasq_config_file_url", "");
-			o.addremove = true;
-			o = s.option(
-				form.DynamicList,
-				"blocked_domain",
-				_("Blocked Domains"),
-				_("Individual domains to be blocked.")
-			);
-			o.addremove = true;
-
-			s = m.section(
-				form.GridSection,
-				"file_url",
-				_("AdBlock-Fast - File URLs"),
-				_("URLs to file(s) containing lists to be allowed or blocked.")
-			);
-			s.sectiontitle = function (section_id) {
-				let url = uci.get(pkg.Name, section_id, "url");
-				let ret = _("Unknown");
-				reply.sizes.forEach((element) => {
-					if (element.url === url) {
-						ret = element.size === 0 ? ret : pkg.humanFileSize(element.size);
-					}
+			// 			if (! s1.cfgvalue("config", "dns") || s1.cfgvalue("config", "dns") != "dnsmasq.config_file" ) {
+			if (uci.get(pkg.Name, "config", "dns") != "dnsmasq.config_file") {
+				s2 = m.section(
+					form.NamedSection,
+					"config",
+					"adblock-fast",
+					_("AdBlock-Fast - Allowed and Blocked Domains")
+				);
+				o.addremove = true;
+				o.rmempty = true;
+				o = s2.option(
+					form.DynamicList,
+					"allowed_domain",
+					_("Allowed Domains"),
+					_("Individual domains to be allowed.")
+				);
+				o.depends({
+					"adblock-fast.config.dns": "dnsmasq.config_file",
+					"!reverse": true,
 				});
-				return _("Size: %s").format(ret);
-			};
-			s.rowcolors = true;
-			s.sortable = true;
-			s.anonymous = true;
-			s.addremove = true;
-			o = s.option(form.Flag, "enabled", _("Enable"));
-			o.editable = true;
-			o.default = "1";
-			o = s.option(form.ListValue, "action", _("Action"));
-			o.value("allow", _("Allow"));
-			o.value("block", _("Block"));
-			o.default = "block";
-			o = s.option(form.Value, "url", _("URL"));
-			o.optional = false;
+
+				o.addremove = true;
+				o = s2.option(
+					form.DynamicList,
+					"blocked_domain",
+					_("Blocked Domains"),
+					_("Individual domains to be blocked.")
+				);
+				o.addremove = true;
+				o.depends({
+					"adblock-fast.config.dns": "dnsmasq.config_file",
+					"!reverse": true,
+				});
+
+				s3 = m.section(
+					form.GridSection,
+					"file_url",
+					_("AdBlock-Fast - Allowed and Blocked Lists URLs"),
+					_("URLs to file(s) containing lists to be allowed or blocked.")
+				);
+				s3.sectiontitle = function (section_id) {
+					let url = uci.get(pkg.Name, section_id, "url");
+					let ret = _("Unknown");
+					reply.sizes.forEach((element) => {
+						if (element.url === url) {
+							ret = element.size === 0 ? ret : pkg.humanFileSize(element.size);
+						}
+					});
+					return _("Size: %s").format(ret);
+				};
+				s3.rowcolors = true;
+				s3.sortable = true;
+				s3.anonymous = true;
+				s3.addremove = true;
+				o = s3.option(form.Flag, "enabled", _("Enable"));
+				o.editable = true;
+				o.default = "1";
+				o = s3.option(form.ListValue, "action", _("Action"));
+				o.value("allow", _("Allow"));
+				o.value("block", _("Block"));
+				o.default = "block";
+				o = s3.option(form.Value, "url", _("URL"));
+				o.optional = false;
+			}
 
 			return Promise.all([status.render(), m.render()]);
 		});
