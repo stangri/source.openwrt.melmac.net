@@ -185,24 +185,20 @@ var status = baseclass.extend({
 							if (match[1]) {
 								if (prov.params && prov.params.option && prov.params.option.options) {
 									prov.params.option.options.forEach(opt => {
-										if (opt.value === match[1]) {
+										if (opt.value === match[1])
 											option = _(opt.description);
-										}
 									})
-									name += " (" + option + ")"
+									name += " (" + option + ")";
 								}
-								else {
-									name += " (" + match[1] + ")"
-								}
+								else
+									name += " (" + match[1] + ")";
 							}
 						}
 					});
-					if (address === "127.0.0.1") {
+					if (address === "127.0.0.1")
 						text += _("%s%s%s proxy on port %s.%s").format("<strong>", name, "</strong>", port, "<br />");
-					}
-					else {
+					else
 						text += _("%s%s%s proxy at %s on port %s.%s").format("<strong>", name, "</strong>", address, port, "<br />");
-					}
 				});
 				var instancesText = E('div', {}, text);
 				var instancesField = E('div', { class: 'cbi-value-field' }, [instancesText, instancesDescr]);

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2021 Stan Grishin (stangri@melmac.ca)
+# Copyright 2023 MOSSDeF, Stan Grishin (stangri@melmac.ca)
 # shellcheck disable=SC1091,SC2039,SC3043
 
 # TechRef: https://openwrt.org/docs/techref/rpcd
@@ -108,7 +108,7 @@ get_providers() {
 		cat "$f"
 		echo ','
 	done
-	echo '{ "title": "Custom", "template": "{url}", "params": { "url": { "type": "text", }, }, },'
+	echo '{ "title": "Custom", "template": "{option}", "params": { "option": { "type": "text", }, }, },'
 	echo ']}'
 }
 

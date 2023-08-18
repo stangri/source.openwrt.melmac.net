@@ -1,4 +1,4 @@
-// Copyright 2022 Stan Grishin <stangri@melmac.ca>
+// Copyright 2023 Stan Grishin <stangri@melmac.ca>
 // This code wouldn't have been possible without help from [@vsviridov](https://github.com/vsviridov)
 
 'use strict';
@@ -19,7 +19,10 @@ var pkg = {
 			else
 				return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 		}).join('') + '$');
-	}
+	},
+	updateParamOption: function (opt, section_id) {
+		;
+	},
 };
 
 return view.extend({
@@ -42,22 +45,23 @@ return view.extend({
 				},
 				providers: data[1] && data[1][pkg.Name] || { providers: [] },
 			};
-			var status, m, s, o, v;
+			var status, m, s, o, p;
+			var __provider, __paramList, __paramText;
 			var text;
 
 			status = new hdp.status();
 
 			m = new form.Map(pkg.Name, _("HTTPS DNS Proxy - Configuration"));
 
-			s = m.section(form.NamedSection, 'config', pkg.Name);
+			s = m.section(form.NamedSection, "config", pkg.Name);
 			o = s.option(form.ListValue, "dnsmasq_config_update", _("Update DNSMASQ Config on Start/Stop"),
 				_("If update option is selected, the %s'DNS forwardings' section of DHCP and DNS%s will be automatically updated to use selected DoH providers (%smore information%s).").format("<a href=\"" + L.url("admin", "network", "dhcp") + "\">", "</a>", "<a href=\"" + pkg.URL + "#default-settings" + "\" target=\"_blank\">", "</a>"));
-			o.value('*', _("Update all configs"));
-			var sections = uci.sections('dhcp', 'dnsmasq');
+			o.value("*", _("Update all configs"));
+			var sections = uci.sections("dhcp", "dnsmasq");
 			sections.forEach(element => {
 				var description;
 				var key;
-				if (element[".name"] === uci.resolveSID('dhcp', element[".name"])) {
+				if (element[".name"] === uci.resolveSID("dhcp", element[".name"])) {
 					key = element[".index"];
 					description = "dnsmasq[" + element[".index"] + "]";
 				}
@@ -80,14 +84,14 @@ return view.extend({
 				_("Blocks access to iCloud Private Relay resolvers, forcing local devices to use router for DNS resolution (%smore information%s).").format("<a href=\"" + pkg.URL + "#canary_domains_icloud" + "\" target=\"_blank\">", "</a>"));
 			o.value("0", _("Let local devices use iCloud Private Relay"));
 			o.value("1", _("Force Router DNS server to all local devices"));
-			o.depends('force_dns', '1');
+			o.depends("force_dns", "1");
 			o.default = "1";
 
 			o = s.option(form.ListValue, "canary_domains_mozilla", _("Canary Domains Mozilla"),
 				_("Blocks access to Mozilla Private Relay resolvers, forcing local devices to use router for DNS resolution (%smore information%s).").format("<a href=\"" + pkg.URL + "#canary_domains_mozilla" + "\" target=\"_blank\">", "</a>"));
 			o.value("0", _("Let local devices use Mozilla Private Relay"));
 			o.value("1", _("Force Router DNS server to all local devices"));
-			o.depends('force_dns', '1');
+			o.depends("force_dns", "1");
 			o.default = "1";
 
 			text = "";
@@ -102,7 +106,7 @@ return view.extend({
 			s.anonymous = true;
 			s.addremove = true;
 
-			s.sectiontitle = function (section_id) {
+			s.sectiontitle = (section_id => {
 				var provText;
 				var found;
 				reply.providers.forEach(prov => {
@@ -130,30 +134,43 @@ return view.extend({
 					}
 				});
 				return provText || _("Unknown");
-			};
+			});
 
-			o = s.option(form.DummyValue, "resolver_url", _("Resolver"));
-			o.modalonly = true;
-			v = s.option(form.DummyValue, "_dummy", _("Option"));
-			v.modalonly = true;
-			v.default = "";
-			v.optional = true;
+			__provider = s.option(form.ListValue, "__provider", _("Provider"));
+			__provider.modalonly = true;
+			__provider.onchange = function() {
+				console.log(arguments);
+				pkg.updateParamOption(this, section_id);
+			}
+
+			__paramList = s.option(form.ListValue, "__paramList", _("Parameter"));
+			__paramList.modalonly = true;
+
+			__paramText = s.option(form.Value, "__paramText", _("Parameter"));
+			__paramText.modalonly = true;
+
+			reply.providers.forEach(prov => {
+				__provider.value(prov.template, _(prov.title));
+				if (prov.params && prov.params.option) {
+					if (prov.params.option.type && prov.params.option.type === "select") {
+						__paramList.depends("__provider", prov.template);
+					}
+					else if (prov.params.option.type && prov.params.option.type === "text") {
+						__paramText.depends("__provider", prov.template);
+					}
+				}
+			});
 
 			o = s.option(form.Value, "bootstrap_dns", _("Bootstrap DNS"));
 			o.default = "";
 			o.modalonly = true;
-			o.optional = false;
+			o.optional = true;
 			o = s.option(form.Value, "listen_addr", _("Listen Address"));
 			o.datatype = "ipaddr";
 			o.default = "";
 			o.optional = true;
 			o.placeholder = "127.0.0.1";
 			var n = 0;
-			var sections = uci.sections(pkg.Name, pkg.Name);
-			sections.forEach(element => {
-				//				if (element[".name"] === section_id) return false;
-				n += 1;
-			});
 			o = s.option(form.Value, "listen_port", _("Listen Port"));
 			o.datatype = "port";
 			o.default = "";
@@ -202,6 +219,84 @@ return view.extend({
 			o.optional = true;
 			o.value("0", _("Use any family DNS resolvers"));
 			o.value("1", _("Force use of IPv6 DNS resolvers"));
+
+			s.addModalOptions = (modalSection, section_id, ev) => {
+				var provText;
+				var found;
+				let resolver = uci.get(pkg.Name, section_id, "resolver_url");
+				if (resolver === "undefined") {
+					let prov = reply.providers[0];
+					modalSection.children[0].default = prov.template;
+					if (prov.params && prov.params.option) {
+						if (prov.params.option.type && prov.params.option.type === "select" && prov.params.option.options) {
+							modalSection.children[1].default = prov.params.option.options[0].value;
+						}
+					}
+				}
+				else {
+					reply.providers.forEach(prov => {
+						let regexp = pkg.templateToRegexp(prov.template);
+						//					console.log(prov.template, _(prov.title));
+						//					__provider.value(prov.template, _(prov.title));
+						if (!found && resolver && regexp.test(resolver)) {
+							found = true;
+							//						console.log(modalSection);
+							modalSection.children[0].default = prov.template;
+							if (prov.params && prov.params.option) {
+								if (prov.params.option.type && prov.params.option.type === "select" && prov.params.option.options) {
+									let optName = prov.params.option.description;
+									optName = optName ? _(optName) : _("Parameter")
+									prov.params.option.options.forEach(opt => {
+										let val = opt.value || "";
+										let descr = opt.description ? _(opt.description) : "";
+										modalSection.children[1].value(val, descr);
+										let match = resolver.match(regexp);
+										if (match[1])
+											modalSection.children[1].default = match[1];
+									});
+								}
+								else if (prov.params.option.type && prov.params.option.type === "text") {
+									let optName = prov.params.option.description;
+									optName = optName ? _(optName) : _("Parameter")
+									prov.params.option.options.forEach(opt => {
+										let val = opt.value || "";
+										let descr = opt.description ? _(opt.description) : "";
+										modalSection.children[2].value(val, descr);
+										let match = resolver.match(regexp);
+										if (match[1])
+											modalSection.children[2].default = match[1];
+									});
+								}
+							}
+						}
+					});
+
+				}
+			};
+
+			// o = s.option(form.ListValue, "__provider", _("Provider"));
+			// o.modalonly = true;
+			// p = s.option(form.ListValue, "__param", _("Parameter"));
+			// p.modalonly = true;
+			// p.default = "";
+			// p.optional = true;
+			// reply.providers.forEach(prov => {
+				// if (prov.template && prov.title) {
+					// o.value(prov.template, _(prov.title));
+					// if (prov.params && prov.params.option) {
+						// if (prov.params.option.type && prov.params.option.type === 'select' && prov.params.option.options) {
+							// let prefixText = prov.params.option.description ? prov.params.option.description + ": " : "";
+							// prov.params.option.options.forEach(opt=> {
+								// let val = opt.value || '';
+								// let descr = opt.description ? _(opt.description) : '';
+								// p.value(val, prefixText + descr);
+								// p.depends('__provider', prov.template);
+							// });
+						// }
+					// }
+				// }
+			// });
+
 
 			return Promise.all([status.render(), m.render()]);
 		})
