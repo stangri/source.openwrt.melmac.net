@@ -290,11 +290,12 @@ is_ipv6_link_local() { [ "${1:0:4}" = 'fe80' ]; }
 is_ipv6_unique_local() { [ "${1:0:2}" = 'fc' ] || [ "${1:0:2}" = 'fd' ]; }
 is_list() { str_contains "$1" ',' || str_contains "$1" ' '; }
 is_ipv4_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
+is_lan() { local d; network_get_device d "$1"; str_contains "$d" 'br-lan'; }
 is_l2tp() { local p; network_get_protocol p "$1"; [ "${p:0:4}" = "l2tp" ]; }
 is_mac_address() { expr "$1" : '[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]$' >/dev/null; }
 is_netifd_table() { local iface="$1"; [ "$(uci -q get "network.${iface}.ip4table")" = "${packageName}_${iface%6}" ]; }
 is_oc() { local p; network_get_protocol p "$1"; [ "${p:0:11}" = "openconnect" ]; }
-is_ovpn() { local d; network_get_device d "$1" [ "${d:0:3}" = "tun" ] || [ "${d:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${d}/tun_flags" ]; }
+is_ovpn() { local d; network_get_device d "$1"; [ "${d:0:3}" = "tun" ] || [ "${d:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${d}/tun_flags" ]; }
 is_ovpn_valid() { local dev_net dev_ovpn; network_get_device dev_net "$1"; dev_ovpn="$(uci -q get "openvpn.${1}.dev")"; [ -n "$dev_net" ] && [ -n "$dev_ovpn" ] && [ "$dev_net" = "$dev_ovpn" ]; }
 is_phys_dev() { [ "${1:0:1}" = "@" ] && ip l show | grep -E -q "^\\d+\\W+${1:1}"; }
 is_present() { command -v "$1" >/dev/null 2>&1; }
@@ -304,9 +305,9 @@ is_service_running_nft() { [ -x "$nft" ] && [ -n "$(get_mark_nft_chains)" ]; }
 is_supported_iface_dev() { local n dev; for n in $ifacesSupported; do network_get_device dev "$n"; [ "$1" = "$dev" ] && return 0; done; return 1; }
 is_supported_protocol() { grep -o '^[^#]*' /etc/protocols | grep -w -v '0' | grep . | awk '{print $1}' | grep -q "$1"; }
 is_pptp() { local p; network_get_protocol p "$1"; [ "${p:0:4}" = "pptp" ]; }
-is_softether() { local d; network_get_device d "$1" [ "${d:0:4}" = "vpn_" ]; }
-is_supported_interface() { str_contains_word "$supported_interface" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; } || is_ignore_target "$1" || is_xray "$1"; }
-is_tailscale() { local d; network_get_device d "$1" [ "${d:0:9}" = "tailscale" ]; }
+is_softether() { local d; network_get_device d "$1"; [ "${d:0:4}" = "vpn_" ]; }
+is_supported_interface() { is_lan "$1" && return 1; str_contains_word "$supported_interface" "$1" || { ! is_ignored_interface "$1" && { is_wan "$1" || is_wan6 "$1" || is_tunnel "$1"; }; } || is_ignore_target "$1" || is_xray "$1"; }
+is_tailscale() { local d; network_get_device d "$1"; [ "${d:0:9}" = "tailscale" ]; }
 is_tor() { [ "$(str_to_lower "$1")" = "tor" ]; }
 is_tor_running() {
 	local ret=0
