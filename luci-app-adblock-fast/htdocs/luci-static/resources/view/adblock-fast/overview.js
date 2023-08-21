@@ -347,6 +347,7 @@ return view.extend({
 			o.default = ("0", _("Disable Debugging"));
 
 			// 			if (! s1.cfgvalue("config", "dns") || s1.cfgvalue("config", "dns") != "dnsmasq.config_file" ) {
+			console.log(this.map.data.get(this.map.config, s1, "dns"));
 			if (uci.get(pkg.Name, "config", "dns") != "dnsmasq.config_file") {
 				s2 = m.section(
 					form.NamedSection,
@@ -386,7 +387,13 @@ return view.extend({
 					_("AdBlock-Fast - Allowed and Blocked Lists URLs"),
 					_("URLs to file(s) containing lists to be allowed or blocked.")
 				);
-				s3.sectiontitle = function (section_id) {
+				s3.rowcolors = true;
+				s3.sortable = true;
+				s3.anonymous = true;
+				s3.addremove = true;
+				o = s3.option(form.DummyValue, "_size", "Size");
+				o.modalonly = false;
+				o.cfgvalue = function (section_id) {
 					let url = uci.get(pkg.Name, section_id, "url");
 					let ret = _("Unknown");
 					reply.sizes.forEach((element) => {
@@ -396,10 +403,6 @@ return view.extend({
 					});
 					return _("Size: %s").format(ret);
 				};
-				s3.rowcolors = true;
-				s3.sortable = true;
-				s3.anonymous = true;
-				s3.addremove = true;
 				o = s3.option(form.Flag, "enabled", _("Enable"));
 				o.editable = true;
 				o.default = "1";
