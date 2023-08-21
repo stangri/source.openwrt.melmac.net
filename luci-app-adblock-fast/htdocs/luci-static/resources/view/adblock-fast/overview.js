@@ -133,7 +133,6 @@ return view.extend({
 			if (reply.platform.dnsmasq_installed) {
 				o.value("dnsmasq.addnhosts", _("dnsmasq additional hosts"));
 				o.value("dnsmasq.conf", _("dnsmasq config"));
-				o.value("dnsmasq.config_file", _("dnsmasq config file url"));
 				if (reply.platform.dnsmasq_ipset_support) {
 					o.value("dnsmasq.ipset", _("dnsmasq ipset"));
 				}
@@ -159,7 +158,7 @@ return view.extend({
 					"</a>"
 				)
 			);
-			o.depends("dns", "dnsmasq.config_file");
+			o.depends("dns", "dnsmasq.conf");
 
 			o = s1.taboption(
 				"tab_basic",
@@ -346,9 +345,9 @@ return view.extend({
 			o.value("1", _("Enable Debugging"));
 			o.default = ("0", _("Disable Debugging"));
 
-			// 			if (! s1.cfgvalue("config", "dns") || s1.cfgvalue("config", "dns") != "dnsmasq.config_file" ) {
-			console.log(this.map.data.get(this.map.config, s1, "dns"));
-			if (uci.get(pkg.Name, "config", "dns") != "dnsmasq.config_file") {
+			// 			if ( s1.cfgvalue("config", "dnsmasq_config_file_url")) {
+			// console.log(this.map.data.get(this.map.config, s1, "dns"));
+			if (uci.get(pkg.Name, "config", "dnsmasq_config_file_url") != "") {
 				s2 = m.section(
 					form.NamedSection,
 					"config",
@@ -364,7 +363,7 @@ return view.extend({
 					_("Individual domains to be allowed.")
 				);
 				o.depends({
-					"adblock-fast.config.dns": "dnsmasq.config_file",
+					"adblock-fast.config.dnsmasq_config_file_url": "",
 					"!reverse": true,
 				});
 
@@ -377,7 +376,7 @@ return view.extend({
 				);
 				o.addremove = true;
 				o.depends({
-					"adblock-fast.config.dns": "dnsmasq.config_file",
+					"adblock-fast.config.dnsmasq_config_file_url": "",
 					"!reverse": true,
 				});
 
