@@ -35,7 +35,7 @@ readonly dnsmasqServersGzip="${packageName}.dnsmasq.servers.gz"
 readonly unboundFile="/var/lib/unbound/adb_list.${packageName}"
 readonly unboundCache="/var/run/${packageName}/unbound.cache"
 readonly unboundGzip="${packageName}.unbound.gz"
-readonly jsonFile="/var/run/${packageName}/${packageName}.json"
+readonly jsonFile="/dev/shm/$packageName-status.json"
 
 str_contains() { [ -n "$1" ] &&[ -n "$2" ] && [ "${1//$2}" != "$1" ]; }
 str_contains_word() { echo "$1" | grep -q -w "$2"; }
@@ -159,9 +159,6 @@ get_init_status() {
 	else
 		compressed_cache_dir="/etc"
 	fi
-	errors="$(ubus_get_status errors)"
-	warnings="$(ubus_get_status warnings)"
-	ports="$(ubus_get_ports)"
 	if [ -n "$(uci -q get $packageName.config.dnsmasq_config_file_url)" ]; then
 		dns="dnsmasq.conf"
 	else
@@ -214,6 +211,7 @@ get_init_status() {
 		json_add_boolean 'running' '0'
 	fi
 	json_add_string 'version' "$(get_version "$name")"
+	errors="$(ubus_get_status errors)"
 	json_add_array 'errors'
 	if [ -n "$errors" ]; then
 		for i in $errors; do
@@ -231,6 +229,7 @@ get_init_status() {
 		done
 	fi
 	json_close_array
+	warnings="$(ubus_get_status warnings)"
 	json_add_array 'warnings'
 	if [ -n "$warnings" ]; then
 		for i in $warnings; do
@@ -249,6 +248,7 @@ get_init_status() {
 	fi
 	json_close_array
 
+	ports="$(ubus_get_ports)"
 	if [ -n "$ports" ]; then
 		json_add_boolean 'force_dns_active' '1'
 		json_add_array 'force_dns_ports'

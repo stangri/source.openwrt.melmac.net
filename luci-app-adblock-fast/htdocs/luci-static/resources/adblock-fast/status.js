@@ -185,10 +185,10 @@ var status = baseclass.extend({
 				if (reply.status.warnings && reply.status.warnings.length) {
 					var warningTable = {
 						warningExternalDnsmasqConfig: _(
-							"use of external dnsmasq config file detected, please set '%s' option to '%s'"
+							"Use of external dnsmasq config file detected, please set '%s' option to '%s'"
 						).format("dns", "dnsmasq.conf"),
 						warningMissingRecommendedPackages: _(
-							"some recommended packages are missing"
+							"Some recommended packages are missing"
 						),
 					};
 					var warningsTitle = E(
@@ -217,62 +217,62 @@ var status = baseclass.extend({
 				if (reply.status.errors && reply.status.errors.length) {
 					var errorTable = {
 						errorConfigValidationFail: _(
-							"config (%s) validation failure!"
+							"Config (%s) validation failure!"
 						).format("/etc/config/" + pkg.Name),
 						errorServiceDisabled: _("%s is currently disabled").format(
 							pkg.Name
 						),
 						errorNoDnsmasqIpset: _(
-							"dnsmasq ipset support is enabled, but dnsmasq is either not installed or installed dnsmasq does not support ipset"
+							"The dnsmasq ipset support is enabled, but dnsmasq is either not installed or installed dnsmasq does not support ipset"
 						),
 						errorNoIpset: _(
-							"dnsmasq ipset support is enabled, but ipset is either not installed or installed ipset does not support '%s' type"
+							"The dnsmasq ipset support is enabled, but ipset is either not installed or installed ipset does not support '%s' type"
 						).format("hash:net"),
 						errorNoDnsmasqNftset: _(
-							"dnsmasq nft set support is enabled, but dnsmasq is either not installed or installed dnsmasq does not support nft set"
+							"The dnsmasq nft set support is enabled, but dnsmasq is either not installed or installed dnsmasq does not support nft set"
 						),
 						errorNoNft: _(
-							"dnsmasq nft sets support is enabled, but nft is not installed"
+							"The dnsmasq nft sets support is enabled, but nft is not installed"
 						),
 						errorNoWanGateway: _(
-							"the %s failed to discover WAN gateway"
+							"The %s failed to discover WAN gateway"
 						).format(pkg.Name),
-						errorOutputDirCreate: _("failed to create directory for %s file"),
-						errorOutputFileCreate: _("failed to create '%s' file").format(
+						errorOutputDirCreate: _("Failed to create directory for %s file"),
+						errorOutputFileCreate: _("Failed to create '%s' file").format(
 							outputFile
 						),
-						errorFailDNSReload: _("failed to restart/reload DNS resolver"),
-						errorSharedMemory: _("failed to access shared memory"),
-						errorSorting: _("failed to sort data file"),
-						errorOptimization: _("failed to optimize data file"),
-						errorAllowListProcessing: _("failed to process allow-list"),
-						errorDataFileFormatting: _("failed to format data file"),
+						errorFailDNSReload: _("Failed to restart/reload DNS resolver"),
+						errorSharedMemory: _("Failed to access shared memory"),
+						errorSorting: _("Failed to sort data file"),
+						errorOptimization: _("Failed to optimize data file"),
+						errorAllowListProcessing: _("Failed to process allow-list"),
+						errorDataFileFormatting: _("Failed to format data file"),
 						errorMovingDataFile: _(
-							"failed to move temporary data file to '%s'"
+							"Failed to move temporary data file to '%s'"
 						).format(outputFile),
 						errorCreatingCompressedCache: _(
-							"failed to create compressed cache"
+							"Failed to create compressed cache"
 						),
-						errorRemovingTempFiles: _("failed to remove temporary files"),
-						errorRestoreCompressedCache: _("failed to unpack compressed cache"),
-						errorRestoreCache: _("failed to move '%s' to '%s'").format(
+						errorRemovingTempFiles: _("Failed to remove temporary files"),
+						errorRestoreCompressedCache: _("Failed to unpack compressed cache"),
+						errorRestoreCache: _("Failed to move '%s' to '%s'").format(
 							outputCache,
 							outputFile
 						),
 						errorOhSnap: _(
-							"failed to create block-list or restart DNS resolver"
+							"Failed to create block-list or restart DNS resolver"
 						),
-						errorStopping: _("failed to stop %s").format(pkg.Name),
-						errorDNSReload: _("failed to reload/restart DNS resolver"),
+						errorStopping: _("Failed to stop %s").format(pkg.Name),
+						errorDNSReload: _("Failed to reload/restart DNS resolver"),
 						errorDownloadingConfigUpdate: _(
-							"failed to download Config Update file"
+							"Failed to download Config Update file"
 						),
-						errorDownloadingList: _("failed to download"),
-						errorParsingConfigUpdate: _("failed to parse Config Update file"),
-						errorParsingList: _("failed to parse"),
-						errorNoSSLSupport: _("no HTTPS/SSL support on device"),
+						errorDownloadingList: _("Failed to download %s"),
+						errorParsingConfigUpdate: _("Failed to parse Config Update file"),
+						errorParsingList: _("Failed to parse"),
+						errorNoSSLSupport: _("No HTTPS/SSL support on device"),
 						errorCreatingDirectory: _(
-							"failed to create output/cache/gzip file directory"
+							"Failed to create output/cache/gzip file directory"
 						),
 					};
 					var errorsTitle = E(

@@ -59,7 +59,7 @@ readonly unboundGzip="${packageName}.unbound.gz"
 readonly unboundFilter='s|^|local-zone: "|;s|$|" static|'
 readonly A_TMP="/var/${packageName}.hosts.a.tmp"
 readonly B_TMP="/var/${packageName}.hosts.b.tmp"
-readonly jsonFile="/var/run/${packageName}/${packageName}.json"
+readonly jsonFile="/dev/shm/$packageName-status.json"
 readonly sharedMemoryError="/dev/shm/$packageName-error"
 readonly hostsFilter='/localhost/d;/^#/d;/^[^0-9]/d;s/^0\.0\.0\.0.//;s/^127\.0\.0\.1.//;s/[[:space:]]*#.*$//;s/[[:cntrl:]]$//;s/[[:space:]]//g;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
 readonly domainsFilter='/^#/d;s/[[:space:]]*#.*$//;s/[[:space:]]*$//;s/[[:cntrl:]]$//;/[[:space:]]/d;/[`~!@#\$%\^&\*()=+;:"'\'',<>?/\|[{}]/d;/]/d;/\./!d;/^$/d;/[^[:alnum:]_.-]/d;'
@@ -683,7 +683,7 @@ json() {
 		json_load_file "$jsonFile" 2>/dev/null
 		json_select 'data' 2>/dev/null
 		for i in status message error stats reload restart; do
-			json_get_var $i "$i" 2>/dev/null
+			json_get_var "$i" "$i" 2>/dev/null
 		done
 	fi
 	case "$action" in
@@ -1415,7 +1415,8 @@ adb_start() {
 	procd_set_param stderr 1
 	procd_open_data
 	json_add_string 'status' "$(json get status)"
-	json_add_string 'errors' "$(json get errors)"
+	json_add_string 'errors' "$(json get error)"
+	json_add_string 'warnings' "$(json get warning)"
 	if [ -s "$outputFile" ]; then
 		json_add_int 'entries' "$(wc -l < "$outputFile")"
 	else
