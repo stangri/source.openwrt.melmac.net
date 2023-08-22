@@ -3,8 +3,9 @@
 # Credits to https://forum.openwrt.org/u/dscpl for api.hackertarget.com code.
 # Credits to https://github.com/kkeker and https://github.com/tophirsch for api.bgpview.io code.
 
-TARGET_SET='pbr_wan_4_dst_ip_user'
-TARGET_IPSET='pbr_wan_4_dst_net_user'
+TARGET_INTERFACE='wan'
+TARGET_NFTSET="pbr_${TARGET_INTERFACE}_4_dst_ip_user"
+TARGET_IPSET="pbr_${TARGET_INTERFACE}_4_dst_net_user"
 TARGET_TABLE='inet fw4'
 TARGET_ASN='2906'
 TARGET_DL_FILE="/var/pbr_tmp_AS${TARGET_ASN}"
@@ -30,7 +31,7 @@ fi
 
 if [ -s "$TARGET_DL_FILE" ]; then
 	if [ -n "$nft" ] && [ -x "$nft" ]; then
-		while read -r p; do "$nft" "add element $TARGET_TABLE $TARGET_SET { $p }" || _ret=1; done < "$TARGET_DL_FILE"
+		while read -r p; do "$nft" "add element $TARGET_TABLE $TARGET_NFTSET { $p }" || _ret=1; done < "$TARGET_DL_FILE"
 	elif ipset -q list "$TARGET_IPSET" >/dev/null 2>&1; then
 		if awk -v ipset="$TARGET_IPSET" '{print "add " ipset " " $1}' "$TARGET_DL_FILE" | ipset restore -!; then
 			_ret=0
