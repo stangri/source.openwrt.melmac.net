@@ -11,59 +11,59 @@ msgstr ""
 msgid "%s binary cannot be found"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:50
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:56
 msgid ""
 "%sWARNING:%s Please make sure to check the %sREADME%s before changing "
 "anything in this section! Change any of the settings below with extreme "
 "caution!%s"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:94
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:95
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:142
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:143
 msgid "AdGuardHome ipset"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:122
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:194
 msgid "Add"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:157
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:262
 msgid "Add Ignore Target"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:158
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:264
 msgid ""
 "Adds 'ignore' to the list of interfaces for policies. See the %sREADME%s for "
 "details."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:49
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:54
 msgid "Advanced Configuration"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:111
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:169
 msgid ""
 "Allows to specify the list of interface names (in lower case) to be "
 "explicitly supported by the service. Can be useful if your OpenVPN tunnels "
 "have dev option other than tun* or tap*."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:116
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:181
 msgid ""
 "Allows to specify the list of interface names (in lower case) to be ignored "
 "by the service. Can be useful if running both VPN server and VPN client on "
 "the router."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:48
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:51
 msgid "Basic Configuration"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:222
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:346
 msgid "Chain"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:59
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:78
 msgid "Condensed output"
 msgstr ""
 
@@ -71,11 +71,11 @@ msgstr ""
 msgid "Config (%s) validation failure"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:57
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:75
 msgid "Controls both system log and console output verbosity."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:248
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:391
 msgid "Custom User File Includes"
 msgstr ""
 
@@ -83,15 +83,15 @@ msgstr ""
 msgid "Custom user file '%s' not found or empty"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:243
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:382
 msgid "DSCP Tag"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:238
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:366
 msgid "DSCP Tagging"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:126
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:202
 msgid "Default ICMP Interface"
 msgstr ""
 
@@ -99,9 +99,9 @@ msgstr ""
 msgid "Disable"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:92
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:107
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:140
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:160
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:270
 msgid "Disabled"
 msgstr ""
 
@@ -109,21 +109,21 @@ msgstr ""
 msgid "Disabling %s service"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:166
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:280
 msgid "Display these protocols in protocol column in Web UI."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:98
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:99
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:146
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:147
 msgid "Dnsmasq ipset"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:102
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:103
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:150
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:151
 msgid "Dnsmasq nft set"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:66
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:92
 msgid "Do not enforce policies when their gateway is down"
 msgstr ""
 
@@ -131,10 +131,10 @@ msgstr ""
 msgid "Enable"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:108
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:161
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:178
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:256
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:271
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:299
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:404
 msgid "Enabled"
 msgstr ""
 
@@ -146,7 +146,7 @@ msgstr ""
 msgid "Error running custom user file '%s'"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:151
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:247
 msgid ""
 "FW Mask used by the service. High mask is used to avoid conflict with SQM/"
 "QoS. Change with caution together with"
@@ -180,7 +180,7 @@ msgstr ""
 msgid "Failed to set up any gateway"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:127
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:203
 msgid "Force the ICMP protocol interface."
 msgstr ""
 
@@ -188,11 +188,11 @@ msgstr ""
 msgid "Grant UCI and file access for luci-app-pbr"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:106
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:158
 msgid "IPv6 Support"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:115
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:179
 msgid "Ignored Interfaces"
 msgstr ""
 
@@ -202,7 +202,7 @@ msgid ""
 "support."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:123
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:195
 msgid "Insert"
 msgstr ""
 
@@ -218,7 +218,7 @@ msgstr ""
 msgid "Installed AdGuardHome (%s) doesn't support 'ipset_file' option."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:231
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:355
 msgid "Interface"
 msgstr ""
 
@@ -230,11 +230,11 @@ msgstr ""
 msgid "Invalid OpenVPN config for '%s' interface"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:184
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:305
 msgid "Local addresses / devices"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:189
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:311
 msgid "Local ports"
 msgstr ""
 
@@ -242,11 +242,11 @@ msgstr ""
 msgid "Mismatched IP family between in policy '%s'"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:182
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:303
 msgid "Name"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:170
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:289
 msgid ""
 "Name, interface and at least one other field are required. Multiple local "
 "and remote addresses/devices/domains and ports can be space separated. "
@@ -254,7 +254,7 @@ msgid ""
 "fields are left blank."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:128
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:205
 msgid "No Change"
 msgstr ""
 
@@ -262,15 +262,15 @@ msgstr ""
 msgid "Not installed or not found"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:56
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:74
 msgid "Output verbosity"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:261
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:409
 msgid "Path"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:89
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:128
 msgid "Please check the %sREADME%s before changing this option."
 msgstr ""
 
@@ -290,7 +290,7 @@ msgstr ""
 msgid "Please unset 'src_addr', 'src_port' and 'dest_port' for policy '%s'"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:169
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:287
 msgid "Policies"
 msgstr ""
 
@@ -311,7 +311,7 @@ msgid ""
 "Policy '%s' refers to URL which can't be downloaded in 'secure_reload' mode!"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:45
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:48
 msgid "Policy Based Routing - Configuration"
 msgstr ""
 
@@ -323,7 +323,7 @@ msgstr ""
 msgid "Policy Routing"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:206
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:329
 msgid "Protocol"
 msgstr ""
 
@@ -331,11 +331,11 @@ msgstr ""
 msgid "Received empty tid/mark or interface name when setting up routing"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:195
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:317
 msgid "Remote addresses / domains"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:200
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:323
 msgid "Remote ports"
 msgstr ""
 
@@ -369,11 +369,11 @@ msgstr ""
 msgid "Restarting %s service"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:120
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:191
 msgid "Rule Create option"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:249
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:393
 msgid ""
 "Run the following user files after setting up but before restarting DNSMASQ. "
 "See the %sREADME%s for details."
@@ -383,11 +383,11 @@ msgstr ""
 msgid "Running"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:64
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:87
 msgid "See the %sREADME%s for details."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:121
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:192
 msgid "Select Add for -A/add and Insert for -I/Insert."
 msgstr ""
 
@@ -399,8 +399,8 @@ msgstr ""
 msgid "Service Errors"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:145
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:150
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:234
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:245
 msgid "Service FW Mask"
 msgstr ""
 
@@ -416,7 +416,7 @@ msgstr ""
 msgid "Service Warnings"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:239
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:368
 msgid ""
 "Set DSCP tags (in range between 1 and 63) for specific interfaces. See the "
 "%sREADME%s for details."
@@ -434,13 +434,13 @@ msgstr ""
 msgid "Starting %s service"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:143
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:230
 msgid ""
 "Starting (WAN) FW Mark for marks used by the service. High starting mark is "
 "used to avoid conflict with SQM/QoS. Change with caution together with"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:137
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:218
 msgid "Starting (WAN) Table ID number for tables created by the service."
 msgstr ""
 
@@ -460,23 +460,23 @@ msgstr ""
 msgid "Stopping %s service"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:63
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:86
 msgid "Strict enforcement"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:67
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:93
 msgid "Strictly enforce policies when their gateway is down"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:110
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:167
 msgid "Supported Interfaces"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:165
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:279
 msgid "Supported Protocols"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:58
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:77
 msgid "Suppress/No output"
 msgstr ""
 
@@ -488,9 +488,9 @@ msgstr ""
 msgid "The %s indicates default gateway. See the %sREADME%s for details."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:75
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:81
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:87
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:103
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:113
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:123
 msgid "The %s is not supported on this system."
 msgstr ""
 
@@ -502,9 +502,9 @@ msgstr ""
 msgid "The %s service is currently disabled"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:72
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:78
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:84
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:99
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:109
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:119
 msgid "The %s support is unknown."
 msgstr ""
 
@@ -550,11 +550,11 @@ msgid ""
 "installed"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:91
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:137
 msgid "Use resolver set support for domains"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:60
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:79
 msgid "Verbose output"
 msgstr ""
 
@@ -562,21 +562,21 @@ msgstr ""
 msgid "Version %s"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:142
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:152
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:228
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:251
 msgid "WAN Table FW Mark"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:136
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:217
 msgid "WAN Table ID"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:54
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:68
 msgid "Web UI Configuration"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:213
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:214
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:338
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:339
 msgid "all"
 msgstr ""
 

@@ -24,6 +24,10 @@ config include
 	option path '/usr/share/pbr/pbr.user.netflix'
 	option enabled 0
 
+config include
+	option path '/usr/share/pbr/pbr.user.wg_server_and_client'
+	option enabled 0
+
 config policy
 	option name 'Plex/Emby Local Server'
 	option interface 'wan'

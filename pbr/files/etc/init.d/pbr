@@ -1987,8 +1987,8 @@ EOF
 				nftset 'create_user_set' "$iface" 'src' 'mac' 'user' '' "$mark" || s=1
 			else
 				ips 'create_user_set' "$iface" 'dst' 'ip' 'user' '' "$mark" || s=1
-				ips 'create_user_set' "$iface" 'src' 'ip' 'user' '' "$mark" || s=1
 				ips 'create_user_set' "$iface" 'dst' 'net' 'user' '' "$mark" || s=1
+				ips 'create_user_set' "$iface" 'src' 'ip' 'user' '' "$mark" || s=1
 				ips 'create_user_set' "$iface" 'src' 'net' 'user' '' "$mark" || s=1
 				ips 'create_user_set' "$iface" 'src' 'mac' 'user' '' "$mark" || s=1
 			fi
