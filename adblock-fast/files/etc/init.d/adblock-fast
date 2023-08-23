@@ -272,14 +272,12 @@ detect_file_type() {
 	local file="$1"
 	if [ "$(head -1 "$file")" = '[Adblock Plus]' ]; then
 		echo 'adBlockPlus'
-	# TODO: add IPv6 local addresses
-	elif grep -q ':: ' "$file" || grep -q '::1' "$file" || \
-		grep -q '0.0.0.0' "$file" || grep -q '127.0.0.1' "$file"; then
-		echo 'hosts'
 	elif grep -q '^server=' "$file"; then
 		echo 'dnsmasqFile'
 	elif grep -q '^local=' "$file"; then
 		echo 'dnsmasq2File'
+	elif grep -q '^0.0.0.0' "$file" || grep -q '^127.0.0.1' "$file"; then
+		echo 'hosts'
 	else
 		echo 'domains'
 	fi

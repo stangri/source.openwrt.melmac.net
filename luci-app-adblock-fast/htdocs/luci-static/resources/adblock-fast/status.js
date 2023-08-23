@@ -1,5 +1,6 @@
-// Copyright 2023 MOSSDeF, Stan Grishin <stangri@melmac.ca>
-// This code wouldn't have been possible without help from [@vsviridov](https://github.com/vsviridov)
+// Copyright MOSSDeF, 2023 Stan Grishin <stangri@melmac.ca>
+// This code wouldn't have been possible without help from:
+// - [@vsviridov](https://github.com/vsviridov)
 
 "require ui";
 "require rpc";
