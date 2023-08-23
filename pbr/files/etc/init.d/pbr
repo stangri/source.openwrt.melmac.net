@@ -399,7 +399,7 @@ process_url() {
 	elif is_url_https "$url" && [ -z "$dl_https_supported" ]; then
 		state add 'errorSummary' 'errorDownloadUrlNoHttps' "$url"
 	elif $dl_command "$url" "$dl_flag" "$dl_temp_file" 2>/dev/null; then
-		cat "$dl_temp_file"
+		sed 'N;s/\n/ /;s/\s\+/ /g;' "$dl_temp_file"
 	else
 		state add 'errorSummary' 'errorDownloadUrl' "$url"
 	fi
