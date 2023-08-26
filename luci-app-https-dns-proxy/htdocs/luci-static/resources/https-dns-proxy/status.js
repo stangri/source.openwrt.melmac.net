@@ -212,6 +212,7 @@ var status = baseclass.extend({
 						if (param === "-a") address = arr[index + 1];
 						if (param === "-p") port = arr[index + 1];
 					});
+					// TODO: validate resolver, address, port
 					reply.providers.forEach((prov) => {
 						let regexp = pkg.templateToRegexp(prov.template);
 						if (!found && regexp.test(resolver)) {

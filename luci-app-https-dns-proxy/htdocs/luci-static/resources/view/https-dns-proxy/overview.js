@@ -51,8 +51,11 @@ return view.extend({
 			},
 			providers: (data[1] && data[1][pkg.Name]) || { providers: [] },
 		};
+		reply.providers.sort(function (a, b) {
+			return _(a.title).localeCompare(_(b.title));
+		});
+
 		var status, m, s, o, p;
-		var __provider;
 		var text;
 
 		status = new hdp.status();
@@ -121,7 +124,7 @@ return view.extend({
 			"canary_domains_mozilla",
 			_("Canary Domains Mozilla"),
 			_(
-				"Blocks access to Mozilla Private Relay resolvers, forcing local devices to use router for DNS resolution (%smore information%s)."
+				"Blocks access to Mozilla Encrypted resolvers, forcing local devices to use router for DNS resolution (%smore information%s)."
 			).format(
 				'<a href="' +
 					pkg.URL +
@@ -199,36 +202,41 @@ return view.extend({
 			return provText || _("Unknown");
 		};
 
-		__provider = s.option(form.ListValue, "__provider", _("Provider"));
-		__provider.modalonly = true;
+		var _provider;
+		_provider = s.option(form.ListValue, "_provider", _("Provider"));
+		_provider.modalonly = true;
+		_provider.write((section_id, formvalue) => {
+			console.log(formvalue);
+			console.log(this.Map);
+			uci.set(pkg.Name, section_id, "resolver_url", formvalue);
+		});
 
 		reply.providers.forEach((prov, i) => {
-			__provider.value(prov.template, _(prov.title));
+			_provider.value(prov.template, _(prov.title));
 			if (prov.params && prov.params.option) {
 				if (prov.params.option.type && prov.params.option.type === "select") {
 					let optName = prov.params.option.description || _("Parameter");
-					var __paramList = s.option(
-						form.ListValue,
-						"__paramList_" + i,
-						optName
-					);
+					var _paramList = s.option(form.ListValue, "_paramList_" + i, optName);
 					prov.params.option.options.forEach((opt) => {
 						let val = opt.value || "";
 						let descr = opt.description || "";
-						__paramList.value(val, descr);
+						_paramList.value(val, descr);
 					});
-					__paramList.modalonly = true;
-					__paramList.depends("__provider", prov.template);
-					//FIXME __paramText.write =
+					_paramList.modalonly = true;
+					if (prov.params.option.default) {
+						_paramList.default = prov.params.option.default;
+					}
+					_paramList.depends("_provider", prov.template);
+					//FIXME _paramList.write =
 				} else if (
 					prov.params.option.type &&
 					prov.params.option.type === "text"
 				) {
 					let optName = prov.params.option.description || _("Parameter");
-					var __paramText = s.option(form.Value, "__paramText_" + i, optName);
-					__paramText.modalonly = true;
-					__paramText.depends("__provider", prov.template);
-					//FIXME __paramText.write =
+					var _paramText = s.option(form.Value, "_paramText_" + i, optName);
+					_paramText.modalonly = true;
+					_paramText.depends("_provider", prov.template);
+					//FIXME _paramText.write =
 				}
 			}
 		});
@@ -316,11 +324,8 @@ return view.extend({
 			} else {
 				reply.providers.forEach((prov) => {
 					let regexp = pkg.templateToRegexp(prov.template);
-					//					console.log(prov.template, _(prov.title));
-					//					__provider.value(prov.template, _(prov.title));
 					if (!found && resolver && regexp.test(resolver)) {
 						found = true;
-						//						console.log(modalSection);
 						modalSection.children[0].default = prov.template;
 						if (prov.params && prov.params.option) {
 							if (
