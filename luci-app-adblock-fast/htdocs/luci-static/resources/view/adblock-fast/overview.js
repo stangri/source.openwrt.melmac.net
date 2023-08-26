@@ -192,6 +192,7 @@ return view.extend({
 		o.default = "*";
 		o.depends("dns", "dnsmasq.addnhosts");
 		o.depends("dns", "dnsmasq.servers");
+		o.retain = true;
 
 		o = s1.taboption(
 			"tab_basic",
@@ -255,6 +256,7 @@ return view.extend({
 		o.depends("dns", "dnsmasq.nftset");
 		o.default = ("", _("Do not add IPv6 entries"));
 		o.rmempty = true;
+		o.retain = true;
 
 		o = s1.taboption(
 			"tab_advanced",
@@ -330,6 +332,7 @@ return view.extend({
 		o.rmempty = true;
 		o.default = "/etc";
 		o.depends("compressed_cache", "1");
+		o.retain = true;
 
 		o = s1.taboption(
 			"tab_advanced",
