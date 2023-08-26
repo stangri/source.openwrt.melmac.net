@@ -286,6 +286,10 @@ var status = baseclass.extend({
 						text +=
 							errorTable[element.id].format(element.extra || " ") + "<br />";
 					});
+					text += _("Errors encountered, please check the %sREADME%s!").format(
+						"<a href='" + pkg.URL + '" target="_blank">',
+						"</a><br />"
+					);
 					var errorsText = E("div", {}, text);
 					var errorsField = E("div", { class: "cbi-value-field" }, errorsText);
 					errorsDiv = E("div", { class: "cbi-value" }, [
