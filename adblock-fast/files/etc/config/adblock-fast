@@ -45,7 +45,7 @@ config file_url
 	option action 'block'
 	option enabled '0'
 
-	config file_url
+config file_url
 	option url 'https://big.oisd.nl/'
 	option size '6163363'
 	option action 'block'
