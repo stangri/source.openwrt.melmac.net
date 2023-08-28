@@ -148,6 +148,14 @@ var status = baseclass.extend({
 				providers: (data[1] && data[1][pkg.Name]) || { providers: [] },
 				runtime: (data[2] && data[2][pkg.Name]) || { instances: [] },
 			};
+			reply.providers.sort(function (a, b) {
+				return _(a.title).localeCompare(_(b.title));
+			});
+			reply.providers.push({
+				title: "Custom",
+				template: "{option}",
+				params: { option: { type: "text" } },
+			});
 
 			var header = E("h2", {}, _("HTTPS DNS Proxy - Status"));
 			var statusTitle = E(
@@ -212,14 +220,16 @@ var status = baseclass.extend({
 						if (param === "-a") address = arr[index + 1];
 						if (param === "-p") port = arr[index + 1];
 					});
-					// TODO: validate resolver, address, port
+					resolver = resolver || "Unknown";
+					address = address || "127.0.0.1";
+					port = port || "Unknown";
 					reply.providers.forEach((prov) => {
 						let regexp = pkg.templateToRegexp(prov.template);
 						if (!found && regexp.test(resolver)) {
 							found = true;
 							name = _(prov.title);
 							let match = resolver.match(regexp);
-							if (match[1]) {
+							if (match[1] != null) {
 								if (
 									prov.params &&
 									prov.params.option &&
@@ -408,7 +418,6 @@ var status = baseclass.extend({
 			} else {
 				var buttonsDiv = [];
 			}
-
 			return E("div", {}, [header, statusDiv, instancesDiv, buttonsDiv]);
 		});
 	},

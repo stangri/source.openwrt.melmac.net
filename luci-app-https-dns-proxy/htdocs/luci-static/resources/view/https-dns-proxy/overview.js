@@ -31,6 +31,9 @@ var pkg = {
 				"$"
 		);
 	},
+	templateToResolver: function (template, args) {
+		return template.replace(/{(\w+)}/g, (_, v) => args[v]);
+	},
 };
 
 return view.extend({
@@ -53,6 +56,11 @@ return view.extend({
 		};
 		reply.providers.sort(function (a, b) {
 			return _(a.title).localeCompare(_(b.title));
+		});
+		reply.providers.push({
+			title: "Custom",
+			template: "{option}",
+			params: { option: { type: "text" } },
 		});
 
 		var status, m, s, o, p;
@@ -181,7 +189,7 @@ return view.extend({
 					found = true;
 					provText = _(prov.title);
 					let match = resolver.match(regexp);
-					if (match[1]) {
+					if (match[1] != null) {
 						if (
 							prov.params &&
 							prov.params.option &&
@@ -205,11 +213,9 @@ return view.extend({
 		var _provider;
 		_provider = s.option(form.ListValue, "_provider", _("Provider"));
 		_provider.modalonly = true;
-		_provider.write((section_id, formvalue) => {
-			console.log(formvalue);
-			console.log(this.Map);
+		_provider.write = function (section_id, formvalue) {
 			uci.set(pkg.Name, section_id, "resolver_url", formvalue);
-		});
+		};
 
 		reply.providers.forEach((prov, i) => {
 			_provider.value(prov.template, _(prov.title));
@@ -227,7 +233,15 @@ return view.extend({
 						_paramList.default = prov.params.option.default;
 					}
 					_paramList.depends("_provider", prov.template);
-					//FIXME _paramList.write =
+					_paramList.write = function (section_id, formvalue) {
+						var template = uci.get(pkg.Name, section_id, "resolver_url");
+						var param = formvalue || "";
+						var resolver = pkg.templateToResolver(template, {
+							option: param,
+						});
+						uci.set(pkg.Name, section_id, "resolver_url", resolver);
+					};
+					_paramList.remove = _paramList.write;
 				} else if (
 					prov.params.option.type &&
 					prov.params.option.type === "text"
@@ -236,7 +250,17 @@ return view.extend({
 					var _paramText = s.option(form.Value, "_paramText_" + i, optName);
 					_paramText.modalonly = true;
 					_paramText.depends("_provider", prov.template);
-					//FIXME _paramText.write =
+					if (prov.params.option.default && prov.params.option.default != "")
+						_paramText.optional = false;
+					_paramText.write = function (section_id, formvalue) {
+						var template = uci.get(pkg.Name, section_id, "resolver_url");
+						var param = formvalue || "";
+						var resolver = pkg.templateToResolver(template, {
+							option: param,
+						});
+						uci.set(pkg.Name, section_id, "resolver_url", resolver);
+					};
+					_paramText.remove = _paramText.write;
 				}
 			}
 		});
@@ -288,21 +312,23 @@ return view.extend({
 		o.modalonly = true;
 		o.optional = true;
 		o = s.option(form.ListValue, "use_http1", _("Use HTTP/1"));
-		o.default = "0";
 		o.modalonly = true;
 		o.optional = true;
-		o.value("0", _("Use negotiated HTTP version"));
+		o.rmempty = true;
+		o.value("", _("Use negotiated HTTP version"));
 		o.value("1", _("Force use of HTTP/1"));
+		o.default = "";
 		o = s.option(
 			form.ListValue,
 			"use_ipv6_resolvers_only",
 			_("Use IPv6 resolvers")
 		);
-		o.default = "0";
 		o.modalonly = true;
 		o.optional = true;
-		o.value("0", _("Use any family DNS resolvers"));
+		o.rmempty = true;
+		o.value("", _("Use any family DNS resolvers"));
 		o.value("1", _("Force use of IPv6 DNS resolvers"));
+		o.default = "";
 
 		s.addModalOptions = (modalSection, section_id, ev) => {
 			var provText;
@@ -322,7 +348,7 @@ return view.extend({
 					}
 				}
 			} else {
-				reply.providers.forEach((prov) => {
+				reply.providers.forEach((prov, i) => {
 					let regexp = pkg.templateToRegexp(prov.template);
 					if (!found && resolver && regexp.test(resolver)) {
 						found = true;
