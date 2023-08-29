@@ -86,6 +86,7 @@ procd_lan_interface=
 procd_wan_interface=
 procd_wan6_interface=
 resolver_set=
+resolver_instance=
 rule_create_option=
 secure_reload=
 strict_enforcement=
@@ -100,6 +101,7 @@ errorSummary=
 warningSummary=
 wanIface4=
 wanIface6=
+dnsmasqFileList=
 ifaceMark=
 ifaceTableID=
 ifacePriority=
@@ -406,9 +408,18 @@ process_url() {
 	rm -f "$dl_temp_file"
 }
 
+_dnsmasq_file_add() {
+	local cfg="$1"
+	local confdir
+	config_get confdir "$1" 'confdir'
+	if [ -n "$confdir" ] && ! str_contains "$dnsmasqFileList" "$confdir"; then
+		dnsmasqFileList="${dnsmasqFileList:+$dnsmasqFileList }${confdir}/${packageName}"
+	fi
+}
+
 load_package_config() {
 	local param="$1"
-	local user_file_check_result
+	local user_file_check_result i
 	config_load "$packageName"
 	config_get      boot_timeout             'config' 'boot_timeout' '30'
 	config_get_bool enabled                  'config' 'enabled' '0'
@@ -421,6 +432,7 @@ load_package_config() {
 	config_get_bool nft_user_set_counter     'config' 'nft_user_set_counter' '0'
 	config_get      procd_boot_delay         'config' 'procd_boot_delay' '0'
 	config_get      resolver_set             'config' 'resolver_set'
+	config_get      resolver_instance        'config' 'resolver_instance' '*'
 	config_get      rule_create_option       'config' 'rule_create_option' 'add'
 	config_get_bool secure_reload            'config' 'secure_reload' '0'
 	config_get_bool strict_enforcement       'config' 'strict_enforcement' '1'
@@ -441,7 +453,19 @@ load_package_config() {
 	[ -n "$user_file_check_result" ] && unset nft_file_support
 	[ -n "$nft_file_support" ] && unset secure_reload
 	is_config_enabled 'include' && unset secure_reload
-	mkdir -p "${dnsmasqFile%/*}"
+	config_load 'dhcp'
+	if [ "$resolver_instance" = "*" ]; then
+		config_foreach _dnsmasq_file_add 'dnsmasq'
+	elif [ -n "$resolver_instance" ]; then
+		for i in $resolver_instance; do
+			_dnsmasq_file_add "@dnsmasq[$i]" || _dnsmasq_file_add "$i"
+		done
+	fi
+	dnsmasqFileList="${dnsmasqFileList:+$dnsmasqFileList }${dnsmasqFile}"
+	local dfl
+	for dfl in $dnsmasqFileList; do
+		mkdir -p "${dfl%/*}"
+	done
 	if is_nft_mode; then
 		fw_maskXor="$(printf '%#x' "$((fw_mask ^ 0xffffffff))")"
 		fw_maskXor="${fw_maskXor:-0xff00ffff}"
@@ -604,7 +628,8 @@ ips() {
 		;;
 		add_dnsmasq_element)
 			[ -n "$ipv6_enabled" ] || unset ipset6
-			echo "ipset=/${param}/${ipset4}${ipset6:+,$ipset6} # $comment" >> "$dnsmasqFile" && ipv4_error=0
+			# shellcheck disable=SC2086
+			echo "ipset=/${param}/${ipset4}${ipset6:+,$ipset6} # $comment" | tee -a $dnsmasqFileList >/dev/null 2>&1 && ipv4_error=0
 		;;
 		create)
 			ips4 -q -! create "$ipset4" "hash:$type" comment && ipv4_error=0
@@ -764,7 +789,8 @@ nftset() {
 		;;
 		add_dnsmasq_element)
 			[ -n "$ipv6_enabled" ] || unset nftset6
-			echo "nftset=/${param}/4#inet#${nftTable}#${nftset4}${nftset6:+,6#inet#${nftTable}#$nftset6} # $comment" >> "$dnsmasqFile" && ipv4_error=0
+			# shellcheck disable=SC2086
+			echo "nftset=/${param}/4#inet#${nftTable}#${nftset4}${nftset6:+,6#inet#${nftTable}#$nftset6} # $comment" | tee -a $dnsmasqFileList >/dev/null 2>&1 && ipv4_error=0
 		;;
 		create)
 			case "$type" in
@@ -961,7 +987,10 @@ resolver() {
 	if [ "$param" = 'cleanup_all' ]; then
 		sed -i "/ipset_file: ${aghIpsetFile}/d" "$aghConfigFile" >/dev/null 2>&1
 		rm -f "$aghIpsetFile"
-		rm -f "$dnsmasqFile"
+		local dfl
+		for dfl in $dnsmasqFileList; do
+			rm -f "$dfl"
+		done
 		return 0
 	fi
 
@@ -1077,9 +1106,21 @@ resolver() {
 					fi
 				;;
 				cleanup)
-					[ -n "$resolver_set_supported" ] && rm -f "$dnsmasqFile";;
+					if [ -n "$resolver_set_supported" ]; then
+						local dfl
+						for dfl in $dnsmasqFileList; do
+							rm -f "$dfl"
+						done
+					fi
+				;;
 				configure)
-					[ -n "$resolver_set_supported" ] && mkdir -p "${dnsmasqFile%/*}";;
+					if [ -n "$resolver_set_supported" ]; then
+						local dfl
+						for dfl in $dnsmasqFileList; do
+							mkdir -p "${dfl%/*}"
+						done
+					fi
+				;;
 				init) :;;
 				init_end) :;;
 				kill)
@@ -1110,12 +1151,12 @@ resolver() {
 					[ -z "$resolver_set_supported" ] && return 1
 					local resolverNewHash
 					if [ -s "$dnsmasqFile" ]; then
-						resolverNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+						resolverNewHash="$(md5sum "$dnsmasqFile" | awk '{ print $1; }')"
 					fi
 					[ "$resolverNewHash" != "$resolverStoredHash" ]
 				;;
 				store_hash)
-					[ -s "$dnsmasqFile" ] && resolverStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')";;
+					[ -s "$dnsmasqFile" ] && resolverStoredHash="$(md5sum "$dnsmasqFile" | awk '{ print $1; }')";;
 			esac
 		;;
 		dnsmasq.nftset)
@@ -1138,9 +1179,21 @@ resolver() {
 					fi
 				;;
 				cleanup)
-					[ -n "$resolver_set_supported" ] && rm -f "$dnsmasqFile";;
+					if [ -n "$resolver_set_supported" ]; then
+						local dfl
+						for dfl in $dnsmasqFileList; do
+							rm -f "$dfl"
+						done
+					fi
+				;;
 				configure)
-					[ -n "$resolver_set_supported" ] && mkdir -p "${dnsmasqFile%/*}";;
+					if [ -n "$resolver_set_supported" ]; then
+						local dfl
+						for dfl in $dnsmasqFileList; do
+							mkdir -p "${dfl%/*}"
+						done
+					fi
+				;;
 				init) :;;
 				init_end) :;;
 				kill)
@@ -1171,12 +1224,12 @@ resolver() {
 					[ -z "$resolver_set_supported" ] && return 1
 					local resolverNewHash
 					if [ -s "$dnsmasqFile" ]; then
-						resolverNewHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')"
+						resolverNewHash="$(md5sum "$dnsmasqFile" | awk '{ print $1; }')"
 					fi
 					[ "$resolverNewHash" != "$resolverStoredHash" ]
 				;;
 				store_hash)
-					[ -s "$dnsmasqFile" ] && resolverStoredHash="$(md5sum $dnsmasqFile | awk '{ print $1; }')";;
+					[ -s "$dnsmasqFile" ] && resolverStoredHash="$(md5sum "$dnsmasqFile" | awk '{ print $1; }')";;
 			esac
 		;;
 		unbound.ipset)
@@ -2711,6 +2764,7 @@ load_validate_config() {
 		'secure_reload:bool:0' \
 		'ipv6_enabled:bool:0' \
 		'resolver_set:or("", "none", "dnsmasq.ipset", "dnsmasq.nftset")' \
+		'resolver_instance:list(or(integer, string)):*' \
 		'verbosity:range(0,2):2' \
 		'wan_mark:regex("[A-Fa-f0-9]{8}"):010000' \
 		'fw_mask:regex("[A-Fa-f0-9]{8}"):ff0000' \
