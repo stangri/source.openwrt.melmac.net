@@ -1,0 +1,260 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:255
+msgid "%s%s%s proxy at %s on port %s.%s"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:247
+msgid "%s%s%s proxy on port %s.%s"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:135
+msgid ""
+"Blocks access to Mozilla Encrypted resolvers, forcing local devices to use "
+"router for DNS resolution (%smore information%s)."
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:119
+msgid ""
+"Blocks access to iCloud Private Relay resolvers, forcing local devices to "
+"use router for DNS resolution (%smore information%s)."
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:268
+msgid "Bootstrap DNS"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:133
+msgid "Canary Domains Mozilla"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:117
+msgid "Canary Domains iCloud"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:291
+msgid "DSCP Codepoint"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:373
+msgid "Disable"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:367
+msgid "Disabling %s service"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:101
+msgid "Do not update configs"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:354
+msgid "Enable"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:348
+msgid "Enabling %s service"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:170
+msgid "Force DNS ports:"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:107
+msgid "Force Router DNS"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:111
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:126
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:145
+msgid "Force Router DNS server to all local devices"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:319
+msgid "Force use of HTTP/1"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:330
+msgid "Force use of IPv6 DNS resolvers"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:108
+msgid "Forces Router DNS use on local devices, also known as DNS Hijacking."
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/root/usr/share/rpcd/acl.d/luci-app-https-dns-proxy.json:3
+msgid "Grant UCI and file access for luci-app-https-dns-proxy"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/root/usr/share/luci/menu.d/luci-app-https-dns-proxy.json:3
+msgid "HTTPS DNS Proxy"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:71
+msgid "HTTPS DNS Proxy - Configuration"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:172
+msgid "HTTPS DNS Proxy - Instances"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:160
+msgid "HTTPS DNS Proxy - Status"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:79
+msgid ""
+"If update option is selected, the %s'DNS forwardings' section of DHCP and "
+"DNS%s will be automatically updated to use selected DoH providers (%smore "
+"information%s)."
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:144
+msgid "Let local devices use Mozilla Private Relay"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:125
+msgid "Let local devices use iCloud Private Relay"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:110
+msgid "Let local devices use their own DNS servers if set"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:272
+msgid "Listen Address"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:278
+msgid "Listen Port"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:301
+msgid "Logging File Path"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:296
+msgid "Logging Verbosity"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:186
+msgid "Not installed or not found"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:224
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:249
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:363
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:376
+msgid "Parameter"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:153
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:162
+msgid ""
+"Please note that %s is not supported on this system (%smore information%s)."
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:305
+msgid "Polling Interval"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:214
+msgid "Provider"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:310
+msgid "Proxy Server"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:316
+msgid "Restart"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:310
+msgid "Restarting %s service"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:287
+msgid "Run As Group"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:283
+msgid "Run As User"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:202
+msgid "See the %sREADME%s for details."
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:399
+msgid "Service Control"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:200
+msgid "Service Instances"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:164
+msgid "Service Status"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:297
+msgid "Start"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:291
+msgid "Starting %s service"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:335
+msgid "Stop"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:329
+msgid "Stopping %s service"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:210
+msgid "Unknown"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:99
+msgid "Update %s only"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:77
+msgid "Update DNSMASQ Config on Start/Stop"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:87
+msgid "Update all configs"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:314
+msgid "Use HTTP/1"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:324
+msgid "Use IPv6 resolvers"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:329
+msgid "Use any family DNS resolvers"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:318
+msgid "Use negotiated HTTP version"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:168
+msgid "Version %s - Running."
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:180
+msgid "Version %s - Stopped (Disabled)."
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:178
+msgid "Version %s - Stopped."
+msgstr ""
