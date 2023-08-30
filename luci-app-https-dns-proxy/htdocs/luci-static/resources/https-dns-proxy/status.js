@@ -239,7 +239,9 @@ var status = baseclass.extend({
 										if (opt.value === match[1]) option = _(opt.description);
 									});
 									name += " (" + option + ")";
-								} else name += " (" + match[1] + ")";
+								} else {
+									if (match[1] != "") name += " (" + match[1] + ")";
+								}
 							}
 						}
 					});

@@ -1,5 +1,6 @@
-// Copyright MOSSDeF, 2023 Stan Grishin <stangri@melmac.ca>
+// Copyright 2023 MOSSDeF, Stan Grishin <stangri@melmac.ca>
 // This code wouldn't have been possible without help from:
+// - [@jow-](https://github.com/jow-)
 // - [@stokito](https://github.com/stokito)
 // - [@vsviridov](https://github.com/vsviridov)
 
@@ -184,7 +185,7 @@ return view.extend({
 				var option;
 				let regexp = pkg.templateToRegexp(prov.template);
 				let resolver = uci.get(pkg.Name, section_id, "resolver_url");
-				resolver = resolver === "undefined" ? null : resolver;
+				resolver = resolver === undefined ? null : resolver;
 				if (!found && resolver && regexp.test(resolver)) {
 					found = true;
 					provText = _(prov.title);
@@ -202,7 +203,7 @@ return view.extend({
 							});
 							provText += " (" + option + ")";
 						} else {
-							provText += " (" + match[1] + ")";
+							if (match[1] != "") provText += " (" + match[1] + ")";
 						}
 					}
 				}
@@ -213,55 +214,100 @@ return view.extend({
 		var _provider;
 		_provider = s.option(form.ListValue, "_provider", _("Provider"));
 		_provider.modalonly = true;
+		_provider.cfgvalue = function (section_id) {
+			let resolver = this.map.data.get(
+				this.map.config,
+				section_id,
+				"resolver_url"
+			);
+			if (resolver === undefined || resolver === null) return null;
+			let found;
+			let ret;
+			reply.providers.forEach((prov, i) => {
+				let regexp = pkg.templateToRegexp(prov.template);
+				if (!found && regexp.test(resolver)) {
+					found = true;
+					ret = prov.template;
+				}
+			});
+			return ret || "";
+		};
 		_provider.write = function (section_id, formvalue) {
 			uci.set(pkg.Name, section_id, "resolver_url", formvalue);
 		};
 
 		reply.providers.forEach((prov, i) => {
 			_provider.value(prov.template, _(prov.title));
-			if (prov.params && prov.params.option) {
-				if (prov.params.option.type && prov.params.option.type === "select") {
-					let optName = prov.params.option.description || _("Parameter");
-					var _paramList = s.option(form.ListValue, "_paramList_" + i, optName);
-					prov.params.option.options.forEach((opt) => {
-						let val = opt.value || "";
-						let descr = opt.description || "";
-						_paramList.value(val, descr);
-					});
-					_paramList.modalonly = true;
-					if (prov.params.option.default) {
-						_paramList.default = prov.params.option.default;
-					}
-					_paramList.depends("_provider", prov.template);
-					_paramList.write = function (section_id, formvalue) {
-						var template = uci.get(pkg.Name, section_id, "resolver_url");
-						var param = formvalue || "";
-						var resolver = pkg.templateToResolver(template, {
-							option: param,
-						});
-						uci.set(pkg.Name, section_id, "resolver_url", resolver);
-					};
-					_paramList.remove = _paramList.write;
-				} else if (
-					prov.params.option.type &&
-					prov.params.option.type === "text"
-				) {
-					let optName = prov.params.option.description || _("Parameter");
-					var _paramText = s.option(form.Value, "_paramText_" + i, optName);
-					_paramText.modalonly = true;
-					_paramText.depends("_provider", prov.template);
-					if (prov.params.option.default && prov.params.option.default != "")
-						_paramText.optional = false;
-					_paramText.write = function (section_id, formvalue) {
-						var template = uci.get(pkg.Name, section_id, "resolver_url");
-						var param = formvalue || "";
-						var resolver = pkg.templateToResolver(template, {
-							option: param,
-						});
-						uci.set(pkg.Name, section_id, "resolver_url", resolver);
-					};
-					_paramText.remove = _paramText.write;
+			if (
+				prov.params &&
+				prov.params.option &&
+				prov.params.option.type &&
+				prov.params.option.type === "select"
+			) {
+				let optName = prov.params.option.description || _("Parameter");
+				var _paramList = s.option(form.ListValue, "_paramList_" + i, optName);
+				_paramList.template = prov.template;
+				_paramList.modalonly = true;
+				if (prov.params.option.default) {
+					_paramList.default = prov.params.option.default;
 				}
+				prov.params.option.options.forEach((opt) => {
+					let val = opt.value || "";
+					let descr = opt.description || "";
+					_paramList.value(val, descr);
+				});
+				_paramList.depends("_provider", prov.template);
+				_paramList.write = function (section_id, formvalue) {
+					let template = this.map.data.get(
+						this.map.config,
+						section_id,
+						"resolver_url"
+					);
+					if (_paramList.template !== template) return 0;
+					let resolver = pkg.templateToResolver(template, {
+						option: formvalue || "",
+					});
+					uci.set(pkg.Name, section_id, "resolver_url", resolver);
+				};
+				_paramList.remove = _paramList.write;
+			} else if (
+				prov.params &&
+				prov.params.option &&
+				prov.params.option.type &&
+				prov.params.option.type === "text"
+			) {
+				let optName = prov.params.option.description || _("Parameter");
+				var _paramText = s.option(form.Value, "_paramText_" + i, optName);
+				_paramText.template = prov.template;
+				_paramText.modalonly = true;
+				_paramText.depends("_provider", prov.template);
+				if (prov.params.option.default && prov.params.option.default != "")
+					_paramText.optional = false;
+				else _paramText.optional = true;
+				_paramText.cfgvalue = function (section_id) {
+					let resolver = this.map.data.get(
+						this.map.config,
+						section_id,
+						"resolver_url"
+					);
+					if (resolver === undefined || resolver === null) return null;
+					let regexp = pkg.templateToRegexp(prov.template);
+					let match = resolver.match(regexp);
+					return (match && match[1]) || null;
+				};
+				_paramText.write = function (section_id, formvalue) {
+					let template = this.map.data.get(
+						this.map.config,
+						section_id,
+						"resolver_url"
+					);
+					if (_paramText.template !== template) return 0;
+					let resolver = pkg.templateToResolver(template, {
+						option: formvalue || "",
+					});
+					uci.set(pkg.Name, section_id, "resolver_url", resolver);
+				};
+				_paramText.remove = _paramText.write;
 			}
 		});
 
@@ -329,64 +375,6 @@ return view.extend({
 		o.value("", _("Use any family DNS resolvers"));
 		o.value("1", _("Force use of IPv6 DNS resolvers"));
 		o.default = "";
-
-		s.addModalOptions = (modalSection, section_id, ev) => {
-			var provText;
-			var found;
-			let resolver = uci.get(pkg.Name, section_id, "resolver_url");
-			if (resolver === "undefined") {
-				let prov = reply.providers[0];
-				modalSection.children[0].default = prov.template;
-				if (prov.params && prov.params.option) {
-					if (
-						prov.params.option.type &&
-						prov.params.option.type === "select" &&
-						prov.params.option.options
-					) {
-						modalSection.children[1].default =
-							prov.params.option.options[0].value;
-					}
-				}
-			} else {
-				reply.providers.forEach((prov, i) => {
-					let regexp = pkg.templateToRegexp(prov.template);
-					if (!found && resolver && regexp.test(resolver)) {
-						found = true;
-						modalSection.children[0].default = prov.template;
-						if (prov.params && prov.params.option) {
-							if (
-								prov.params.option.type &&
-								prov.params.option.type === "select" &&
-								prov.params.option.options
-							) {
-								let optName = prov.params.option.description;
-								optName = optName ? _(optName) : _("Parameter");
-								prov.params.option.options.forEach((opt) => {
-									let val = opt.value || "";
-									let descr = opt.description ? _(opt.description) : "";
-									modalSection.children[1].value(val, descr);
-									let match = resolver.match(regexp);
-									if (match[1]) modalSection.children[1].default = match[1];
-								});
-							} else if (
-								prov.params.option.type &&
-								prov.params.option.type === "text"
-							) {
-								let optName = prov.params.option.description;
-								optName = optName ? _(optName) : _("Parameter");
-								prov.params.option.options.forEach((opt) => {
-									let val = opt.value || "";
-									let descr = opt.description ? _(opt.description) : "";
-									modalSection.children[2].value(val, descr);
-									let match = resolver.match(regexp);
-									if (match[1]) modalSection.children[2].default = match[1];
-								});
-							}
-						}
-					}
-				});
-			}
-		};
 
 		return Promise.all([status.render(), m.render()]);
 	},
