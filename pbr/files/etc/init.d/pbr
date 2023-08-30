@@ -36,7 +36,7 @@ readonly serviceName="$packageName $PKG_VERSION"
 readonly serviceTrapSignals='exit SIGHUP SIGQUIT SIGKILL'
 readonly packageConfigFile="/etc/config/${packageName}"
 readonly packageLockFile="/var/run/${packageName}.lock"
-readonly dnsmasqFile="/var/dnsmasq.d/${packageName}"
+readonly dnsmasqFileDefault="/var/dnsmasq.d/${packageName}"
 readonly _OK_='\033[0;32m\xe2\x9c\x93\033[0m'
 readonly _FAIL_='\033[0;31m\xe2\x9c\x97\033[0m'
 readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
@@ -101,6 +101,7 @@ errorSummary=
 warningSummary=
 wanIface4=
 wanIface6=
+dnsmasqFile=
 dnsmasqFileList=
 ifaceMark=
 ifaceTableID=
@@ -169,6 +170,7 @@ get_text() {
 		warningTorUnsetChainNft) r="Please unset 'chain' or set 'chain' to 'prerouting' for policy '%s'.";;
 		warningOutdatedWebUIApp) r="The WebUI application is outdated (version %s), please update it.";;
 		warningBadNftCallsInUserFile) r="Incomatible nft calls detected in user include file, disabling fw4 nft file support.";;
+		warningDnsmasqInstanceNoConfdir) r="Dnsmasq instance (%s) targeted in settings, but it doesn't have its own confdir.";;
 	esac
 	echo "$r"
 }
@@ -408,15 +410,6 @@ process_url() {
 	rm -f "$dl_temp_file"
 }
 
-_dnsmasq_file_add() {
-	local cfg="$1"
-	local confdir
-	config_get confdir "$1" 'confdir'
-	if [ -n "$confdir" ] && ! str_contains "$dnsmasqFileList" "$confdir"; then
-		dnsmasqFileList="${dnsmasqFileList:+$dnsmasqFileList }${confdir}/${packageName}"
-	fi
-}
-
 load_package_config() {
 	local param="$1"
 	local user_file_check_result i
@@ -453,19 +446,6 @@ load_package_config() {
 	[ -n "$user_file_check_result" ] && unset nft_file_support
 	[ -n "$nft_file_support" ] && unset secure_reload
 	is_config_enabled 'include' && unset secure_reload
-	config_load 'dhcp'
-	if [ "$resolver_instance" = "*" ]; then
-		config_foreach _dnsmasq_file_add 'dnsmasq'
-	elif [ -n "$resolver_instance" ]; then
-		for i in $resolver_instance; do
-			_dnsmasq_file_add "@dnsmasq[$i]" || _dnsmasq_file_add "$i"
-		done
-	fi
-	dnsmasqFileList="${dnsmasqFileList:+$dnsmasqFileList }${dnsmasqFile}"
-	local dfl
-	for dfl in $dnsmasqFileList; do
-		mkdir -p "${dfl%/*}"
-	done
 	if is_nft_mode; then
 		fw_maskXor="$(printf '%#x' "$((fw_mask ^ 0xffffffff))")"
 		fw_maskXor="${fw_maskXor:-0xff00ffff}"
@@ -475,6 +455,7 @@ load_package_config() {
 			add|-a|-A|*) rule_create_option='-A';;
 		esac
 	fi
+	resolver 'configure_instances'
 }
 
 load_environment() {
@@ -979,6 +960,20 @@ EOF
 	esac
 }
 
+_resolver_dnsmasq_confdir() {
+	local cfg="$1"
+	local confdir
+	[ -z "$(uci -q get "dhcp.${cfg}")" ] && return 1;
+	config_get confdir "$1" 'confdir'
+	if [ -z "$confdir" ] && [ "$resolver_instance" != "*" ]; then
+		state add 'warningSummary' 'warningDnsmasqInstanceNoConfdir' "$cfg"
+	fi
+	if [ -n "$confdir" ] && ! str_contains "$dnsmasqFileList" "$confdir"; then
+		dnsmasqFile="${confdir}/${packageName}"
+		dnsmasqFileList="${dnsmasqFileList:+$dnsmasqFileList }${dnsmasqFile}"
+	fi
+}
+
 resolver() {
 	local agh_version
 	local param="$1"
@@ -1118,7 +1113,27 @@ resolver() {
 						local dfl
 						for dfl in $dnsmasqFileList; do
 							mkdir -p "${dfl%/*}"
+							chmod -R 660 "${dfl%/*}"
+							chown -R root:dnsmasq "${dfl%/*}"
+							touch "$dfl"
+							chmod 660 "$dfl"
+							chown root:dnsmasq "$dfl"
 						done
+					fi
+				;;
+				configure_instances)
+					config_load 'dhcp'
+					if [ "$resolver_instance" = "*" ]; then
+						config_foreach _resolver_dnsmasq_confdir 'dnsmasq'
+						dnsmasqFile="$dnsmasqFileDefault"
+						dnsmasqFileList="${dnsmasqFileList:+$dnsmasqFileList }${dnsmasqFileDefault}"
+					else
+						for i in $resolver_instance; do
+							_resolver_dnsmasq_confdir "@dnsmasq[$i]" \
+							|| _resolver_dnsmasq_confdir "$i"
+						done
+						dnsmasqFile="${dnsmasqFile:-$dnsmasqFileDefault}"
+						dnsmasqFileList="${dnsmasqFileList:-$dnsmasqFileDefault}"
 					fi
 				;;
 				init) :;;
@@ -1191,7 +1206,27 @@ resolver() {
 						local dfl
 						for dfl in $dnsmasqFileList; do
 							mkdir -p "${dfl%/*}"
+							chmod -R 660 "${dfl%/*}"
+							chown -R root:dnsmasq "${dfl%/*}"
+							touch "$dfl"
+							chmod 660 "$dfl"
+							chown root:dnsmasq "$dfl"
 						done
+					fi
+				;;
+				configure_instances)
+					config_load 'dhcp'
+					if [ "$resolver_instance" = "*" ]; then
+						config_foreach _resolver_dnsmasq_confdir 'dnsmasq'
+						dnsmasqFile="$dnsmasqFileDefault"
+						dnsmasqFileList="${dnsmasqFileList:+$dnsmasqFileList }${dnsmasqFile}"
+					else
+						for i in $resolver_instance; do
+							_resolver_dnsmasq_confdir "@dnsmasq[$i]" \
+							|| _resolver_dnsmasq_confdir "$i"
+						done
+						dnsmasqFile="${dnsmasqFile:-$dnsmasqFileDefault}"
+						dnsmasqFileList="${dnsmasqFileList:-$dnsmasqFile}"
 					fi
 				;;
 				init) :;;
@@ -2180,7 +2215,9 @@ interface_process() {
 	dispGw4="${gw4:-0.0.0.0}"
 	dispGw6="${gw6:-::/0}"
 	[ "$iface" != "$dev" ] && dispDev="$dev"
-	is_default_dev "$dev" && dispStatus="${__OK__}"
+	if is_default_dev "$dev"; then
+		[ "$verbosity" = '1' ] && dispStatus="$_OK_" || dispStatus="$__OK__"
+	fi
 	displayText="${iface}/${dispDev:+$dispDev/}${dispGw4}${ipv6_enabled:+/$dispGw6}"
 
 	case "$action" in

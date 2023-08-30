@@ -236,6 +236,9 @@ var status = baseclass.extend({
 					warningBadNftCallsInUserFile: _(
 						"Incomatible nft calls detected in user include file, disabling fw4 nft file support."
 					),
+					warningDnsmasqInstanceNoConfdir: _(
+						"Dnsmasq instance (%s) targeted in settings, but it doesn't have its own confdir."
+					),
 				};
 				var warningsTitle = E(
 					"label",
