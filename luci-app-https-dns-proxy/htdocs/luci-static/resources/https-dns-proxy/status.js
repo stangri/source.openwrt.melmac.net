@@ -70,7 +70,7 @@ var _setInitAction = rpc.declare({
 
 var RPC = {
 	listeners: [],
-	on: function on(event, callback) {
+	on: function (event, callback) {
 		var pair = { event: event, callback: callback };
 		this.listeners.push(pair);
 		return function unsubscribe() {
@@ -79,49 +79,49 @@ var RPC = {
 			});
 		}.bind(this);
 	},
-	emit: function emit(event, data) {
+	emit: function (event, data) {
 		this.listeners.forEach(function (listener) {
 			if (listener.event === event) {
 				listener.callback(data);
 			}
 		});
 	},
-	getInitList: function getInitList(name) {
+	getInitList: function (name) {
 		getInitList(name).then(
 			function (result) {
 				this.emit("getInitList", result);
 			}.bind(this)
 		);
 	},
-	getInitStatus: function getInitStatus(name) {
+	getInitStatus: function (name) {
 		getInitStatus(name).then(
 			function (result) {
 				this.emit("getInitStatus", result);
 			}.bind(this)
 		);
 	},
-	getPlatformSupport: function getPlatformSupport(name) {
+	getPlatformSupport: function (name) {
 		getPlatformSupport(name).then(
 			function (result) {
 				this.emit("getPlatformSupport", result);
 			}.bind(this)
 		);
 	},
-	getProviders: function getProviders(name) {
+	getProviders: function (name) {
 		getProviders(name).then(
 			function (result) {
 				this.emit("getProviders", result);
 			}.bind(this)
 		);
 	},
-	getRuntime: function getRuntime(name) {
+	getRuntime: function (name) {
 		getRuntime(name).then(
 			function (result) {
 				this.emit("getRuntime", result);
 			}.bind(this)
 		);
 	},
-	setInitAction: function setInitAction(name, action) {
+	setInitAction: function (name, action) {
 		_setInitAction(name, action).then(
 			function (result) {
 				this.emit("setInitAction", result);

@@ -203,7 +203,7 @@ return view.extend({
 							});
 							provText += " (" + option + ")";
 						} else {
-							if (match[1] != "") provText += " (" + match[1] + ")";
+							if (match[1] !== "") provText += " (" + match[1] + ")";
 						}
 					}
 				}
@@ -281,9 +281,7 @@ return view.extend({
 				_paramText.template = prov.template;
 				_paramText.modalonly = true;
 				_paramText.depends("_provider", prov.template);
-				if (prov.params.option.default && prov.params.option.default != "")
-					_paramText.optional = false;
-				else _paramText.optional = true;
+				_paramText.optional = !(prov.params.option.default && prov.params.option.default !== "");
 				_paramText.cfgvalue = function (section_id) {
 					let resolver = this.map.data.get(
 						this.map.config,
