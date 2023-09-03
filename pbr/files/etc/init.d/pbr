@@ -169,7 +169,7 @@ get_text() {
 		warningTorUnsetChainIpt) r="Please unset 'chain' or set 'chain' to 'PREROUTING' for policy '%s'.";;
 		warningTorUnsetChainNft) r="Please unset 'chain' or set 'chain' to 'prerouting' for policy '%s'.";;
 		warningOutdatedWebUIApp) r="The WebUI application is outdated (version %s), please update it.";;
-		warningBadNftCallsInUserFile) r="Incomatible nft calls detected in user include file, disabling fw4 nft file support.";;
+		warningBadNftCallsInUserFile) r="Incompatible nft calls detected in user include file, disabling fw4 nft file support.";;
 		warningDnsmasqInstanceNoConfdir) r="Dnsmasq instance (%s) targeted in settings, but it doesn't have its own confdir.";;
 	esac
 	echo "$r"
