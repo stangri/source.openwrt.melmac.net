@@ -41,14 +41,14 @@ define Package/https-dns-proxy/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/https_dns_proxy $(1)/usr/sbin/https-dns-proxy
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/https-dns-proxy.init $(1)/etc/init.d/https-dns-proxy
+	$(INSTALL_BIN) ./files/etc/init.d/https-dns-proxy $(1)/etc/init.d/https-dns-proxy
 	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/https-dns-proxy
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/https-dns-proxy.config $(1)/etc/config/https-dns-proxy
+	$(INSTALL_CONF) ./files/etc/config/https-dns-proxy $(1)/etc/config/https-dns-proxy
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/online
-	$(INSTALL_DATA) ./files/https-dns-proxy.hotplug $(1)/etc/hotplug.d/online/30-https-dns-proxy
+	$(INSTALL_DATA) ./files/etc/hotplug.d/online/30-https-dns-proxy $(1)/etc/hotplug.d/online/30-https-dns-proxy
 	$(INSTALL_DIR) $(1)/etc/uci-defaults/
-	$(INSTALL_BIN) ./files/https-dns-proxy.defaults $(1)/etc/uci-defaults/50-https-dns-proxy-migrate-options.sh
+	$(INSTALL_BIN) ./files/etc/uci-defaults/50-https-dns-proxy-migrate-options.sh $(1)/etc/uci-defaults/50-https-dns-proxy-migrate-options.sh
 endef
 
 $(eval $(call BuildPackage,https-dns-proxy))
