@@ -208,7 +208,7 @@ msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:237
 msgid ""
-"Incomatible nft calls detected in user include file, disabling fw4 nft file "
+"Incompatible nft calls detected in user include file, disabling fw4 nft file "
 "support."
 msgstr ""
 
