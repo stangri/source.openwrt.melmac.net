@@ -28,8 +28,9 @@ var pkg = {
 					.split(/(\{\w+\})/g)
 					.map((part) => {
 						let placeholder = part.match(/^\{(\w+)\}$/);
-						if (placeholder) return `(?<${placeholder[1]}>.*?)`;
-						else return part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+						return placeholder ?
+							`(?<${placeholder[1]}>.*?)`
+							: part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 					})
 					.join("") +
 				"$"
@@ -226,7 +227,7 @@ return view.extend({
 				section_id,
 				"resolver_url"
 			);
-			if (resolver === undefined || resolver === null) return null;
+			if (!resolver) return null;
 			let found;
 			let ret;
 			reply.providers.forEach((prov, i) => {
