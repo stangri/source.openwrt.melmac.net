@@ -140,15 +140,15 @@ return view.extend({
 		o.value("none", _("Disabled"));
 		if (reply.platform.adguardhome_ipset_support) {
 			o.value("adguardhome.ipset", _("AdGuardHome ipset"));
-			o.default = ("adguardhome.ipset", _("AdGuardHome ipset"));
+			o.default = "adguardhome.ipset";
 		}
 		if (reply.platform.dnsmasq_ipset_support) {
 			o.value("dnsmasq.ipset", _("Dnsmasq ipset"));
-			o.default = ("dnsmasq.ipset", _("Dnsmasq ipset"));
+			o.default = "dnsmasq.ipset";
 		}
 		if (reply.platform.dnsmasq_nftset_support) {
 			o.value("dnsmasq.nftset", _("Dnsmasq nft set"));
-			o.default = ("dnsmasq.nftset", _("Dnsmasq nft set"));
+			o.default = "dnsmasq.nftset";
 		}
 
 		o = s.taboption(
@@ -336,7 +336,7 @@ return view.extend({
 		proto.forEach((element) => {
 			if (element === "all") {
 				o.value("", _("all"));
-				o.default = ("", _("all"));
+				o.default = "";
 			} else {
 				o.value(element.toLowerCase());
 			}
@@ -349,7 +349,7 @@ return view.extend({
 		o.value("input", "input");
 		o.value("output", "output");
 		o.value("postrouting", "postrouting");
-		o.default = ("", "prerouting");
+		o.default = "";
 		o.rmempty = true;
 
 		o = s.option(form.ListValue, "interface", _("Interface"));
