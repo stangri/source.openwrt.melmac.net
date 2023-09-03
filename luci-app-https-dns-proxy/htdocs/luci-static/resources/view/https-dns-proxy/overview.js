@@ -244,74 +244,70 @@ return view.extend({
 
 		reply.providers.forEach((prov, i) => {
 			_provider.value(prov.template, _(prov.title));
-			if (
-				prov.params &&
-				prov.params.option &&
-				prov.params.option.type &&
-				prov.params.option.type === "select"
-			) {
-				let optName = prov.params.option.description || _("Parameter");
-				var _paramList = s.option(form.ListValue, "_paramList_" + i, optName);
-				_paramList.template = prov.template;
-				_paramList.modalonly = true;
-				if (prov.params.option.default) {
-					_paramList.default = prov.params.option.default;
-				}
-				prov.params.option.options.forEach((opt) => {
-					let val = opt.value || "";
-					let descr = opt.description || "";
-					_paramList.value(val, descr);
-				});
-				_paramList.depends("_provider", prov.template);
-				_paramList.write = function (section_id, formvalue) {
-					let template = this.map.data.get(
-						this.map.config,
-						section_id,
-						"resolver_url"
-					);
-					if (_paramList.template !== template) return 0;
-					let resolver = pkg.templateToResolver(template, {
-						option: formvalue || "",
+			if (!(prov.params && prov.params.option && prov.params.option.type)) {
+				continue;
+			}
+			switch (prov.params.option.type) {
+				case "select":
+					let optName = prov.params.option.description || _("Parameter");
+					var _paramList = s.option(form.ListValue, "_paramList_" + i, optName);
+					_paramList.template = prov.template;
+					_paramList.modalonly = true;
+					if (prov.params.option.default) {
+						_paramList.default = prov.params.option.default;
+					}
+					prov.params.option.options.forEach((opt) => {
+						let val = opt.value || "";
+						let descr = opt.description || "";
+						_paramList.value(val, descr);
 					});
-					uci.set(pkg.Name, section_id, "resolver_url", resolver);
-				};
-				_paramList.remove = _paramList.write;
-			} else if (
-				prov.params &&
-				prov.params.option &&
-				prov.params.option.type &&
-				prov.params.option.type === "text"
-			) {
-				let optName = prov.params.option.description || _("Parameter");
-				var _paramText = s.option(form.Value, "_paramText_" + i, optName);
-				_paramText.template = prov.template;
-				_paramText.modalonly = true;
-				_paramText.depends("_provider", prov.template);
-				_paramText.optional = !(prov.params.option.default && prov.params.option.default !== "");
-				_paramText.cfgvalue = function (section_id) {
-					let resolver = this.map.data.get(
-						this.map.config,
-						section_id,
-						"resolver_url"
-					);
-					if (resolver === undefined || resolver === null) return null;
-					let regexp = pkg.templateToRegexp(prov.template);
-					let match = resolver.match(regexp);
-					return (match && match[1]) || null;
-				};
-				_paramText.write = function (section_id, formvalue) {
-					let template = this.map.data.get(
-						this.map.config,
-						section_id,
-						"resolver_url"
-					);
-					if (_paramText.template !== template) return 0;
-					let resolver = pkg.templateToResolver(template, {
-						option: formvalue || "",
-					});
-					uci.set(pkg.Name, section_id, "resolver_url", resolver);
-				};
-				_paramText.remove = _paramText.write;
+					_paramList.depends("_provider", prov.template);
+					_paramList.write = function (section_id, formvalue) {
+						let template = this.map.data.get(
+							this.map.config,
+							section_id,
+							"resolver_url"
+						);
+						if (_paramList.template !== template) return 0;
+						let resolver = pkg.templateToResolver(template, {
+							option: formvalue || "",
+						});
+						uci.set(pkg.Name, section_id, "resolver_url", resolver);
+					};
+					_paramList.remove = _paramList.write;
+					break;
+				case "text":
+					let optName = prov.params.option.description || _("Parameter");
+					var _paramText = s.option(form.Value, "_paramText_" + i, optName);
+					_paramText.template = prov.template;
+					_paramText.modalonly = true;
+					_paramText.depends("_provider", prov.template);
+					_paramText.optional = !(prov.params.option.default && prov.params.option.default !== "");
+					_paramText.cfgvalue = function (section_id) {
+						let resolver = this.map.data.get(
+							this.map.config,
+							section_id,
+							"resolver_url"
+						);
+						if (resolver === undefined || resolver === null) return null;
+						let regexp = pkg.templateToRegexp(prov.template);
+						let match = resolver.match(regexp);
+						return (match && match[1]) || null;
+					};
+					_paramText.write = function (section_id, formvalue) {
+						let template = this.map.data.get(
+							this.map.config,
+							section_id,
+							"resolver_url"
+						);
+						if (_paramText.template !== template) return 0;
+						let resolver = pkg.templateToResolver(template, {
+							option: formvalue || "",
+						});
+						uci.set(pkg.Name, section_id, "resolver_url", resolver);
+					};
+					_paramText.remove = _paramText.write;
+					break;
 			}
 		});
 
