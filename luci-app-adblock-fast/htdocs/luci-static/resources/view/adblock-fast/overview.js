@@ -16,8 +16,8 @@ var pkg = {
 	get URL() {
 		return "https://docs.openwrt.melmac.net/" + pkg.Name + "/";
 	},
-	humanFileSize: function (bytes) {
-		return `%1024.2mB`.format(bytes);
+	humanFileSize: function (bytes, si = false, dp = 2) {
+		return `%${si ? 1000 : 1024}.${dp ?? 0}mB`.format(bytes);
 	},
 };
 
