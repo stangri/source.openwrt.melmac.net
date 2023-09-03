@@ -526,15 +526,11 @@ var status = baseclass.extend({
 				btn_disable,
 			]);
 			var buttonsField = E("div", { class: "cbi-value-field" }, buttonsText);
-			if (reply.version) {
-				var buttonsDiv = E("div", { class: "cbi-value" }, [
+			var buttonsDiv = reply.version ?
+				E('div', {class: 'cbi-value'}, [
 					buttonsTitle,
 					buttonsField,
-				]);
-			} else {
-				var buttonsDiv = [];
-			}
-
+				]) : '';
 			return E("div", {}, [
 				header,
 				statusDiv,
