@@ -154,6 +154,7 @@ return view.extend({
 			)
 		);
 		o.value("*", _("AdBlock on all instances"));
+
 		var sections = uci.sections("dhcp", "dnsmasq");
 		sections.forEach((element) => {
 			var description;
@@ -211,6 +212,7 @@ return view.extend({
 				o.value(element);
 			});
 		}
+
 		o = s1.taboption(
 			"tab_advanced",
 			form.ListValue,
@@ -332,14 +334,15 @@ return view.extend({
 		);
 		o.addremove = true;
 		o.rmempty = true;
+
 		o = s2.option(
 			form.DynamicList,
 			"allowed_domain",
 			_("Allowed Domains"),
 			_("Individual domains to be allowed.")
 		);
-
 		o.addremove = true;
+
 		o = s2.option(
 			form.DynamicList,
 			"blocked_domain",
@@ -358,6 +361,7 @@ return view.extend({
 		s3.sortable = true;
 		s3.anonymous = true;
 		s3.addremove = true;
+
 		o = s3.option(form.DummyValue, "_size", "Size");
 		o.modalonly = false;
 		o.cfgvalue = function (section_id) {
@@ -370,13 +374,16 @@ return view.extend({
 			});
 			return _("Size: %s").format(ret);
 		};
+
 		o = s3.option(form.Flag, "enabled", _("Enable"));
 		o.editable = true;
 		o.default = "1";
+
 		o = s3.option(form.ListValue, "action", _("Action"));
 		o.value("allow", _("Allow"));
 		o.value("block", _("Block"));
 		o.default = "block";
+
 		o = s3.option(form.Value, "url", _("URL"));
 		o.optional = false;
 
