@@ -127,13 +127,12 @@ append_bootstrap() {
 	[ "$ipv6_resolvers_only" -eq 0 ] && xappend '-4'
 }
 
-resolver_health_check() { resolveip one.one.one.one >/dev/null 2>&1; }
+resolver_health_check() { resolveip -t 3 one.one.one.one >/dev/null 2>&1; }
 
 boot() {
 	ubus -t 30 wait_for network.interface 2>/dev/null
-#	rc_procd stop_service 'on_boot'
-#	while ! resolver_health_check; do sleep 1; done
 	rc_procd start_service 'on_boot'
+	resolver_health_check || rc_procd stop_service 'on_boot'
 }
 
 start_instance() {
@@ -167,7 +166,6 @@ start_instance() {
 	json_add_object mdns
 		procd_add_mdns_service "$packageName" 'udp' "$port" "DNS over HTTPS proxy"
 	json_close_object
-#	json_add_string url "$url"
 	if [ "$force_dns" -ne 0 ]; then
 		json_add_array firewall
 		for iface in $procd_fw_src_interfaces; do
@@ -230,7 +228,7 @@ start_service() {
 	local procd_fw_src_interfaces
 
 	local port=5053
-	output "Starting $serviceName instances "
+	output "Starting $serviceName instances ${param:+$param }"
 	config_load "$packageName"
 	config_get_bool canary_domains_icloud  'config' 'canary_domains_icloud' '1'
 	config_get_bool canary_domains_mozilla 'config' 'canary_domains_mozilla' '1'
@@ -245,13 +243,6 @@ start_service() {
 		canaryDomains="${canaryDomains:+$canaryDomains }${canaryDomainsMozilla}"
 	fi
 	dhcp_backup 'create'
-#	while :; do
-#		config_load "$packageName"
-#		config_foreach start_instance "$packageName" "$param"
-#		resolver_health_check && break
-#		sleep 1
-#		procd_kill
-#	done
 	config_load "$packageName"
 	config_foreach start_instance "$packageName" "$param"
 	output "\\n"
@@ -262,6 +253,10 @@ start_service() {
 		else
 			output_failn
 		fi
+		param='dnsmasq_restart'
+	fi
+	if [ "$param" = 'on_hotplug' ] || [ "$param" = 'on_boot' ] || \
+		[ "$param" = 'dnsmasq_restart' ] ; then
 		output "Restarting dnsmasq "
 		if dnsmasq_restart; then
 			output_okn
@@ -276,7 +271,7 @@ stop_service() {
 	local canaryDomains canary_domains_icloud canary_domains_mozilla
 	local dnsmasq_config_update
 	local s=0
-	output "Stopping $serviceName "
+	output "Stopping $serviceName ${param:+$param }"
 	config_load "$packageName"
 	config_get dnsmasq_config_update        'config' 'dnsmasq_config_update' '*'
 	config_get_bool canary_domains_icloud   'config' 'canary_domains_icloud' '1'
@@ -337,10 +332,6 @@ dnsmasq_doh_server() {
 			uci_add_list_if_new 'dhcp' "$cfg" 'doh_server' "${address}#${port}"
 		;;
 		remove)
-#			eval "$(ubus call service list "{ 'verbose': true, 'name': '$packageName' }" | jsonfilter -F '# ' -e 'TUPLES=@[*].instances[*].command[4,6]')"
-#			for i in $TUPLES; do
-#				uci_remove_list 'dhcp' "$cfg" 'server' "$i"
-#			done
 			for i in $(uci -q get "dhcp.$cfg.doh_server"); do
 				uci_remove_list 'dhcp' "$cfg" 'server' "$i"
 				uci_remove_list 'dhcp' "$cfg" 'doh_server' "$i"
