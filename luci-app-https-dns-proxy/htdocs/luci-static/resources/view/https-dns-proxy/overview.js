@@ -326,12 +326,11 @@ return view.extend({
 		o.optional = true;
 		o.placeholder = "127.0.0.1";
 
-		var n = 0;
 		o = s.option(form.Value, "listen_port", _("Listen Port"));
 		o.datatype = "port";
 		o.default = "";
 		o.optional = true;
-		o.placeholder = n + 5053;
+		o.placeholder = "5053";
 
 		o = s.option(form.Value, "user", _("Run As User"));
 		o.default = "";
