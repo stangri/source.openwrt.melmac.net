@@ -125,7 +125,7 @@ return view.extend({
 		if (reply.platform.unbound_installed) {
 			o.value("unbound.adb_list", _("unbound adblock list"));
 		}
-		o.default = ("dnsmasq.servers", _("dnsmasq servers file"));
+		o.default = "dnsmasq.servers";
 
 		o = s1.taboption(
 			"tab_basic",
@@ -182,7 +182,7 @@ return view.extend({
 		);
 		o.value("0", _("Let local devices use their own DNS servers if set"));
 		o.value("1", _("Force Router DNS server to all local devices"));
-		o.default = ("1", _("Force Router DNS server to all local devices"));
+		o.default = "1";
 
 		o = s1.taboption(
 			"tab_basic",
@@ -194,7 +194,7 @@ return view.extend({
 		o.value("0", _("Suppress output"));
 		o.value("1", _("Some output"));
 		o.value("2", _("Verbose output"));
-		o.default = ("2", _("Verbose output"));
+		o.default = "2";
 
 		if (reply.platform.leds.length) {
 			o = s1.taboption(
@@ -220,7 +220,7 @@ return view.extend({
 		);
 		o.value("0", _("Disable"));
 		o.value("1", _("Enable"));
-		o.default = ("0", _("Disable"));
+		o.default = "0";
 
 		o = s1.taboption(
 			"tab_advanced",
@@ -233,7 +233,7 @@ return view.extend({
 		o.value("1", _("Add IPv6 entries"));
 		o.depends("dns", "dnsmasq.addnhosts");
 		o.depends("dns", "dnsmasq.nftset");
-		o.default = ("", _("Do not add IPv6 entries"));
+		o.default = "";
 		o.rmempty = true;
 		o.retain = true;
 
@@ -283,7 +283,7 @@ return view.extend({
 		);
 		o.value("0", _("Do not use simultaneous processing"));
 		o.value("1", _("Use simultaneous processing"));
-		o.default = ("1", _("Use simultaneous processing"));
+		o.default = "1";
 
 		o = s1.taboption(
 			"tab_advanced",
@@ -296,7 +296,7 @@ return view.extend({
 		);
 		o.value("0", _("Do not store compressed cache"));
 		o.value("1", _("Store compressed cache"));
-		o.default = ("0", _("Do not store compressed cache"));
+		o.default = "0";
 
 		o = s1.taboption(
 			"tab_advanced",
@@ -322,7 +322,7 @@ return view.extend({
 		);
 		o.value("0", _("Disable Debugging"));
 		o.value("1", _("Enable Debugging"));
-		o.default = ("0", _("Disable Debugging"));
+		o.default = "0";
 
 		s2 = m.section(
 			form.NamedSection,
