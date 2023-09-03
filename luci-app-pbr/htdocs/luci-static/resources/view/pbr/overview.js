@@ -12,6 +12,7 @@ var pkg = {
 	get Name() {
 		return "pbr";
 	},
+
 	get URL() {
 		return "https://docs.openwrt.melmac.net/" + pkg.Name + "/";
 	},
@@ -65,6 +66,7 @@ return view.extend({
 				"<br/><br/>"
 			)
 		);
+
 		s.tab("tab_webui", _("Web UI Configuration"));
 
 		o = s.taboption(
@@ -130,6 +132,7 @@ return view.extend({
 			'<a href="' + pkg.URL + '#use-resolvers-set-support" target="_blank">',
 			"</a>"
 		);
+
 		o = s.taboption(
 			"tab_basic",
 			form.ListValue,
