@@ -55,7 +55,7 @@ return view.extend({
 		var text = _(
 			"DNS resolution option, see the %sREADME%s for details."
 		).format(
-			'<a href="' + pkg.URL + '#dns-resolution-option" target="_blank">',
+			'<a href="' + pkg.URL + '#dns-resolver-option" target="_blank">',
 			"</a>"
 		);
 		if (!reply.platform.dnsmasq_installed) {
