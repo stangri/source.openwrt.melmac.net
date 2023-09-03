@@ -234,7 +234,7 @@ var status = baseclass.extend({
 						"The WebUI application is outdated (version %s), please update it"
 					),
 					warningBadNftCallsInUserFile: _(
-						"Incomatible nft calls detected in user include file, disabling fw4 nft file support."
+						"Incompatible nft calls detected in user include file, disabling fw4 nft file support."
 					),
 					warningDnsmasqInstanceNoConfdir: _(
 						"Dnsmasq instance (%s) targeted in settings, but it doesn't have its own confdir."
