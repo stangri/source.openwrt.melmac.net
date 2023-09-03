@@ -1,5 +1,6 @@
 // Copyright MOSSDeF, 2023 Stan Grishin <stangri@melmac.ca>
 // This code wouldn't have been possible without help from:
+// - [@stokito](https://github.com/stokito)
 // - [@vsviridov](https://github.com/vsviridov)
 
 "require ui";
