@@ -55,7 +55,7 @@ var _setInitAction = rpc.declare({
 
 var RPC = {
 	listeners: [],
-	on: function on(event, callback) {
+	on: function (event, callback) {
 		var pair = { event: event, callback: callback };
 		this.listeners.push(pair);
 		return function unsubscribe() {
@@ -64,49 +64,49 @@ var RPC = {
 			});
 		}.bind(this);
 	},
-	emit: function emit(event, data) {
+	emit: function (event, data) {
 		this.listeners.forEach(function (listener) {
 			if (listener.event === event) {
 				listener.callback(data);
 			}
 		});
 	},
-	getInitList: function getInitList(name) {
+	getInitList: function (name) {
 		getInitList(name).then(
 			function (result) {
 				this.emit("getInitList", result);
 			}.bind(this)
 		);
 	},
-	getInitStatus: function getInitStatus(name) {
+	getInitStatus: function (name) {
 		getInitStatus(name).then(
 			function (result) {
 				this.emit("getInitStatus", result);
 			}.bind(this)
 		);
 	},
-	getGateways: function getGateways(name) {
+	getGateways: function (name) {
 		getGateways(name).then(
 			function (result) {
 				this.emit("getGateways", result);
 			}.bind(this)
 		);
 	},
-	getPlatformSupport: function getPlatformSupport(name) {
+	getPlatformSupport: function (name) {
 		getPlatformSupport(name).then(
 			function (result) {
 				this.emit("getPlatformSupport", result);
 			}.bind(this)
 		);
 	},
-	getInterfaces: function getInterfaces(name) {
+	getInterfaces: function (name) {
 		getInterfaces(name).then(
 			function (result) {
 				this.emit("getInterfaces", result);
 			}.bind(this)
 		);
 	},
-	setInitAction: function setInitAction(name, action) {
+	setInitAction: function (name, action) {
 		_setInitAction(name, action).then(
 			function (result) {
 				this.emit("setInitAction", result);
