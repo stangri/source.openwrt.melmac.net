@@ -413,14 +413,11 @@ var status = baseclass.extend({
 				btn_disable,
 			]);
 			var buttonsField = E("div", { class: "cbi-value-field" }, buttonsText);
-			if (reply.status.version) {
-				var buttonsDiv = E("div", { class: "cbi-value" }, [
+			var buttonsDiv = reply.status.version ?
+				E('div', {class: 'cbi-value'}, [
 					buttonsTitle,
 					buttonsField,
-				]);
-			} else {
-				var buttonsDiv = [];
-			}
+				]) : '';
 			return E("div", {}, [header, statusDiv, instancesDiv, buttonsDiv]);
 		});
 	},
