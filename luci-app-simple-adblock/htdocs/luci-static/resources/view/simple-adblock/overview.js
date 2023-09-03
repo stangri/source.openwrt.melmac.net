@@ -151,31 +151,38 @@ return view.extend({
 
 			s = m.section(form.NamedSection, "config", "simple-adblock", 
 				_("Allowed and Blocked Lists Management"));
+
 			o = s.option(form.Value, "dnsmasq_config_file_url", _("Dnsmasq Config File URL"),
 				_("URL to the external dnsmasq config file, see the %sREADME%s for details.")
 					.format("<a href=\"" + pkg.URL + "#dnsmasq_config_file_url\" target=\"_blank\">", "</a>"));
 			o.addremove = true;
 			o.rmempty = true;
+
 			o = s.option(form.DynamicList, "allowed_domain", _("Allowed Domains"),
 				_("Individual domains to be allowed."));
 			o.depends('dnsmasq_config_file_url', '');
 			o.addremove = true;
+
 			o = s.option(form.DynamicList, "allowed_domains_url", _("Allowed Domain URLs"),
 				_("URLs to lists of domains to be allowed."));
 			o.depends('dnsmasq_config_file_url', '');
 			o.addremove = true;
+
 			o = s.option(form.DynamicList, "blocked_adblockplus_url", _("Blocked AdBlockPlus-style URLs"),
 				_("URLs to lists of AdBlockPlus-style formatted domains to be blocked."));
 			o.depends('dnsmasq_config_file_url', '');
 			o.addremove = true;
+
 			o = s.option(form.DynamicList, "blocked_domain", _("Blocked Domains"),
 				_("Individual domains to be blocked."));
 			o.depends('dnsmasq_config_file_url', '');
 			o.addremove = true;
+
 			o = s.option(form.DynamicList, "blocked_domains_url", _("Blocked Domain URLs"),
 				_("URLs to lists of domains to be blocked."));
 			o.depends('dnsmasq_config_file_url', '');
 			o.addremove = true;
+
 			o = s.option(form.DynamicList, "blocked_hosts_url", _("Blocked Hosts URLs"),
 				_("URLs to lists of hosts to be blocked."));
 			o.depends('dnsmasq_config_file_url', '');
