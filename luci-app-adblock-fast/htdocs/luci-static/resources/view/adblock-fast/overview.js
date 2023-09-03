@@ -37,7 +37,7 @@ return view.extend({
 			platform: (data[1] && data[1][pkg.Name]) || {
 				ipset_installed: false,
 				nft_installed: false,
-				dnsmasq_installed: fasle,
+				dnsmasq_installed: false,
 				unbound_installed: false,
 				dnsmasq_ipset_support: false,
 				dnsmasq_nftset_support: false,
