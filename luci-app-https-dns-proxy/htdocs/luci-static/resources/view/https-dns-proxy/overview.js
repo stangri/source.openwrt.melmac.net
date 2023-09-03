@@ -237,6 +237,8 @@ return view.extend({
 		};
 
 		reply.providers.forEach((prov, i) => {
+			if (prov.http2_only && !reply.platform.http2_support) return;
+			if (prov.http3_only && !reply.platform.http3_support) return;
 			_provider.value(prov.template, _(prov.title));
 			if (
 				prov.params &&
@@ -281,7 +283,9 @@ return view.extend({
 				_paramText.template = prov.template;
 				_paramText.modalonly = true;
 				_paramText.depends("_provider", prov.template);
-				_paramText.optional = !(prov.params.option.default && prov.params.option.default !== "");
+				_paramText.optional = !(
+					prov.params.option.default && prov.params.option.default !== ""
+				);
 				_paramText.cfgvalue = function (section_id) {
 					let resolver = this.map.data.get(
 						this.map.config,
