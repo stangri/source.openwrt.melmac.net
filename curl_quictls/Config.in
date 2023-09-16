@@ -107,11 +107,11 @@ config LIBCURL_NGHTTP2
 
 config LIBCURL_NGHTTP3
 	bool "HTTP3 protocol"
-	default n
+	default y
 
 config LIBCURL_NGTCP2
 	bool "QUIC protocol"
-	default n
+	default y
 
 comment "Miscellaneous"
 
