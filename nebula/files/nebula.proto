@@ -49,6 +49,7 @@ proto_nebula_setup() {
 
 	[ -s "$config_file" ] || { log "Config file not found or empty!"; return 1; }
 	eval "$(yaml_parse "$config_file" "yaml_")"
+	yaml_tun_dev="${yaml_tun_dev%"${yaml_tun_dev##*[![:space:]]}"}"
 	[ "$yaml_tun_dev" = "$interface" ] || { log "Tunnel device in config file (${yaml_tun_dev}) doesn't match interface name (${interface})!"; return 1; }
 
 	log "Setting up ${interface} from $(basename "$config_file")."
