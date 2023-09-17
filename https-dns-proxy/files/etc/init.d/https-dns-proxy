@@ -256,8 +256,9 @@ start_service() {
 		param='dnsmasq_restart'
 	fi
 	if [ "$param" = 'on_hotplug' ] || [ "$param" = 'on_boot' ] || \
-		[ "$param" = 'dnsmasq_restart' ] ; then
-		output "Restarting dnsmasq "
+		[ "$param" = 'dnsmasq_restart' ]; then
+		[ "$param" = 'dnsmasq_restart' ] && unset param
+		output "Restarting dnsmasq ${param:+$param }"
 		if dnsmasq_restart; then
 			output_okn
 		else
