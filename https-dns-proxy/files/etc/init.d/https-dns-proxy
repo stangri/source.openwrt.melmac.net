@@ -250,21 +250,21 @@ start_service() {
 		output "Updating dnsmasq config "
 		if uci_commit 'dhcp'; then
 			output_okn
-		else
-			output_failn
-		fi
-		param='dnsmasq_restart'
-	fi
-	if [ "$param" = 'on_hotplug' ] || [ "$param" = 'on_boot' ] || \
-		[ "$param" = 'dnsmasq_restart' ]; then
-		[ "$param" = 'dnsmasq_restart' ] && unset param
-		output "Restarting dnsmasq ${param:+$param }"
-		if dnsmasq_restart; then
-			output_okn
+			param='on_config_update'
 		else
 			output_failn
 		fi
 	fi
+	case "$param" in
+		on_boot|on_config_update|on_hotplug)
+			output "Restarting dnsmasq ${param:+$param }"
+			if dnsmasq_restart; then
+				output_okn
+			else
+				output_failn
+			fi
+		;;
+	esac
 }
 
 stop_service() {
@@ -307,9 +307,9 @@ service_triggers() {
 		wan6="${wan6:-wan6}"
 	fi
 	for i in "$wan" "$wan6"; do
-		[ -n "$i" ] && procd_add_interface_trigger "interface.*" "$i" "/etc/init.d/${packageName}" restart
+		[ -n "$i" ] && procd_add_interface_trigger "interface.*" "$i" "/etc/init.d/${packageName}" restart 'on_interface_trigger'
 	done
-	procd_add_config_trigger "config.change" "$packageName" "/etc/init.d/${packageName}" reload
+	procd_add_config_trigger "config.change" "$packageName" "/etc/init.d/${packageName}" reload 'on_config_change'
 }
 
 service_started() { procd_set_config_changed firewall; }
