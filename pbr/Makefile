@@ -18,6 +18,9 @@ define Package/pbr/Default
   TITLE:=Policy Based Routing Service
   URL:=https://docs.openwrt.melmac.net/pbr/
   DEPENDS:=+ip-full +jshn +jsonfilter +resolveip
+	DEPENDS+=+BUSYBOX_DEFAULT_AWK:gawk
+	DEPENDS+=+BUSYBOX_DEFAULT_GREP:grep
+	DEPENDS+=+BUSYBOX_DEFAULT_SED:sed
   CONFLICTS:=vpnbypass vpn-policy-routing
   PKGARCH:=all
 endef

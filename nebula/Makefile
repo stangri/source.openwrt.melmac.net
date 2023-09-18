@@ -51,6 +51,9 @@ define Package/nebula-proto
   TITLE:=nebula-proto
   URL:=https://docs.openwrt.melmac.net/nebula/
   DEPENDS:=nebula
+	DEPENDS+=+BUSYBOX_DEFAULT_AWK:gawk
+	DEPENDS+=+BUSYBOX_DEFAULT_GREP:grep
+	DEPENDS+=+BUSYBOX_DEFAULT_SED:sed
   PKGARCH:=all
 endef
 
@@ -60,6 +63,8 @@ define Package/nebula-service
   TITLE:=nebula-service
   URL:=https://docs.openwrt.melmac.net/nebula/
   DEPENDS:=nebula
+	DEPENDS+=+BUSYBOX_DEFAULT_AWK:gawk
+	DEPENDS+=+BUSYBOX_DEFAULT_SED:sed
 	CONFLICTS:=nebula-proto
   PKGARCH:=all
 endef

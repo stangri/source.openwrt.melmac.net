@@ -18,6 +18,7 @@ define Package/3rd-party-dns
 	TITLE:=3rd Party DNS Service
 	URL:=https://docs.openwrt.melmac.net/3rd-party-dns/
 	DEPENDS:=+jshn +wget
+	DEPENDS+=+BUSYBOX_DEFAULT_SED:sed
 	PKGARCH:=all
 endef
 

@@ -18,6 +18,10 @@ define Package/adblock-fast
   TITLE:=AdBlock Fast Service
   URL:=https://docs.openwrt.melmac.net/adblock-fast/
   DEPENDS:=+jshn +curl
+	DEPENDS+=+BUSYBOX_DEFAULT_AWK:gawk
+	DEPENDS+=+BUSYBOX_DEFAULT_GREP:grep
+	DEPENDS+=+BUSYBOX_DEFAULT_SED:sed
+	DEPENDS+=+BUSYBOX_DEFAULT_SORT:coreutils-sort
   CONFLICTS:=simple-adblock
   PROVIDES:=simple-adblock
   PKGARCH:=all

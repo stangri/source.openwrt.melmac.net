@@ -15,6 +15,8 @@ define Package/slider-support/default
 	SECTION:=net
 	CATEGORY:=Network
 	DEPENDS:=+relayd
+	DEPENDS+=+BUSYBOX_DEFAULT_GREP:grep
+	DEPENDS+=+BUSYBOX_DEFAULT_SED:sed
 	PKGARCH:=all
 	TITLE:=Slider support
 	URL:=https://docs.openwrt.melmac.net/slider-support/
