@@ -216,17 +216,6 @@ return view.extend({
 		o = s.taboption(
 			"tab_advanced",
 			form.Value,
-			"wan_tid",
-			_("WAN Table ID"),
-			_("Starting (WAN) Table ID number for tables created by the service.")
-		);
-		o.rmempty = true;
-		o.placeholder = "201";
-		o.datatype = "and(uinteger, min(201))";
-
-		o = s.taboption(
-			"tab_advanced",
-			form.Value,
 			"wan_mark",
 			_("WAN Table FW Mark"),
 			_(
