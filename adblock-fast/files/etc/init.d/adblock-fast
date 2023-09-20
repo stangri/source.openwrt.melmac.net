@@ -543,7 +543,7 @@ get_local_filesize() {
 	echo -en "$size"
 }
 
-resolver() {
+resolver_config() {
 	local cfg="$1" param="$2"
 	case "$param" in
 		dnsmasq.addnhosts)
@@ -580,10 +580,10 @@ dns() {
 
 			config_load 'dhcp'
 			if [ "$dnsmasq_instance" = "*" ]; then
-				config_foreach resolver 'dnsmasq' "$dns"
+				config_foreach resolver_config 'dnsmasq' "$dns"
 			elif [ -n "$dnsmasq_instance" ]; then
 				for i in $dnsmasq_instance; do
-					resolver "@dnsmasq[$i]" "$dns" || resolver "$i" "$dns"
+					resolver_config "@dnsmasq[$i]" "$dns" || resolver_config "$i" "$dns"
 				done
 			fi
 
@@ -1596,7 +1596,7 @@ killcache() {
 	rm -f "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
 	rm -f "$unboundCache" "$unboundGzip"
 	config_load 'dhcp'
-	config_foreach resolver 'dnsmasq' 'cleanup'
+	config_foreach resolver_config 'dnsmasq' 'cleanup'
 	uci_commit 'dhcp'
 	return 0
 }
