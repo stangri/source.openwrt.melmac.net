@@ -376,7 +376,7 @@ var status = baseclass.extend({
 					}
 				});
 				text += _("Errors encountered, please check the %sREADME%s!").format(
-					"<a href='" + pkg.URL + '" target="_blank">',
+					'<a href="' + pkg.URL + '" target="_blank">',
 					"</a><br />"
 				);
 				var errorsText = E("div", {}, text);
@@ -526,11 +526,9 @@ var status = baseclass.extend({
 				btn_disable,
 			]);
 			var buttonsField = E("div", { class: "cbi-value-field" }, buttonsText);
-			var buttonsDiv = reply.version ?
-				E('div', {class: 'cbi-value'}, [
-					buttonsTitle,
-					buttonsField,
-				]) : '';
+			var buttonsDiv = reply.version
+				? E("div", { class: "cbi-value" }, [buttonsTitle, buttonsField])
+				: "";
 			return E("div", {}, [
 				header,
 				statusDiv,

@@ -155,6 +155,22 @@ return view.extend({
 		);
 		o.value("*", _("AdBlock on all instances"));
 
+		//		Object.values(L.uci.sections("dhcp", "dnsmasq")).forEach(function (
+		//			val,
+		//			index
+		//		) {
+		//			const nameValueMap = new Map(Object.entries(val));
+		//			so.value(
+		//				nameValueMap.get(".name"),
+		//				"%s (Name: %s, Domain: %s, Local: %s)".format(
+		//					nameValueMap.get(".index"),
+		//					nameValueMap.get(".name") || "noname",
+		//					val.domain || "unset",
+		//					val.local || "unset"
+		//				)
+		//			);
+		//		});
+
 		var sections = uci.sections("dhcp", "dnsmasq");
 		sections.forEach((element) => {
 			var description;

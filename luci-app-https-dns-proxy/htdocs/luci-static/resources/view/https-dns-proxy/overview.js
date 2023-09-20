@@ -3,6 +3,7 @@
 // - [@jow-](https://github.com/jow-)
 // - [@stokito](https://github.com/stokito)
 // - [@vsviridov](https://github.com/vsviridov)
+// noinspection JSAnnotator
 
 "use strict";
 "require form";
