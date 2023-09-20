@@ -10,5 +10,4 @@ network_find_wan6 NET_IF6
 [ "$ACTION" = "ifupdate" ] && [ -z "$IFUPDATE_ADDRESSES" ] && \
 [ -z "$IFUPDATE_DATA" ] && exit 0
 
-sleep 10
-/etc/init.d/https-dns-proxy start 'on_hotplug'
+sleep 10 && /etc/init.d/https-dns-proxy start 'on_hotplug' &
