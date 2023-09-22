@@ -188,9 +188,7 @@ var status = baseclass.extend({
 					"The %s indicates default gateway. See the %sREADME%s for details."
 				).format(
 					"<strong>✓</strong>",
-					'<a href="' +
-						pkg.URL +
-						'#a-word-about-default-routing" target="_blank">',
+					'<a href="' + pkg.URL + '#AWordAboutDefaultRouting" target="_blank">',
 					"</a>"
 				);
 				var gatewaysDescr = E("div", { class: "cbi-value-description" }, text);

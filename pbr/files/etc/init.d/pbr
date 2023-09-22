@@ -71,7 +71,7 @@ readonly torConfigFile='/etc/tor/torrc'
 readonly xrayIfacePrefix='xray_'
 
 # package config options
-boot_timeout=
+procd_boot_timeout=
 enabled=
 fw_mask=
 icmp_interface=
@@ -414,7 +414,6 @@ load_package_config() {
 	local param="$1"
 	local user_file_check_result i
 	config_load "$packageName"
-	config_get      boot_timeout             'config' 'boot_timeout' '30'
 	config_get_bool enabled                  'config' 'enabled' '0'
 	config_get      fw_mask                  'config' 'fw_mask' 'ff0000'
 	config_get      icmp_interface           'config' 'icmp_interface'
@@ -423,7 +422,6 @@ load_package_config() {
 	config_get_bool nft_file_support         'config' 'nft_file_support' '1'
 	config_get      nft_user_set_policy      'config' 'nft_user_set_policy' 'memory'
 	config_get_bool nft_user_set_counter     'config' 'nft_user_set_counter' '0'
-	config_get      procd_boot_delay         'config' 'procd_boot_delay' '0'
 	config_get      resolver_set             'config' 'resolver_set'
 	config_get      resolver_instance        'config' 'resolver_instance' '*'
 	config_get      rule_create_option       'config' 'rule_create_option' 'add'
@@ -431,6 +429,8 @@ load_package_config() {
 	config_get_bool strict_enforcement       'config' 'strict_enforcement' '1'
 	config_get      supported_interface      'config' 'supported_interface'
 	config_get      verbosity                'config' 'verbosity' '2'
+	config_get      procd_boot_delay         'config' 'procd_boot_delay' '0'
+	config_get      procd_boot_timeout       'config' 'procd_boot_timeout' '30'
 	config_get      procd_lan_interface      'config' 'procd_lan_interface'
 	config_get      procd_wan_interface      'config' 'procd_wan_interface'
 	config_get      procd_wan6_interface     'config' 'procd_wan6_interface'
@@ -455,7 +455,7 @@ load_package_config() {
 			add|-a|-A|*) rule_create_option='-A';;
 		esac
 	fi
-	resolver 'configure_instances'
+	resolver 'check_support' && resolver 'configure_instances'
 }
 
 load_environment() {
@@ -489,7 +489,6 @@ load_environment() {
 				fi
 			fi
 			rm -f "$packageLockFile"
-			resolver 'check_support'
 		;;
 		on_stop)
 			touch "$packageLockFile"
@@ -521,25 +520,21 @@ load_network() {
 is_wan_up() {
 	local sleepCount='1' param="$1"
 	load_network "$param"
-	case "$param" in
-		on_boot|on_start|on_restart|on_reload)
-			while [ -z "$wanGW" ] ; do
-				load_network "$param"
-				if [ $((sleepCount)) -gt $((boot_timeout)) ] || [ -n "$wanGW" ]; then break; fi
-				output "$serviceName waiting for ${procd_wan_interface:-wan} gateway...\\n"
-				sleep 1
-				network_flush_cache
-				sleepCount=$((sleepCount+1))
-			done
-			if [ -n "$wanGW" ]; then
-				return 0
-			else
-				state add 'errorSummary' 'errorNoWanGateway'
-				return 1
-			fi
-		;;
-		*) return 0;;
-	esac
+	[ "$param" = 'on_boot' ] || procd_boot_timeout='1'
+	while [ -z "$wanGW" ] ; do
+		load_network "$param"
+		if [ $((sleepCount)) -gt $((procd_boot_timeout)) ] || [ -n "$wanGW" ]; then break; fi
+		output "$serviceName waiting for ${procd_wan_interface:-wan} gateway...\\n"
+		sleep 1
+		network_flush_cache
+		sleepCount=$((sleepCount+1))
+	done
+	if [ -n "$wanGW" ]; then
+		return 0
+	else
+		state add 'errorSummary' 'errorNoWanGateway'
+		return 1
+	fi
 }
 
 # shellcheck disable=SC2086
@@ -2295,12 +2290,16 @@ user_file_process() {
 }
 
 boot() {
+	local procd_boot_delay
+	config_load "$packageName"
+	config_get procd_boot_delay 'config' 'procd_boot_delay' '0'
+	nft_file 'delete'
 	ubus -t 30 wait_for network.interface 2>/dev/null
-	rc_procd start_service 'on_boot'
+	sleep $((procd_boot_delay)) && rc_procd start_service 'on_boot' &
 }
 
 on_firewall_reload() { 
-	if [ -e "$packageLockFile" ]; then # service is stopped, do not start it on firewall reload
+	if [ -e "$packageLockFile" ]; then
 		logger -t "$packageName" "Reload on firewall action aborted: service is stopped."
 		return 0
 	else
@@ -2312,7 +2311,7 @@ on_firewall_reload() {
 	fi
 }
 on_interface_reload() { 
-	if [ -e "$packageLockFile" ]; then # service is stopped, do not start it on interface change
+	if [ -e "$packageLockFile" ]; then
 		logger -t "$packageName" "Reload on interface change aborted: service is stopped."
 		return 0
 	else
@@ -2796,7 +2795,6 @@ status_service_iptables() {
 load_validate_config() {
 	uci_load_validate "$packageName" "$packageName" "$1" "${2}${3:+ $3}" \
 		'enabled:bool:0' \
-		'procd_boot_delay:integer:0' \
 		'strict_enforcement:bool:1' \
 		'secure_reload:bool:0' \
 		'ipv6_enabled:bool:0' \
@@ -2808,13 +2806,14 @@ load_validate_config() {
 		'icmp_interface:or("", tor, uci("network", "@interface"))' \
 		'ignored_interface:list(or(tor, uci("network", "@interface")))' \
 		'supported_interface:list(or(ignore, tor, regex("xray_.*"), uci("network", "@interface")))' \
-		'boot_timeout:integer:30' \
+		'procd_boot_delay:integer:0' \
+		'procd_boot_timeout:integer:30' \
 		'procd_lan_interface:string' \
+		'procd_reload_delay:integer:0' \
 		'procd_wan_interface:string' \
 		'procd_wan6_interface:string' \
 		'wan_ip_rules_priority:uinteger:30000' \
 		'rule_create_option:or("", add, insert):add' \
-		'procd_reload_delay:integer:0' \
 		'webui_supported_protocol:list(string)' \
 		'nft_file_support:bool:1'\
 		'nft_user_set_policy:or("", memory, performance):memory'\
