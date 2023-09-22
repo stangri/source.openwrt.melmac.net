@@ -2310,6 +2310,7 @@ on_firewall_reload() {
 		fi
 	fi
 }
+
 on_interface_reload() { 
 	if [ -e "$packageLockFile" ]; then
 		logger -t "$packageName" "Reload on interface change aborted: service is stopped."
