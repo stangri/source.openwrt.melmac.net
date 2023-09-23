@@ -15,7 +15,7 @@ define Package/fakeinternet
 	SECTION:=net
 	CATEGORY:=Network
 	DEPENDS:=+uhttpd +uhttpd-mod-ubus
-	DEPENDS+=+BUSYBOX_DEFAULT_GREP:grep
+	DEPENDS+=+!BUSYBOX_DEFAULT_GREP:grep
 	TITLE:=Fakeinternet Service
 	URL:=https://docs.openwrt.melmac.net/fakeinternet/
 	PKGARCH:=all

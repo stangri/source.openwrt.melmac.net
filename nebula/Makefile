@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nebula
 PKG_VERSION:=1.7.2
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/slackhq/nebula/tar.gz/v$(PKG_VERSION)?
@@ -51,9 +51,9 @@ define Package/nebula-proto
   TITLE:=nebula-proto
   URL:=https://docs.openwrt.melmac.net/nebula/
   DEPENDS:=nebula
-	DEPENDS+=+BUSYBOX_DEFAULT_AWK:gawk
-	DEPENDS+=+BUSYBOX_DEFAULT_GREP:grep
-	DEPENDS+=+BUSYBOX_DEFAULT_SED:sed
+	DEPENDS+=+!BUSYBOX_DEFAULT_AWK:gawk
+	DEPENDS+=+!BUSYBOX_DEFAULT_GREP:grep
+	DEPENDS+=+!BUSYBOX_DEFAULT_SED:sed
   PKGARCH:=all
 endef
 
@@ -63,8 +63,8 @@ define Package/nebula-service
   TITLE:=nebula-service
   URL:=https://docs.openwrt.melmac.net/nebula/
   DEPENDS:=nebula
-	DEPENDS+=+BUSYBOX_DEFAULT_AWK:gawk
-	DEPENDS+=+BUSYBOX_DEFAULT_SED:sed
+	DEPENDS+=+!BUSYBOX_DEFAULT_AWK:gawk
+	DEPENDS+=+!BUSYBOX_DEFAULT_SED:sed
 	CONFLICTS:=nebula-proto
   PKGARCH:=all
 endef

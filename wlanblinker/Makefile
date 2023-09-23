@@ -15,8 +15,8 @@ define Package/wlanblinker
 	SECTION:=net
 	CATEGORY:=Network
 	DEPENDS:=+coreutils-sleep +iwinfo
-	DEPENDS+=+BUSYBOX_DEFAULT_AWK:gawk
-	DEPENDS+=+BUSYBOX_DEFAULT_GREP:grep
+	DEPENDS+=+!BUSYBOX_DEFAULT_AWK:gawk
+	DEPENDS+=+!BUSYBOX_DEFAULT_GREP:grep
 	TITLE:=WLAN Blinker Service
 	URL:=https://docs.openwrt.melmac.net/wlanblinker/
 	PKGARCH:=all
