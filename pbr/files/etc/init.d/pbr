@@ -2542,12 +2542,13 @@ service_triggers() {
 		load_validate_include
 	procd_close_validate
 	procd_open_trigger
-		procd_add_reload_trigger 'openvpn'
+		procd_add_config_trigger "config.change" 'openvpn' "/etc/init.d/${packageName}" reload 'on_openvpn_change'
 		procd_add_config_trigger "config.change" "${packageName}" /etc/init.d/${packageName} reload
 		for n in $ifacesSupported; do 
 			procd_add_interface_trigger "interface.*" "$n" /etc/init.d/${packageName} on_interface_reload "$n"
 		done
 	procd_close_trigger
+#	procd_add_raw_trigger "interface.*.up" 4000 "/etc/init.d/${packageName}" restart 'on_interface_up'
 	if [ "$serviceStartTrigger" = 'on_start' ]; then
 		output 3 "$serviceName monitoring interfaces: ${ifacesSupported}\\n"
 	fi
