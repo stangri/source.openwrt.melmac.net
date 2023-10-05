@@ -282,7 +282,7 @@ append_url() {
  		echo 'dnsmasq2'
  	elif grep -q '^address=' "$file"; then
  		echo 'dnsmasq3'
- 	elif grep -q '^0.0.0.0' "$file" || grep -q '^127.0.0.1' "$file"; then
+ 	elif grep -q '^0\.0\.0\.0' "$file" || grep -q '^127\.0\.0\.1' "$file"; then
  		echo 'hosts'
  	elif [ -n "$(sed "$domainsFilter" "$file" | head -1)" ]; then
  		echo 'domains'
