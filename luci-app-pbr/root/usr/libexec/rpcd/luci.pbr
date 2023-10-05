@@ -32,6 +32,12 @@ is_running_iptables() { iptables -t mangle -L | grep -q PBR_PREROUTING >/dev/nul
 is_running_nft_file() { [ -s "$nftPermFile" ]; }
 is_running_nft() { "$nft" list table inet fw4 | grep chain | grep -q pbr_mark_ >/dev/null 2>&1; }
 is_running() { is_running_iptables || is_running_nft; }
+get_listen_port() {
+	local __tmp
+	__tmp="$(uci -q get "network.${2}.listen_port")"
+	[ -z "$__tmp" ] && unset "$1" && return 1
+	eval "$1=$__tmp"
+}
 get_version() { grep -m1 -A2 -w "^Package: $1$" /usr/lib/opkg/status | sed -n 's/Version: //p'; }
 print_json_bool() { json_init; json_add_boolean "$1" "$2"; json_dump; json_cleanup; }
 print_json_string() { json_init; json_add_string "$1" "$2"; json_dump; json_cleanup; }
@@ -275,7 +281,7 @@ is_tor_running() {
 	json_cleanup
 	if [ "$ret" = "0" ]; then return 1; else return 0; fi
 }
-is_wg() { local proto; proto=$(uci -q get network."$1".proto); [ "${proto:0:9}" = "wireguard" ]; }
+is_wg() { local p lp; network_get_protocol p "$1"; get_listen_port lp "$1"; [ -z "$lp" ] && [ "${p:0:9}" = "wireguard" ]; }
 is_tunnel() { is_dslite "$1" || is_l2tp "$1" || is_oc "$1" || is_ovpn "$1" || is_pptp "$1" || is_softether "$1" || is_tor "$1" || is_wg "$1"; }
 is_wan() { [ "$1" = "$wanIface4" ] || { [ "${1##wan}" != "$1" ] && [ "${1##wan6}" = "$1" ]; } || [ "${1%%wan}" != "$1" ]; }
 is_wan6() { [ -n "$wanIface6" ] && [ "$1" = "$wanIface6" ] || [ "${1/#wan6}" != "$1" ] || [ "${1/%wan6}" != "$1" ]; }

@@ -20,15 +20,21 @@ config pbr 'config'
 
 config include
 	option path '/usr/share/pbr/pbr.user.aws'
-	option enabled 0
+	option enabled '0'
 
 config include
 	option path '/usr/share/pbr/pbr.user.netflix'
-	option enabled 0
+	option enabled '0'
 
 config include
 	option path '/usr/share/pbr/pbr.user.wg_server_and_client'
-	option enabled 0
+	option enabled '0'
+
+config policy
+	option name 'Ignore Local Requests'
+	option interface 'ignore'
+	option dest_addr '10.0.0.0/24 10.0.1.0/24 192.168.100.0/24 192.168.1.0/24'
+	option enabled '0'
 
 config policy
 	option name 'Plex/Emby Local Server'
