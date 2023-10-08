@@ -1,8 +1,13 @@
 #!/bin/sh
-# shellcheck disable=SC1091,SC3037,SC3043
+# shellcheck disable=SC3037,SC3043
 
-readonly packageName='pbr'
-readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
+readonly pbrFunctionsFile='/usr/share/pbr/pbr.functions.sh'
+if [ -s "$pbrFunctionsFile" ]; then
+# shellcheck source=../../usr/share/pbr/pbr.functions.sh
+	. "$pbrFunctionsFile"
+else
+	printf "%b: pbr functions file (%s) not found! \n" '\033[0;31mERROR\033[0m' "$pbrFunctionsFile"
+fi
 
 # shellcheck disable=SC2317
 pbr_iface_setup() {
@@ -33,8 +38,6 @@ pbr_iface_setup() {
 	echo -e "${__OK__}"
 }
 
-. /lib/functions.sh
-. /lib/functions/network.sh
 config_load network
 config_foreach pbr_iface_setup interface
 network_flush_cache

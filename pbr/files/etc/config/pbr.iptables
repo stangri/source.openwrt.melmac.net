@@ -17,15 +17,15 @@ config pbr 'config'
 	list webui_supported_protocol 'icmp'
 
 config include
-	option path '/usr/share/pbr/pbr.user.aws'
+	option path '/etc/pbr/pbr.user.aws'
 	option enabled 0
 
 config include
-	option path '/usr/share/pbr/pbr.user.netflix'
+	option path '/etc/pbr/pbr.user.netflix'
 	option enabled 0
 
 config include
-	option path '/usr/share/pbr/pbr.user.wg_server_and_client'
+	option path '/etc/pbr/pbr.user.wg_server_and_client'
 	option enabled 0
 
 config policy
