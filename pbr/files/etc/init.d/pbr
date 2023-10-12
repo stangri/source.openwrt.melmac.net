@@ -221,10 +221,9 @@ load_environment() {
 					return 1
 				fi
 			fi
-			rm -f "$packageLockFile"
 		;;
 		on_stop)
-			touch "$packageLockFile"
+			:
 		;;
 	esac
 	load_network "$param"
@@ -2032,7 +2031,7 @@ boot() {
 }
 
 on_firewall_reload() { 
-	if [ -e "$packageLockFile" ]; then
+	if [ ! -e "$packageLockFile" ]; then
 		logger -t "$packageName" "Reload on firewall action aborted: service is stopped."
 		return 0
 	else
@@ -2045,7 +2044,7 @@ on_firewall_reload() {
 }
 
 on_interface_reload() { 
-	if [ -e "$packageLockFile" ]; then
+	if [ ! -e "$packageLockFile" ]; then
 		logger -t "$packageName" "Reload on interface change aborted: service is stopped."
 		return 0
 	else
@@ -2255,6 +2254,7 @@ service_started() {
 	fi
 	state print 'errorSummary'
 	state print 'warningSummary'
+	touch "$packageLockFile"
 	if [ -n "$errorSummary" ]; then
 		return 2
 	elif [ -n "$warningSummary" ]; then
@@ -2322,6 +2322,7 @@ stop_service() {
 			output "$serviceName (iptables mode) stopped "; output_okn;
 		fi
 	fi
+	rm -f "$packageLockFile"
 }
 
 version() { echo "$PKG_VERSION"; }
