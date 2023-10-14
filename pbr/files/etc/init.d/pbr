@@ -2027,7 +2027,7 @@ boot() {
 	config_get procd_boot_delay 'config' 'procd_boot_delay' '0'
 	nft_file 'delete'
 	ubus -t 30 wait_for network.interface 2>/dev/null
-	sleep $((procd_boot_delay)) && rc_procd start_service 'on_boot' &
+	sleep $((procd_boot_delay)) && rc_procd start_service 'on_boot' && rc_procd service_started 'on_boot' &
 }
 
 on_firewall_reload() { 
@@ -2172,7 +2172,7 @@ start_service() {
 			fi
 			nft_file 'install'
 			resolver 'init_end'
-			resolver 'compare_hash' && resolver 'restart'
+			! nft_file 'exists' && resolver 'compare_hash' && resolver 'restart'
 			traffic_killswitch 'remove'
 		;;
 		on_start|*)
@@ -2218,7 +2218,7 @@ start_service() {
 			fi
 			nft_file 'install'
 			resolver 'init_end'
-			resolver 'compare_hash' && resolver 'restart'
+			! nft_file 'exists' && resolver 'compare_hash' && resolver 'restart'
 			traffic_killswitch 'remove'
 		;;
 	esac
@@ -2242,6 +2242,7 @@ service_started() {
 	if nft_file 'exists'; then
 		procd_set_config_changed firewall
 		if nft_file 'exists'; then
+			resolver 'compare_hash' && resolver 'restart'
 			[ -n "$gatewaySummary" ] && output "$serviceName (fw4 nft file mode) started with gateways:\\n${gatewaySummary}"
 		else
 			output "$serviceName FAILED TO START in fw4 nft file mode!!!"
