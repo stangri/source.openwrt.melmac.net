@@ -852,15 +852,17 @@ resolver() {
 					config_load 'dhcp'
 					if [ "$resolver_instance" = "*" ]; then
 						config_foreach _resolver_dnsmasq_confdir 'dnsmasq'
-						dnsmasqFile="$dnsmasqFileDefault"
-						dnsmasqFileList="${dnsmasqFileList:+$dnsmasqFileList }${dnsmasqFileDefault}"
+						dnsmasqFile="${dnsmasqFile:-$dnsmasqFileDefault}"
+						str_contains "$dnsmasqFileList" "$dnsmasqFileDefault" || \
+							dnsmasqFileList="${dnsmasqFileList:+$dnsmasqFileList }${dnsmasqFileDefault}"
 					else
 						for i in $resolver_instance; do
 							_resolver_dnsmasq_confdir "@dnsmasq[$i]" \
 							|| _resolver_dnsmasq_confdir "$i"
 						done
 						dnsmasqFile="${dnsmasqFile:-$dnsmasqFileDefault}"
-						dnsmasqFileList="${dnsmasqFileList:-$dnsmasqFileDefault}"
+						str_contains "$dnsmasqFileList" "$dnsmasqFileDefault" || \
+							dnsmasqFileList="${dnsmasqFileList:-$dnsmasqFileDefault}"
 					fi
 				;;
 				init) :;;
@@ -945,15 +947,17 @@ resolver() {
 					config_load 'dhcp'
 					if [ "$resolver_instance" = "*" ]; then
 						config_foreach _resolver_dnsmasq_confdir 'dnsmasq'
-						dnsmasqFile="$dnsmasqFileDefault"
-						dnsmasqFileList="${dnsmasqFileList:+$dnsmasqFileList }${dnsmasqFile}"
+						dnsmasqFile="${dnsmasqFile:-$dnsmasqFileDefault}"
+						str_contains "$dnsmasqFileList" "$dnsmasqFileDefault" || \
+							dnsmasqFileList="${dnsmasqFileList:+$dnsmasqFileList }${dnsmasqFileDefault}"
 					else
 						for i in $resolver_instance; do
 							_resolver_dnsmasq_confdir "@dnsmasq[$i]" \
 							|| _resolver_dnsmasq_confdir "$i"
 						done
 						dnsmasqFile="${dnsmasqFile:-$dnsmasqFileDefault}"
-						dnsmasqFileList="${dnsmasqFileList:-$dnsmasqFile}"
+						str_contains "$dnsmasqFileList" "$dnsmasqFileDefault" || \
+							dnsmasqFileList="${dnsmasqFileList:-$dnsmasqFileDefault}"
 					fi
 				;;
 				init) :;;
