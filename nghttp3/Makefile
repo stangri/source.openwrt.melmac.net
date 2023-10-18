@@ -25,7 +25,7 @@ define Package/libnghttp3
 endef
 
 define Package/libnghttp3/description
-nghttp3 is a thin HTTP/3 layer over an underlying QUIC stack.
+ nghttp3 is a thin HTTP/3 layer over an underlying QUIC stack.
 endef
 
 CONFIGURE_ARGS += --enable-lib-only

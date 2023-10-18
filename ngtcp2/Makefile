@@ -26,7 +26,7 @@ define Package/libngtcp2
 endef
 
 define Package/libngtcp2/description
-ngtcp2 project is an effort to implement QUIC protocol which is now being discussed in IETF QUICWG for its standardization.
+ ngtcp2 project is an effort to implement QUIC protocol which is now being discussed in IETF QUICWG for its standardization.
 endef
 
 CONFIGURE_ARGS += --enable-lib-only
