@@ -12,6 +12,6 @@ LUCI_DESCRIPTION:=Provides Web UI for Fakeinternet.
 LUCI_DEPENDS:=+luci-compat +luci-base +fakeinternet
 LUCI_PKGARCH:=all
 
-include ../../luci.mk
+include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature

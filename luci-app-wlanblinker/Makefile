@@ -12,6 +12,6 @@ LUCI_DESCRIPTION:=Provides Web UI for WLAN Blinker service.
 LUCI_DEPENDS:=+luci-compat +luci-base +wlanblinker
 LUCI_PKGARCH:=all
 
-include ../../luci.mk
+include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature

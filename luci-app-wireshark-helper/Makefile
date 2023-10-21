@@ -12,6 +12,6 @@ LUCI_DESCRIPTION:=Provides Web UI for Wireshark-helper.
 LUCI_DEPENDS:=+luci-compat +luci-base +wireshark-helper
 LUCI_PKGARCH:=all
 
-include ../../luci.mk
+include $(TOPDIR)/feeds/luci/luci.mk
 
 # call BuildPackage - OpenWrt buildroot signature
