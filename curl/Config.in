@@ -108,12 +108,12 @@ config LIBCURL_NGHTTP2
 config LIBCURL_NGHTTP3
 	bool "HTTP/3 protocol"
 	depends on LIBCURL_OPENSSL
-	default y
+	default n
 
 config LIBCURL_NGTCP2
 	bool "QUIC protocol"
 	depends on LIBCURL_OPENSSL
-	default y
+	default n
 
 comment "Miscellaneous"
 
