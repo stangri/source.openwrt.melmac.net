@@ -134,6 +134,7 @@ var status = baseclass.extend({
 					running: null,
 					running_iptables: null,
 					running_nft: null,
+					running_nft_file: null,
 					version: null,
 					gateways: null,
 					errors: [],
