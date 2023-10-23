@@ -96,7 +96,7 @@ return baseclass.extend({
 			{ class: "table", id: "https-dns-proxy_status_table" },
 			[
 				E("tr", { class: "tr table-titles" }, [
-					E("th", { class: "th" }, _("Name/Type")),
+					E("th", { class: "th" }, _("Name / Type")),
 					E("th", { class: "th" }, _("Listen Address")),
 					E("th", { class: "th" }, _("Listen Port")),
 					E("th", { class: "th" }, _("Force DNS Ports")),

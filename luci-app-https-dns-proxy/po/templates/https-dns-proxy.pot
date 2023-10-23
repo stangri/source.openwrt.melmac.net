@@ -57,6 +57,10 @@ msgstr ""
 msgid "Enabling %s service"
 msgstr ""
 
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/status/include/71_https-dns-proxy.js:102
+msgid "Force DNS Ports"
+msgstr ""
+
 #: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:172
 msgid "Force DNS ports:"
 msgstr ""
@@ -103,6 +107,10 @@ msgstr ""
 msgid "HTTPS DNS Proxy - Status"
 msgstr ""
 
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/status/include/71_https-dns-proxy.js:55
+msgid "HTTPS DNS Proxy Instances"
+msgstr ""
+
 #: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:86
 msgid ""
 "If update option is selected, the %s'DNS forwardings' section of DHCP and "
@@ -123,10 +131,12 @@ msgid "Let local devices use their own DNS servers if set"
 msgstr ""
 
 #: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:328
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/status/include/71_https-dns-proxy.js:100
 msgid "Listen Address"
 msgstr ""
 
 #: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:334
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/status/include/71_https-dns-proxy.js:101
 msgid "Listen Port"
 msgstr ""
 
@@ -136,6 +146,10 @@ msgstr ""
 
 #: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:356
 msgid "Logging Verbosity"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/status/include/71_https-dns-proxy.js:99
+msgid "Name/Type"
 msgstr ""
 
 #: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:188
@@ -211,6 +225,10 @@ msgstr ""
 
 #: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/https-dns-proxy/status.js:333
 msgid "Stopping %s service"
+msgstr ""
+
+#: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/status/include/71_https-dns-proxy.js:148
+msgid "There are no active instances."
 msgstr ""
 
 #: applications/luci-app-https-dns-proxy/htdocs/luci-static/resources/view/https-dns-proxy/overview.js:218
