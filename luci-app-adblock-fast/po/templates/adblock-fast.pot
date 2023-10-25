@@ -72,6 +72,7 @@ msgid "Advanced Configuration"
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:399
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:404
 msgid "Allow"
 msgstr ""
 
@@ -93,6 +94,7 @@ msgid "Basic Configuration"
 msgstr ""
 
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:400
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:404
 msgid "Block"
 msgstr ""
 
@@ -565,7 +567,7 @@ msgstr ""
 msgid "The dnsmasq nft sets support is enabled, but nft is not installed"
 msgstr ""
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:403
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:407
 msgid "URL"
 msgstr ""
 

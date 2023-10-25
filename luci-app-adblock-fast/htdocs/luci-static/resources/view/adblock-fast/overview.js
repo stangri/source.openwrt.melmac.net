@@ -399,6 +399,10 @@ return view.extend({
 		o.value("allow", _("Allow"));
 		o.value("block", _("Block"));
 		o.default = "block";
+		o.textvalue = function (section_id) {
+			var val = this.cfgvalue(section_id);
+			return val == "allow" ? _("Allow") : _("Block");
+		};
 
 		o = s3.option(form.Value, "url", _("URL"));
 		o.optional = false;
