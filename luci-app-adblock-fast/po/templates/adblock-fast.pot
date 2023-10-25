@@ -477,6 +477,10 @@ msgstr ""
 msgid "Simultaneous processing"
 msgstr ""
 
+#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:381
+msgid "Size"
+msgstr ""
+
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:391
 msgid "Size: %s"
 msgstr ""

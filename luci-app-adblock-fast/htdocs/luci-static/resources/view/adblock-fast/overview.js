@@ -378,7 +378,7 @@ return view.extend({
 		s3.anonymous = true;
 		s3.addremove = true;
 
-		o = s3.option(form.DummyValue, "_size", "Size");
+		o = s3.option(form.DummyValue, "_size", _("Size"));
 		o.modalonly = false;
 		o.cfgvalue = function (section_id) {
 			let url = uci.get(pkg.Name, section_id, "url");
