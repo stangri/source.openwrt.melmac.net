@@ -1,11 +1,11 @@
-# Copyright 2017-2023 Stan Grishin (stangri@melmac.ca)
+# Copyright 2017-2023 MOSSDeF, Stan Grishin (stangri@melmac.ca)
 # This is free software, licensed under the GNU General Public License v3.
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=1.1.3
-PKG_RELEASE:=13
+PKG_RELEASE:=15
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -85,8 +85,8 @@ define Package/pbr/default/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN)  ./files/etc/uci-defaults/90-pbr $(1)/etc/uci-defaults/90-pbr
 	$(INSTALL_DIR) $(1)/usr/share/pbr
-	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.functions.sh $(1)/usr/share/pbr/pbr.functions.sh
-	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/usr/share/pbr/pbr.functions.sh
+	$(INSTALL_DATA) ./files/usr/share/pbr/functions.sh $(1)/usr/share/pbr/functions.sh
+	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/usr/share/pbr/functions.sh
 	$(INSTALL_DIR) $(1)/etc/pbr
 	$(INSTALL_DATA) ./files/etc/pbr/pbr.user.aws $(1)/etc/pbr/pbr.user.aws
 	$(INSTALL_DATA) ./files/etc/pbr/pbr.user.netflix $(1)/etc/pbr/pbr.user.netflix
@@ -98,7 +98,7 @@ $(call Package/pbr/default/install,$(1))
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/etc/config/pbr $(1)/etc/config/pbr
 	$(INSTALL_DIR) $(1)/usr/share/pbr
-	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.firewall.include $(1)/usr/share/pbr/pbr.firewall.include
+	$(INSTALL_DATA) ./files/usr/share/pbr/firewall.include $(1)/usr/share/pbr/firewall.include
 	$(INSTALL_DIR) $(1)/usr/share/nftables.d
 	$(CP) ./files/usr/share/nftables.d/* $(1)/usr/share/nftables.d/
 endef

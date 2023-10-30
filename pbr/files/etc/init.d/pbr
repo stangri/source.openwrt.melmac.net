@@ -30,9 +30,9 @@ else
 		List domain names after options to include their lookup in report"
 fi
 
-readonly pbrFunctionsFile='/usr/share/pbr/pbr.functions.sh'
+readonly pbrFunctionsFile='/usr/share/pbr/functions.sh'
 if [ -s "$pbrFunctionsFile" ]; then
-# shellcheck source=../../usr/share/pbr/pbr.functions.sh
+# shellcheck source=../../usr/share/pbr/functions.sh
 	. "$pbrFunctionsFile"
 else
 	printf "%b: pbr functions file (%s) not found! \n" '\033[0;31mERROR\033[0m' "$pbrFunctionsFile"

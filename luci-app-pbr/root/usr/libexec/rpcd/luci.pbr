@@ -11,9 +11,9 @@
 # ubus -S call luci.pbr getGateways '{"name": "pbr" }'
 # ubus -S call luci.pbr getInterfaces '{"name": "pbr" }'
 
-readonly pbrFunctionsFile='/usr/share/pbr/pbr.functions.sh'
+readonly pbrFunctionsFile='/usr/share/pbr/functions.sh'
 if [ -s "$pbrFunctionsFile" ]; then
-# shellcheck source=../../../../../pbr/files/usr/share/pbr/pbr.functions.sh
+# shellcheck source=../../../../../pbr/files/usr/share/pbr/functions.sh
 	. "$pbrFunctionsFile"
 else
 	print_json_string 'error' "pbr functions file ($pbrFunctionsFile) not found!"
