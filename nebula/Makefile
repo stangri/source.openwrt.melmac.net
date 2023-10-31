@@ -74,28 +74,28 @@ define Build/Compile
 endef
 
 define Package/nebula/description
-  Nebula is a scalable overlay networking tool with a focus on performance, simplicity
-  and security. It lets you seamlessly connect computers anywhere in the world.
-  This package contains only nebula binary. Unless you want to start nebula manually,
-  you may want to also install *either* 'nebula-service' *or* 'nebula-proto' package.
+Nebula is a scalable overlay networking tool with a focus on performance, simplicity
+and security. It lets you seamlessly connect computers anywhere in the world.
+This package contains only nebula binary. Unless you want to start nebula manually,
+you may want to also install *either* 'nebula-service' *or* 'nebula-proto' package.
 endef
 
 define Package/nebula-cert/description
-  Nebula is a scalable overlay networking tool with a focus on performance, simplicity
-  and security. It lets you seamlessly connect computers anywhere in the world.
-  This package contains only nebula-cert binary.
+Nebula is a scalable overlay networking tool with a focus on performance, simplicity
+and security. It lets you seamlessly connect computers anywhere in the world.
+This package contains only nebula-cert binary.
 endef
 
 define Package/nebula-proto/description
-  Nebula is a scalable overlay networking tool with a focus on performance, simplicity
-  and security. It lets you seamlessly connect computers anywhere in the world.
-  This package contains only OpenWrt protocol/interface support for nebula.
+Nebula is a scalable overlay networking tool with a focus on performance, simplicity
+and security. It lets you seamlessly connect computers anywhere in the world.
+This package contains only OpenWrt protocol/interface support for nebula.
 endef
 
 define Package/nebula-service/description
-  Nebula is a scalable overlay networking tool with a focus on performance, simplicity
-  and security. It lets you seamlessly connect computers anywhere in the world.
-  This package contains only OpenWrt-specific init.d script for nebula.
+Nebula is a scalable overlay networking tool with a focus on performance, simplicity
+and security. It lets you seamlessly connect computers anywhere in the world.
+This package contains only OpenWrt-specific init.d script for nebula.
 endef
 
 define Package/nebula/install
