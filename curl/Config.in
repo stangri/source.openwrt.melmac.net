@@ -4,7 +4,7 @@ comment "SSL support"
 
 choice
 	prompt "Selected SSL library"
-	default LIBCURL_MBEDTLS
+	default LIBCURL_OPENSSL
 
 	config LIBCURL_MBEDTLS
 		bool "mbed TLS"
@@ -108,12 +108,12 @@ config LIBCURL_NGHTTP2
 config LIBCURL_NGHTTP3
 	bool "HTTP/3 protocol"
 	depends on LIBCURL_OPENSSL
-	default n
+	default y
 
 config LIBCURL_NGTCP2
 	bool "QUIC protocol"
 	depends on LIBCURL_OPENSSL
-	default n
+	default y
 
 comment "Miscellaneous"
 

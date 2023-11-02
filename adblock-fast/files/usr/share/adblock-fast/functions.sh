@@ -75,6 +75,22 @@ blocked_url=
 # shellcheck disable=SC1091
 . /usr/share/libubox/jshn.sh
 
+check_ipset() { { command -v ipset && /usr/sbin/ipset help hash:net; } >/dev/null 2>&1; }
+check_nft() { command -v nft >/dev/null 2>&1; }
+check_dnsmasq() { command -v dnsmasq >/dev/null 2>&1; }
+check_dnsmasq_ipset() {
+	local o;
+	check_dnsmasq || return 1
+	o="$(dnsmasq -v 2>/dev/null)"
+	check_ipset && ! echo "$o" | grep -q 'no-ipset' && echo "$o" | grep -q 'ipset'
+}
+check_dnsmasq_nftset() {
+	local o;
+	check_dnsmasq || return 1
+	o="$(dnsmasq -v 2>/dev/null)"
+	check_nft && ! echo "$o" | grep -q 'no-nftset' && echo "$o" | grep -q 'nftset'
+}
+check_unbound() { command -v unbound >/dev/null 2>&1; }
 debug() { local i j; for i in "$@"; do eval "j=\$$i"; echo "${i}: ${j} "; done; }
 dnsmasq_hup() { killall -q -s HUP dnsmasq; }
 dnsmasq_kill() { killall -q -s KILL dnsmasq; }
@@ -83,6 +99,16 @@ is_enabled() { uci -q get "${1}.config.enabled"; }
 is_greater() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 is_greater_or_equal() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" = "$2"; }
 is_present() { command -v "$1" >/dev/null 2>&1; }
+is_running() {
+	local i j
+	i="$(json 'get' 'status')"
+	j="$(ubus_get_data 'status')"
+	if [ "$i" = 'statusStopped' ] || [ -z "${i}${j}" ]; then
+		return 1
+	else
+		return 0
+	fi
+}
 ipset() { "$ipset" "$@" >/dev/null 2>&1; }
 get_version() { grep -m1 -A2 -w "^Package: $1$" /usr/lib/opkg/status | sed -n 's/Version: //p'; }
 led_on(){ if [ -n "${1}" ] && [ -e "${1}/trigger" ]; then echo 'default-on' > "${1}/trigger" 2>&1; fi; }
@@ -102,25 +128,92 @@ str_contains_word() { echo "$1" | grep -q -w "$2"; }
 str_to_lower() { echo "$1" | tr 'A-Z' 'a-z'; }
 str_to_upper() { echo "$1" | tr 'a-z' 'A-Z'; }
 str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
-ubus_get_status() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances.main.data.${1}"; }
+ubus_get_data() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances.main.data.${1}"; }
 ubus_get_ports() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances.main.data.firewall.*.dest_port"; }
 unbound_restart() { /etc/init.d/unbound restart >/dev/null 2>&1; }
 
-check_ipset() { { command -v ipset && /usr/sbin/ipset help hash:net; } >/dev/null 2>&1; }
-check_nft() { command -v nft >/dev/null 2>&1; }
-check_dnsmasq() { command -v dnsmasq >/dev/null 2>&1; }
-check_unbound() { command -v unbound >/dev/null 2>&1; }
-check_dnsmasq_ipset() {
-	local o;
-	check_dnsmasq || return 1
-	o="$(dnsmasq -v 2>/dev/null)"
-	check_ipset && ! echo "$o" | grep -q 'no-ipset' && echo "$o" | grep -q 'ipset'
-}
-check_dnsmasq_nftset() {
-	local o;
-	check_dnsmasq || return 1
-	o="$(dnsmasq -v 2>/dev/null)"
-	check_nft && ! echo "$o" | grep -q 'no-nftset' && echo "$o" | grep -q 'nftset'
+json() {
+# shellcheck disable=SC2034
+	local action="$1" param="$2" value="$3"
+	shift 3
+# shellcheck disable=SC2124
+	local extras="$@" line
+	local status message error stats
+	local reload restart curReload curRestart ret i
+	if [ -s "$jsonFile" ]; then
+		json_load_file "$jsonFile" 2>/dev/null
+		json_select 'data' 2>/dev/null
+		for i in status message error stats reload restart; do
+			json_get_var "$i" "$i" 2>/dev/null
+		done
+	fi
+	case "$action" in
+		get)
+			case "$param" in
+				triggers)
+# shellcheck disable=SC2154
+					curReload="$parallel_downloads $debug $download_timeout \
+						$allowed_domain $blocked_domain $allowed_url $blocked_url $dns \
+						$config_update_enabled $config_update_url $dnsmasq_config_file_url \
+						$curl_additional_param $curl_max_file_size $curl_retry"
+# shellcheck disable=SC2154
+					curRestart="$compressed_cache $compressed_cache_dir $force_dns $led \
+						$force_dns_port"
+					if [ ! -s "$jsonFile" ]; then
+						ret='on_boot'
+					elif [ "$curReload" != "$reload" ]; then
+						ret='download'
+					elif [ "$curRestart" != "$restart" ]; then
+						ret='restart'
+					fi
+					printf "%b" "$ret"
+					return;;
+				*)
+					printf "%b" "$(eval echo "\$$param")"; return;;
+			esac
+		;;
+		add)
+			line="$(eval echo "\$$param")"
+			eval "$param"='${line:+$line }${value}${extras:+|$extras}'
+		;;
+		del)
+			case "$param" in
+				all)
+					unset status message error stats;;
+				triggers) 
+					unset reload restart;;
+				*)
+					unset "$param";;
+			esac
+		;;
+		set)
+			case "$param" in
+				triggers) 
+					reload="$parallel_downloads $debug $download_timeout \
+						$allowed_domain $blocked_domain $allowed_url $blocked_url $dns \
+						$config_update_enabled $config_update_url $dnsmasq_config_file_url \
+						$curl_additional_param $curl_max_file_size $curl_retry"
+					restart="$compressed_cache $compressed_cache_dir $force_dns $led \
+						$force_dns_port"
+				;;
+				*)
+					eval "$param"='${value}${extras:+|$extras}';;
+			esac
+		;;
+	esac
+	json_init
+	json_add_object 'data'
+	json_add_string version "$PKG_VERSION"
+	json_add_string status "$status"
+	json_add_string message "$message"
+	json_add_string error "$error"
+	json_add_string stats "$stats"
+	json_add_string reload "$reload"
+	json_add_string restart "$restart"
+	json_close_object
+	mkdir -p "$(dirname "$jsonFile")"
+	json_dump > "$jsonFile"
+	sync
 }
 
 get_local_filesize() {

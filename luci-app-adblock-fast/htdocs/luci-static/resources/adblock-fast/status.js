@@ -462,8 +462,8 @@ var status = baseclass.extend({
 				var buttonsText = E("div", {}, [
 					btn_start,
 					btn_gap,
-					btn_action_pause,
-					btn_gap,
+					// btn_action_pause,
+					// btn_gap,
 					btn_action_dl,
 					btn_gap,
 					btn_stop,
