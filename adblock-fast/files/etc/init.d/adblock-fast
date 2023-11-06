@@ -72,6 +72,7 @@ get_text() {
 		errorCreatingDirectory) r="failed to create output/cache/gzip file directory";;
 		errorDetectingFileType) r="failed to detect format";;
 		errorNothingToDo) r="no blocked list URLs nor blocked-domains enabled";;
+		errorTooLittleRam) r="free ram (%s) is not enough to process all enabled block-lists";;
 
 		statusNoInstall) r="$serviceName is not installed or not found";;
 		statusStopped) r="Stopped";;
@@ -80,15 +81,14 @@ get_text() {
 		statusForceReloading) r="Force Reloading";;
 		statusDownloading) r="Downloading";;
 		statusProcessing) r="Processing";;
-		statusError) r="Error";;
-		statusWarning) r="Warning";;
-		statusFail) r="Fail";;
+		statusFail) r="failed to start";;
 		statusSuccess) r="Success";;
 
 		warningExternalDnsmasqConfig)
 			r="use of external dnsmasq config file detected, please set 'dns' option to 'dnsmasq.conf'";;
-		warningMissingRecommendedPackages) r="Some recommended packages are missing";;
+		warningMissingRecommendedPackages) r="some recommended packages are missing";;
 		warningInvalidCompressedCacheDir) r="invalid compressed cache directory '%s'";;
+		warningFreeRamCheckFail) r="can't detect free RAM";;
 	esac
 	echo "$r"
 }
@@ -435,6 +435,12 @@ resolver() {
 	local param output_text i
 	case $1 in
 		cleanup)
+			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "${compressed_cache_dir}/${dnsmasqAddnhostsGzip}"
+			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "${compressed_cache_dir}/${dnsmasqConfGzip}"
+			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
+			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
+			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
+			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			config_load 'dhcp'
 			config_foreach _resolver_config 'dnsmasq' 'cleanup'
 			uci_commit 'dhcp'
@@ -702,7 +708,36 @@ download_dnsmasq_file() {
 }
 
 download_lists() {
+	_ram_check() {
+		_config_calculate_sizes() {
+			local cfg="$1"
+			local en size url
+			config_get en "$cfg" enabled '1'
+			config_get size "$cfg" size
+			config_get url "$cfg" url
+			[ "$en" = '0' ] && return 0
+			[ -n "$size" ] || size="$(get_url_filesize "$url")"
+			[ -n "$size" ] && total_sizes=$((total_sizes+size))
+		}
+		local i free_mem total_sizes
+		free_mem="$(ubus call system info | jsonfilter -e '@.memory.free')"
+		if [ -z "$free_mem" ]; then
+			json add warnning "warningFreeRamCheckFail"
+			return 0
+		fi
+		config_load "$packageName"
+		config_foreach _config_calculate_sizes 'file_url'
+		if [ $((free_mem)) -lt $((total_sizes * 2)) ]; then
+			json add error "errorTooLittleRam" "$free_mem"
+			output "${_ERROR_}: $(get_text 'errorTooLittleRam')!\\n"
+			return 1
+		else
+			return 0
+		fi
+	}
 	local hf allow_filter j=0 R_TMP
+
+	_ram_check || return 1
 
 	json set message "$(get_text "statusDownloading")..."
 	json set status "statusDownloading"
@@ -1073,20 +1108,19 @@ adb_config_update() {
 	return 0
 }
 
-_config_add_url_size() {
-	local cfg="$1" url size
-	config_get url "$cfg" url
-	size="$(get_url_filesize "$url")"
-	output "$url${size:+: $size} "
-	if [ -n "$size" ]; then
-		uci set "${packageName}.${cfg}.size=$size"
-		output_okn
-	else
-		output_failn
-	fi
-}
-
 adb_sizes() {
+	_config_add_url_size() {
+		local cfg="$1" url size
+		config_get url "$cfg" url
+		size="$(get_url_filesize "$url")"
+		output "$url${size:+: $size} "
+		if [ -n "$size" ]; then
+			uci set "${packageName}.${cfg}.size=$size"
+			output_okn
+		else
+			output_failn
+		fi
+	}
 	local i
 	local validation_result="$3"
 	load_environment "$validation_result" 'quiet' || return 1
@@ -1125,7 +1159,7 @@ adb_start() {
 	elif [ "$action" = 'restart' ] || [ "$param" = 'restart' ]; then
 		action='restart'
 	elif [ -s "$outputFile" ] && [ "$status" = "statusSuccess" ] && [ -z "$error" ]; then
-		status_service
+		adb_status 'quiet'
 		return 0
 	else
 		action='download'
@@ -1179,6 +1213,7 @@ adb_start() {
 				output 3 "Starting $serviceName...\\n"
 				json set status "statusStarting"
 			fi
+			resolver 'cleanup'
 			if [ "$dns" = 'dnsmasq.conf' ] && [ -n "$dnsmasq_config_file_url" ]; then
 				download_dnsmasq_file
 			else
@@ -1204,12 +1239,14 @@ adb_start() {
 		json del message
 		json set status "statusSuccess"
 		json set stats "$serviceName is blocking $(wc -l < "$outputFile") domains (with ${dns})"
-		status_service
+		adb_status 'quiet'
+
 	else
 		output 0 "$__FAIL__\\n";
 		json set status "statusFail"
 		json add error "errorOhSnap"
-		status_service
+		adb_status 'quiet'
+
 	fi
 
 	procd_open_instance 'main'
@@ -1308,9 +1345,12 @@ adb_start() {
 }
 
 adb_status() {
+	local param="$1"
 	local c url status message error stats
-	local validation_result="$3"
-	load_environment "$validation_result" 'quiet' || return 1
+	if [ -z "$param" ]; then # we're not being called from start_service
+		local validation_result="$3"
+		load_environment "$validation_result" 'quiet' || return 1
+	fi
 	status="$(json get status)"
 	message="$(json get message)"
 	error="$(json get error)"
@@ -1322,9 +1362,9 @@ adb_status() {
 		if [ -n "$status" ] && [ -n "$message" ]; then 
 			status="${status}: $message"
 		fi
-		[ -n "$status" ] && output "$serviceName $status\\n"
+		[ -n "$status" ] && output "$serviceName $status!\\n"
 	fi
-	if [ -n "$error" ]; then
+	if [ "$param" != 'quiet' ] && [ -n "$error" ]; then
 		for c in $error; do
 			url="${c##*|}"
 			c="${c%|*}"
@@ -1446,8 +1486,6 @@ load_validate_file_url_section() {
 }
 
 load_validate_config() {
-	. /lib/functions/network.sh
-	. /usr/share/libubox/jshn.sh
 	local enabled
 	local force_dns
 	local force_dns_port
