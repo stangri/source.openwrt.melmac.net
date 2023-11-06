@@ -120,7 +120,7 @@ quiet_mode() {
 output() {
 # Can take a single parameter (text) to be output at any verbosity
 # Or target verbosity level and text to be output at specifc verbosity
-	is_number() {
+	is_integer() {
 		case "$1" in
 			(*[!0123456789]*) return 1 ;;
 			('')              return 1 ;;
@@ -130,7 +130,7 @@ output() {
 	local msg memmsg logmsg text
 	local sharedMemoryOutput="/dev/shm/$packageName-output"
 	verbosity="${verbosity:-2}"
-	if [ $# -ne 1 ] && is_number "$1"; then
+	if [ $# -ne 1 ] && is_integer "$1"; then
 		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; text="$*"; else return 0; fi
 	fi
 	text="${text:-$*}";
