@@ -241,7 +241,7 @@ output() {
 # Or target verbosity level and text to be output at specifc verbosity
 	local msg memmsg logmsg
 	local sharedMemoryOutput="/dev/shm/$packageName-output"
-	verbosity="${verbosity:-2}"
+	verbosity="${verbosity:-1}"
 	if [ $# -ne 1 ]; then
 		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; else return 0; fi
 	fi
