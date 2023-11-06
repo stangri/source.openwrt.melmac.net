@@ -120,18 +120,26 @@ quiet_mode() {
 output() {
 # Can take a single parameter (text) to be output at any verbosity
 # Or target verbosity level and text to be output at specifc verbosity
-	local msg memmsg logmsg
+	is_number() {
+		case "$1" in
+			(*[!0123456789]*) return 1 ;;
+			('')              return 1 ;;
+			(*)               return 0 ;;
+		esac
+	}
+	local msg memmsg logmsg text
 	local sharedMemoryOutput="/dev/shm/$packageName-output"
 	verbosity="${verbosity:-2}"
-	if [ "$#" -ne 1 ]; then
-		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; else return 0; fi
+	if [ $# -ne 1 ] && is_number "$1"; then
+		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; text="$*"; else return 0; fi
 	fi
-	[ -t 1 ] && [ "$verbosity" -ne 0 ] && printf "%b" "$1"
-	msg="${1//$serviceName /service }";
+	text="${text:-$*}";
+	[ -t 1 ] && printf "%b" "$text"
+	msg="${text//$serviceName /service }";
 	if [ "$(printf "%b" "$msg" | wc -l)" -gt 0 ]; then
 		[ -s "$sharedMemoryOutput" ] && memmsg="$(cat "$sharedMemoryOutput")"
 		logmsg="$(printf "%b" "${memmsg}${msg}" | sed 's/\x1b\[[0-9;]*m//g')"
-		logger -t "${packageName:-service}" "$(printf "%b" "$logmsg")"
+		logger -t "${packageName:-service} [$$]" "$(printf "%b" "$logmsg")"
 		rm -f "$sharedMemoryOutput"
 	else
 		printf "%b" "$msg" >> "$sharedMemoryOutput"

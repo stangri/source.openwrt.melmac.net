@@ -248,10 +248,11 @@ output() {
 	}
 	local msg memmsg logmsg text
 	local sharedMemoryOutput="/dev/shm/$packageName-output"
-	verbosity="${verbosity:-1}"
+	verbosity="${verbosity:-2}"
 	if [ $# -ne 1 ] && is_number "$1"; then
 		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; text="$*"; else return 0; fi
 	fi
+	text="${text:-$*}";
 	[ -t 1 ] && printf "%b" "$text"
 	msg="${text//$serviceName /service }";
 	if [ "$(printf "%b" "$msg" | wc -l)" -gt 0 ]; then
