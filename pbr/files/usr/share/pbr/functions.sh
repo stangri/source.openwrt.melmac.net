@@ -118,17 +118,19 @@ quiet_mode() {
 	esac
 }
 output() {
-# Can take a single parameter (text) to be output at any verbosity
-# Or target verbosity level and text to be output at specifc verbosity
+# Target verbosity level with the first parameter being an integer
 	is_integer() {
 		case "$1" in
-			(*[!0123456789]*) return 1 ;;
-			('')              return 1 ;;
-			(*)               return 0 ;;
+			(*[!0123456789]*) return 1;;
+			('')              return 1;;
+			(*)               return 0;;
 		esac
 	}
 	local msg memmsg logmsg text
 	local sharedMemoryOutput="/dev/shm/$packageName-output"
+	if [ -z "$verbosity" ] && [ -n "$packageName" ]; then
+		verbosity="$(uci -q get "$packageName.config.verbosity")"
+	fi
 	verbosity="${verbosity:-2}"
 	if [ $# -ne 1 ] && is_integer "$1"; then
 		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; text="$*"; else return 0; fi
