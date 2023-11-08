@@ -1,12 +1,12 @@
 #!/bin/sh
 # shellcheck disable=SC3037,SC3043
 
-readonly pbrFunctionsFile='/usr/share/pbr/functions.sh'
+readonly pbrFunctionsFile='/etc/init.d/pbr'
 if [ -s "$pbrFunctionsFile" ]; then
-# shellcheck source=../../usr/share/pbr/functions.sh
+# shellcheck source=../../etc/init.d/pbr
 	. "$pbrFunctionsFile"
 else
-	printf "%b: pbr functions file (%s) not found! \n" '\033[0;31mERROR\033[0m' "$pbrFunctionsFile"
+	printf "%b: pbr init.d file (%s) not found! \n" '\033[0;31mERROR\033[0m' "$pbrFunctionsFile"
 fi
 
 # shellcheck disable=SC2317

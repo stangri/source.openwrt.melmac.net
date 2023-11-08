@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=1.1.3
-PKG_RELEASE:=15
+PKG_RELEASE:=16
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -81,17 +81,17 @@ endef
 define Package/pbr/default/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/etc/init.d/pbr $(1)/etc/init.d/pbr
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN)  ./files/etc/uci-defaults/90-pbr $(1)/etc/uci-defaults/90-pbr
 	$(INSTALL_DIR) $(1)/usr/share/pbr
-	$(INSTALL_DATA) ./files/usr/share/pbr/functions.sh $(1)/usr/share/pbr/functions.sh
-	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/usr/share/pbr/functions.sh
-	$(INSTALL_DIR) $(1)/etc/pbr
-	$(INSTALL_DATA) ./files/etc/pbr/pbr.user.aws $(1)/etc/pbr/pbr.user.aws
-	$(INSTALL_DATA) ./files/etc/pbr/pbr.user.netflix $(1)/etc/pbr/pbr.user.netflix
-	$(INSTALL_DATA) ./files/etc/pbr/pbr.user.wg_server_and_client $(1)/etc/pbr/pbr.user.wg_server_and_client
+	$(INSTALL_DATA) ./files/usr/share/pbr/.keep $(1)/usr/share/pbr/.keep
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.aws $(1)/usr/share/pbr/pbr.user.aws
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.netflix $(1)/usr/share/pbr/pbr.user.netflix
+	$(INSTALL_DATA) ./files/usr/share/pbr/pbr.user.wg_server_and_client $(1)/usr/share/pbr/pbr.user.wg_server_and_client
 endef
+#	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+#	$(INSTALL_DATA) ./files/etc/hotplug.d/iface/70-pbr $(1)/etc/hotplug.d/iface/70-pbr
 
 define Package/pbr/install
 $(call Package/pbr/default/install,$(1))

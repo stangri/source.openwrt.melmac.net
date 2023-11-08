@@ -11,12 +11,13 @@
 # ubus -S call luci.pbr getGateways '{"name": "pbr" }'
 # ubus -S call luci.pbr getInterfaces '{"name": "pbr" }'
 
-readonly pbrFunctionsFile='/usr/share/pbr/functions.sh'
+readonly pbrFunctionsFile='/etc/init.d/pbr'
 if [ -s "$pbrFunctionsFile" ]; then
-# shellcheck source=../../../../../pbr/files/usr/share/pbr/functions.sh
+# shellcheck source=../../../../../pbr/files/etc/init.d/pbr
 	. "$pbrFunctionsFile"
 else
-	print_json_string 'error' "pbr functions file ($pbrFunctionsFile) not found!"
+	print_json_string 'error' "pbr init.d file ($pbrFunctionsFile) not found!"
+	logger -t pbr 'error' "pbr init.d file ($pbrFunctionsFile) not found!"
 fi
 
 get_init_list() {
