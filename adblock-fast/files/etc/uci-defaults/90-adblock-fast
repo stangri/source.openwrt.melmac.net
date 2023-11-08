@@ -2,12 +2,12 @@
 # Copyright 2023 MOSSDeF, Stan Grishin (stangri@melmac.ca)
 # shellcheck disable=SC2015,SC3043,SC3060
 
-readonly adbFunctionsFile='/usr/share/adblock-fast/functions.sh'
+readonly adbFunctionsFile='/etc/init.d/adblock-fast'
 if [ -s "$adbFunctionsFile" ]; then
-# shellcheck source=../../usr/share/adblock-fast/functions.sh
+# shellcheck source=../../etc/init.d/adblock-fast
 	. "$adbFunctionsFile"
 else
-	printf "%b: adblock-fast functions file (%s) not found! \n" '\033[0;31mERROR\033[0m' "$adbFunctionsFile"
+	printf "%b: adblock-fast init.d file (%s) not found! \n" '\033[0;31mERROR\033[0m' "$adbFunctionsFile"
 fi
 
 # Transition from simple-adblock

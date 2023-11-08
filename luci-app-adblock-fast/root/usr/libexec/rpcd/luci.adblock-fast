@@ -14,12 +14,12 @@
 # ubus -S call luci.adblock-fast setInitAction '{"name": "adblock-fast", "action": "pause" }'
 # ubus -S call luci.adblock-fast setInitAction '{"name": "adblock-fast", "action": "stop" }'
 
-readonly adbFunctionsFile='/usr/share/adblock-fast/functions.sh'
+readonly adbFunctionsFile='/etc/init.d/adblock-fast'
 if [ -s "$adbFunctionsFile" ]; then
-# shellcheck source=../../../../../adblock-fast/files/usr/share/adblock-fast/functions.sh
+# shellcheck source=../../../../../adblock-fast/files/etc/init.d/adblock-fast
 	. "$adbFunctionsFile"
 else
-	print_json_string 'error' "adblock-fast functions file ($adbFunctionsFile) not found!"
+	print_json_string 'error' "adblock-fast init.d file ($adbFunctionsFile) not found!"
 fi
 
 get_file_url_filesizes() {
