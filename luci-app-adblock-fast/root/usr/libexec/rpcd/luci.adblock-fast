@@ -19,6 +19,7 @@ if [ -s "$adbFunctionsFile" ]; then
 # shellcheck source=../../../../../adblock-fast/files/etc/init.d/adblock-fast
 	. "$adbFunctionsFile"
 else
+	logger -t adblock-fast 'error' "adblock-fast init.d file ($adbFunctionsFile) not found!"
 	print_json_string 'error' "adblock-fast init.d file ($adbFunctionsFile) not found!"
 fi
 
