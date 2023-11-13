@@ -81,6 +81,7 @@ blocked_url=
 # shellcheck disable=SC1091
 . /usr/share/libubox/jshn.sh
 
+append_newline() { is_newline_ending "$1" || echo '' >> "$1"; }
 check_ipset() { { command -v ipset && /usr/sbin/ipset help hash:net; } >/dev/null 2>&1; }
 check_nft() { command -v nft >/dev/null 2>&1; }
 check_dnsmasq() { command -v dnsmasq >/dev/null 2>&1; }
@@ -106,6 +107,7 @@ is_greater() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 is_greater_or_equal() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" = "$2"; }
 # shellcheck disable=SC3057
 is_https_url() { [ "${1:0:8}" = "https://" ]; }
+is_newline_ending() { [ "$(tail -c1 "$1" | wc -l)" -ne '0' ]; }
 is_present() { command -v "$1" >/dev/null 2>&1; }
 is_running() {
 	local i j
@@ -924,6 +926,7 @@ process_file_url() {
 		output 2 "[DL] $type $label $__FAIL__\\n"
 		echo "errorDownloadingList|${url}" >> "$sharedMemoryError"
 	else
+		append_newline "$R_TMP"
 		[ -n "$cfg" ] && new_size="$(get_local_filesize "$R_TMP")"
 		if [ -n "$new_size" ] && [ "$size" != "$new_size" ]; then
 			uci set "${packageName}.${cfg}.size=$size"
@@ -952,6 +955,7 @@ process_file_url() {
 			output 2 "[DL] $type $label ($format) $__FAIL__\\n"
 			echo "errorParsingList|${url}" >> "$sharedMemoryError"
 		else
+			append_newline "$R_TMP"
 			cat "${R_TMP}" >> "$D_TMP"
 			output 1 "$_OK_"
 			output 2 "[DL] $type $label ($format) $__OK__\\n"
@@ -1067,7 +1071,10 @@ download_lists() {
 		canaryDomains="${canaryDomains:+$canaryDomains }${canaryDomainsMozilla}"
 	fi
 
-	for hf in $blocked_domain $canaryDomains; do echo "$hf" | sed "$domainsFilter" >> $B_TMP; done
+	append_newline "$B_TMP"
+	for hf in $blocked_domain $canaryDomains; do
+		printf "%s\n" "$(echo "$hf" | sed "$domainsFilter")" >> "$B_TMP"
+	done
 	allowed_domain="${allowed_domain}
 $(cat $A_TMP)"
 	for hf in ${allowed_domain}; do hf="$(echo "$hf" | sed 's/\./\\./g')"; allow_filter="$allow_filter/(^|\.)${hf}$/d;"; done
@@ -1382,6 +1389,7 @@ adb_config_update() {
 		R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
 	done
 	if ! $dl_command "$config_update_url" "$dl_flag" "$R_TMP" 2>/dev/null || [ ! -s "$R_TMP" ]; then
+		append_newline "$R_TMP"
 		output 1 "$_FAIL_\\n"
 		output 2 "[DL] Config  Update:  $label $__FAIL__\\n"
 		json add error 'errorDownloadingConfigUpdate'
