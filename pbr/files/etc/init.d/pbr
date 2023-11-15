@@ -787,6 +787,7 @@ nftset() {
 	local command="$1" iface="$2" target="${3:-dst}" type="${4:-ip}" uid="$5" comment="$6" param="$7" mark="$7"
 	local nftset4 nftset6 i param4 param6
 	local ipv4_error=1 ipv6_error=1
+	local ip4Flag='ip' ip6Flag='ip6'
 	nftset4="${nftPrefix}${iface:+_$iface}_4${target:+_$target}${type:+_$type}${uid:+_$uid}"
 	nftset6="${nftPrefix}${iface:+_$iface}_6${target:+_$target}${type:+_$type}${uid:+_$uid}"
 
@@ -849,12 +850,12 @@ nftset() {
 					nft6 add set inet "$nftTable" "$nftset6" "{ type ipv6_addr; ${nft_user_set_counter:+counter;} flags interval; auto-merge; policy $nft_user_set_policy; comment \"$comment\"; }" && ipv6_error=0
 					case "$target" in
 						dst)
-							nft4 add rule inet "$nftTable" "${nftPrefix}_prerouting" ip daddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
-							nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" ip daddr "@${nftset6}" goto "${nftPrefix}_mark_${mark}" && ipv6_error=0
+							nft4 add rule inet "$nftTable" "${nftPrefix}_prerouting" "$ip4Flag" daddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
+							nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" "$ip6Flag" daddr "@${nftset6}" goto "${nftPrefix}_mark_${mark}" && ipv6_error=0
 						;;
 						src)
-							nft4 add rule inet "$nftTable" "${nftPrefix}_prerouting" ip saddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
-							nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" ip saddr "@${nftset6}" goto "${nftPrefix}_mark_${mark}" && ipv6_error=0
+							nft4 add rule inet "$nftTable" "${nftPrefix}_prerouting" "$ip4Flag" saddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
+							nft6 add rule inet "$nftTable" "${nftPrefix}_prerouting" "$ip6Flag" saddr "@${nftset6}" goto "${nftPrefix}_mark_${mark}" && ipv6_error=0
 						;;
 					esac
 					;;
@@ -877,12 +878,12 @@ nftset() {
 				ip|net)
 					case "$target" in
 						dst)
-							nft_call delete rule inet "$nftTable" "${nftPrefix}_prerouting" ip daddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
-							nft_call delete rule inet "$nftTable" "${nftPrefix}_prerouting" ip daddr "@${nftset6}" goto "${nftPrefix}_mark_${mark}" && ipv6_error=0
+							nft_call delete rule inet "$nftTable" "${nftPrefix}_prerouting" "$ip4Flag" daddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
+							nft_call delete rule inet "$nftTable" "${nftPrefix}_prerouting" "$ip6Flag" daddr "@${nftset6}" goto "${nftPrefix}_mark_${mark}" && ipv6_error=0
 						;;
 						src)
-							nft_call delete rule inet "$nftTable" "${nftPrefix}_prerouting" ip saddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
-							nft_call delete rule inet "$nftTable" "${nftPrefix}_prerouting" ip saddr "@${nftset6}" goto "${nftPrefix}_mark_${mark}" && ipv6_error=0
+							nft_call delete rule inet "$nftTable" "${nftPrefix}_prerouting" "$ip4Flag" saddr "@${nftset4}" goto "${nftPrefix}_mark_${mark}" && ipv4_error=0
+							nft_call delete rule inet "$nftTable" "${nftPrefix}_prerouting" "$ip6Flag" saddr "@${nftset6}" goto "${nftPrefix}_mark_${mark}" && ipv6_error=0
 						;;
 					esac
 					;;
@@ -1368,6 +1369,7 @@ trap_process() {
 
 traffic_killswitch() {
 	local s=0
+	local ip4Flag='ip' ip6Flag='ip6'
 	case "$1" in
 		insert)
 			local lan_subnet wan_device wan6_device
@@ -1383,8 +1385,8 @@ traffic_killswitch() {
 			network_get_physdev wan6_device "${wanIface6:-wan6}"
 			if is_nft_mode; then
 				nft_call add chain inet "$nftTable" "${nftPrefix}_killswitch" '{ type filter hook forward priority 0; policy accept; }' || s=1
-				nft_call add rule inet "$nftTable" "${nftPrefix}_killswitch" oifname "$wan_device" ip saddr "$lan_subnet" counter reject || s=1
-				nft_call add rule inet "$nftTable" "${nftPrefix}_killswitch" oifname "$wan6_device" ip saddr "$lan_subnet" counter reject
+				nft_call add rule inet "$nftTable" "${nftPrefix}_killswitch" oifname "$wan_device"  "$ip4Flag" saddr "$lan_subnet" counter reject || s=1
+				nft_call add rule inet "$nftTable" "${nftPrefix}_killswitch" oifname "$wan6_device" "$ip6Flag" saddr "$lan_subnet" counter reject
 			else
 				ipt -N "${iptPrefix}_KILLSWITCH" || s=1
 				ipt -A "${iptPrefix}_KILLSWITCH" -s "$lan_subnet" -o "$wan_device" -j REJECT || s=1
@@ -1692,8 +1694,8 @@ policy_routing_nft() {
 	if is_xray "$iface"; then
 		unset dest_port
 		[ -z "$src_port" ] && src_port='0-65535'
-		dest4="tproxy ip to: $(get_xray_traffic_port "$iface") accept"
-		dest6="tproxy ip6 to: $(get_xray_traffic_port "$iface") accept"
+		dest4="tproxy $ip4Flag to: $(get_xray_traffic_port "$iface") accept"
+		dest6="tproxy $ip6Flag to: $(get_xray_traffic_port "$iface") accept"
 	elif [ -n "$mark" ]; then
 		dest4="goto ${nftPrefix}_mark_${mark}"
 		dest6="goto ${nftPrefix}_mark_${mark}"
@@ -1983,6 +1985,7 @@ interface_process_tor_nft() {
 		destroy)
 			;;
 		create)
+			local ip4Flag='ip' ip6Flag='ip6'
 			output 2 "Creating TOR redirects "
 			dnsPort="$(get_tor_dns_port)"
 			trafficPort="$(get_tor_traffic_port)"
@@ -1990,16 +1993,16 @@ interface_process_tor_nft() {
 			if resolver 'create_resolver_set' "$iface" 'dst' 'ip'; then
 				set_name4="${nftPrefix}_${iface}_4_dst_ip"
 				set_name6="${nftPrefix}_${iface}_6_dst_ip"
-				nft4 add rule inet "$nftTable" dstnat meta nfproto ipv4 ip daddr "@${set_name4}" udp dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv4" || s=1
-				nft4 add rule inet "$nftTable" dstnat meta nfproto ipv4 ip daddr "@${set_name4}" tcp dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv4" || s=1
-				nft4 add rule inet "$nftTable" dstnat meta nfproto ipv4 ip daddr "@${set_name4}" udp dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv4" || s=1
-				nft4 add rule inet "$nftTable" dstnat meta nfproto ipv4 ip daddr "@${set_name4}" tcp dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv4" || s=1
-				nft4 add rule inet "$nftTable" dstnat meta nfproto ipv4 ip daddr "@${set_name4}" udp dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv4" || s=1
-				nft6 add rule inet "$nftTable" dstnat meta nfproto ipv6 ip6 daddr "@${set_name6}" udp dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv6" || s=1
-				nft6 add rule inet "$nftTable" dstnat meta nfproto ipv6 ip6 daddr "@${set_name6}" tcp dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv6" || s=1
-				nft6 add rule inet "$nftTable" dstnat meta nfproto ipv6 ip6 daddr "@${set_name6}" udp dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv6" || s=1
-				nft6 add rule inet "$nftTable" dstnat meta nfproto ipv6 ip6 daddr "@${set_name6}" tcp dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv6" || s=1
-				nft6 add rule inet "$nftTable" dstnat meta nfproto ipv6 ip6 daddr "@${set_name6}" udp dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv6" || s=1
+				nft4 add rule inet "$nftTable" dstnat meta nfproto ipv4 "$ip4Flag" daddr "@${set_name4}" udp dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv4" || s=1
+				nft4 add rule inet "$nftTable" dstnat meta nfproto ipv4 "$ip4Flag" daddr "@${set_name4}" tcp dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv4" || s=1
+				nft4 add rule inet "$nftTable" dstnat meta nfproto ipv4 "$ip4Flag" daddr "@${set_name4}" udp dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv4" || s=1
+				nft4 add rule inet "$nftTable" dstnat meta nfproto ipv4 "$ip4Flag" daddr "@${set_name4}" tcp dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv4" || s=1
+				nft4 add rule inet "$nftTable" dstnat meta nfproto ipv4 "$ip4Flag" daddr "@${set_name4}" udp dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv4" || s=1
+				nft6 add rule inet "$nftTable" dstnat meta nfproto ipv6 "$ip6Flag" daddr "@${set_name6}" udp dport 53 counter redirect to :"$dnsPort" comment "Tor-DNS-UDP-ipv6" || s=1
+				nft6 add rule inet "$nftTable" dstnat meta nfproto ipv6 "$ip6Flag" daddr "@${set_name6}" tcp dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-TCP-ipv6" || s=1
+				nft6 add rule inet "$nftTable" dstnat meta nfproto ipv6 "$ip6Flag" daddr "@${set_name6}" udp dport 80 counter redirect to :"$trafficPort" comment "Tor-HTTP-UDP-ipv6" || s=1
+				nft6 add rule inet "$nftTable" dstnat meta nfproto ipv6 "$ip6Flag" daddr "@${set_name6}" tcp dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-TCP-ipv6" || s=1
+				nft6 add rule inet "$nftTable" dstnat meta nfproto ipv6 "$ip6Flag" daddr "@${set_name6}" udp dport 443 counter redirect to :"$trafficPort" comment "Tor-HTTPS-UDP-ipv6" || s=1
 			else
 				s=1
 			fi
