@@ -1742,27 +1742,27 @@ policy_routing_nft() {
 				unset negation; value="$src_addr";
 			fi
 			if is_phys_dev "$value"; then
-				param4="$param4 iifname ${negation:+$negation }${value:1}"
-				param6="$param6 iifname ${negation:+$negation }${value:1}"
+				param4="${param4:+$param4 }iifname ${negation:+$negation }${value:1}"
+				param6="${param6:+$param6 }iifname ${negation:+$negation }${value:1}"
 			elif is_mac_address "$value"; then
 				local target='src' type='mac'
 				if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
 					nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-					param4="$param4 ether saddr ${negation:+$negation }@${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-					param6="$param6 ether saddr ${negation:+$negation }@${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+					param4="${param4:+$param4 }ether saddr ${negation:+$negation }@${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+					param6="${param6:+$param6 }ether saddr ${negation:+$negation }@${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				else
-					param4="$param4 ether saddr ${negation:+$negation }${value}"
-					param6="$param6 ether saddr ${negation:+$negation }${value}"
+					param4="${param4:+$param4 }ether saddr ${negation:+$negation }${value}"
+					param6="${param6:+$param6 }ether saddr ${negation:+$negation }${value}"
 				fi
 			else
 				local target='src' type='ip'
 				if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
 					nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-					param4="$param4 $nftIPv4Flag saddr ${negation:+$negation }@${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-					param6="$param6 $nftIPv6Flag saddr ${negation:+$negation }@${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+					param4="${param4:+$param4 }${nftIPv4Flag} saddr ${negation:+$negation }@${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+					param6="${param6:+$param6 }${nftIPv6Flag} saddr ${negation:+$negation }@${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				else
-					param4="$param4 $nftIPv4Flag saddr ${negation:+$negation }${value}"
-					param6="$param6 $nftIPv6Flag saddr ${negation:+$negation }${value}"
+					param4="${param4:+$param4 }${nftIPv4Flag} saddr ${negation:+$negation }${value}"
+					param6="${param6:+$param6 }${nftIPv6Flag} saddr ${negation:+$negation }${value}"
 				fi
 			fi
 		fi
@@ -1774,18 +1774,18 @@ policy_routing_nft() {
 				unset negation; value="$dest_addr";
 			fi
 			if is_phys_dev "$value"; then
-				param4="$param4 oifname ${negation:+$negation }${value:1}"
-				param6="$param6 oifname ${negation:+$negation }${value:1}"
+				param4="${param4:+$param4 }oifname ${negation:+$negation }${value:1}"
+				param6="${param6:+$param6 }oifname ${negation:+$negation }${value:1}"
 			elif is_domain "$value"; then
 				local target='dst' type='ip'
 				if resolver 'create_resolver_set' "$iface" "$target" "$type" "$uid" "$name" && \
 					resolver 'add_resolver_element' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-					param4="$param4 $nftIPv4Flag daddr ${negation:+$negation }@${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-					param6="$param6 $nftIPv6Flag daddr ${negation:+$negation }@${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+					param4="${param4:+$param4 }${nftIPv4Flag} daddr ${negation:+$negation }@${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+					param6="${param6:+$param6 }${nftIPv6Flag} daddr ${negation:+$negation }@${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				elif nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
 					nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-					param4="$param4 $nftIPv4Flag daddr ${negation:+$negation }@${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-					param6="$param6 $nftIPv6Flag daddr ${negation:+$negation }@${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+					param4="${param4:+$param4 }${nftIPv4Flag} daddr ${negation:+$negation }@${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+					param6="${param6:+$param6 }${nftIPv6Flag} daddr ${negation:+$negation }@${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				else
 					local resolvedIP4 resolvedIP6
 					resolvedIP4="$(resolveip_to_nftset4 "$value")"
@@ -1793,18 +1793,18 @@ policy_routing_nft() {
 					if [ -z "$resolvedIP4" ] && [ -z "$resolvedIP6" ]; then
 						state add 'errorSummary' 'errorFailedToResolve' "$value"
 					fi
-					param4="$param4 $nftIPv4Flag daddr ${negation:+$negation }{ $resolvedIP4 }"
-					param6="$param6 $nftIPv6Flag daddr ${negation:+$negation }{ $resolvedIP6 }"
+					param4="${param4:+$param4 }${nftIPv4Flag} daddr ${negation:+$negation }{ $resolvedIP4 }"
+					param6="${param6:+$param6 }${nftIPv6Flag} daddr ${negation:+$negation }{ $resolvedIP6 }"
 				fi
 			else
 				local target='dst' type='ip'
 				if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
 					nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
-					param4="$param4 $nftIPv4Flag daddr ${negation:+$negation }@${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
-					param6="$param6 $nftIPv6Flag daddr ${negation:+$negation }@${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+					param4="${param4:+$param4 }${nftIPv4Flag} daddr ${negation:+$negation }@${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+					param6="${param6:+$param6 }${nftIPv6Flag} daddr ${negation:+$negation }@${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
 				else
-					param4="$param4 $nftIPv4Flag daddr ${negation:+$negation }${value}"
-					param6="$param6 $nftIPv6Flag daddr ${negation:+$negation }${value}"
+					param4="${param4:+$param4 }${nftIPv4Flag} daddr ${negation:+$negation }${value}"
+					param6="${param6:+$param6 }${nftIPv6Flag} daddr ${negation:+$negation }${value}"
 				fi
 			fi
 		fi
@@ -1815,8 +1815,8 @@ policy_routing_nft() {
 			else
 				unset negation; value="$src_port";
 			fi
-			param4="$param4 ${proto_i:+$proto_i }sport ${negation:+$negation }{$(ports_to_nftset "$value")}"
-			param6="$param6 ${proto_i:+$proto_i }sport ${negation:+$negation }{$(ports_to_nftset "$value")}"
+			param4="${param4:+$param4 }${proto_i:+$proto_i }sport ${negation:+$negation }{$(ports_to_nftset "$value")}"
+			param6="${param6:+$param6 }${proto_i:+$proto_i }sport ${negation:+$negation }{$(ports_to_nftset "$value")}"
 		fi
 
 		if [ -n "$dest_port" ]; then
@@ -1825,8 +1825,8 @@ policy_routing_nft() {
 			else
 				unset negation; value="$dest_port";
 			fi
-			param4="$param4 ${proto_i:+$proto_i }dport ${negation:+$negation }{$(ports_to_nftset "$value")}"
-			param6="$param6 ${proto_i:+$proto_i }dport ${negation:+$negation }{$(ports_to_nftset "$value")}"
+			param4="${param4:+$param4 }${proto_i:+$proto_i }dport ${negation:+$negation }{$(ports_to_nftset "$value")}"
+			param6="${param6:+$param6 }${proto_i:+$proto_i }dport ${negation:+$negation }{$(ports_to_nftset "$value")}"
 		fi
 
 		param4="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} $param4 $dest4 comment \"$name\""
@@ -2111,10 +2111,16 @@ EOF
 				dscp="$(uci -q get "${packageName}".config."${iface}"_dscp)"
 				if is_nft_mode; then
 					if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
-						nft add rule inet "$nftTable" "${nftPrefix}_prerouting ip dscp ${dscp} goto ${nftPrefix}_mark_${mark}" || s=1
+						nft add rule inet "$nftTable" "${nftPrefix}_prerouting ${nftIPv4Flag} dscp ${dscp} goto ${nftPrefix}_mark_${mark}" || s=1
+						if [ -n "$ipv6_enabled" ]; then
+							nft add rule inet "$nftTable" "${nftPrefix}_prerouting ${nftIPv6Flag} dscp ${dscp} goto ${nftPrefix}_mark_${mark}" || s=1
+						fi
 					fi
 					if [ "$iface" = "$icmp_interface" ]; then
-						nft add rule inet "$nftTable" "${nftPrefix}_output ip protocol icmp goto ${nftPrefix}_mark_${mark}" || s=1
+						nft add rule inet "$nftTable" "${nftPrefix}_output ${nftIPv4Flag} protocol icmp goto ${nftPrefix}_mark_${mark}" || s=1
+						if [ -n "$ipv6_enabled" ]; then
+							nft add rule inet "$nftTable" "${nftPrefix}_output ${nftIPv6Flag} protocol icmp goto ${nftPrefix}_mark_${mark}" || s=1
+						fi
 					fi
 				else
 					if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
