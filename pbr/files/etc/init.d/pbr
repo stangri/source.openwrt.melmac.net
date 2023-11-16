@@ -492,7 +492,7 @@ load_package_config() {
 	config_get      procd_boot_delay         'config' 'procd_boot_delay' '0'
 	config_get      procd_boot_timeout       'config' 'procd_boot_timeout' '30'
 	config_get      procd_lan_interface      'config' 'procd_lan_interface'
-	config_get      procd_wan_ignore_status  'config' 'procd_wan_ignore_status'
+	config_get      procd_wan_ignore_status  'config' 'procd_wan_ignore_status' '0'
 	config_get      procd_wan_interface      'config' 'procd_wan_interface'
 	config_get      procd_wan6_interface     'config' 'procd_wan6_interface'
 	config_get      wan_ip_rules_priority    'config' 'wan_ip_rules_priority' '30000'
