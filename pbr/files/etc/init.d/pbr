@@ -67,6 +67,7 @@ nft_user_set_counter=
 procd_boot_delay=
 procd_reload_delay=
 procd_lan_interface=
+procd_wan_ignore_status=
 procd_wan_interface=
 procd_wan6_interface=
 resolver_set=
@@ -491,6 +492,7 @@ load_package_config() {
 	config_get      procd_boot_delay         'config' 'procd_boot_delay' '0'
 	config_get      procd_boot_timeout       'config' 'procd_boot_timeout' '30'
 	config_get      procd_lan_interface      'config' 'procd_lan_interface'
+	config_get      procd_wan_ignore_status  'config' 'procd_wan_ignore_status'
 	config_get      procd_wan_interface      'config' 'procd_wan_interface'
 	config_get      procd_wan6_interface     'config' 'procd_wan6_interface'
 	config_get      wan_ip_rules_priority    'config' 'wan_ip_rules_priority' '30000'
@@ -578,6 +580,7 @@ load_network() {
 is_wan_up() {
 	local sleepCount='1' param="$1"
 	load_network "$param"
+	[ "$procd_wan_ignore_status" -eq '0' ] || return 0
 	[ "$param" = 'on_boot' ] || procd_boot_timeout='1'
 	while [ -z "$wanGW" ] ; do
 		load_network "$param"
@@ -2882,6 +2885,7 @@ load_validate_config() {
 		'procd_boot_timeout:integer:30' \
 		'procd_lan_interface:string' \
 		'procd_reload_delay:integer:0' \
+		'procd_wan_ignore_status:bool:0' \
 		'procd_wan_interface:string' \
 		'procd_wan6_interface:string' \
 		'wan_ip_rules_priority:uinteger:30000' \
