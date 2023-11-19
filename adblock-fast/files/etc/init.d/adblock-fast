@@ -307,6 +307,7 @@ uci_changes() {
 if type extra_command 1>/dev/null 2>&1; then
 	extra_command 'allow' 'Allows domain in current block-list and config'
 	extra_command 'check' 'Checks if specified domain is found in current block-list'
+	extra_command 'check_lists' 'Checks if specified domain is found in enabled block-lists'
 	extra_command 'dl' 'Force-downloads all enabled block-list'
 	extra_command 'killcache' 'Delete all cached files'
 	extra_command 'pause' 'Pauses AdBlocking for specified number of seconds (default: 60)'
@@ -428,7 +429,7 @@ load_network() {
 append_url() {
 	local cfg="$1" var="$2"
 	local en action url
-	config_get en "$cfg" enabled '1'
+	config_get_bool en "$cfg" enabled '1'
 	config_get action "$cfg" action 'block'
 	config_get url "$cfg" url
 	if [ "$en" = '1' ]; then
@@ -1005,7 +1006,7 @@ download_lists() {
 		_config_calculate_sizes() {
 			local cfg="$1"
 			local en size url
-			config_get en "$cfg" enabled '1'
+			config_get_bool en "$cfg" enabled '1'
 			config_get size "$cfg" size
 			config_get url "$cfg" url
 			[ "$en" = '0' ] && return 0
@@ -1368,6 +1369,56 @@ adb_check() {
 	done
 }
 
+adb_check_lists() {
+	_check_list() {
+		local cfg="$1"
+		local en size url R_TMP string c
+		config_get_bool en "$cfg" enabled '1'
+		config_get action "$cfg" action 'block'
+		config_get url "$cfg" url
+		[ "$en" = '0' ] && return 0
+		[ "$action" != 'block' ] && return 0
+		if is_https_url "$url" && [ -z "$isSSLSupported" ]; then
+			output "[DL] $url $__FAIL__\\n"
+		fi
+		while [ -z "$R_TMP" ] || [ -e "$R_TMP" ]; do
+			R_TMP="$(mktemp -u -q -t ${packageName}_tmp.XXXXXXXX)"
+		done
+		if [ -z "$url" ] || ! $dl_command "$url" "$dl_flag" "$R_TMP" 2>/dev/null || \
+			[ ! -s "$R_TMP" ]; then
+			output "[DL] $url $__FAIL__\\n"
+		else
+			append_newline "$R_TMP"
+			for string in ${param}; do
+				c="$(grep -c "$string" "$R_TMP")"
+				if [ "$c" -gt 0 ]; then
+					if [ "$c" -eq 1 ]; then
+						output "Found 1 match for '$string' in '$url'.\\n"
+					else
+						output "Found $c matches for '$string' in '$url'.\\n"
+					fi
+					if [ "$c" -le 20 ]; then
+								grep "$string" "$R_TMP"
+					fi
+				else
+					output "The '$string' is not found in '$url'.\\n"
+				fi
+			done
+		rm -f "$R_TMP"
+		fi
+	}
+	local param="$1"
+	local validation_result="$3"
+	load_environment "$validation_result" 'quiet' || return 1
+	if [ -z "$param" ]; then
+		output "Usage: /etc/init.d/${packageName} check_lists 'domain' ...\\n"
+		return 0
+	fi
+	config_load "$packageName"
+	config_foreach _check_list 'file_url'
+	return 0
+}
+
 adb_config_update() {
 	local R_TMP label
 	local param validation_result="$3"
@@ -1722,6 +1773,7 @@ boot() {
 	rc_procd start_service 'on_boot'
 }
 check() { load_validate_config 'config' adb_check "'$*'"; }
+check_lists() { load_validate_config 'config' adb_check_lists "'$*'"; }
 dl() { rc_procd start_service 'download'; }
 killcache() {
 	local compressed_cache_dir
