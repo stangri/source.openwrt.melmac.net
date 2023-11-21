@@ -8,7 +8,6 @@
 "use strict";
 "require form";
 "require rpc";
-"require uci";
 "require view";
 "require https-dns-proxy.status as hdp";
 
@@ -46,8 +45,8 @@ return view.extend({
 		return Promise.all([
 			L.resolveDefault(hdp.getPlatformSupport(pkg.Name), {}),
 			L.resolveDefault(hdp.getProviders(pkg.Name), {}),
-			uci.load(pkg.Name),
-			uci.load("dhcp"),
+			L.uci.load(pkg.Name),
+			L.uci.load("dhcp"),
 		]);
 	},
 
@@ -97,7 +96,7 @@ return view.extend({
 		) {
 			var description;
 			var key;
-			if (element[".name"] === uci.resolveSID("dhcp", element[".name"])) {
+			if (element[".name"] === L.uci.resolveSID("dhcp", element[".name"])) {
 				key = element[".index"];
 				description = "dnsmasq[" + element[".index"] + "]";
 			} else {
@@ -192,7 +191,7 @@ return view.extend({
 			reply.providers.forEach((prov) => {
 				var option;
 				let regexp = pkg.templateToRegexp(prov.template);
-				let resolver = uci.get(pkg.Name, section_id, "resolver_url");
+				let resolver = L.uci.get(pkg.Name, section_id, "resolver_url");
 				resolver = resolver === undefined ? null : resolver;
 				if (!found && resolver && regexp.test(resolver)) {
 					found = true;
@@ -241,7 +240,7 @@ return view.extend({
 			return ret || "";
 		};
 		_provider.write = function (section_id, formvalue) {
-			uci.set(pkg.Name, section_id, "resolver_url", formvalue);
+			L.uci.set(pkg.Name, section_id, "resolver_url", formvalue);
 		};
 
 		reply.providers.forEach((prov, i) => {
@@ -277,7 +276,7 @@ return view.extend({
 					let resolver = pkg.templateToResolver(template, {
 						option: formvalue || "",
 					});
-					uci.set(pkg.Name, section_id, "resolver_url", resolver);
+					L.uci.set(pkg.Name, section_id, "resolver_url", resolver);
 				};
 				_paramList.remove = _paramList.write;
 			} else if (
@@ -315,7 +314,7 @@ return view.extend({
 					let resolver = pkg.templateToResolver(template, {
 						option: formvalue || "",
 					});
-					uci.set(pkg.Name, section_id, "resolver_url", resolver);
+					L.uci.set(pkg.Name, section_id, "resolver_url", resolver);
 				};
 				_paramText.remove = _paramText.write;
 			}

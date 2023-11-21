@@ -47,13 +47,18 @@ set_init_action() {
 	fi
 	case $action in
 		enable)
-			cmd="uci -q set ${name}.config.enabled=1 && uci commit $packageName";;
+			cmd="/etc/init.d/${name} ${action}"
+			cmd="${cmd} && uci -q set ${name}.config.enabled=1 && uci commit $name"
+		;;
 		disable)
-			cmd="uci -q set ${name}.config.enabled=0 && uci commit $packageName";;
+			cmd="/etc/init.d/${name} ${action}"
+			cmd="${cmd} && uci -q set ${name}.config.enabled=0 && uci commit $name"
+		;;
 		start|stop|reload|restart)
-			cmd="/etc/init.d/${name} ${action}";;
+			cmd="/etc/init.d/${name} ${action}"
+		;;
 	esac
-	if [ -n "$cmd" ] && eval "${cmd}" 1>/dev/null 2>&1; then
+	if [ -n "$cmd" ] && eval "$cmd" 1>/dev/null 2>&1; then
 		print_json_bool 'result' '1'
 	else
 		print_json_bool 'result' '0'

@@ -5,7 +5,6 @@
 
 "use strict";
 "require form";
-"require uci";
 "require view";
 "require adblock-fast.status as adb";
 
@@ -26,8 +25,8 @@ return view.extend({
 		return Promise.all([
 			L.resolveDefault(adb.getFileUrlFilesizes(pkg.Name), {}),
 			L.resolveDefault(adb.getPlatformSupport(pkg.Name), {}),
-			uci.load(pkg.Name),
-			uci.load("dhcp"),
+			L.uci.load(pkg.Name),
+			L.uci.load("dhcp"),
 		]);
 	},
 
@@ -155,27 +154,12 @@ return view.extend({
 		);
 		o.value("*", _("AdBlock on all instances"));
 
-		//		Object.values(L.uci.sections("dhcp", "dnsmasq")).forEach(function (
-		//			val,
-		//			index
-		//		) {
-		//			const nameValueMap = new Map(Object.entries(val));
-		//			so.value(
-		//				nameValueMap.get(".name"),
-		//				"%s (Name: %s, Domain: %s, Local: %s)".format(
-		//					nameValueMap.get(".index"),
-		//					nameValueMap.get(".name") || "noname",
-		//					val.domain || "unset",
-		//					val.local || "unset"
-		//				)
-		//			);
-		//		});
-
-		var sections = uci.sections("dhcp", "dnsmasq");
-		sections.forEach((element) => {
+		Object.values(L.uci.sections("dhcp", "dnsmasq")).forEach(function (
+			element
+		) {
 			var description;
 			var key;
-			if (element[".name"] === uci.resolveSID("dhcp", element[".name"])) {
+			if (element[".name"] === L.uci.resolveSID("dhcp", element[".name"])) {
 				key = element[".index"];
 				description = "dnsmasq[" + element[".index"] + "]";
 			} else {
@@ -381,7 +365,7 @@ return view.extend({
 		o = s3.option(form.DummyValue, "_size", _("Size"));
 		o.modalonly = false;
 		o.cfgvalue = function (section_id) {
-			let url = uci.get(pkg.Name, section_id, "url");
+			let url = L.uci.get(pkg.Name, section_id, "url");
 			let ret = _("Unknown");
 			reply.sizes.forEach((element) => {
 				if (element.url === url) {

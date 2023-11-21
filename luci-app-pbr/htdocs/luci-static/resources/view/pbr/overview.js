@@ -4,7 +4,6 @@
 "use strict";
 "require form";
 "require rpc";
-"require uci";
 "require view";
 "require pbr.status as pbr";
 
@@ -23,7 +22,7 @@ return view.extend({
 		return Promise.all([
 			L.resolveDefault(pbr.getInterfaces(pkg.Name), {}),
 			L.resolveDefault(pbr.getPlatformSupport(pkg.Name), {}),
-			uci.load(pkg.Name),
+			L.uci.load(pkg.Name),
 		]);
 	},
 
@@ -320,7 +319,7 @@ return view.extend({
 
 		o = s.option(form.ListValue, "proto", _("Protocol"));
 		var proto = L.toArray(
-			uci.get(pkg.Name, "config", "webui_supported_protocol")
+			L.uci.get(pkg.Name, "config", "webui_supported_protocol")
 		);
 		if (!proto.length) {
 			proto = ["all", "tcp", "udp", "tcp udp", "icmp"];
