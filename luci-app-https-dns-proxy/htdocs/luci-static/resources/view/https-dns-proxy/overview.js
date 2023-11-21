@@ -13,7 +13,6 @@
 "require https-dns-proxy.status as hdp";
 
 var pkg = {
-
 	get Name() {
 		return "https-dns-proxy";
 	},
@@ -93,8 +92,9 @@ return view.extend({
 		);
 		o.value("*", _("Update all configs"));
 
-		var sections = uci.sections("dhcp", "dnsmasq");
-		sections.forEach((element) => {
+		Object.values(L.uci.sections("dhcp", "dnsmasq")).forEach(function (
+			element
+		) {
 			var description;
 			var key;
 			if (element[".name"] === uci.resolveSID("dhcp", element[".name"])) {
@@ -106,6 +106,7 @@ return view.extend({
 			}
 			o.value(key, _("Update %s only").format(description));
 		});
+
 		o.value("-", _("Do not update configs"));
 		o.default = "*";
 
