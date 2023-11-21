@@ -1397,9 +1397,7 @@ adb_check_lists() {
 					else
 						output "Found $c matches for '$string' in '$url'.\\n"
 					fi
-					if [ "$c" -le 20 ]; then
-								grep "$string" "$R_TMP"
-					fi
+					grep "$string" "$R_TMP"
 				else
 					output "The '$string' is not found in '$url'.\\n"
 				fi
