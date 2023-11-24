@@ -1779,8 +1779,8 @@ boot() {
 	config_load "$packageName"
 	config_get procd_boot_delay 'config' 'procd_boot_delay' '0'
 # shellcheck disable=SC2154
-	{ is_integer "$procd_boot_delay" && sleep "$procd_boot_delay" || true; } && \
-		rc_procd start_service 'on_boot' && service_started 'on_boot' &
+	{ is_integer "$procd_boot_delay" && sleep "$procd_boot_delay"; \
+		rc_procd start_service 'on_boot' && service_started 'on_boot'; } &
 }
 check() { load_validate_config 'config' adb_check "'$*'"; }
 check_lists() { load_validate_config 'config' adb_check_lists "'$*'"; }

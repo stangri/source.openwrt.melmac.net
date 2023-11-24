@@ -2374,8 +2374,8 @@ boot() {
 	config_get procd_boot_delay 'config' 'procd_boot_delay' '0'
 	nft_file 'delete'
 	ubus -t 30 wait_for network.interface 2>/dev/null
-	{ is_integer "$procd_boot_delay" && sleep "$procd_boot_delay" || true; } && \
-		rc_procd start_service 'on_boot' && service_started 'on_boot' &
+	{ is_integer "$procd_boot_delay" && sleep "$procd_boot_delay"; \
+		rc_procd start_service 'on_boot' && service_started 'on_boot'; } &
 }
 
 on_firewall_reload() { 
