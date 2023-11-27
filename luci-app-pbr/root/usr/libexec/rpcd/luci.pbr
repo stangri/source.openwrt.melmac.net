@@ -48,11 +48,11 @@ set_init_action() {
 	case $action in
 		enable)
 			cmd="/etc/init.d/${name} ${action}"
-			cmd="${cmd} && uci -q set ${name}.config.enabled=1 && uci commit $name"
+			cmd="${cmd} && uci_set ${name} config enabled 1 && uci_commit $name"
 		;;
 		disable)
 			cmd="/etc/init.d/${name} ${action}"
-			cmd="${cmd} && uci -q set ${name}.config.enabled=0 && uci commit $name"
+			cmd="${cmd} && uci_set ${name} config enabled 0 && uci_commit $name"
 		;;
 		start|stop|reload|restart)
 			cmd="/etc/init.d/${name} ${action}"
@@ -209,7 +209,7 @@ get_gateways() {
 }
 
 get_supported_interfaces() {
-	_find_firewall_wan_zone() { [ "$(uci -q get "firewall.${1}.name")" = "wan" ] && firewallWanZone="$1"; }
+	_find_firewall_wan_zone() { [ "$(uci_get 'firewall' "$1" 'name')" = "wan" ] && firewallWanZone="$1"; }
 	_build_ifaces_all() { ifacesAll="${ifacesAll}${1} "; }
 	_build_ifaces_supported() { is_supported_interface "$1" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${1} "; }
 	local i
@@ -229,7 +229,7 @@ get_supported_interfaces() {
 	pbr_find_iface wanIface6 'wan6'
 	config_load 'firewall'
 	config_foreach _find_firewall_wan_zone 'zone'
-	for i in $(uci -q get "firewall.${firewallWanZone}.network"); do
+	for i in $(uci_get 'firewall' "$firewallWanZone" 'network'); do
 		is_supported_interface "$i" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${i} "
 	done
 	config_load 'network'

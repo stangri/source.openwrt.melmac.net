@@ -20,17 +20,17 @@ pbr_iface_setup() {
 	case "${proto}" in
 		(gre*|nebula|relay|vti*|vxlan|xfrm) return 0 ;;
 		(none)
-			uci -q set "network.${iface}_rt=route"
-			uci -q set "network.${iface}_rt.interface=${iface}"
-			uci -q set "network.${iface}_rt.target=0.0.0.0/0"
-			uci -q set "network.${iface}_rt6=route6"
-			uci -q set "network.${iface}_rt6.interface=${iface}"
-			uci -q set "network.${iface}_rt6.target=::/0"
+			uci_add network route "${iface}_rt"
+			uci_set network "${iface}_rt" interface "${iface}"
+			uci_set network "${iface}_rt" target '0.0.0.0/0'
+			uci_add route6 network "${iface}_rt6"
+			uci_set network "${iface}_rt6" interface "${iface}"
+			uci_set network "${iface}_rt6" target '::/0'
 		;;
 	esac
 	echo -en "Setting up ${packageName} routing tables for ${iface}... "
-	uci -q set "network.${iface}.ip4table=${packageName}_${iface%6}"
-	uci -q set "network.${iface}.ip6table=${packageName}_${iface%6}"
+	uci_set 'network' "${iface}" 'ip4table' "${packageName}_${iface%6}"
+	uci_set 'network' "${iface}" 'ip6table' "${packageName}_${iface%6}"
 	if ! grep -q -E -e "^[0-9]+\s+${packageName}_${iface%6}$" /etc/iproute2/rt_tables; then
 		sed -i -e "\$a $(($(sort -r -n /etc/iproute2/rt_tables | grep -o -E -m 1 "^[0-9]+")+1))\t${packageName}_${iface%6}" \
 			/etc/iproute2/rt_tables
@@ -54,7 +54,7 @@ set network.default6='rule6'
 set network.default6.lookup='${packageName}_${iface6%6}'
 set network.default6.priority='80000'
 EOF
-uci commit network
+uci_commit network
 echo -en "Restarting network... "
 /etc/init.d/network restart
 echo -e "${__OK__}"

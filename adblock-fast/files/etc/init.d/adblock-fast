@@ -102,7 +102,7 @@ debug() { local i j; for i in "$@"; do eval "j=\$$i"; echo "${i}: ${j} "; done; 
 dnsmasq_hup() { killall -q -s HUP dnsmasq; }
 dnsmasq_kill() { killall -q -s KILL dnsmasq; }
 dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
-is_enabled() { uci -q get "${1}.config.enabled"; }
+is_enabled() { uci_get "$1" 'config' 'enabled' '0'; }
 is_integer() {
 	case "$1" in
 		(*[!0123456789]*) return 1;;
@@ -151,6 +151,7 @@ str_to_upper() { echo "$1" | tr 'a-z' 'A-Z'; }
 str_replace() { printf "%b" "$1" | sed -e "s/$(printf "%b" "$2")/$(printf "%b" "$3")/g"; }
 ubus_get_data() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances.main.data.${1}"; }
 ubus_get_ports() { ubus call service list "{ 'name': '$packageName' }" | jsonfilter -e "@['${packageName}'].instances.main.data.firewall.*.dest_port"; }
+uci_get_protocol() { uci_get 'network' "$1" 'proto'; }
 unbound_restart() { /etc/init.d/unbound restart >/dev/null 2>&1; }
 
 json() {
@@ -271,9 +272,8 @@ output() {
 	local msg memmsg logmsg text
 	local sharedMemoryOutput="/dev/shm/$packageName-output"
 	if [ -z "$verbosity" ] && [ -n "$packageName" ]; then
-		verbosity="$(uci -q get "$packageName.config.verbosity")"
+		verbosity="$(uci_get "$packageName" 'config' 'verbosity' '2')"
 	fi
-	verbosity="${verbosity:-2}"
 	if [ $# -ne 1 ] && is_integer "$1"; then
 		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; text="$*"; else return 0; fi
 	fi
@@ -393,7 +393,7 @@ get_text() {
 
 load_network() {
 	local param="$1"
-	local i j wan_if wan_gw wan_proto
+	local i j wan_if wan_gw
 	local counter wan_if_timeout="$procd_boot_wan_timeout" wan_gw_timeout='5'
 	counter=0
 	while [ -z "$wan_if" ]; do
@@ -414,8 +414,7 @@ load_network() {
 	done
 
 	counter=0
-	wan_proto="$(uci -q get "network.${wan_if}.proto")"
-	if [ "$wan_proto" = 'pppoe' ]; then
+	if [ "$(uci_get_protocol "$wan_if")" = 'pppoe' ]; then
 		wan_gw_timeout=$((wan_gw_timeout+10))
 	fi
 	while [ "$counter" -le "$wan_gw_timeout" ]; do
@@ -937,7 +936,7 @@ process_file_url() {
 		append_newline "$R_TMP"
 		[ -n "$cfg" ] && new_size="$(get_local_filesize "$R_TMP")"
 		if [ -n "$new_size" ] && [ "$size" != "$new_size" ]; then
-			uci set "${packageName}.${cfg}.size=$size"
+			uci_set "$packageName" "$cfg" 'size' "$size"
 		fi
 		format="$(detect_file_type "$R_TMP")"
 		case "$format" in
@@ -1059,9 +1058,9 @@ download_lists() {
 	config_load "$packageName"
 	config_foreach load_validate_file_url_section 'file_url' process_file_url_wrapper
 	wait
-	if [ -n "$(uci changes "$packageName")" ]; then 
+	if [ -n "$(uci_changes "$packageName")" ]; then 
 		output 2 "Saving updated file size(s) "
-		if uci commit "$packageName"; then output_okn; else output_failn; fi
+		if uci_commit "$packageName"; then output_okn; else output_failn; fi
 	fi
 	output 1 '\n'
 
@@ -1470,7 +1469,7 @@ adb_sizes() {
 		size="$(get_url_filesize "$url")"
 		output "$url${size:+: $size} "
 		if [ -n "$size" ]; then
-			uci set "${packageName}.${cfg}.size=$size"
+			uci_set "$packageName" "$cfg" 'size' "$size"
 			output_okn
 		else
 			output_failn
@@ -1481,7 +1480,7 @@ adb_sizes() {
 	load_environment "$validation_result" 'quiet' || return 1
 	config_load "$packageName"
 	config_foreach _config_add_url_size 'file_url'
-	uci commit "$packageName"
+	uci_commit "$packageName"
 }
 
 # shellcheck disable=SC2120
@@ -1764,7 +1763,7 @@ adb_pause() {
 	local validation_result="$3"
 	adb_stop 'on_pause' '' "$validation_result"
 	output "Sleeping for $timeout seconds... "
-	if is_number "$timeout" && sleep "$timeout"; then
+	if is_integer "$timeout" && sleep "$timeout"; then
 		output_okn
 	else
 		output_failn

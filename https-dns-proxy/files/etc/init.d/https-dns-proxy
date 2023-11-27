@@ -339,7 +339,7 @@ dnsmasq_doh_server() {
 			uci_add_list_if_new 'dhcp' "$cfg" 'doh_server' "${address}#${port}"
 		;;
 		remove)
-			for i in $(uci -q get "dhcp.$cfg.doh_server"); do
+			for i in $(uci_get 'dhcp' "$cfg" 'doh_server'); do
 				uci_remove_list 'dhcp' "$cfg" 'server' "$i"
 				uci_remove_list 'dhcp' "$cfg" 'doh_server' "$i"
 			done
