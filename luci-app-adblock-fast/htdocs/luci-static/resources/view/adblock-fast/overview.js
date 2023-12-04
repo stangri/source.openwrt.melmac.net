@@ -27,6 +27,7 @@ return view.extend({
 			L.resolveDefault(adb.getPlatformSupport(pkg.Name), {}),
 			L.uci.load(pkg.Name),
 			L.uci.load("dhcp"),
+			L.uci.load("smartdns"),
 		]);
 	},
 
@@ -94,6 +95,14 @@ return view.extend({
 					);
 			}
 		}
+		if (!reply.platform.smartdns_installed) {
+			text =
+				text +
+				"<br />" +
+				_("Please note that %s is not supported on this system.").format(
+					"<i>smartdns.domainset</i>"
+				);
+		}
 		if (!reply.platform.unbound_installed) {
 			text =
 				text +
@@ -120,6 +129,9 @@ return view.extend({
 				o.value("dnsmasq.nftset", _("dnsmasq nft set"));
 			}
 			o.value("dnsmasq.servers", _("dnsmasq servers file"));
+		}
+		if (reply.platform.smartdns_installed) {
+			o.value("smartdns.domainset", _("smartdns domain set"));
 		}
 		if (reply.platform.unbound_installed) {
 			o.value("unbound.adb_list", _("unbound adblock list"));
@@ -172,6 +184,39 @@ return view.extend({
 		o.default = "*";
 		o.depends("dns", "dnsmasq.addnhosts");
 		o.depends("dns", "dnsmasq.servers");
+		o.retain = true;
+
+		o = s1.taboption(
+			"tab_basic",
+			form.ListValue,
+			"smartdns_instance",
+			_("Use AdBlocking on the SmartDNS instance(s)"),
+			_(
+				"You can limit the AdBlocking to a specific SmartDNS instance(s) (%smore information%s)."
+			).format(
+				'<a href="' + pkg.URL + "#smartdns_instance" + '" target="_blank">',
+				"</a>"
+			)
+		);
+		o.value("*", _("AdBlock on all instances"));
+
+		Object.values(L.uci.sections("smartdns", "smartdns")).forEach(function (
+			element
+		) {
+			var description;
+			var key;
+			if (element[".name"] === L.uci.resolveSID("smartdns", element[".name"])) {
+				key = element[".index"];
+				description = "smartdns[" + element[".index"] + "]";
+			} else {
+				key = element[".name"];
+				description = element[".name"];
+			}
+			o.value(key, _("AdBlock on %s only").format(description));
+		});
+		o.value("-", _("No AdBlock on SmartDNS"));
+		o.default = "*";
+		o.depends("dns", "smartdns.domainset");
 		o.retain = true;
 
 		o = s1.taboption(

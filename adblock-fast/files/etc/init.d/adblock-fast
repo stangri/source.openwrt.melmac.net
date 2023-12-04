@@ -34,6 +34,11 @@ readonly dnsmasqServersFile="/var/run/${packageName}/dnsmasq.servers"
 readonly dnsmasqServersCache="/var/run/${packageName}/dnsmasq.servers.cache"
 readonly dnsmasqServersGzip="${packageName}.dnsmasq.servers.gz"
 readonly dnsmasqServersFilter='s|^|server=/|;s|$|/|'
+readonly smartdnsDomainSetFile="/var/run/${packageName}/smartdns.domainset"
+readonly smartdnsDomainSetCache="/var/run/${packageName}/smartdns.domainset.cache"
+readonly smartdnsDomainSetConfig="/var/run/${packageName}/smartdns.conf"
+readonly smartdnsDomainSetGzip="${packageName}.smartdns.domainset.gz"
+readonly smartdnsDomainSetFilter=';'
 readonly unboundFile="/var/lib/unbound/adb_list.${packageName}"
 readonly unboundCache="/var/run/${packageName}/unbound.cache"
 readonly unboundGzip="${packageName}.unbound.gz"
@@ -97,6 +102,7 @@ check_dnsmasq_nftset() {
 	o="$(dnsmasq -v 2>/dev/null)"
 	check_nft && ! echo "$o" | grep -q 'no-nftset' && echo "$o" | grep -q 'nftset'
 }
+check_smartdns() { command -v smartdns >/dev/null 2>&1; }
 check_unbound() { command -v unbound >/dev/null 2>&1; }
 debug() { local i j; for i in "$@"; do eval "j=\$$i"; echo "${i}: ${j} "; done; }
 dnsmasq_hup() { killall -q -s HUP dnsmasq; }
@@ -142,6 +148,7 @@ print_json_bool() { json_init; json_add_boolean "$1" "$2"; json_dump; json_clean
 print_json_int() { json_init; json_add_int "$1" "$2"; json_dump; json_cleanup; }
 print_json_string() { json_init; json_add_string "$1" "$2"; json_dump; json_cleanup; }
 sanitize_dir() { [ -d "$(readlink -fn "$1")" ] && readlink -fn "$1"; }
+smartdns_restart() { /etc/init.d/smartdns restart >/dev/null 2>&1; }
 str_contains() { test "$1" != "$(str_replace "$1" "$2" '')"; }
 str_contains_word() { echo "$1" | grep -q -w "$2"; }
 # shellcheck disable=SC2018,SC2019
@@ -572,6 +579,7 @@ load_environment() {
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
+			rm -f "$smartdnsDomainSetFile" "$smartdnsDomainSetCache" "${compressed_cache_dir}/${smartdnsDomainSetGzip}"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 		;;
 		dnsmasq.conf)
@@ -583,6 +591,7 @@ load_environment() {
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
+			rm -f "$smartdnsDomainSetFile" "$smartdnsDomainSetCache" "${compressed_cache_dir}/${smartdnsDomainSetGzip}"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 		;;
 		dnsmasq.ipset)
@@ -594,6 +603,7 @@ load_environment() {
 			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "${compressed_cache_dir}/${dnsmasqConfGzip}"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
+			rm -f "$smartdnsDomainSetFile" "$smartdnsDomainSetCache" "${compressed_cache_dir}/${smartdnsDomainSetGzip}"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 		;;
 		dnsmasq.nftset)
@@ -609,6 +619,7 @@ load_environment() {
 			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "${compressed_cache_dir}/${dnsmasqConfGzip}"
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
+			rm -f "$smartdnsDomainSetFile" "$smartdnsDomainSetCache" "${compressed_cache_dir}/${smartdnsDomainSetGzip}"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 		;;
 		dnsmasq.servers)
@@ -620,6 +631,19 @@ load_environment() {
 			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "${compressed_cache_dir}/${dnsmasqConfGzip}"
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
+			rm -f "$smartdnsDomainSetFile" "$smartdnsDomainSetCache" "${compressed_cache_dir}/${smartdnsDomainSetGzip}"
+			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
+		;;
+		smartdns.domainset)
+			outputFilter="$smartdnsDomainSetFilter"
+			outputFile="$smartdnsDomainSetFile"
+			outputCache="$smartdnsDomainSetCache"
+			outputGzip="${compressed_cache_dir}/${smartdnsDomainSetGzip}"
+			rm -f "$dnsmasqAddnhostsFile" "$dnsmasqAddnhostsCache" "${compressed_cache_dir}/${dnsmasqAddnhostsGzip}"
+			rm -f "$dnsmasqConfFile" "$dnsmasqConfCache" "${compressed_cache_dir}/${dnsmasqConfGzip}"
+			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
+			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
+			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 		;;
 		unbound.adb_list)
@@ -632,6 +656,7 @@ load_environment() {
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
+			rm -f "$smartdnsDomainSetFile" "$smartdnsDomainSetCache" "${compressed_cache_dir}/${smartdnsDomainSetGzip}"
 		;;
 	esac
 
@@ -707,7 +732,7 @@ load_environment() {
 }
 
 resolver() {
-	_resolver_config() {
+	_dnsmasq_instance_config() {
 		local cfg="$1" param="$2"
 		case "$param" in
 			dnsmasq.addnhosts)
@@ -730,6 +755,21 @@ resolver() {
 			;;
 		esac
 	}
+	_smartdns_instance_config() {
+		local cfg="$1" param="$2"
+		case "$param" in
+			cleanup)
+				uci_remove_list 'smartdns' "$cfg" 'conf_files' "$smartdnsDomainSetConfig"
+				rm -f "$smartdnsDomainSetConfig"
+			;;
+			smartdns.domainset)
+				{ echo "domain-set -name adblock-fast -file $smartdnsDomainSetFile"; \
+				echo "domain-rules /domain-set:adblock-fast/ -a #"; } > "$smartdnsDomainSetConfig"
+				uci_add_list_if_new 'smartdns' "$cfg" 'conf_files' "$smartdnsDomainSetConfig"
+			;;
+		esac
+	}
+	
 	local param output_text i
 	case $1 in
 		cleanup)
@@ -738,10 +778,15 @@ resolver() {
 			rm -f "$dnsmasqIpsetFile" "$dnsmasqIpsetCache" "${compressed_cache_dir}/${dnsmasqIpsetGzip}"
 			rm -f "$dnsmasqNftsetFile" "$dnsmasqNftsetCache" "${compressed_cache_dir}/${dnsmasqNftsetGzip}"
 			rm -f "$dnsmasqServersFile" "$dnsmasqServersCache" "${compressed_cache_dir}/${dnsmasqServersGzip}"
+			rm -f "$smartdnsDomainSetFile" "$smartdnsDomainSetCache" "${compressed_cache_dir}/${smartdnsDomainSetGzip}"
 			rm -f "$unboundFile" "$unboundCache" "$unboundGzip"
 			config_load 'dhcp'
-			config_foreach _resolver_config 'dnsmasq' 'cleanup'
+			config_foreach _dnsmasq_instance_config 'dnsmasq' 'cleanup'
 			uci_commit 'dhcp'
+			config_load 'smartdns'
+			config_foreach _smartdns_instance_config 'smartdns' 'cleanup'
+			rm -f "$smartdnsDomainSetConfig"
+			uci_commit 'smartdns'
 		;;
 		on_start)
 			if [ ! -s "$outputFile" ]; then
@@ -753,10 +798,18 @@ resolver() {
 
 			config_load 'dhcp'
 			if [ "$dnsmasq_instance" = "*" ]; then
-				config_foreach _resolver_config 'dnsmasq' "$dns"
+				config_foreach _dnsmasq_instance_config 'dnsmasq' "$dns"
 			elif [ -n "$dnsmasq_instance" ]; then
 				for i in $dnsmasq_instance; do
-					_resolver_config "@dnsmasq[$i]" "$dns" || _resolver_config "$i" "$dns"
+					_dnsmasq_instance_config "@dnsmasq[$i]" "$dns" || _dnsmasq_instance_config "$i" "$dns"
+				done
+			fi
+			config_load 'smartdns'
+			if [ "$smartdns_instance" = "*" ]; then
+				config_foreach _smartdns_instance_config 'smartdns' "$dns"
+			elif [ -n "$smartdns_instance" ]; then
+				for i in $smartdns_instance; do
+					_smartdns_instance_config "@smartdns[$i]" "$dns" || _smartdns_instance_config "$i" "$dns"
 				done
 			fi
 
@@ -764,29 +817,41 @@ resolver() {
 				dnsmasq.addnhosts|dnsmasq.servers)
 					chmod 660 "$outputFile"
 					chown root:dnsmasq "$outputFile"
-					param=dnsmasq_restart
+					param='dnsmasq_restart'
 					output_text='Reloading dnsmasq'
 				;;
 				dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset)
 					chmod 660 "$outputFile"
 					chown root:dnsmasq "$outputFile"
-					param=dnsmasq_restart
+					param='dnsmasq_restart'
 					output_text='Restarting dnsmasq'
 				;;
+				smartdns.domainset)
+					chmod 660 "$outputFile" "$smartdnsDomainSetConfig"
+					chown root:smartdns "$outputFile" "$smartdnsDomainSetConfig"
+					param='smartdns_restart'
+					output_text='Restarting SmartDNS'
+				;;
 				unbound.adb_list)
-					param=unbound_restart
+					chmod 660 "$outputFile"
+					chown root:unbound "$outputFile"
+					param='unbound_restart'
 					output_text='Restarting Unbound'
 				;;
 			esac
 
-			if [ -n "$(uci_changes dhcp)" ]; then
-				uci_commit dhcp
-				if [ "$param" = 'unbound_restart' ]; then
-					param='dnsmasq_restart; unbound_restart;'
-					output_text='Restarting Unbound/dnsmasq'
-				else
-					param=dnsmasq_restart
-					output_text='Restarting dnsmasq'
+			if [ -n "$(uci_changes dhcp)" ]; then 
+				uci_commit 'dhcp'
+				if ! str_contains "$param" 'dnsmasq_restart'; then
+					param="${param:+"$param; dnsmasq_restart"}"
+					output_text="${output_text}/dnsmasq"
+				fi
+			fi
+			if [ -n "$(uci_changes smartdns)" ]; then 
+				uci_commit 'smartdns'
+				if ! str_contains "$param" 'smartdns_restart'; then
+					param="${param:+"$param; "}smartdns_restart"
+					output_text="${output_text}/smartDNS"
 				fi
 			fi
 			output 1 "$output_text "
@@ -807,22 +872,25 @@ resolver() {
 		on_stop)
 			case "$dns" in
 				dnsmasq.addnhosts|dnsmasq.servers)
-					param=dnsmasq_restart
+					param='dnsmasq_restart'
 				;;
 				dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset)
-					param=dnsmasq_restart
+					param='dnsmasq_restart'
+				;;
+				smartdns.domainset)
+					param='smartdns_restart'
 				;;
 				unbound.adb_list)
-					param=unbound_restart
+					param='unbound_restart'
 				;;
 			esac
 			if [ -n "$(uci_changes dhcp)" ]; then 
-				uci_commit dhcp
-				if [ "$param" = 'unbound_restart' ]; then
-					param='dnsmasq_restart; unbound_restart;'
-				else
-					param=dnsmasq_restart
-				fi
+				uci_commit 'dhcp'
+				str_contains "$param" 'dnsmasq_restart' || param="${param:+"$param; dnsmasq_restart"}"
+			fi
+			if [ -n "$(uci_changes smartdns)" ]; then 
+				uci_commit 'smartdns'
+				str_contains "$param" 'smartdns_restart' || param="${param:+"$param; "}smartdns_restart"
 			fi
 			eval "$param"
 			return $?
@@ -830,10 +898,13 @@ resolver() {
 		quiet|quiet_restart)
 			case "$dns" in
 				dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
-					param=dnsmasq_restart
+					param='dnsmasq_restart'
+				;;
+				smartdns.domainset)
+					param='smartdns_restart'
 				;;
 				unbound.adb_list)
-					param=unbound_restart
+					param='unbound_restart'
 				;;
 			esac
 			eval "$param"
@@ -1167,7 +1238,7 @@ $(cat $A_TMP)"
 		if sed "$outputFilter" "$B_TMP" > "$A_TMP"; then
 			output_ok
 		else
-			output_failn
+			output_failn 
 			json add error 'errorDataFileFormatting'
 		fi
 	else
@@ -1894,8 +1965,9 @@ load_validate_config() {
 		'procd_trigger_wan6:bool:0' \
 		'procd_boot_wan_timeout:integer:60' \
 		'led:or("", "none", file, device, string)' \
-		'dns:or("dnsmasq.addnhosts", "dnsmasq.conf", "dnsmasq.ipset", "dnsmasq.nftset", "dnsmasq.servers", "unbound.adb_list"):dnsmasq.servers' \
+		'dns:or("dnsmasq.addnhosts", "dnsmasq.conf", "dnsmasq.ipset", "dnsmasq.nftset", "dnsmasq.servers", "smartdns.domainset", "unbound.adb_list"):dnsmasq.servers' \
 		'dnsmasq_instance:list(or(integer, string)):*' \
+		'smartdns_instance:list(or(integer, string)):*' \
 		'allowed_domain:list(string)' \
 		'blocked_domain:list(string)' \
 		'dnsmasq_config_file_url:string'
