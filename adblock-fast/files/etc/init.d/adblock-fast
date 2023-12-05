@@ -114,6 +114,7 @@ dnsmasq_hup() { killall -q -s HUP dnsmasq; }
 dnsmasq_kill() { killall -q -s KILL dnsmasq; }
 dnsmasq_restart() { /etc/init.d/dnsmasq restart >/dev/null 2>&1; }
 is_enabled() { uci_get "$1" 'config' 'enabled' '0'; }
+is_fw4_restart_needed() { [ "$(uci_get "$packageName" 'config' 'force_dns' '1')" = '1' ]; }
 is_integer() {
 	case "$1" in
 		(*[!0123456789]*) return 1;;
@@ -173,7 +174,8 @@ json() {
 # shellcheck disable=SC2124
 	local extras="$@" line
 	local status message error stats
-	local reload restart curReload curRestart ret i
+	local reload restart curReload curRestart
+	local ret i
 	if [ -s "$jsonFile" ]; then
 		json_load_file "$jsonFile" 2>/dev/null
 		json_select 'data' 2>/dev/null
@@ -1882,8 +1884,8 @@ killcache() {
 }
 reload_service() { rc_procd start_service 'restart'; }
 restart_service() { rc_procd start_service 'restart'; }
-service_started() { procd_set_config_changed firewall; }
-service_stopped() { procd_set_config_changed firewall; }
+service_started() { is_fw4_restart_needed && procd_set_config_changed firewall; }
+service_stopped() { is_fw4_restart_needed && procd_set_config_changed firewall; }
 service_triggers() {
 	local wan wan6 i
 	local procd_trigger_wan6
@@ -1960,7 +1962,7 @@ load_validate_config() {
 		'canary_domains_icloud:bool:0' \
 		'canary_domains_mozilla:bool:0' \
 		'config_update_enabled:bool:0' \
-		'config_update_url:string:https://cdn.jsdelivr.net/gh/openwrt/packages/net/adblock-fast/files/adblock-fast.conf.update' \
+		'config_update_url:string:https://cdn.jsdelivr.net/gh/openwrt/packages/net/adblock-fast/files/adblock-fast.config.update' \
 		'download_timeout:range(1,60):20' \
 		'pause_timeout:range(1,60):20' \
 		'curl_additional_param:or("", string)' \
