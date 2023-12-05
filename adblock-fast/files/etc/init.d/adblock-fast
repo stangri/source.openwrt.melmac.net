@@ -114,7 +114,7 @@ check_dnsmasq_nftset() {
 }
 check_smartdns() { command -v smartdns >/dev/null 2>&1; }
 check_smartdns_ipset() { check_smartdns && check_ipset; }
-check_smartdns_nftset() { check_smartdns && check_nftset; }
+check_smartdns_nftset() { check_smartdns && check_nft; }
 check_unbound() { command -v unbound >/dev/null 2>&1; }
 debug() { local i j; for i in "$@"; do eval "j=\$$i"; echo "${i}: ${j} "; done; }
 dnsmasq_hup() { killall -q -s HUP dnsmasq; }
