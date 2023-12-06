@@ -804,19 +804,19 @@ resolver() {
 				rm -f "$outputConfig"
 			;;
 			smartdns.domainset)
-				{ echo "domain-set -name adblock-fast -file $smartdnsDomainSetFile"; \
+				{ echo "domain-set -name adblock-fast -file $outputFile"; \
 				echo "domain-rules /domain-set:adblock-fast/ -a #"; } > "$outputConfig"
 				uci_add_list_if_new 'smartdns' "$cfg" 'conf_files' "$outputConfig"
 			;;
 			smartdns.ipset)
-				{ echo "domain-set -name adblock-fast -file $smartdnsIpsetFile"; \
+				{ echo "domain-set -name adblock-fast -file $outputFile"; \
 				echo "domain-rules /domain-set:adblock-fast/ -ipset adb"; } > "$outputConfig"
 				uci_add_list_if_new 'smartdns' "$cfg" 'conf_files' "$outputConfig"
 			;;
 			smartdns.nftset)
 				local nftset="#4:inet#fw4#adb4"
 				[ "$ipv6_enabled" -ne '0' ] && nftset="${nftset},#6:inet#fw4#adb6"
-				{ echo "domain-set -name adblock-fast -file $smartdnsNftsetFile"; \
+				{ echo "domain-set -name adblock-fast -file $outputFile"; \
 				echo "domain-rules /domain-set:adblock-fast/ -nftset $nftset"; } > "$outputConfig"
 				uci_add_list_if_new 'smartdns' "$cfg" 'conf_files' "$outputConfig"
 			;;
@@ -868,25 +868,19 @@ resolver() {
 			fi
 
 			case "$dns" in
-				dnsmasq.addnhosts|dnsmasq.servers)
-					chmod 660 "$outputFile"
-					chown root:dnsmasq "$outputFile"
-					param='dnsmasq_restart'
-					output_text='Reloading dnsmasq'
-				;;
-				dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset)
+				dnsmasq.*)
 					chmod 660 "$outputFile"
 					chown root:dnsmasq "$outputFile"
 					param='dnsmasq_restart'
 					output_text='Restarting dnsmasq'
 				;;
-				smartdns.domainset|smartdns.ipset|smartdns.nftset)
+				smartdns.*)
 					chmod 660 "$outputFile" "$outputConfig"
 					chown root:smartdns "$outputFile" "$outputConfig"
 					param='smartdns_restart'
 					output_text='Restarting SmartDNS'
 				;;
-				unbound.adb_list)
+				unbound.*)
 					chmod 660 "$outputFile"
 					chown root:unbound "$outputFile"
 					param='unbound_restart'
@@ -925,16 +919,13 @@ resolver() {
 		;;
 		on_stop)
 			case "$dns" in
-				dnsmasq.addnhosts|dnsmasq.servers)
+				dnsmasq.*)
 					param='dnsmasq_restart'
 				;;
-				dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset)
-					param='dnsmasq_restart'
-				;;
-				smartdns.domainset|smartdns.ipset|smartdns.nftset)
+				smartdns.*)
 					param='smartdns_restart'
 				;;
-				unbound.adb_list)
+				unbound.*)
 					param='unbound_restart'
 				;;
 			esac
@@ -951,13 +942,13 @@ resolver() {
 		;;
 		quiet|quiet_restart)
 			case "$dns" in
-				dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
+				dnsmasq.*)
 					param='dnsmasq_restart'
 				;;
-				smartdns.domainset|smartdns.ipset|smartdns.nftset)
+				smartdns.*)
 					param='smartdns_restart'
 				;;
-				unbound.adb_list)
+				unbound.*)
 					param='unbound_restart'
 				;;
 			esac
@@ -1396,7 +1387,7 @@ adb_allow() {
 		return 0
 	fi
 	case "$dns" in
-		dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
+		dnsmasq.*)
 			output 1 "Allowing domain(s) and restarting dnsmasq "
 			output 2 "Allowing domain(s) \\n"
 			for c in $string; do
@@ -1438,7 +1429,7 @@ adb_allow() {
 				output_fail; 
 			fi
 		;;
-		smartdns.domainset|smartdns.ipset|smartdns.nftset)
+		smartdns.*)
 			output 1 "Allowing domain(s) and restarting smartdns "
 			output 2 "Allowing domain(s) \\n"
 			for c in $string; do 
@@ -1471,7 +1462,7 @@ adb_allow() {
 				output_fail; 
 			fi
 		;;
-		unbound.adb_list)
+		unbound.*)
 			output 1 "Allowing domain(s) and restarting Unbound "
 			output 2 "Allowing domain(s) \\n"
 			for c in $string; do 
@@ -1538,7 +1529,7 @@ adb_check() {
 						grep "$string" "$outputFile" | sed 's|nftset=/||;s|/4#inet#adb#adb4||;';;
 					dnsmasq.servers)
 						grep "$string" "$outputFile" | sed 's|server=/||;s|/$||;';;
-					smartdns.domainset|smartdns.ipset|smartdns.nftset)
+					smartdns.*)
 						grep "$string" "$outputFile";;
 					unbound.adb_list)
 						grep "$string" "$outputFile" | sed 's|^local-zone: "||;s|" static$||;';;
