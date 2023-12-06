@@ -547,15 +547,17 @@ load_environment() {
 	fi
 
 	case "$dns" in
-		dnsmasq.addnhosts|dnsmasq.conf|dnsmasq.ipset|dnsmasq.nftset|dnsmasq.servers)
+		dnsmasq.*)
 			if dnsmasq -v 2>/dev/null | grep -q 'no-IDN' || ! dnsmasq -v 2>/dev/null | grep -q -w 'IDN'; then
-				allow_non_ascii=0
+				allow_non_ascii='0'
 			fi
 		;;
-		smartdns.domainset|smartdns.ipset|smartdns.nftset)
-			allow_non_ascii=1;;
-		unbound.adb_list)
-			allow_non_ascii=1;;
+		smartdns.*)
+			allow_non_ascii='0'
+		;;
+		unbound.*)
+			allow_non_ascii='1'
+		;;
 	esac
 
 	case "$dns" in
