@@ -4,12 +4,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nebula
-PKG_VERSION:=1.7.2
-PKG_RELEASE:=3
+PKG_VERSION:=1.8.0
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/slackhq/nebula/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=c4771ce6eb3e142f88f5f4c12443cfca140bf96b2746c74f9536bd1a362f3f88
+PKG_HASH:=678ad2bda47258cce8c2d14b3fa56d17c0ba4f894d75b75afab8937d64e12da7
 
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 PKG_LICENSE:=MIT
