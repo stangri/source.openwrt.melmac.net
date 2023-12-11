@@ -884,7 +884,7 @@ resolver() {
 				;;
 				smartdns.*)
 					chmod 660 "$outputFile" "$outputConfig"
-					chown root:smartdns "$outputFile" "$outputConfig"
+					chown root:root "$outputFile" "$outputConfig"
 					param='smartdns_restart'
 					output_text='Restarting SmartDNS'
 				;;
