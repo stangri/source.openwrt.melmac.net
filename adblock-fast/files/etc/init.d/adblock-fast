@@ -1109,7 +1109,7 @@ download_dnsmasq_file() {
 			output_failn
 		fi
 	fi
-	touch "$A_TMP"; touch "$B_TMP"; touch "$SED_TMP";
+	touch "$A_TMP" "$B_TMP" "$SED_TMP"
 	output 1 'Downloading dnsmasq file '
 	rm -f "$sharedMemoryError"
 	process_file_url '' "$dnsmasq_config_file_url" 'file'
@@ -1174,7 +1174,7 @@ download_lists() {
 			output_failn
 		fi
 	fi
-	touch "$A_TMP"; touch "$B_TMP"; touch "$SED_TMP";
+	touch "$A_TMP" "$B_TMP" "$SED_TMP"
 	output 1 'Downloading lists '
 	rm -f "$sharedMemoryError"
 	config_load "$packageName"
