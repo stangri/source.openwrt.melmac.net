@@ -22,7 +22,7 @@ return view.extend({
 		return Promise.all([
 			L.resolveDefault(pbr.getInterfaces(pkg.Name), {}),
 			L.resolveDefault(pbr.getPlatformSupport(pkg.Name), {}),
-			L.uci.load(pkg.Name),
+			L.resolveDefault(L.uci.load(pkg.Name), {}),
 		]);
 	},
 
