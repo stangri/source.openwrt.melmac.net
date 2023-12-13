@@ -31,7 +31,7 @@ return view.extend({
 		var reply = {
 			interfaces: (data[0] &&
 				data[0][pkg.Name] &&
-				data[0][pkg.Name].interfaces) || { interfaces: ["wan"] },
+				data[0][pkg.Name].interfaces) || ["wan"],
 			platform: (data[1] && data[1][pkg.Name]) || {
 				ipset_installed: null,
 				nft_installed: null,
