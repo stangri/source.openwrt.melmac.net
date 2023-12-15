@@ -291,9 +291,9 @@ get_rt_tables_next_id() { echo "$(($(sort -r -n '/etc/iproute2/rt_tables' | grep
 get_rt_tables_non_pbr_next_id() { echo "$(($(grep -v "${ipTablePrefix}_" '/etc/iproute2/rt_tables' | sort -r -n  | grep -o -E -m 1 "^[0-9]+")+1))"; }
 network_get_listen_port() {
 	local __tmp
-	__tmp="$1=$(uci_get 'network' "$2" 'listen_port')"
+	__tmp="$(uci_get 'network' "$2" 'listen_port')"
 	[ -z "$__tmp" ] && unset "$1" && return 1
-	eval "$__tmp"
+	eval "$1=$__tmp"
 }
 # shellcheck disable=SC2016
 resolveip_to_ipt() { resolveip "$@" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d'; }
