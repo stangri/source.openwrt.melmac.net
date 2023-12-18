@@ -12,10 +12,12 @@ PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
-CMAKE_INSTALL:=1
+PKG_FIXUP:=autoreconf
+PKG_INSTALL:=1
+#CMAKE_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/cmake.mk
+#include $(INCLUDE_DIR)/cmake.mk
 
 define Package/libnghttp3
   SECTION:=libs
@@ -28,7 +30,16 @@ define Package/libnghttp3/description
 nghttp3 is a thin HTTP/3 layer over an underlying QUIC stack.
 endef
 
-CMAKE_OPTIONS += -DENABLE_LIB_ONLY=ON
+CONFIGURE_ARGS += --enable-lib-only
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include/nghttp3
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/include/nghttp3/*.h $(1)/usr/include/nghttp3/
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/*.pc $(1)/usr/lib/pkgconfig/
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libnghttp3.so* $(1)/usr/lib/
+endef
+#CMAKE_OPTIONS += -DENABLE_LIB_ONLY=ON
 
 define Package/libnghttp3/install
 	$(INSTALL_DIR) $(1)/usr/lib
