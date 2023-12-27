@@ -16,11 +16,18 @@ PKG_NAME:=openssl
 #PKG_SOURCE_URL:=https://codeload.github.com/quictls/openssl/tar.gz/$(PKG_NAME)-$(PKG_VERSION)-$(PKG_RELEASE)?
 #PKG_HASH:=4bf990243d6aa39b8befa0c399834415842912ef67f88bef98e74dc619469618
 
-PKG_VERSION:=openssl-3.1.4-quic1
-PKG_RELEASE:=1
-PKG_SOURCE:=$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/quictls/openssl/archive/refs/tags/
-PKG_HASH:=4bf990243d6aa39b8befa0c399834415842912ef67f88bef98e74dc619469618
+#PKG_VERSION:=openssl-3.1.4-quic1
+#PKG_RELEASE:=1
+#PKG_SOURCE:=$(PKG_VERSION).tar.gz
+#PKG_SOURCE_URL:=https://github.com/quictls/openssl/archive/refs/tags/
+#PKG_HASH:=4bf990243d6aa39b8befa0c399834415842912ef67f88bef98e74dc619469618
+
+PKG_VERSION:=3.0.12
+PKG_RELEASE:=quic1
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_NAME)-$(PKG_VERSION)-$(PKG_RELEASE)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_RELEASE).tar.gz
+PKG_SOURCE_URL:=https://codeload.github.com/quictls/openssl/tar.gz/$(PKG_NAME)-$(PKG_VERSION)-$(PKG_RELEASE)?
+PKG_HASH:=ca0e148f5e50c38198a25559d52cc06781345f5bff15de526ff65b0cc623d1bc
 
 #PKG_VERSION:=openssl-3.0.12-quic1
 #PKG_RELEASE:=1
