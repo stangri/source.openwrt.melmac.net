@@ -57,6 +57,11 @@ return view.extend({
 
 		status = new adb.status();
 		m = new form.Map(pkg.Name, _("AdBlock-Fast - Configuration"));
+
+		if (!reply.pkg) {
+			return Promise.all([status.render(), m.render()]);
+		}
+
 		s1 = m.section(form.NamedSection, "config", pkg.Name);
 		s1.tab("tab_basic", _("Basic Configuration"));
 		s1.tab("tab_advanced", _("Advanced Configuration"));
