@@ -1,5 +1,7 @@
 # curl
 
+Some OpenWrt-specific information for the `curl` package can be found below.
+
 ## Building libcurl with HTTP/3 and QUIC support
 
 I was only able to successfully build the libcurl with HTTP/3 and QUIC support inside the musl-based Alpine Linux VM. Instructions below are for the Alpine Linux VM, however you may also be able to create an [Alpine Linix-based docker image](https://openwrt.org/docs/guide-user/virtualization/obtain.firmware.docker) and use that.
