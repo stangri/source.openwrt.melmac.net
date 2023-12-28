@@ -14,10 +14,10 @@ PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
-#CMAKE_INSTALL:=1
+CMAKE_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
-#include $(INCLUDE_DIR)/cmake.mk
+include $(INCLUDE_DIR)/cmake.mk
 
 define Package/libngtcp2
   SECTION:=libs
@@ -32,16 +32,15 @@ ngtcp2 project is an effort to implement QUIC protocol which is now being
 discussed in IETF QUICWG for its standardization.
 endef
 
-CONFIGURE_ARGS += --enable-lib-only
-
-define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/include/ngtcp2
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/include/ngtcp2/*.h $(1)/usr/include/ngtcp2/
-	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/*.pc $(1)/usr/lib/pkgconfig/
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libngtcp2.so* $(1)/usr/lib/
-endef
-#CMAKE_OPTIONS += -DENABLE_LIB_ONLY=ON
+#CONFIGURE_ARGS += --enable-lib-only
+#define Build/InstallDev
+#	$(INSTALL_DIR) $(1)/usr/include/ngtcp2
+#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/include/ngtcp2/*.h $(1)/usr/include/ngtcp2/
+#	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
+#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/*.pc $(1)/usr/lib/pkgconfig/
+#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libngtcp2.so* $(1)/usr/lib/
+#endef
+CMAKE_OPTIONS += -DENABLE_LIB_ONLY=ON
 
 define Package/libngtcp2/install
 	$(INSTALL_DIR) $(1)/usr/lib
