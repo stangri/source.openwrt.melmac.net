@@ -30,15 +30,6 @@ define Package/libnghttp3/description
 nghttp3 is a thin HTTP/3 layer over an underlying QUIC stack.
 endef
 
-#CONFIGURE_ARGS += --enable-lib-only
-#define Build/InstallDev
-#	$(INSTALL_DIR) $(1)/usr/include/nghttp3
-#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/include/nghttp3/*.h $(1)/usr/include/nghttp3/
-#	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
-#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/*.pc $(1)/usr/lib/pkgconfig/
-#	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libnghttp3.so* $(1)/usr/lib/
-#endef
-
 CMAKE_OPTIONS += -DENABLE_LIB_ONLY=ON
 
 define Package/libnghttp3/install
