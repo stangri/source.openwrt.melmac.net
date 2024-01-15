@@ -33,7 +33,7 @@ define Package/netclient
   CATEGORY:=Network
   TITLE:=netclient
   URL:=https://docs.openwrt.melmac.net/netclient/
-  DEPENDS:=$(GO_ARCH_DEPENDS)
+  DEPENDS:=$(GO_ARCH_DEPENDS) +wireguard-tools
 endef
 
 define Build/Compile
