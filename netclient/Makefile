@@ -1,5 +1,5 @@
-# Copyright 2021-2023 Stan Grishin (stangri@melmac.ca)
-# This is free software, licensed under the MIT License.
+# Copyright 2024 Stan Grishin (stangri@melmac.ca)
+# This is free software, licensed under the Apache-2.0 License.
 
 include $(TOPDIR)/rules.mk
 
@@ -13,7 +13,7 @@ PKG_HASH:=6e8017e1e89530d836a35658d778196d801cd634569c3827858631d9f756ac31
 
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 PKG_LICENSE:=Apache-2.0
-PKG_LICENSE_FILES:=LICENSE
+PKG_LICENSE_FILES:=LICENSE.txt
 
 PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
@@ -23,7 +23,7 @@ GO_PKG:=github.com/gravitl/netclient
 GO_PKG_BUILD_PKG:= \
 	github.com/gravitl/netclient
 GO_PKG_LDFLAGS_X:=\
-	main.Build=$(PKG_VERSION)
+	main.version=$(PKG_VERSION)-$(PKG_RELEASE)
 
 include $(INCLUDE_DIR)/package.mk
 include ../../lang/golang/golang-package.mk
@@ -55,7 +55,7 @@ define Package/netclient/install
 	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
 	$(INSTALL_DATA) ./files/netclient.upgrade $(1)/lib/upgrade/keep.d/netclient
 	$(INSTALL_DIR) $(1)/usr/share/doc/netclient
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE.txt $(1)/usr/share/doc/netclient/LICENSE.txt
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LICENSE_FILES) $(1)/usr/share/doc/netclient/$(PKG_LICENSE_FILES)
 endef
 
 $(eval $(call GoBinPackage,netclient))
