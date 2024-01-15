@@ -1,5 +1,5 @@
 # Copyright 2021-2023 Stan Grishin (stangri@melmac.ca)
-# This is free software, licensed under the MIT License.
+# This is free software, licensed under the Apache 2.0 License.
 
 include $(TOPDIR)/rules.mk
 
