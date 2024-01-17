@@ -4,12 +4,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=netclient
-PKG_VERSION:=0.21.2
+PKG_VERSION:=0.22.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/gravitl/netclient/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=6e8017e1e89530d836a35658d778196d801cd634569c3827858631d9f756ac31
+PKG_HASH:=010e7ee72f8cf8ae4cc91b19010b85875d75e70faabd248c992af2487629211d
 
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 PKG_LICENSE:=Apache-2.0
@@ -20,10 +20,8 @@ PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16
 
 GO_PKG:=github.com/gravitl/netclient
-GO_PKG_BUILD_PKG:= \
-	github.com/gravitl/netclient
-GO_PKG_LDFLAGS_X:=\
-	main.version=$(PKG_VERSION)-$(PKG_RELEASE)
+GO_PKG_BUILD_PKG:=github.com/gravitl/netclient
+GO_PKG_LDFLAGS_X:=main.version=$(PKG_VERSION)-$(PKG_RELEASE)
 
 include $(INCLUDE_DIR)/package.mk
 include ../../lang/golang/golang-package.mk
@@ -34,10 +32,6 @@ define Package/netclient
   TITLE:=netclient
   URL:=https://docs.openwrt.melmac.net/netclient/
   DEPENDS:=$(GO_ARCH_DEPENDS) +wireguard-tools
-endef
-
-define Build/Compile
-  $(call GoPackage/Build/Compile)
 endef
 
 define Package/netclient/description
