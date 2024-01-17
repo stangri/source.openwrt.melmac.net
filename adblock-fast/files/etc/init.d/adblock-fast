@@ -1351,7 +1351,7 @@ $(sed '/^[[:space:]]*$/d' "$A_TMP")"
 		if sed "$outputFilter" "$B_TMP" > "$A_TMP"; then
 			output_ok
 		else
-			output_failn 
+			output_failn
 			json add error 'errorDataFileFormatting'
 		fi
 	else
