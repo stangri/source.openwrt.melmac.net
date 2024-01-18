@@ -21,7 +21,7 @@ PKG_BUILD_FLAGS:=no-mips16
 
 GO_PKG:=github.com/gravitl/netclient
 GO_PKG_BUILD_PKG:=github.com/gravitl/netclient
-GO_PKG_LDFLAGS_X:=main.version=$(PKG_VERSION)-$(PKG_RELEASE)
+GO_PKG_LDFLAGS_X:=main.version=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 include ../../lang/golang/golang-package.mk
@@ -35,7 +35,7 @@ define Package/netclient
 endef
 
 define Package/netclient/description
-This is the client for Netmaker networks. To learn more about Netmaker, see URL below.
+This is the client for Netmaker networks. To learn more about Netmaker, see URL below:
 https://github.com/gravitl/netmaker
 endef
 
