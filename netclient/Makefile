@@ -21,7 +21,7 @@ PKG_BUILD_FLAGS:=no-mips16
 
 GO_PKG:=github.com/gravitl/netclient
 GO_PKG_BUILD_PKG:=github.com/gravitl/netclient
-GO_PKG_LDFLAGS_X:=main.version=$(PKG_VERSION)
+GO_PKG_LDFLAGS_X:=main.version=v$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 include ../../lang/golang/golang-package.mk
