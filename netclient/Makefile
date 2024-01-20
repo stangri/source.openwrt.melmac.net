@@ -35,7 +35,8 @@ define Package/netclient
 endef
 
 define Package/netclient/description
-This is the client for Netmaker networks. To learn more about Netmaker, see URL below:
+This is the client for Netmaker networks. Netmaker automates fast, secure, and
+distributed virtual networks with Wireguard. To learn more about Netmaker, see:
 https://github.com/gravitl/netmaker
 endef
 
@@ -46,8 +47,6 @@ define Package/netclient/install
 	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/netclient
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/netclient $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
-	$(INSTALL_DATA) ./files/netclient.upgrade $(1)/lib/upgrade/keep.d/netclient
 	$(INSTALL_DIR) $(1)/usr/share/doc/netclient
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LICENSE_FILES) $(1)/usr/share/doc/netclient/$(PKG_LICENSE_FILES)
 endef

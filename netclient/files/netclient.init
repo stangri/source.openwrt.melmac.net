@@ -9,7 +9,6 @@ STOP=95
 USE_PROCD=1
 
 readonly PKG_VERSION='dev-test'
-readonly packageName='netclient'
 readonly PROG=/usr/sbin/netclient
 
 extra_command 'version' 'Show version information'
