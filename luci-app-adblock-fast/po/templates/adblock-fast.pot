@@ -1,11 +1,6 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:246
-#: applications/luci-app-adblock-fast/htdocs/luci-static/resources/view/adblock-fast/overview.js:309
-msgid "%s"
-msgstr ""
-
 #: applications/luci-app-adblock-fast/htdocs/luci-static/resources/adblock-fast/status.js:225
 msgid "%s is currently disabled"
 msgstr ""
