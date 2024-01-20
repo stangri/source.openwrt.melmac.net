@@ -243,7 +243,7 @@ return view.extend({
 					key = element[".name"];
 					description = element[".name"];
 				}
-				o.value(key, _("%s").format(description));
+				o.value(key, description);
 			});
 			o.depends("dnsmasq_instance_option", "+");
 			o.retain = true;
@@ -306,7 +306,7 @@ return view.extend({
 					key = element[".name"];
 					description = element[".name"];
 				}
-				o.value(key, _("%s").format(description));
+				o.value(key, description);
 			});
 			o.depends("smartdns_instance_option", "+");
 			o.retain = true;
