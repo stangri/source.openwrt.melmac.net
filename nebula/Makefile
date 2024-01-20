@@ -69,10 +69,6 @@ define Package/nebula-service
   PKGARCH:=all
 endef
 
-define Build/Compile
-  $(call GoPackage/Build/Compile)
-endef
-
 define Package/nebula/description
 Nebula is a scalable overlay networking tool with a focus on performance, simplicity
 and security. It lets you seamlessly connect computers anywhere in the world.
@@ -98,20 +94,21 @@ and security. It lets you seamlessly connect computers anywhere in the world.
 This package contains only OpenWrt-specific init.d script for nebula.
 endef
 
+define Package/nebula/conffiles
+/etc/nebula/
+endef
+
 define Package/nebula/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
 	$(INSTALL_DIR) $(1)/usr/share/doc/nebula
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula $(1)/usr/sbin/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula/LICENSE
-	$(INSTALL_DATA) ./files/nebula.upgrade $(1)/lib/upgrade/keep.d/nebula
 endef
 
 define Package/nebula-cert/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
 	$(INSTALL_DIR) $(1)/usr/share/doc/nebula-cert
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/nebula-cert $(1)/usr/sbin/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/usr/share/doc/nebula-cert/LICENSE
