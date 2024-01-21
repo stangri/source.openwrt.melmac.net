@@ -35,9 +35,9 @@ define Package/netclient
 endef
 
 define Package/netclient/description
-This is the client for Netmaker networks. Netmaker automates fast, secure, and
-distributed virtual networks with Wireguard. To learn more about Netmaker, see:
-https://github.com/gravitl/netmaker
+  This is the client for Netmaker networks. Netmaker automates fast, secure, and
+  distributed virtual networks with Wireguard. To learn more about Netmaker, see:
+  https://github.com/gravitl/netmaker
 endef
 
 define Package/netclient/install
