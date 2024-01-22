@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ngtcp2
-PKG_VERSION:=1.1.0
+PKG_VERSION:=1.2.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/ngtcp2/ngtcp2/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=987d784643edea4f2859c405f7dfbc53871a9f7ae5fcddf5fb12ec5dfce1ef22
+PKG_HASH:=15f3dd4cc4db2435bcd0b5253ccce4cbab26d18cc6ef4f00b5cb4af21ed06a0b
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
