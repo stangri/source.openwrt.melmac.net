@@ -47,8 +47,6 @@ define Package/netclient/install
 	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/netclient
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/netclient $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/usr/share/doc/netclient
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LICENSE_FILES) $(1)/usr/share/doc/netclient/$(PKG_LICENSE_FILES)
 endef
 
 $(eval $(call GoBinPackage,netclient))
