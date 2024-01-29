@@ -99,6 +99,10 @@ define Package/nebula/conffiles
 /etc/nebula/
 endef
 
+Package/nebula-cert/conffiles = $(Package/nebula/conffiles)
+Package/nebula-proto/conffiles = $(Package/nebula/conffiles)
+Package/nebula-service/conffiles = $(Package/nebula/conffiles)
+
 define Package/nebula/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
 	$(INSTALL_DIR) $(1)/usr/sbin
