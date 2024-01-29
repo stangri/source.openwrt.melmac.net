@@ -4,8 +4,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
-PKG_VERSION:=1.1.3
-PKG_RELEASE:=25
+PKG_VERSION:=1.1.4
+PKG_RELEASE:=1
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -50,19 +50,19 @@ $(call Package/pbr/Default)
 endef
 
 define Package/pbr/description
-This service enables policy-based routing for WAN interfaces and various VPN tunnels.
-This version supports OpenWrt with both firewall3/ipset/iptables and firewall4/nft.
+  This service enables policy-based routing for WAN interfaces and various VPN tunnels.
+  This version supports OpenWrt with both firewall3/ipset/iptables and firewall4/nft.
 endef
 
 define Package/pbr-iptables/description
-This service enables policy-based routing for WAN interfaces and various VPN tunnels.
-This version supports OpenWrt with firewall3/ipset/iptables.
+  This service enables policy-based routing for WAN interfaces and various VPN tunnels.
+  This version supports OpenWrt with firewall3/ipset/iptables.
 endef
 
 define Package/pbr-netifd/description
-This service enables policy-based routing for WAN interfaces and various VPN tunnels.
-This version supports OpenWrt with both firewall3/ipset/iptables and firewall4/nft.
-This version uses OpenWrt native netifd/tables to set up interfaces. This is WIP.
+  This service enables policy-based routing for WAN interfaces and various VPN tunnels.
+  This version supports OpenWrt with both firewall3/ipset/iptables and firewall4/nft.
+  This version uses OpenWrt native netifd/tables to set up interfaces. This is WIP.
 endef
 
 define Package/pbr/conffiles
