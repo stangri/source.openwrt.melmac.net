@@ -548,21 +548,12 @@ load_package_config() {
 	[ "$nft_set_flags_interval" != '1' ] && unset nft_set_flags_interval
 	[ "$nft_set_flags_timeout" != '1' ]  && unset nft_set_flags_timeout
 	[ -z "${nft_set_flags_timeout}${nft_set_timeout}" ] && unset nft_set_gc_interval
-	local nft_set_flags
-	if [ -n "${nft_set_flags_interval}${nft_set_flags_timeout}" ]; then
-		[ -n "$nft_set_flags_interval" ] && nft_set_flags='flags interval'
-		if [ -n "$nft_set_flags_timeout" ]; then
-			if [ -n "$nft_set_flags" ]; then
-				nft_set_flags="${nft_set_flags}, timeout"
-			else
-				nft_set_flags='flags timeout'
-			fi
-		fi
-	fi
 	nft_set_params=" \
 		${nft_set_auto_merge:+ auto-merge;} \
 		${nft_set_counter:+ counter;} \
-		${nft_set_flags:+ $nft_set_flags;} \
+		${nft_set_flags_interval:+ flags interval;} \
+		${nft_set_flags_timeout:+ flags timeout;} \
+		${nft_set_flags:+ $nft_set_flags} \
 		${nft_set_gc_interval:+ gc_interval "$nft_set_gc_interval";} \
 		${nft_set_policy:+ policy "$nft_set_policy";} \
 		${nft_set_timeout:+ timeout "$nft_set_timeout";} \
