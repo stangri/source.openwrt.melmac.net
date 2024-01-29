@@ -30,27 +30,27 @@ GO_PKG_LDFLAGS_X:=\
 include $(INCLUDE_DIR)/package.mk
 include ../../lang/golang/golang-package.mk
 
-define Package/nebula
+define Package/nebula/Default
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=nebula
   URL:=https://docs.openwrt.melmac.net/nebula/
+endef
+
+define Package/nebula
+  $(call Package/nebula/Default)
+  TITLE:=nebula
   DEPENDS:=$(GO_ARCH_DEPENDS) +kmod-tun
 endef
 
 define Package/nebula-cert
-  SECTION:=net
-  CATEGORY:=Network
+  $(call Package/nebula/Default)
   TITLE:=nebula-cert
-  URL:=https://docs.openwrt.melmac.net/nebula/
   DEPENDS:=$(GO_ARCH_DEPENDS)
 endef
 
 define Package/nebula-proto
-  SECTION:=net
-  CATEGORY:=Network
+  $(call Package/nebula/Default)
   TITLE:=nebula-proto
-  URL:=https://docs.openwrt.melmac.net/nebula/
   DEPENDS:=nebula
 	DEPENDS+=+!BUSYBOX_DEFAULT_AWK:gawk
 	DEPENDS+=+!BUSYBOX_DEFAULT_GREP:grep
@@ -59,10 +59,8 @@ define Package/nebula-proto
 endef
 
 define Package/nebula-service
-  SECTION:=net
-  CATEGORY:=Network
+  $(call Package/nebula/Default)
   TITLE:=nebula-service
-  URL:=https://docs.openwrt.melmac.net/nebula/
   DEPENDS:=nebula
 	DEPENDS+=+!BUSYBOX_DEFAULT_AWK:gawk
 	DEPENDS+=+!BUSYBOX_DEFAULT_SED:sed
@@ -70,28 +68,29 @@ define Package/nebula-service
   PKGARCH:=all
 endef
 
-define Package/nebula/description
+define Package/nebula/description/Default
   Nebula is a scalable overlay networking tool with a focus on performance, simplicity
   and security. It lets you seamlessly connect computers anywhere in the world.
+endef
+
+define Package/nebula/description
+  $(call Package/nebula/description/Default)
   This package contains only nebula binary. Unless you want to start nebula manually,
   you may want to also install *either* 'nebula-service' *or* 'nebula-proto' package.
 endef
 
 define Package/nebula-cert/description
-  Nebula is a scalable overlay networking tool with a focus on performance, simplicity
-  and security. It lets you seamlessly connect computers anywhere in the world.
+  $(call Package/nebula/description/Default)
   This package contains only nebula-cert binary.
 endef
 
 define Package/nebula-proto/description
-  Nebula is a scalable overlay networking tool with a focus on performance, simplicity
-  and security. It lets you seamlessly connect computers anywhere in the world.
+  $(call Package/nebula/description/Default)
   This package contains only OpenWrt protocol/interface support for nebula.
 endef
 
 define Package/nebula-service/description
-  Nebula is a scalable overlay networking tool with a focus on performance, simplicity
-  and security. It lets you seamlessly connect computers anywhere in the world.
+  $(call Package/nebula/description/Default)
   This package contains only OpenWrt-specific init.d script for nebula.
 endef
 
