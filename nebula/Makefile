@@ -99,8 +99,6 @@ define Package/nebula/conffiles
 endef
 
 Package/nebula-cert/conffiles = $(Package/nebula/conffiles)
-Package/nebula-proto/conffiles = $(Package/nebula/conffiles)
-Package/nebula-service/conffiles = $(Package/nebula/conffiles)
 
 define Package/nebula/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
