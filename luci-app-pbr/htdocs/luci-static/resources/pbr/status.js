@@ -253,7 +253,7 @@ var status = baseclass.extend({
 								) + "<br />";
 						}
 					} else {
-						text += _("Unknown Warning.") + "<br />";
+						text += _("Unknown warning") + "<br />";
 					}
 				});
 				var warningsText = E("div", {}, text);
@@ -370,7 +370,7 @@ var status = baseclass.extend({
 								) + "<br />";
 						}
 					} else {
-						text += _("Unknown Error!") + "<br />";
+						text += _("Unknown error!") + "<br />";
 					}
 				});
 				text += _("Errors encountered, please check the %sREADME%s!").format(

@@ -557,11 +557,7 @@ msgid "Unexpected exit or service termination: '%s'"
 msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:373
-msgid "Unknown Error!"
-msgstr ""
-
-#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:256
-msgid "Unknown Warning."
+msgid "Unknown error!"
 msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:325
@@ -570,6 +566,10 @@ msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:331
 msgid "Unknown protocol in policy '%s'"
+msgstr ""
+
+#: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:256
+msgid "Unknown warning"
 msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/pbr/status.js:317
