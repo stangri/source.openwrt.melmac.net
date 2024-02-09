@@ -21,16 +21,17 @@ define Package/pbr/Default
 	DEPENDS+=+!BUSYBOX_DEFAULT_AWK:gawk
 	DEPENDS+=+!BUSYBOX_DEFAULT_GREP:grep
 	DEPENDS+=+!BUSYBOX_DEFAULT_SED:sed
+  PROVIDES:=pbr
   CONFLICTS:=vpnbypass vpn-policy-routing
   PKGARCH:=all
 endef
 
-define Package/pbr
+define Package/pbr-nft
 $(call Package/pbr/Default)
   TITLE+= with nft/nft set support
   DEPENDS+=+kmod-nft-core +kmod-nft-nat +nftables-json
   VARIANT:=nftables
-  PROVIDES:=vpnbypass vpn-policy-routing
+  PROVIDES+=vpnbypass vpn-policy-routing
   DEFAULT_VARIANT:=1
 endef
 
@@ -39,17 +40,15 @@ $(call Package/pbr/Default)
   TITLE+= with iptables/ipset support
   DEPENDS+=+ipset +iptables +kmod-ipt-ipset +iptables-mod-ipopt
   VARIANT:=iptables
-  PROVIDES:=pbr
 endef
 
 define Package/pbr-netifd
 $(call Package/pbr/Default)
   TITLE+= with netifd support
   VARIANT:=netifd
-  PROVIDES:=pbr
 endef
 
-define Package/pbr/description
+define Package/pbr-nft/description
   This service enables policy-based routing for WAN interfaces and various VPN tunnels.
   This version supports OpenWrt with both firewall3/ipset/iptables and firewall4/nft.
 endef
@@ -69,6 +68,7 @@ define Package/pbr/conffiles
 /etc/config/pbr
 endef
 
+Package/pbr-nft/conffiles = $(Package/pbr/conffiles)
 Package/pbr-iptables/conffiles = $(Package/pbr/conffiles)
 Package/pbr-netifd/conffiles = $(Package/pbr/conffiles)
 
@@ -93,7 +93,7 @@ endef
 #	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 #	$(INSTALL_DATA) ./files/etc/hotplug.d/iface/70-pbr $(1)/etc/hotplug.d/iface/70-pbr
 
-define Package/pbr/install
+define Package/pbr-nft/install
 $(call Package/pbr/default/install,$(1))
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/etc/config/pbr $(1)/etc/config/pbr
@@ -119,7 +119,7 @@ $(call Package/pbr/default/install,$(1))
 	$(INSTALL_BIN)  ./files/etc/uci-defaults/91-pbr $(1)/etc/uci-defaults/91-pbr
 endef
 
-define Package/pbr/postinst
+define Package/pbr-nft/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -132,7 +132,7 @@ define Package/pbr/postinst
 	exit 0
 endef
 
-define Package/pbr/prerm
+define Package/pbr-nft/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -145,7 +145,7 @@ define Package/pbr/prerm
 	exit 0
 endef
 
-define Package/pbr/postrm
+define Package/pbr-nft/postrm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -200,6 +200,6 @@ define Package/pbr-netifd/prerm
 	exit 0
 endef
 
-$(eval $(call BuildPackage,pbr))
+$(eval $(call BuildPackage,pbr-nft))
 $(eval $(call BuildPackage,pbr-iptables))
 #$(eval $(call BuildPackage,pbr-netifd))
