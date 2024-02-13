@@ -1855,7 +1855,7 @@ adb_start() {
 				json_add_object ""
 				json_add_string type redirect
 				json_add_string target DNAT
-				json_add_string src lan
+				json_add_string src "$procd_lan_interface_name"
 				json_add_string proto "tcp udp"
 				json_add_string src_dport "$c"
 				json_add_string dest_port "$c"
@@ -1865,7 +1865,7 @@ adb_start() {
 			else
 				json_add_object ""
 				json_add_string type rule
-				json_add_string src lan
+				json_add_string src "$procd_lan_interface_name"
 				json_add_string dest "*"
 				json_add_string proto "tcp udp"
 				json_add_string dest_port "$c"
@@ -1885,7 +1885,7 @@ adb_start() {
 			json_add_object ""
 			json_add_string type rule
 			json_add_string ipset adb
-			json_add_string src lan
+			json_add_string src "$procd_lan_interface_name"
 			json_add_string dest "*"
 			json_add_string proto "tcp udp"
 			json_add_string target REJECT
@@ -1901,7 +1901,7 @@ adb_start() {
 			json_add_object ""
 			json_add_string type rule
 			json_add_string ipset adb4
-			json_add_string src lan
+			json_add_string src "$procd_lan_interface_name"
 			json_add_string dest "*"
 			json_add_string proto "tcp udp"
 			json_add_string target REJECT
@@ -1916,7 +1916,7 @@ adb_start() {
 				json_add_object ""
 				json_add_string type rule
 				json_add_string ipset adb6
-				json_add_string src lan
+				json_add_string src "$procd_lan_interface_name"
 				json_add_string dest "*"
 				json_add_string proto "tcp udp"
 				json_add_string target REJECT
@@ -2100,6 +2100,7 @@ load_validate_config() {
 	local verbosity
 	local procd_trigger_wan6
 	local procd_boot_wan_timeout
+	local procd_lan_interface_name
 	local led
 	local dns
 	local dnsmasq_instance
@@ -2128,6 +2129,7 @@ load_validate_config() {
 		'verbosity:range(0,2):2' \
 		'procd_trigger_wan6:bool:0' \
 		'procd_boot_wan_timeout:integer:60' \
+		'procd_lan_interface_name:network:lan' \
 		'led:or("", "none", file, device, string)' \
 		'dns:or("dnsmasq.addnhosts", "dnsmasq.conf", "dnsmasq.ipset", "dnsmasq.nftset", "dnsmasq.servers", "smartdns.domainset", "smartdns.ipset", "smartdns.nftset", "unbound.adb_list"):dnsmasq.servers' \
 		'dnsmasq_instance:list(or(integer, string)):*' \
