@@ -70,7 +70,7 @@ get_init_status() {
 	name="$(basename "$1")"
 	name="${name:-$packageName}" 
 	local version gateways warnings errors
-	[ -z "$version" ] && version="$(opkg_get_version "$packageName")"
+#	[ -z "$version" ] && version="$(opkg_get_version "$packageName")"
 	[ -z "$version" ] && version="$(opkg_get_version "${name}-nft")"
 	[ -z "$version" ] && version="$(opkg_get_version "${name}-iptables")"
 	[ -z "$version" ] && version="$(opkg_get_version "${name}-netifd")"
