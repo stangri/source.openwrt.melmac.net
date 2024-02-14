@@ -71,6 +71,7 @@ get_init_status() {
 	name="${name:-$packageName}" 
 	local version gateways warnings errors
 	[ -z "$version" ] && version="$(opkg_get_version "$packageName")"
+	[ -z "$version" ] && version="$(opkg_get_version "${name}-nft")"
 	[ -z "$version" ] && version="$(opkg_get_version "${name}-iptables")"
 	[ -z "$version" ] && version="$(opkg_get_version "${name}-netifd")"
 	gateways="$(ubus_get_status gateways | sed "s|\\\n|<br />|g;s|\(\\\033[^<]*\)|✓|g;")"
