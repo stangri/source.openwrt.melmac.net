@@ -1,0 +1,85 @@
+#!/bin/sh
+# Copyright 2024 Stan Grishin <stangri@melmac.ca>
+# Licensed to the public under the Apache License 2.0.
+
+# shellcheck disable=SC1091,SC3003,SC3043
+# ubus call network.interface.netmaker status
+
+readonly PROG='/usr/bin/netclient'
+readonly IP='/sbin/ip'
+readonly WG='/usr/bin/wg'
+
+if [ ! -x "$PROG" ]; then
+	logger -t "netclient" "Error: netclient binary (${PROG}) is missing!"
+	exit 1
+fi
+
+if [ ! -x "$IP" ]; then
+	logger -t "netclient" "Error: ip binary (${IP}) is missing!"
+	exit 1
+fi
+
+if [ ! -x "$WG" ]; then
+	logger -t "netclient" "Error: wg binary (${WG}) is missing!"
+	exit 1
+fi
+
+[ -n "$INCLUDE_ONLY" ] || {
+	. /lib/functions.sh
+	. ../netifd-proto.sh
+	init_proto "$@"
+}
+
+proto_netclient_setup() {
+	local config="$1"
+	local device addresses
+	local key address port
+
+	config_load network
+	config_get  device "$config" "device" "$config"
+	proto_init_update "$config" 1
+
+	"$PROG" daemon &
+
+	if ! wg show "$config" >/dev/null 2>&1; then
+		sleep 5
+		proto_setup_failed "$config"
+		exit 1
+	fi
+
+	addresses="$("$IP" route list dev "$device" | awk '{print $NF}')"
+	for address in ${addresses}; do
+		case "${address}" in
+			*:*/*)
+				proto_add_ipv6_address "${address%%/*}" "${address##*/}"
+				;;
+			*.*/*)
+				proto_add_ipv4_address "${address%%/*}" "${address##*/}"
+				;;
+			*:*)
+				proto_add_ipv6_address "${address%%/*}" "128"
+				;;
+			*.*)
+				proto_add_ipv4_address "${address%%/*}" "32"
+				;;
+		esac
+	done
+
+# shellcheck disable=SC2034
+	"$WG" show "$config" endpoints | \
+	sed -E 's/\[?([0-9.:a-f]+)\]?:([0-9]+)/\1 \2/' | \
+	while IFS=$'\t ' read -r key address port; do
+		[ -n "$port" ] || continue
+		proto_add_host_dependency "$config" "$address"
+	done
+
+	proto_send_update "$config"
+}
+
+proto_netclient_teardown() {
+	local config="$1"
+}
+
+[ -n "$INCLUDE_ONLY" ] || {
+	add_protocol netclient
+}

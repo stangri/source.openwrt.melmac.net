@@ -42,11 +42,25 @@ endef
 
 define Package/netclient/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/netclient.init $(1)/etc/init.d/netclient
-	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/netclient
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/netclient $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/netclient $(1)/usr/bin/
+	$(INSTALL_DIR) $(1)/lib/netifd/proto/
+	$(INSTALL_BIN) ./files/netclient.proto $(1)/lib/netifd/proto/netclient.sh
+	$(INSTALL_DIR) $(1)/etc/uci-defaults/
+	$(INSTALL_BIN) ./files/netclient.uci-defaults $(1)/etc/uci-defaults/30-netclient.sh
+endef
+#	$(INSTALL_DIR) $(1)/etc/init.d
+#	$(INSTALL_BIN) ./files/netclient.init $(1)/etc/init.d/netclient
+#	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/netclient
+
+define Package/netclient/prerm
+	#!/bin/sh
+	# check if we are on real system
+	if [ -z "$${IPKG_INSTROOT}" ]; then
+		ifdown netmaker
+		uci -q del network.netmaker || true
+	fi
+	exit 0
 endef
 
 $(eval $(call GoBinPackage,netclient))

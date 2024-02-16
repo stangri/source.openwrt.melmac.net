@@ -1,0 +1,8 @@
+#!/bin/sh
+
+uci -q del network.netmaker
+uci -q set network.netmaker=interface
+uci -q set network.netmaker.auto=1
+uci -q set network.netmaker.device=netmaker
+uci -q set network.netmaker.proto=netclient
+uci commit network
