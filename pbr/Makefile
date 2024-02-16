@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=1.1.4
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -78,7 +78,7 @@ endef
 define Build/Compile
 endef
 
-define Package/pbr/default/install
+define Package/pbr/Default/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/etc/init.d/pbr $(1)/etc/init.d/pbr
 	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
@@ -94,7 +94,7 @@ endef
 #	$(INSTALL_DATA) ./files/etc/hotplug.d/iface/70-pbr $(1)/etc/hotplug.d/iface/70-pbr
 
 define Package/pbr-nft/install
-$(call Package/pbr/default/install,$(1))
+$(call Package/pbr/Default/install,$(1))
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/etc/config/pbr $(1)/etc/config/pbr
 	$(INSTALL_DIR) $(1)/usr/share/pbr
@@ -104,7 +104,7 @@ $(call Package/pbr/default/install,$(1))
 endef
 
 define Package/pbr-iptables/install
-$(call Package/pbr/default/install,$(1))
+$(call Package/pbr/Default/install,$(1))
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/firewall
 	$(INSTALL_DATA) ./files/etc/hotplug.d/firewall/70-pbr $(1)/etc/hotplug.d/firewall/70-pbr
 	$(INSTALL_DIR) $(1)/etc/config
@@ -112,7 +112,7 @@ $(call Package/pbr/default/install,$(1))
 endef
 
 define Package/pbr-netifd/install
-$(call Package/pbr/default/install,$(1))
+$(call Package/pbr/Default/install,$(1))
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/etc/config/pbr $(1)/etc/config/pbr
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
