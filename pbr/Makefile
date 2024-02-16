@@ -5,13 +5,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=1.1.4
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/pbr/Default
+define Package/pbr-service/Default
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=Routing and Redirection
@@ -21,56 +21,60 @@ define Package/pbr/Default
 	DEPENDS+=+!BUSYBOX_DEFAULT_AWK:gawk
 	DEPENDS+=+!BUSYBOX_DEFAULT_GREP:grep
 	DEPENDS+=+!BUSYBOX_DEFAULT_SED:sed
-  PROVIDES:=pbr
+  PROVIDES:=pbr-service
   CONFLICTS:=vpnbypass vpn-policy-routing
   PKGARCH:=all
 endef
 
-define Package/pbr-nft
-$(call Package/pbr/Default)
+define Package/pbr
+$(call Package/pbr-service/Default)
   TITLE+= with nft/nft set support
   DEPENDS+=+kmod-nft-core +kmod-nft-nat +nftables-json
-  VARIANT:=nftables
-  PROVIDES+=vpnbypass vpn-policy-routing
   DEFAULT_VARIANT:=1
+  VARIANT:=nftables
+  PROVIDES+=pbr vpnbypass vpn-policy-routing
 endef
 
 define Package/pbr-iptables
-$(call Package/pbr/Default)
+$(call Package/pbr-service/Default)
   TITLE+= with iptables/ipset support
   DEPENDS+=+ipset +iptables +kmod-ipt-ipset +iptables-mod-ipopt
   VARIANT:=iptables
 endef
 
 define Package/pbr-netifd
-$(call Package/pbr/Default)
+$(call Package/pbr-service/Default)
   TITLE+= with netifd support
   VARIANT:=netifd
 endef
 
-define Package/pbr-nft/description
+define Package/pbr-service/description
   This service enables policy-based routing for WAN interfaces and various VPN tunnels.
+endef
+
+define Package/pbr/description
+  $(call Package/pbr-service/description)
   This version supports OpenWrt with both firewall3/ipset/iptables and firewall4/nft.
 endef
 
 define Package/pbr-iptables/description
-  This service enables policy-based routing for WAN interfaces and various VPN tunnels.
+  $(call Package/pbr-service/description)
   This version supports OpenWrt with firewall3/ipset/iptables.
 endef
 
 define Package/pbr-netifd/description
-  This service enables policy-based routing for WAN interfaces and various VPN tunnels.
+  $(call Package/pbr-service/description)
   This version supports OpenWrt with both firewall3/ipset/iptables and firewall4/nft.
   This version uses OpenWrt native netifd/tables to set up interfaces. This is WIP.
 endef
 
-define Package/pbr/conffiles
+define Package/pbr-service/conffiles
 /etc/config/pbr
 endef
 
-Package/pbr-nft/conffiles = $(Package/pbr/conffiles)
-Package/pbr-iptables/conffiles = $(Package/pbr/conffiles)
-Package/pbr-netifd/conffiles = $(Package/pbr/conffiles)
+Package/pbr/conffiles = $(Package/pbr-service/conffiles)
+Package/pbr-iptables/conffiles = $(Package/pbr-service/conffiles)
+Package/pbr-netifd/conffiles = $(Package/pbr-service/conffiles)
 
 define Build/Configure
 endef
@@ -78,7 +82,7 @@ endef
 define Build/Compile
 endef
 
-define Package/pbr/Default/install
+define Package/pbr-service/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/etc/init.d/pbr $(1)/etc/init.d/pbr
 	$(SED) "s|^\(readonly PKG_VERSION\).*|\1='$(PKG_VERSION)-$(PKG_RELEASE)'|" $(1)/etc/init.d/pbr
@@ -93,8 +97,8 @@ endef
 #	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 #	$(INSTALL_DATA) ./files/etc/hotplug.d/iface/70-pbr $(1)/etc/hotplug.d/iface/70-pbr
 
-define Package/pbr-nft/install
-$(call Package/pbr/Default/install,$(1))
+define Package/pbr/install
+$(call Package/pbr-service/install,$(1))
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/etc/config/pbr $(1)/etc/config/pbr
 	$(INSTALL_DIR) $(1)/usr/share/pbr
@@ -104,7 +108,7 @@ $(call Package/pbr/Default/install,$(1))
 endef
 
 define Package/pbr-iptables/install
-$(call Package/pbr/Default/install,$(1))
+$(call Package/pbr-service/install,$(1))
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/firewall
 	$(INSTALL_DATA) ./files/etc/hotplug.d/firewall/70-pbr $(1)/etc/hotplug.d/firewall/70-pbr
 	$(INSTALL_DIR) $(1)/etc/config
@@ -112,14 +116,14 @@ $(call Package/pbr/Default/install,$(1))
 endef
 
 define Package/pbr-netifd/install
-$(call Package/pbr/Default/install,$(1))
+$(call Package/pbr-service/install,$(1))
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/etc/config/pbr $(1)/etc/config/pbr
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN)  ./files/etc/uci-defaults/91-pbr $(1)/etc/uci-defaults/91-pbr
 endef
 
-define Package/pbr-nft/postinst
+define Package/pbr/postinst
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -132,7 +136,7 @@ define Package/pbr-nft/postinst
 	exit 0
 endef
 
-define Package/pbr-nft/prerm
+define Package/pbr/prerm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -145,7 +149,7 @@ define Package/pbr-nft/prerm
 	exit 0
 endef
 
-define Package/pbr-nft/postrm
+define Package/pbr/postrm
 	#!/bin/sh
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
@@ -200,6 +204,6 @@ define Package/pbr-netifd/prerm
 	exit 0
 endef
 
-$(eval $(call BuildPackage,pbr-nft))
+$(eval $(call BuildPackage,pbr))
 $(eval $(call BuildPackage,pbr-iptables))
 #$(eval $(call BuildPackage,pbr-netifd))
