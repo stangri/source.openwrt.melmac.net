@@ -614,29 +614,34 @@ load_environment() {
 load_network() {
 	_find_firewall_wan_zone() { [ "$(uci_get 'firewall' "$1" 'name')" = "wan" ] && firewallWanZone="$1"; }
 	local i param="$1"
-	config_load 'network'
-	[ -z "$ifacesAll" ] && config_foreach _build_ifaces_all 'interface'
 	if [ -z "$ifacesSupported" ]; then
 		config_load 'firewall'
 		config_foreach _find_firewall_wan_zone 'zone'
 		for i in $(uci_get 'firewall' "$firewallWanZone" 'network'); do
 			is_supported_interface "$i" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${i} "
+			if ! is_tunnel "$i"; then
+				is_wan  "$i" && wanIface4="$i"
+				[ -n "$ipv6_enabled" ] && is_wan6 "$i" && wanIface6="$i"
+			fi
 		done
 		config_load 'network'
+		[ -z "$ifacesAll" ] && config_foreach _build_ifaces_all 'interface'
 		config_foreach _build_ifaces_supported 'interface'
 	fi
-	if [ -z "$wanIface4" ] || [ -z "$wanGW4" ]; then
-		pbr_find_iface wanIface4 'wan'
-		[ "$param" != 'on_stop' ] && output 2 "Found wan interface: $wanIface4 \\n"
-		[ -n "$wanIface4" ] && network_get_gateway wanGW4 "$wanIface4"
-		[ -n "$wanGW4" ] && [ "$param" != 'on_stop' ] && output 2 "Found wan gateway: $wanGW4 \\n"
+	[ -z "$wanIface4" ] && pbr_find_iface wanIface4 'wan'
+	[ -n "$wanIface4" ] && [ -z "$wanGW4" ] && network_get_gateway wanGW4 "$wanIface4"
+	if [ -n "$ipv6_enabled" ]; then
+		[ -z "$wanIface6" ] && pbr_find_iface wanIface6 'wan6'
+		[ -n "$wanIface6" ] && [ -z "$wanGW6" ] && network_get_gateway6 wanGW6 "$wanIface6"
 	fi
-	if [ -n "$ipv6_enabled" ] && { [ -z "$wanIface6" ] || [ -z "$wanGW6" ]; }; then
-		pbr_find_iface wanIface6 'wan6'
-		[ "$param" != 'on_stop' ] && output 2 "Found wan6 interface: $wanIface6 \\n"
-		[ -n "$wanIface6" ] && network_get_gateway6 wanGW6 "$wanIface6"
-		[ -n "$wanGW6" ] && [ "$param" != 'on_stop' ] && output 2 "Found wan6 gateway: $wanGW6 \\n"
-	fi
+	case "$param" in
+		on_boot|on_start)
+			[ -n "$wanIface4" ] && output 2 "Found wan interface (${param}): $wanIface4 \\n"
+			[ -n "$wanGW4" ] && output 2 "Found wan gateway (${param}): $wanGW4 \\n"
+			[ -n "$wanIface6" ] && output 2 "Found wan6 interface (${param}): $wanIface6 \\n"
+			[ -n "$wanGW6" ] && output 2 "Found wan6 gateway (${param}): $wanGW6 \\n"
+		;;
+	esac
 	wanGW="${wanGW4:-$wanGW6}"
 }
 
