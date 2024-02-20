@@ -5,24 +5,11 @@
 # shellcheck disable=SC1091,SC3003,SC3043
 # ubus call network.interface.netmaker status
 
+# shellcheck disable=SC2034
+readonly PKG_VERSION='dev-test'
 readonly PROG='/usr/bin/netclient'
 readonly IP='/sbin/ip'
 readonly WG='/usr/bin/wg'
-
-if [ ! -x "$PROG" ]; then
-	logger -t "netclient" "Error: netclient binary (${PROG}) is missing!"
-	exit 1
-fi
-
-if [ ! -x "$IP" ]; then
-	logger -t "netclient" "Error: ip binary (${IP}) is missing!"
-	exit 1
-fi
-
-if [ ! -x "$WG" ]; then
-	logger -t "netclient" "Error: wg binary (${WG}) is missing!"
-	exit 1
-fi
 
 [ -n "$INCLUDE_ONLY" ] || {
 	. /lib/functions.sh
@@ -30,19 +17,44 @@ fi
 	init_proto "$@"
 }
 
+netclient_init_config() {
+#	proto_config_add_string key
+	proto_config_add_string 'device'
+}
+
 proto_netclient_setup() {
 	local config="$1"
+	local interface="$2"
 	local device addresses
 	local key address port
 
-	config_load network
-	config_get  device "$config" "device" "$config"
-	proto_init_update "$config" 1
+	logger -t 'netclient' "Setting up $interface: $config"
 
-	"$PROG" daemon &
+	if [ ! -x "$PROG" ]; then
+		logger -t "netclient" "Error: netclient binary (${PROG}) is missing!"
+		exit 1
+	fi
+
+	if [ ! -x "$IP" ]; then
+		logger -t "netclient" "Error: ip binary (${IP}) is missing!"
+		exit 1
+	fi
+
+	if [ ! -x "$WG" ]; then
+		logger -t "netclient" "Error: wg binary (${WG}) is missing!"
+		exit 1
+	fi
+
+	config_load network
+	config_get  device "$config" 'device' 'netmaker'
+	config_get  key    "$config" 'key'
+	proto_init_update  "$config" 1
+
+	proto_run_command "$config" "$PROG" daemon
 
 	if ! wg show "$config" >/dev/null 2>&1; then
 		sleep 5
+		logger -t 'netclient' "Failed to set up $interface: $config"
 		proto_setup_failed "$config"
 		exit 1
 	fi
@@ -77,7 +89,9 @@ proto_netclient_setup() {
 }
 
 proto_netclient_teardown() {
-	local config="$1"
+	local interface="$1"
+	logger -t 'netclient' "Tearing down $interface"
+	proto_kill_command "$interface"
 }
 
 [ -n "$INCLUDE_ONLY" ] || {

@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ngtcp2
-PKG_VERSION:=1.2.0
+PKG_VERSION:=1.3.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/ngtcp2/ngtcp2/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=15f3dd4cc4db2435bcd0b5253ccce4cbab26d18cc6ef4f00b5cb4af21ed06a0b
+PKG_HASH:=b566a7574a6c58bb19ec5b916300141283ef05139768de2b021ff37676b63dff
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
@@ -24,7 +24,7 @@ define Package/libngtcp2
   CATEGORY:=Libraries
   TITLE:=Implementation of QUIC protocol
   URL:=https://nghttp2.org/ngtcp2
-  DEPENDS:=+libnghttp3 +libopenssl
+  DEPENDS:=+libnghttp3
 endef
 
 define Package/libngtcp2/description
