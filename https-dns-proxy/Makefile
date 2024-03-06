@@ -24,7 +24,7 @@ define Package/https-dns-proxy
 	CATEGORY:=Network
 	TITLE:=DNS Over HTTPS Proxy
 	URL:=https://docs.openwrt.melmac.net/https-dns-proxy/
-	DEPENDS:=+libcares +libcurl +libev +ca-bundle +jsonfilter
+	DEPENDS:=+libcares +libcurl +libev +ca-bundle +jsonfilter +resolveip
 	DEPENDS+=+!BUSYBOX_DEFAULT_GREP:grep
 	DEPENDS+=+!BUSYBOX_DEFAULT_SED:sed
 	CONFLICTS:=https_dns_proxy
