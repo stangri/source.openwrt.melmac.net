@@ -56,6 +56,7 @@ readonly unboundFilter='s|^|local-zone: "|;s|$|" static|'
 readonly A_TMP="/var/${packageName}.a.tmp"
 readonly B_TMP="/var/${packageName}.b.tmp"
 readonly SED_TMP="/var/${packageName}.sed.tmp"
+readonly uciConfigFile="/etc/config/${packageName}"
 readonly runningConfigFile="/dev/shm/${packageName}.config"
 readonly runningErrorFile="/dev/shm/${packageName}.error"
 readonly runningStatusFile="/dev/shm/${packageName}.status"
@@ -128,7 +129,7 @@ config_cache() {
 	local i ret
 	case "$param" in
 		create|set)
-			cp -f "/etc/config/${packageName}" "$runningConfigFile"
+			cp -f "$uciConfigFile" "$runningConfigFile"
 		;;
 		get)
 			case "$var" in
@@ -145,6 +146,8 @@ config_cache() {
 				local old_allowed_url old_blocked_url
 				if [ ! -s "$runningConfigFile" ]; then
 					ret='on_boot'
+				elif cmp -s "$uciConfigFile" "$runningConfigFile"; then
+					ret='restart'
 				else
 					for i in $_reload; do
 						local val_current val_old UCI_CONFIG_DIR
@@ -199,7 +202,7 @@ config_cache() {
 	;;
 	esac
 }
-debug() { local i j; for i in "$@"; do eval "j=\$$i"; echo "${i}: ${j} "; done; }
+debug() { local __i __j; for __i in "$@"; do eval "__j=\$$__i"; echo "${__i}: ${__j} "; done; }
 dns_set_output_values() {
 	case "$1" in
 		dnsmasq.addnhosts)
