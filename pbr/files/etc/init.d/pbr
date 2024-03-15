@@ -695,7 +695,9 @@ ipt() {
 	for d in "${*//-A/-D}" "${*//-I/-D}" "${*//-N/-F}" "${*//-N/-X}"; do 
 		if [ "$d" != "$*" ]; then
 			"$iptables" $d >/dev/null 2>&1
-			[ -x "$ip6tables" ] && "$ip6tables" $d >/dev/null 2>&1
+			if [ -x "$ip6tables" ]; then
+				"$ip6tables" $d >/dev/null 2>&1
+			fi
 		fi
 	done
 	d="$*"; "$iptables" $d >/dev/null 2>&1 && failFlagIpv4=0;
