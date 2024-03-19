@@ -175,20 +175,11 @@ _build_ifaces_all() { ifacesAll="${ifacesAll}${1} "; }
 _build_ifaces_supported() { is_supported_interface "$1" && ! str_contains "$ifacesSupported" "$1" && ifacesSupported="${ifacesSupported}${1} "; }
 pbr_find_iface() {
 	local iface i param="$2"
-	if [ -n "$procd_wan_interface" ] && [ "$param" = 'wan' ]; then
-		iface="$procd_wan_interface"
-	elif [ -n "$procd_wan6_interface" ] && [ "$param" = 'wan6' ]; then
-		iface="$procd_wan6_interface"
-	else
-		"network_find_${param}" iface
-		is_tunnel "$iface" && unset iface
-		if [ -z "$iface" ]; then
-			for i in $ifacesAll; do
-				if "is_${param}" "$i"; then break; else unset i; fi
-			done
-		fi
-	fi
-	eval "$1"='${iface:-$i}'
+	case "$param" in
+		wan6)  iface="${procd_wan6_interface:-wan6}";;
+		wan|*) iface="${procd_wan_interface:-wan}";;
+	esac
+	eval "$1"='${iface}'
 }
 pbr_get_gateway() {
 	local iface="$2" dev="$3" gw
