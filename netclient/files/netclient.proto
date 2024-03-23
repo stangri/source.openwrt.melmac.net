@@ -5,17 +5,24 @@
 # shellcheck disable=SC1091,SC3003,SC3043
 # ubus call network.interface.netmaker status
 
+# https://github.com/openwrt/openwrt/blob/494c5691c60316aa710fbf5a6d38bdb04ff14f76/package/network/services/unetd/files/unetd.sh
+# https://github.com/openwrt/openwrt/blob/494c5691c60316aa710fbf5a6d38bdb04ff14f76/package/network/utils/wireguard-tools/files/wireguard.sh#L26
+
 # shellcheck disable=SC2034
 readonly PKG_VERSION='dev-test'
 readonly PROG='/usr/bin/netclient'
 readonly IP='/sbin/ip'
 readonly WG='/usr/bin/wg'
 
-[ -n "$INCLUDE_ONLY" ] || {
-	. /lib/functions.sh
-	. ../netifd-proto.sh
-	init_proto "$@"
-}
+[ -x "$PROG" ] || exit 0
+[ -x "$IP" ] || exit 0
+[ -x "$WG" ] || exit 0
+
+. /lib/functions.sh
+. /lib/functions/network.sh
+. ../netifd-proto.sh
+
+init_proto "$@"
 
 netclient_init_config() {
 #	proto_config_add_string key
@@ -25,39 +32,32 @@ netclient_init_config() {
 proto_netclient_setup() {
 	local config="$1"
 	local interface="$2"
-	local device addresses
-	local key address port
+	local device key
+	local addresses address port
 
-	logger -t 'netclient' "Setting up $interface: $config"
+	json_get_vars device key
+	device="${device:-$interface}"
+	device="${device:-$config}"
+	device="${device:-netmaker}"
 
-	if [ ! -x "$PROG" ]; then
-		logger -t "netclient" "Error: netclient binary (${PROG}) is missing!"
-		exit 1
-	fi
+	logger -t 'netclient' "Setting up $interface :: $config :: $device"
 
-	if [ ! -x "$IP" ]; then
-		logger -t "netclient" "Error: ip binary (${IP}) is missing!"
-		exit 1
-	fi
-
-	if [ ! -x "$WG" ]; then
-		logger -t "netclient" "Error: wg binary (${WG}) is missing!"
-		exit 1
-	fi
-
-	config_load network
-	config_get  device "$config" 'device' 'netmaker'
-	config_get  key    "$config" 'key'
-	proto_init_update  "$config" 1
-
-	proto_run_command "$config" "$PROG" daemon
-
-	if ! wg show "$config" >/dev/null 2>&1; then
-		sleep 5
-		logger -t 'netclient' "Failed to set up $interface: $config"
+	"$IP" link del dev "$device" >/dev/null 2>&1
+	"$IP" link add dev "$device" type wireguard || {
+		echo "Failed to create wireguard device ($interface :: $config :: $device)"
 		proto_setup_failed "$config"
 		exit 1
-	fi
+	}
+
+	proto_init_update  "$config" 1
+#	proto_run_command "$config" "$PROG" daemon
+
+	"$WG" show "$config" >/dev/null 2>&1 || {
+		sleep 5
+		logger -t 'netclient' "Failed to set up ($interface :: $config :: $device)"
+		proto_setup_failed "$config"
+		exit 1
+	}
 
 	addresses="$("$IP" route list dev "$device" | awk '{print $NF}')"
 	for address in ${addresses}; do
@@ -86,14 +86,32 @@ proto_netclient_setup() {
 	done
 
 	proto_send_update "$config"
+
+#	json_init
+#	json_add_string name "$device"
+#	json_add_string key "$key"
+#	ubus call netclient network_add "$(json_dump)"
 }
 
 proto_netclient_teardown() {
-	local interface="$1"
-	logger -t 'netclient' "Tearing down $interface"
+	local config="$1"
+	local interface="$2"
+	local device key
+
+	json_get_vars device key
+	device="${device:-$interface}"
+	device="${device:-$config}"
+	device="${device:-netmaker}"
+
+	logger -t 'netclient' "Tearing down $interface :: $config :: $device"
 	proto_kill_command "$interface"
+
+	"$IP" link del dev "$device"
+
+#	json_init
+#	json_add_string name "$device"
+#	json_add_string key "$key"
+#	ubus call netclient network_del "$(json_dump)"
 }
 
-[ -n "$INCLUDE_ONLY" ] || {
-	add_protocol netclient
-}
+add_protocol netclient
