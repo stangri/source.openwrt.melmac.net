@@ -11,7 +11,6 @@ PKG_RELEASE:=r10
 LUCI_TITLE:= WLAN Blinker Web UI
 LUCI_DESCRIPTION:=Provides Web UI for WLAN Blinker service.
 LUCI_DEPENDS:=+luci-compat +luci-base +wlanblinker
-LUCI_PKGARCH:=all
 
 include ../../luci.mk
 

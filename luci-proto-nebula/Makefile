@@ -12,7 +12,6 @@ PKG_RELEASE:=r2
 LUCI_TITLE:=Support for Nebula
 LUCI_DESCRIPTION:=Provides Web UI for Nebula protocol/interface.
 LUCI_DEPENDS:=+nebula +nebula-proto
-LUCI_PKGARCH:=all
 
 define Package/$(PKG_NAME)/config
 # shown in make menuconfig <Help>

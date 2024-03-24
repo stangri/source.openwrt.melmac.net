@@ -12,7 +12,6 @@ PKG_RELEASE:=r7
 LUCI_TITLE:=AdBlock-Fast Web UI
 LUCI_DESCRIPTION:=Provides Web UI for adblock-fast service.
 LUCI_DEPENDS:=+luci-base +adblock-fast +jsonfilter
-LUCI_PKGARCH:=all
 
 define Package/$(PKG_NAME)/config
 # shown in make menuconfig <Help>

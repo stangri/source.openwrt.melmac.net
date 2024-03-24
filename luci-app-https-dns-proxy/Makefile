@@ -12,7 +12,6 @@ PKG_RELEASE:=r1
 LUCI_TITLE:=DNS Over HTTPS Proxy Web UI
 LUCI_DESCRIPTION:=Provides Web UI for DNS Over HTTPS Proxy
 LUCI_DEPENDS:=+luci-base +https-dns-proxy
-LUCI_PKGARCH:=all
 
 define Package/$(PKG_NAME)/config
 # shown in make menuconfig <Help>
