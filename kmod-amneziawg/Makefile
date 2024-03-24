@@ -1,10 +1,10 @@
 include $(TOPDIR)/rules.mk
-
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=kmod-amneziawg
 PKG_VERSION:=0.0.1
 PKG_RELEASE:=1
+PKG_BUILD_DEPENDS:=package/linux/kernel
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -21,7 +21,10 @@ define KernelPackage/amneziawg
 		+kmod-udptunnel6 \
 		+kmod-crypto-lib-chacha20poly1305 \
 		+kmod-crypto-lib-curve25519
+	PKG_BUILD_DEPENDS:=package/linux/kernel
 endef
+
+# include $(INCLUDE_DIR)/kernel-defaults.mk
 
 define Build/Prepare
 	cp -fr $(LINUX_DIR)/drivers/net/wireguard/{*.c,*.h,selftest/} $(PKG_BUILD_DIR)

@@ -3,14 +3,24 @@
 
 include $(TOPDIR)/rules.mk
 
+PKG_NAME:=luci-app-adblock-fast
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
-PKG_VERSION:=1.1.1-r7
+PKG_VERSION:=1.1.1
+PKG_RELEASE:=r7
 
 LUCI_TITLE:=AdBlock-Fast Web UI
 LUCI_DESCRIPTION:=Provides Web UI for adblock-fast service.
 LUCI_DEPENDS:=+luci-base +adblock-fast +jsonfilter
 LUCI_PKGARCH:=all
+
+define Package/$(PKG_NAME)/config
+# shown in make menuconfig <Help>
+help
+	$(LUCI_TITLE)
+	.
+	Version: $(PKG_VERSION)-$(PKG_RELEASE)
+endef
 
 include ../../luci.mk
 

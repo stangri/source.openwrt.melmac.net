@@ -5,7 +5,8 @@ include $(TOPDIR)/rules.mk
 
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
-PKG_VERSION:=0.0.1-5
+PKG_VERSION:=0.0.1
+PKG_RELEASE:=r5
 
 LUCI_TITLE:=Wireshark-helper Web UI
 LUCI_DESCRIPTION:=Provides Web UI for Wireshark-helper.
