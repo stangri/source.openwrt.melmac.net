@@ -1,19 +1,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ngtcp2
-PKG_VERSION:=1.3.0
-PKG_RELEASE:=1
+PKG_VERSION:=1.4.0
+PKG_RELEASE:=r1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/ngtcp2/ngtcp2/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=b566a7574a6c58bb19ec5b916300141283ef05139768de2b021ff37676b63dff
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+PKG_SOURCE_URL:=https://github.com/ngtcp2/$(PKG_NAME)/releases/download/v$(PKG_VERSION)/
+PKG_HASH:=b5d1433b9f5c06ce249e1e390e97dcfa49bf7ada5cb7c8bed8e6cd4feaf1ca4a
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
-PKG_FIXUP:=autoreconf
-PKG_INSTALL:=1
 CMAKE_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -33,12 +31,6 @@ discussed in IETF QUICWG for its standardization.
 endef
 
 CMAKE_OPTIONS += -DENABLE_LIB_ONLY=ON
-
-define Build/InstallDev
-	$(call Build/InstallDev/cmake,$(1))
-	$(SED) 's,/usr/include,$$$${prefix}/include,g' $(1)/usr/lib/pkgconfig/libngtcp2.pc
-	$(SED) 's,/usr/lib,$$$${exec_prefix}/lib,g' $(1)/usr/lib/pkgconfig/libngtcp2.pc
-endef
 
 define Package/libngtcp2/install
 	$(INSTALL_DIR) $(1)/usr/lib
