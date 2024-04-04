@@ -22,7 +22,7 @@
 					"description": "Family Filter"
 				}
 			],
-			"default": ""
+			"default": "dns"
 		}
 	}
 }
