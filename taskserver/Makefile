@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=taskserver
 PKG_VERSION:=1.2.0
-PKG_RELEASE:=1
+PKG_RELEASE:=r1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/GothenburgBitFactory/taskserver
