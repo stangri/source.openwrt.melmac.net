@@ -409,6 +409,7 @@ get_text() {
 		errorPolicyProcessInsertionFailedIpv4) r="Insertion failed for IPv4 for policy '%s'!";;
 		errorInterfaceRoutingEmptyValues) r="Received empty tid/mark or interface name when setting up routing!";;
 		errorFailedToResolve) r="Failed to resolve '%s'!";;
+		errorTryFailed) r="Command failed: %s";;
 		errorNftFileInstall) r="Failed to install fw4 nft file '%s'!";;
 		errorDownloadUrlNoHttps) r="Failed to download '%s', HTTPS is not supported!";;
 		errorDownloadUrl) r="Failed to download '%s'!";;
@@ -1962,6 +1963,13 @@ policy_process() {
 	fi
 }
 
+try() {
+	if ! "$@"; then
+		state add 'errorSummary' 'errorTryFailed' "$*"
+		return 1
+	fi
+}
+
 interface_routing() {
 	local action="$1" tid="$2" mark="$3" iface="$4" gw4="$5" dev="$6" gw6="$7" dev6="$8" priority="$9"
 	local dscp s=0 i ipv4_error=1 ipv6_error=1
@@ -1974,11 +1982,11 @@ interface_routing() {
 			if is_netifd_table "$iface"; then
 				ipv4_error=0
 				$ip_bin rule del table "$tid" >/dev/null 2>&1
-				$ip_bin -4 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
+				try "$ip_bin" -4 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
 				if is_nft_mode; then
-					nft add chain inet "$nftTable" "${nftPrefix}_mark_${mark}" || ipv4_error=1 
-					nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} counter mark set mark and ${fw_maskXor} xor ${mark}" || ipv4_error=1
-					nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} return" || ipv4_error=1
+					try nft add chain inet "$nftTable" "${nftPrefix}_mark_${mark}" || ipv4_error=1 
+					try nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} counter mark set mark and ${fw_maskXor} xor ${mark}" || ipv4_error=1
+					try nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} return" || ipv4_error=1
 				else
 					ipt -t mangle -N "${iptPrefix}_MARK_${mark}" || ipv4_error=1
 					ipt -t mangle -A "${iptPrefix}_MARK_${mark}" -j MARK --set-xmark "${mark}/${fw_mask}" || ipv4_error=1
@@ -1986,7 +1994,7 @@ interface_routing() {
 				fi
 				if [ -n "$ipv6_enabled" ]; then
 					ipv6_error=0
-					$ip_bin -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
+					try "$ip_bin" -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
 				fi
 			else
 				if ! grep -q "$tid ${ipTablePrefix}_${iface}" '/etc/iproute2/rt_tables'; then
@@ -2000,9 +2008,9 @@ interface_routing() {
 				if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
 					ipv4_error=0
 					if [ -z "$gw4" ]; then
-						$ip_bin -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
+						try "$ip_bin" -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 					else
-						$ip_bin -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+						try "$ip_bin" -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 					fi
 # shellcheck disable=SC2086
 					while read -r i; do
@@ -2010,16 +2018,16 @@ interface_routing() {
 						i="$(echo "$i" | sed 's/ onlink$//')"
 						idev="$(echo "$i" | grep -Eso 'dev [^ ]*' | awk '{print $2}')"
 						if ! is_supported_iface_dev "$idev"; then
-							$ip_bin -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
+							try "$ip_bin" -4 route add $i table "$tid" >/dev/null 2>&1 || ipv4_error=1
 						fi
 					done << EOF
 					$($ip_bin -4 route list table main)
 EOF
-					$ip_bin -4 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
+					try "$ip_bin" -4 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
 					if is_nft_mode; then
-						nft add chain inet "$nftTable" "${nftPrefix}_mark_${mark}" || ipv4_error=1 
-						nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} counter mark set mark and ${fw_maskXor} xor ${mark}" || ipv4_error=1
-						nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} return" || ipv4_error=1
+						try nft add chain inet "$nftTable" "${nftPrefix}_mark_${mark}" || ipv4_error=1 
+						try nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} counter mark set mark and ${fw_maskXor} xor ${mark}" || ipv4_error=1
+						try nft add rule inet "$nftTable" "${nftPrefix}_mark_${mark} return" || ipv4_error=1
 					else
 						ipt -t mangle -N "${iptPrefix}_MARK_${mark}" || ipv4_error=1
 						ipt -t mangle -A "${iptPrefix}_MARK_${mark}" -j MARK --set-xmark "${mark}/${fw_mask}" || ipv4_error=1
@@ -2030,38 +2038,38 @@ EOF
 					ipv6_error=0
 					if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne 0 ]; then
 						if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
-							$ip_bin -6 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv6_error=1
-						elif $ip_bin -6 route list table main | grep -q " dev $dev6 "; then
-							$ip_bin -6 route add default via "$gw6" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							try "$ip_bin" -6 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv6_error=1
+						elif try "$ip_bin" -6 route list table main | grep -q " dev $dev6 "; then
+							try "$ip_bin" -6 route add default via "$gw6" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 							while read -r i; do
 								i="$(echo "$i" | sed 's/ linkdown$//')"
 								i="$(echo "$i" | sed 's/ onlink$//')"
 								# shellcheck disable=SC2086
-								$ip_bin -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
+								try "$ip_bin" -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
 							done << EOF
 							$($ip_bin -6 route list table main | grep " dev $dev6 ")
 EOF
 						else
-							$ip_bin -6 route add "$($ip_bin -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
-							$ip_bin -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							try "$ip_bin" -6 route add "$($ip_bin -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							try "$ip_bin" -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 						fi
 					fi
-					$ip_bin -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" >/dev/null 2>&1 || ipv6_error=1
+					try "$ip_bin" -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" >/dev/null 2>&1 || ipv6_error=1
 				fi
 			fi
 			if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
 				dscp="$(uci_get "$packageName" 'config' "${iface}_dscp")"
 				if is_nft_mode; then
 					if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
-						nft add rule inet "$nftTable" "${nftPrefix}_prerouting ${nftIPv4Flag} dscp ${dscp} goto ${nftPrefix}_mark_${mark}" || s=1
+						try nft add rule inet "$nftTable" "${nftPrefix}_prerouting ${nftIPv4Flag} dscp ${dscp} goto ${nftPrefix}_mark_${mark}" || s=1
 						if [ -n "$ipv6_enabled" ]; then
-							nft add rule inet "$nftTable" "${nftPrefix}_prerouting ${nftIPv6Flag} dscp ${dscp} goto ${nftPrefix}_mark_${mark}" || s=1
+							try nft add rule inet "$nftTable" "${nftPrefix}_prerouting ${nftIPv6Flag} dscp ${dscp} goto ${nftPrefix}_mark_${mark}" || s=1
 						fi
 					fi
 					if [ "$iface" = "$icmp_interface" ]; then
-						nft add rule inet "$nftTable" "${nftPrefix}_output ${nftIPv4Flag} protocol icmp goto ${nftPrefix}_mark_${mark}" || s=1
+						try nft add rule inet "$nftTable" "${nftPrefix}_output ${nftIPv4Flag} protocol icmp goto ${nftPrefix}_mark_${mark}" || s=1
 						if [ -n "$ipv6_enabled" ]; then
-							nft add rule inet "$nftTable" "${nftPrefix}_output ${nftIPv6Flag} protocol icmp goto ${nftPrefix}_mark_${mark}" || s=1
+							try nft add rule inet "$nftTable" "${nftPrefix}_output ${nftIPv6Flag} protocol icmp goto ${nftPrefix}_mark_${mark}" || s=1
 						fi
 					fi
 				else
@@ -2109,30 +2117,30 @@ EOF
 			fi
 			if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
 				if [ -z "$gw4" ]; then
-					$ip_bin -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
+					try "$ip_bin" -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 				else
-					$ip_bin -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
+					try "$ip_bin" -4 route add default via "$gw4" dev "$dev" table "$tid" >/dev/null 2>&1 || ipv4_error=1
 				fi
-				$ip_bin rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
+				try "$ip_bin" rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
 			fi
 			if [ -n "$ipv6_enabled" ]; then
 				ipv6_error=0
 				if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne 0 ]; then
 					if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
-						$ip_bin -6 route add unreachable default table "$tid" || ipv6_error=1
+						try "$ip_bin" -6 route add unreachable default table "$tid" || ipv6_error=1
 					elif $ip_bin -6 route list table main | grep -q " dev $dev6 "; then
 						while read -r i; do
 							# shellcheck disable=SC2086
-							$ip_bin -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
+							try "$ip_bin" -6 route add $i table "$tid" >/dev/null 2>&1 || ipv6_error=1
 						done << EOF
 						$($ip_bin -6 route list table main | grep " dev $dev6 ")
 EOF
 					else
-						$ip_bin -6 route add "$($ip_bin -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
-						$ip_bin -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+						try "$ip_bin" -6 route add "$($ip_bin -6 -o a show "$dev6" | awk '{print $4}')" dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
+						try "$ip_bin" -6 route add default dev "$dev6" table "$tid" >/dev/null 2>&1 || ipv6_error=1
 					fi
 				fi
-				$ip_bin -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
+				try "$ip_bin" -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
 			fi
 			if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
 				s=0

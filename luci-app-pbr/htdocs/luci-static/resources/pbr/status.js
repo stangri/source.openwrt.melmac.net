@@ -354,6 +354,7 @@ var status = baseclass.extend({
 					errorFileSchemaRequiresCurl: _(
 						"The file:// schema requires curl, but it's not detected on this system!"
 					),
+					errorTryFailed: _("Command failed: %s"),
 				};
 				var errorsTitle = E(
 					"label",
