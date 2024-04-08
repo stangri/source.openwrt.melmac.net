@@ -2218,8 +2218,8 @@ interface_process() {
 	[ -z "$ifacePriority" ] && ifacePriority="$wan_ip_rules_priority"
 
 	if [ "$action" = 'pre-init' ]; then
-		pbr_get_gateway6 gw6 "$iface" "$dev6"
-		[ -n "$gw6" ] && ipv6_enabled=1
+#		pbr_get_gateway6 gw6 "$iface" "$dev6"
+#		[ -n "$gw6" ] && ipv6_enabled=1
 		[ -z "$ifaceTableID" ] && ifaceTableID="$(get_rt_tables_non_pbr_next_id)"
 		eval "pre_init_mark_${iface//-/_}"='$ifaceMark'
 		eval "pre_init_priority_${iface//-/_}"='$ifacePriority'
