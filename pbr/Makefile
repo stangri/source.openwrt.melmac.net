@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pbr
 PKG_VERSION:=1.1.4
-PKG_RELEASE:=r9
+PKG_RELEASE:=r10
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
@@ -105,6 +105,8 @@ $(call Package/pbr-service/install,$(1))
 	$(INSTALL_DATA) ./files/usr/share/pbr/firewall.include $(1)/usr/share/pbr/firewall.include
 	$(INSTALL_DIR) $(1)/usr/share/nftables.d
 	$(CP) ./files/usr/share/nftables.d/* $(1)/usr/share/nftables.d/
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN)  ./files/etc/uci-defaults/91-pbr-nft $(1)/etc/uci-defaults/91-pbr-nft
 endef
 
 define Package/pbr-iptables/install
@@ -113,6 +115,8 @@ $(call Package/pbr-service/install,$(1))
 	$(INSTALL_DATA) ./files/etc/hotplug.d/firewall/70-pbr $(1)/etc/hotplug.d/firewall/70-pbr
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/etc/config/pbr.iptables $(1)/etc/config/pbr
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN)  ./files/etc/uci-defaults/91-pbr-iptables $(1)/etc/uci-defaults/91-pbr-iptables
 endef
 
 define Package/pbr-netifd/install
@@ -120,7 +124,7 @@ $(call Package/pbr-service/install,$(1))
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/etc/config/pbr $(1)/etc/config/pbr
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN)  ./files/etc/uci-defaults/91-pbr $(1)/etc/uci-defaults/91-pbr
+	$(INSTALL_BIN)  ./files/etc/uci-defaults/91-pbr-netifd $(1)/etc/uci-defaults/91-pbr-netifd
 endef
 
 define Package/pbr/postinst
