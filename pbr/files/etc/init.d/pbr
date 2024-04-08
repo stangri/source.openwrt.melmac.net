@@ -2217,37 +2217,31 @@ interface_process() {
 	[ -z "$ifaceMark" ] && ifaceMark="$(printf '0x%06x' "$wan_mark")"
 	[ -z "$ifacePriority" ] && ifacePriority="$wan_ip_rules_priority"
 
-	if [ "$action" = 'pre-init' ]; then
-#		pbr_get_gateway6 gw6 "$iface" "$dev6"
-#		[ -n "$gw6" ] && ipv6_enabled=1
-		[ -z "$ifaceTableID" ] && ifaceTableID="$(get_rt_tables_non_pbr_next_id)"
-		eval "pre_init_mark_${iface//-/_}"='$ifaceMark'
-		eval "pre_init_priority_${iface//-/_}"='$ifacePriority'
-		eval "pre_init_tid_${iface//-/_}"='$ifaceTableID'
-		ifaceMark="$(printf '0x%06x' $((ifaceMark + wan_mark)))"
-		ifacePriority="$((ifacePriority + 1))"
-		ifaceTableID="$((ifaceTableID + 1))"
-		return 0
-	fi
-
-# TODO: if interfaces are started out of order the rt_tables ID may be incorrect
-# use the expected_tid_${iface} ???
-	ifaceTableID="$(get_rt_tables_id "$iface")"
-	[ -z "$ifaceTableID" ] && ifaceTableID="$(get_rt_tables_next_id)"
-	eval "mark_${iface//-/_}"='$ifaceMark'
-	eval "tid_${iface//-/_}"='$ifaceTableID'
-	pbr_get_gateway gw4 "$iface" "$dev"
-	pbr_get_gateway6 gw6 "$iface" "$dev6"
-	dispGw4="${gw4:-0.0.0.0}"
-	dispGw6="${gw6:-::/0}"
-	[ "$iface" != "$dev" ] && dispDev="$dev"
-	if is_default_dev "$dev"; then
-		[ "$verbosity" = '1' ] && dispStatus="$_OK_" || dispStatus="$__OK__"
-	fi
-	displayText="${iface}/${dispDev:+$dispDev/}${dispGw4}${ipv6_enabled:+/$dispGw6}"
-
 	case "$action" in
+		pre_init)
+			[ -z "$ifaceTableID" ] && ifaceTableID="$(get_rt_tables_non_pbr_next_id)"
+			eval "pre_init_mark_${iface//-/_}"='$ifaceMark'
+			eval "pre_init_priority_${iface//-/_}"='$ifacePriority'
+			eval "pre_init_tid_${iface//-/_}"='$ifaceTableID'
+			ifaceMark="$(printf '0x%06x' $((ifaceMark + wan_mark)))"
+			ifacePriority="$((ifacePriority + 1))"
+			ifaceTableID="$((ifaceTableID + 1))"
+			return 0
+		;;
 		create)
+			ifaceTableID="$(get_rt_tables_id "$iface")"
+			[ -z "$ifaceTableID" ] && ifaceTableID="$(get_rt_tables_next_id)"
+			eval "mark_${iface//-/_}"='$ifaceMark'
+			eval "tid_${iface//-/_}"='$ifaceTableID'
+			pbr_get_gateway gw4 "$iface" "$dev"
+			pbr_get_gateway6 gw6 "$iface" "$dev6"
+			dispGw4="${gw4:-0.0.0.0}"
+			dispGw6="${gw6:-::/0}"
+			[ "$iface" != "$dev" ] && dispDev="$dev"
+			if is_default_dev "$dev"; then
+				[ "$verbosity" = '1' ] && dispStatus="$_OK_" || dispStatus="$__OK__"
+			fi
+			displayText="${iface}/${dispDev:+$dispDev/}${dispGw4}${ipv6_enabled:+/$dispGw6}"
 			output 2 "Setting up routing for '$displayText' "
 			if interface_routing 'create' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"; then
 				json_add_gateway 'create' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority" "$dispStatus"
@@ -2259,18 +2253,70 @@ interface_process() {
 			fi
 		;;
 		create_user_set)
+			ifaceTableID="$(get_rt_tables_id "$iface")"
+			[ -z "$ifaceTableID" ] && ifaceTableID="$(get_rt_tables_next_id)"
+			eval "mark_${iface//-/_}"='$ifaceMark'
+			eval "tid_${iface//-/_}"='$ifaceTableID'
+			pbr_get_gateway gw4 "$iface" "$dev"
+			pbr_get_gateway6 gw6 "$iface" "$dev6"
+			dispGw4="${gw4:-0.0.0.0}"
+			dispGw6="${gw6:-::/0}"
+			[ "$iface" != "$dev" ] && dispDev="$dev"
+			if is_default_dev "$dev"; then
+				[ "$verbosity" = '1' ] && dispStatus="$_OK_" || dispStatus="$__OK__"
+			fi
+			displayText="${iface}/${dispDev:+$dispDev/}${dispGw4}${ipv6_enabled:+/$dispGw6}"
 			interface_routing 'create_user_set' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"
 		;;
 		destroy)
+			ifaceTableID="$(get_rt_tables_id "$iface")"
+			[ -z "$ifaceTableID" ] && ifaceTableID="$(get_rt_tables_next_id)"
+			eval "mark_${iface//-/_}"='$ifaceMark'
+			eval "tid_${iface//-/_}"='$ifaceTableID'
+			pbr_get_gateway gw4 "$iface" "$dev"
+			pbr_get_gateway6 gw6 "$iface" "$dev6"
+			dispGw4="${gw4:-0.0.0.0}"
+			dispGw6="${gw6:-::/0}"
+			[ "$iface" != "$dev" ] && dispDev="$dev"
+			if is_default_dev "$dev"; then
+				[ "$verbosity" = '1' ] && dispStatus="$_OK_" || dispStatus="$__OK__"
+			fi
+			displayText="${iface}/${dispDev:+$dispDev/}${dispGw4}${ipv6_enabled:+/$dispGw6}"
 			displayText="${iface}/${dispDev:+$dispDev/}${dispGw4}${ipv6_enabled:+/$dispGw6}"
 			output 2 "Removing routing for '$displayText' "
 			interface_routing 'destroy' "${ifaceTableID}" "${ifaceMark}" "${iface}"
 			output_ok
 		;;
 		reload)
+			ifaceTableID="$(get_rt_tables_id "$iface")"
+			[ -z "$ifaceTableID" ] && ifaceTableID="$(get_rt_tables_next_id)"
+			eval "mark_${iface//-/_}"='$ifaceMark'
+			eval "tid_${iface//-/_}"='$ifaceTableID'
+			pbr_get_gateway gw4 "$iface" "$dev"
+			pbr_get_gateway6 gw6 "$iface" "$dev6"
+			dispGw4="${gw4:-0.0.0.0}"
+			dispGw6="${gw6:-::/0}"
+			[ "$iface" != "$dev" ] && dispDev="$dev"
+			if is_default_dev "$dev"; then
+				[ "$verbosity" = '1' ] && dispStatus="$_OK_" || dispStatus="$__OK__"
+			fi
+			displayText="${iface}/${dispDev:+$dispDev/}${dispGw4}${ipv6_enabled:+/$dispGw6}"
 			gatewaySummary="${gatewaySummary}${displayText}${dispStatus:+ $dispStatus}\\n"
 		;;
 		reload_interface)
+			ifaceTableID="$(get_rt_tables_id "$iface")"
+			[ -z "$ifaceTableID" ] && ifaceTableID="$(get_rt_tables_next_id)"
+			eval "mark_${iface//-/_}"='$ifaceMark'
+			eval "tid_${iface//-/_}"='$ifaceTableID'
+			pbr_get_gateway gw4 "$iface" "$dev"
+			pbr_get_gateway6 gw6 "$iface" "$dev6"
+			dispGw4="${gw4:-0.0.0.0}"
+			dispGw6="${gw6:-::/0}"
+			[ "$iface" != "$dev" ] && dispDev="$dev"
+			if is_default_dev "$dev"; then
+				[ "$verbosity" = '1' ] && dispStatus="$_OK_" || dispStatus="$__OK__"
+			fi
+			displayText="${iface}/${dispDev:+$dispDev/}${dispGw4}${ipv6_enabled:+/$dispGw6}"
 			if [ "$iface" = "$reloadedIface" ]; then
 				output 2 "Reloading routing for '$displayText' "
 				if interface_routing 'reload_interface' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"; then
@@ -2359,7 +2405,7 @@ start_service() {
 	is_wan_up "$param" || return 1
 
 	interface_process 'all' 'prepare'
-	config_foreach interface_process 'interface' 'pre-init'
+	config_foreach interface_process 'interface' 'pre_init'
 
 	case "$param" in
 		on_boot)
