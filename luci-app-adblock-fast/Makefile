@@ -7,7 +7,7 @@ PKG_NAME:=luci-app-adblock-fast
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 PKG_VERSION:=1.1.1
-PKG_RELEASE:=r7
+PKG_RELEASE:=r8
 
 LUCI_TITLE:=AdBlock-Fast Web UI
 LUCI_DESCRIPTION:=Provides Web UI for adblock-fast service.
