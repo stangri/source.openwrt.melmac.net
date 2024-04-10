@@ -145,7 +145,7 @@ define Package/pbr/prerm
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		uci -q delete firewall.pbr || true
-		echo "Stopping pbr service... "
+		echo -n "Stopping pbr service... "
 		/etc/init.d/pbr stop quiet >/dev/null 2>&1 && echo "OK" || echo "FAIL"
 		echo -n "Removing rc.d symlink for pbr... "
 		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
@@ -177,7 +177,7 @@ define Package/pbr-iptables/prerm
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		uci -q delete firewall.pbr || true
-		echo "Stopping pbr-iptables service... "
+		echo -n "Stopping pbr-iptables service... "
 		/etc/init.d/pbr stop quiet >/dev/null 2>&1 && echo "OK" || echo "FAIL"
 		echo -n "Removing rc.d symlink for pbr-iptables... "
 		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
@@ -200,7 +200,7 @@ define Package/pbr-netifd/prerm
 	# check if we are on real system
 	if [ -z "$${IPKG_INSTROOT}" ]; then
 		uci -q delete firewall.pbr || true
-		echo "Stopping pbr-netifd service... "
+		echo -n "Stopping pbr-netifd service... "
 		/etc/init.d/pbr stop quiet >/dev/null 2>&1 && echo "OK" || echo "FAIL"
 		echo -n "Removing rc.d symlink for pbr... "
 		/etc/init.d/pbr disable && echo "OK" || echo "FAIL"
