@@ -22,8 +22,10 @@ readonly packageConfigFile="/etc/config/${packageName}"
 readonly packageLockFile="/var/run/${packageName}.lock"
 readonly dnsmasqFileDefault="/var/dnsmasq.d/${packageName}"
 readonly _OK_='\033[0;32m\xe2\x9c\x93\033[0m'
-readonly _FAIL_='\033[0;31m\xe2\x9c\x97\033[0m'
 readonly __OK__='\033[0;32m[\xe2\x9c\x93]\033[0m'
+readonly _OKB_='\033[1;34m\xe2\x9c\x93\033[0m'
+readonly __OKB__='\033[1;34m[\xe2\x9c\x93]\033[0m'
+readonly _FAIL_='\033[0;31m\xe2\x9c\x97\033[0m'
 readonly __FAIL__='\033[0;31m[\xe2\x9c\x97]\033[0m'
 readonly _ERROR_='\033[0;31mERROR\033[0m'
 readonly _WARNING_='\033[0;33mWARNING\033[0m'
@@ -55,6 +57,7 @@ readonly chainsList='forward input output postrouting prerouting'
 readonly ssConfigFile='/etc/shadowsocks'
 readonly torConfigFile='/etc/tor/torrc'
 readonly xrayIfacePrefix='xray_'
+readonly rtTablesFile='/etc/iproute2/rt_tables'
 
 # package config options
 procd_boot_timeout=
@@ -124,6 +127,8 @@ torTrafficPort=
 
 output_ok() { output 1 "$_OK_"; output 2 "$__OK__\\n"; }
 output_okn() { output 1 "$_OK_\\n"; output 2 "$__OK__\\n"; }
+output_okb() { output 1 "$_OKB_"; output 2 "$__OKB__\\n"; }
+output_okbn() { output 1 "$_OKB_\\n"; output 2 "$__OKB__\\n"; }
 output_fail() { output 1 "$_FAIL_"; output 2 "$__FAIL__\\n"; }
 output_failn() { output 1 "$_FAIL_\\n"; output 2 "$__FAIL__\\n"; }
 # shellcheck disable=SC2317
@@ -236,7 +241,8 @@ is_ipv4_netmask() { local ip="${1%/*}"; [ "$ip" != "$1" ] && is_ipv4 "$ip"; }
 is_lan() { local d; network_get_device d "$1"; str_contains "$d" 'br-lan'; }
 is_l2tp() { local p; network_get_protocol p "$1"; [ "${p:0:4}" = "l2tp" ]; }
 is_mac_address() { expr "$1" : '[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]:[0-9a-fA-F][0-9a-fA-F]$' >/dev/null; }
-is_netifd_table() { local iface="$1"; [ "$(uci_get 'network' "$iface" 'ip4table')" = "${packageName}_${iface%6}" ]; }
+is_netifd_table() { grep -q "ip.table.*$1" /etc/config/network; }
+is_netifd_table_interface() { local iface="$1"; [ "$(uci_get 'network' "$iface" 'ip4table')" = "${packageName}_${iface%6}" ]; }
 is_oc() { local p; network_get_protocol p "$1"; [ "${p:0:11}" = "openconnect" ]; }
 is_ovpn() { local d; uci_get_device d "$1"; [ "${d:0:3}" = "tun" ] || [ "${d:0:3}" = "tap" ] || [ -f "/sys/devices/virtual/net/${d}/tun_flags" ]; }
 is_ovpn_valid() { local dev_net dev_ovpn; uci_get_device dev_net "$1"; dev_ovpn="$(uci_get 'openvpn' "$1" 'dev')"; [ -n "$dev_net" ] && [ -n "$dev_ovpn" ] && [ "$dev_net" = "$dev_ovpn" ]; }
@@ -284,9 +290,9 @@ get_tor_dns_port() { local i="$(grep -m1 DNSPort "$torConfigFile" | awk -F: '{pr
 # shellcheck disable=SC2155
 get_tor_traffic_port() { local i="$(grep -m1 TransPort "$torConfigFile" | awk -F: '{print $2}')"; echo "${i:-9040}"; }
 get_xray_traffic_port() { local i="${1//$xrayIfacePrefix}"; [ "$i" = "$1" ] && unset i; echo "$i"; }
-get_rt_tables_id() { local iface="$1"; grep "${ipTablePrefix}_${iface}\$" '/etc/iproute2/rt_tables' | awk '{print $1;}'; }
-get_rt_tables_next_id() { echo "$(($(sort -r -n '/etc/iproute2/rt_tables' | grep -o -E -m 1 "^[0-9]+")+1))"; }
-get_rt_tables_non_pbr_next_id() { echo "$(($(grep -v "${ipTablePrefix}_" '/etc/iproute2/rt_tables' | sort -r -n  | grep -o -E -m 1 "^[0-9]+")+1))"; }
+get_rt_tables_id() { local iface="$1"; grep "${ipTablePrefix}_${iface}\$" "$rtTablesFile" | awk '{print $1;}'; }
+get_rt_tables_next_id() { echo "$(($(sort -r -n "$rtTablesFile" | grep -o -E -m 1 "^[0-9]+")+1))"; }
+get_rt_tables_non_pbr_next_id() { echo "$(($(grep -v "${ipTablePrefix}_" "$rtTablesFile" | sort -r -n  | grep -o -E -m 1 "^[0-9]+")+1))"; }
 # shellcheck disable=SC2016
 resolveip_to_ipt() { resolveip "$@" | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d'; }
 resolveip_to_ipt4() { resolveip_to_ipt -4 "$@"; }
@@ -386,6 +392,8 @@ get_text() {
 		errorResolverNotSupported) r="Resolver set (${resolver_set}) is not supported on this system!";;
 		errorServiceDisabled) r="The ${packageName} service is currently disabled!";;
 		errorNoWanGateway) r="The ${serviceName} service failed to discover WAN gateway!";;
+		errorNoWanInterface) r="The %s inteface not found, you need to set the 'pbr.config.procd_wan_interface' option!";;
+		errorNoWanInterfaceHint) r="Refer to https://docs.openwrt.melmac.net/pbr/#procd_wan_interface.";;
 		errorIpsetNameTooLong) r="The ipset name '%s' is longer than allowed 31 characters!";;
 		errorNftsetNameTooLong) r="The nft set name '%s' is longer than allowed 255 characters!";;
 		errorUnexpectedExit) r="Unexpected exit or service termination: '%s'!";;
@@ -631,6 +639,11 @@ is_wan_up() {
 	load_network "$param"
 	[ "$procd_wan_ignore_status" -eq '0' ] || return 0
 	[ "$param" = 'on_boot' ] || procd_boot_timeout='1'
+	if [ -z "$(uci_get network "$procd_wan_interface")" ]; then
+		state add 'errorSummary' 'errorNoWanInterface' "$procd_wan_interface"
+		state add 'errorSummary' 'errorNoWanInterfaceHint'
+		return 1
+	fi
 	while [ -z "$wanGW" ] ; do
 		load_network "$param"
 		if [ $((sleepCount)) -gt $((procd_boot_timeout)) ] || [ -n "$wanGW" ]; then break; fi
@@ -960,7 +973,14 @@ nftset() {
 	fi
 }
 
-cleanup_rt_tables() { sed -i "/${ipTablePrefix}_/d" '/etc/iproute2/rt_tables'; sync; }
+cleanup_rt_tables() { 
+	local i
+# shellcheck disable=SC2013
+	for i in $(grep -oh "${ipTablePrefix}_.*" $rtTablesFile); do
+		! is_netifd_table "$i" && sed -i "/${i}/d" "$rtTablesFile"
+	done
+	sync
+}
 
 cleanup_main_chains() {
 	local i
@@ -1979,7 +1999,7 @@ interface_routing() {
 	fi
 	case "$action" in
 		create)
-			if is_netifd_table "$iface"; then
+			if is_netifd_table_interface "$iface"; then
 				ipv4_error=0
 				$ip_bin rule del table "$tid" >/dev/null 2>&1
 				try "$ip_bin" -4 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv4_error=1
@@ -1997,10 +2017,10 @@ interface_routing() {
 					try "$ip_bin" -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
 				fi
 			else
-				if ! grep -q "$tid ${ipTablePrefix}_${iface}" '/etc/iproute2/rt_tables'; then
-					sed -i "/${ipTablePrefix}_${iface}/d" '/etc/iproute2/rt_tables'
+				if ! grep -q "$tid ${ipTablePrefix}_${iface}" "$rtTablesFile"; then
+					sed -i "/${ipTablePrefix}_${iface}/d" "$rtTablesFile"
 					sync
-					echo "$tid ${ipTablePrefix}_${iface}" >> '/etc/iproute2/rt_tables'
+					echo "$tid ${ipTablePrefix}_${iface}" >> "$rtTablesFile"
 					sync
 				fi
 				$ip_bin rule del table "$tid" >/dev/null 2>&1
@@ -2101,18 +2121,18 @@ EOF
 		;;
 		delete|destroy)
 			$ip_bin rule del table "$tid" >/dev/null 2>&1
-			if ! is_netifd_table "$iface"; then
+			if ! is_netifd_table_interface "$iface"; then
 				$ip_bin route flush table "$tid" >/dev/null 2>&1
-				sed -i "/${ipTablePrefix}_${iface}\$/d" '/etc/iproute2/rt_tables'
+				sed -i "/${ipTablePrefix}_${iface}\$/d" "$rtTablesFile"
 				sync
 			fi
 			return "$s"
 		;;
 		reload_interface)
-			is_netifd_table "$iface" && return 0;
+			is_netifd_table_interface "$iface" && return 0;
 			ipv4_error=0
 			$ip_bin rule del table "$tid" >/dev/null 2>&1
-			if ! is_netifd_table "$iface"; then
+			if ! is_netifd_table_interface "$iface"; then
 				$ip_bin route flush table "$tid" >/dev/null 2>&1
 			fi
 			if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
@@ -2224,7 +2244,7 @@ interface_process() {
 			eval "pre_init_priority_${iface//-/_}"='$ifacePriority'
 			eval "pre_init_tid_${iface//-/_}"='$ifaceTableID'
 			ifaceMark="$(printf '0x%06x' $((ifaceMark + wan_mark)))"
-			ifacePriority="$((ifacePriority + 1))"
+			ifacePriority="$((ifacePriority - 1))"
 			ifaceTableID="$((ifaceTableID + 1))"
 			return 0
 		;;
@@ -2246,7 +2266,7 @@ interface_process() {
 			if interface_routing 'create' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"; then
 				json_add_gateway 'create' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority" "$dispStatus"
 				gatewaySummary="${gatewaySummary}${displayText}${dispStatus:+ $dispStatus}\\n"
-				output_ok
+				if is_netifd_table_interface "$iface"; then output_okb; else output_ok; fi
 			else
 				state add 'errorSummary' 'errorFailedSetup' "$displayText"
 				output_fail
@@ -2285,7 +2305,7 @@ interface_process() {
 			displayText="${iface}/${dispDev:+$dispDev/}${dispGw4}${ipv6_enabled:+/$dispGw6}"
 			output 2 "Removing routing for '$displayText' "
 			interface_routing 'destroy' "${ifaceTableID}" "${ifaceMark}" "${iface}"
-			output_ok
+			if is_netifd_table_interface "$iface"; then output_okb; else output_ok; fi
 		;;
 		reload)
 			ifaceTableID="$(get_rt_tables_id "$iface")"
@@ -2322,7 +2342,7 @@ interface_process() {
 				if interface_routing 'reload_interface' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority"; then
 					json_add_gateway 'reload_interface' "$ifaceTableID" "$ifaceMark" "$iface" "$gw4" "$dev" "$gw6" "$dev6" "$ifacePriority" "$dispStatus"
 					gatewaySummary="${gatewaySummary}${displayText}${dispStatus:+ $dispStatus}\\n"
-					output_ok
+					if is_netifd_table_interface "$iface"; then output_okb; else output_ok; fi
 				else
 					state add 'errorSummary' 'errorFailedReload' "$displayText"
 					output_fail
@@ -2334,7 +2354,7 @@ interface_process() {
 	esac
 #	ifaceTableID="$((ifaceTableID + 1))"
 	ifaceMark="$(printf '0x%06x' $((ifaceMark + wan_mark)))"
-	ifacePriority="$((ifacePriority + 1))"
+	ifacePriority="$((ifacePriority - 1))"
 	return $s
 }
 
@@ -2736,7 +2756,7 @@ status_service_nft() {
 #	echo "$_SEPARATOR_"
 #	ip rule list | grep "${packageName}_"
 	echo "$_SEPARATOR_"
-	tableCount="$(grep -c "${packageName}_" /etc/iproute2/rt_tables)" || tableCount=0
+	tableCount="$(grep -c "${packageName}_" $rtTablesFile)" || tableCount=0
 	wan_tid=$(($(get_rt_tables_next_id)-tableCount))
 	i=0; while [ $i -lt "$tableCount" ]; do 
 		echo "IPv4 table $((wan_tid + i)) route: $($ip_bin -4 route show table $((wan_tid + i)) | grep default)"
@@ -2783,7 +2803,7 @@ status_service_iptables() {
 
 		echo "$_SEPARATOR_"
 		echo "Routes/IP Rules"
-		tableCount="$(grep -c "${packageName}_" /etc/iproute2/rt_tables)" || tableCount=0
+		tableCount="$(grep -c "${packageName}_" $rtTablesFile)" || tableCount=0
 		if [ -n "$set_d" ]; then route; else route | grep '^default'; fi
 		if [ -n "$set_d" ]; then ip rule list; fi
 		wan_tid=$(($(get_rt_tables_next_id)-tableCount))
