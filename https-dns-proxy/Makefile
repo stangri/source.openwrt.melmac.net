@@ -2,14 +2,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=https-dns-proxy
 PKG_VERSION:=2023.11.19
-PKG_RELEASE:=r3
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/aarond10/https_dns_proxy/
 PKG_SOURCE_DATE:=$(subst(.,-,$(PKG_VERSION)))
-PKG_SOURCE_RELEASE:=$(subst(r,,$(PKG_RELEASE)))
 PKG_SOURCE_VERSION:=489c57efd46983e688579974a2ab7aeaa7df8d83
-PKG_MIRROR_HASH:=804d857efe79437c7f859fb450aca0d6962b4e80b7354060eb399574083438e4
+PKG_MIRROR_HASH:=0ef2008a2d328ad28e30e7b4d63fa7f769fc0daf2b8f4caf45f6e530655d3726
 
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 PKG_LICENSE:=MIT
@@ -18,7 +17,15 @@ PKG_LICENSE_FILES:=LICENSE
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
-CMAKE_OPTIONS += -DCLANG_TIDY_EXE= -DGIT_VERSION=$(PKG_SOURCE_DATE)-$(PKG_SOURCE_RELEASE)
+TARGET_CFLAGS += $(FPIC)
+TARGET_LDFLAGS += -Wl,--gc-sections
+CMAKE_OPTIONS += -DCLANG_TIDY_EXE= -DGIT_VERSION=$(PKG_SOURCE_DATE)
+
+CONFIGURE_ARGS += \
+	$(if $(CONFIG_LIBCURL_OPENSSL),--with-openssl="$(STAGING_DIR)/usr",--without-openssl) \
+	$(if $(CONFIG_LIBCURL_NGHTTP2),--with-nghttp2="$(STAGING_DIR)/usr",--without-nghttp2) \
+	$(if $(CONFIG_LIBCURL_NGHTTP3),--with-nghttp3="$(STAGING_DIR)/usr",--without-nghttp3) \
+	$(if $(CONFIG_LIBCURL_NGTCP2),--with-ngtcp2="$(STAGING_DIR)/usr",--without-ngtcp2) \
 
 define Package/https-dns-proxy
 	SECTION:=net
@@ -33,7 +40,7 @@ endef
 
 define Package/https-dns-proxy/description
 Light-weight DNS-over-HTTPS, non-caching translation proxy for the RFC 8484 DoH standard.
-It receives regular (UDP) DNS requests and resolves them via DoH resolver.
+It receives regular, unencrypted (UDP) DNS requests and resolves them via DoH resolver.
 Please see https://docs.openwrt.melmac.net/https-dns-proxy/ for more information.
 endef
 

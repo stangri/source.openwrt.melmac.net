@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=antminer-monitor
 PKG_VERSION:=0.4.0
-PKG_RELEASE:=r6
+PKG_RELEASE:=6
 PKG_LICENSE:=GPL-3.0
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 

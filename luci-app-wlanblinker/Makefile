@@ -3,10 +3,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_LICENSE:=GPL-3.0-or-later
+PKG_LICENSE:=AGPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 PKG_VERSION:=0.0.1
-PKG_RELEASE:=r10
+PKG_RELEASE:=10
 
 LUCI_TITLE:= WLAN Blinker Web UI
 LUCI_DESCRIPTION:=Provides Web UI for WLAN Blinker service.

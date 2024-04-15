@@ -5,8 +5,8 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wlanblinker
 PKG_VERSION:=0.0.1
-PKG_RELEASE:=r10
-PKG_LICENSE:=GPL-3.0-or-later
+PKG_RELEASE:=10
+PKG_LICENSE:=AGPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
 include $(INCLUDE_DIR)/package.mk
