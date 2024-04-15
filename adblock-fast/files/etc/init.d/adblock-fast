@@ -818,8 +818,8 @@ load_environment() {
 	config_load "$packageName"
 	config_foreach append_url 'file_url'
 	load_environment_flag=1
-	cache 'test' && return 0 
-	cache 'test_gzip' && return 0
+#	cache 'test' && return 0 
+#	cache 'test_gzip' && return 0
 	if [ "$param" = 'on_boot' ]; then
 		load_network "$param"
 		return "$?"
@@ -1036,7 +1036,7 @@ cache() {
 			return $?
 		;;
 		test_gzip)
-			[ -s "$outputGzip" ] && gzip -t -c "$outputGzip"
+			[ -s "$outputGzip" ] && gzip -t -c "$outputGzip" >/dev/null 2>/dev/null
 			return $?
 		;;
 		create_gzip)
