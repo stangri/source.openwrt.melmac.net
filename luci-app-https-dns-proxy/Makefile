@@ -1,5 +1,5 @@
-# Copyright 2017-2018 Stan Grishin (stangri@melmac.ca)
-# This is free software, licensed under the GNU General Public License v3.
+# Copyright 2017-2024 MOSSDeF, Stan Grishin (stangri@melmac.ca).
+# This is free software, licensed under AGPL-3.0-or-later.
 
 include $(TOPDIR)/rules.mk
 

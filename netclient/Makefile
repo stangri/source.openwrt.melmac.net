@@ -1,4 +1,4 @@
-# Copyright 2024 Stan Grishin (stangri@melmac.ca)
+# Copyright 2024 MOSSDeF, Stan Grishin (stangri@melmac.ca).
 # This is free software, licensed under the Apache-2.0 License.
 
 include $(TOPDIR)/rules.mk

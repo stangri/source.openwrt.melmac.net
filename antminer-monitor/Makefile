@@ -1,12 +1,12 @@
-# Copyright 2017-2018 Stan Grishin (stangri@melmac.ca)
-# This is free software, licensed under the GNU General Public License v3.
+# Copyright 2017-2024 MOSSDeF, Stan Grishin (stangri@melmac.ca).
+# This is free software, licensed under AGPL-3.0-or-later.
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=antminer-monitor
 PKG_VERSION:=0.4.0
 PKG_RELEASE:=6
-PKG_LICENSE:=GPL-3.0
+PKG_LICENSE:=AGPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 
 include $(INCLUDE_DIR)/package.mk
