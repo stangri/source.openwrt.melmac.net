@@ -228,8 +228,11 @@ var status = baseclass.extend({
 					warningInvalidOVPNConfig: _(
 						"Invalid OpenVPN config for %s interface"
 					),
-					warningOutdatedWebUIApp: _(
-						"The WebUI application is outdated (version %s), please update it"
+					warningOutdatedLuciPackage: _(
+						"The WebUI application (luci-app-pbr) is outdated, please update it"
+					),
+					warningOutdatedPrincipalPackage: _(
+						"The principal package (pbr) is outdated, please update it"
 					),
 					warningBadNftCallsInUserFile: _(
 						"Incompatible nft calls detected in user include file, disabling fw4 nft file support."
