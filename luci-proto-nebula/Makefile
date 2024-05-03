@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-proto-nebula
 PKG_LICENSE:=AGPL-3.0-or-later
-PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
+PKG_MAINTAINER:=
 PKG_VERSION:=1.8.2
 PKG_RELEASE:=2
 
