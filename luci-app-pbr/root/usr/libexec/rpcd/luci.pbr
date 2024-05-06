@@ -11,7 +11,7 @@
 # ubus -S call luci.pbr getGateways '{"name": "pbr" }'
 # ubus -S call luci.pbr getInterfaces '{"name": "pbr" }'
 
-readonly pbrLuciCompat='1'
+readonly luciCompat='1'
 readonly pbrFunctionsFile='/etc/init.d/pbr'
 if [ -s "$pbrFunctionsFile" ]; then
 # shellcheck source=../../../../../pbr/files/etc/init.d/pbr
@@ -136,11 +136,11 @@ EOF
 $(echo "$warnings" | tr \# \\n)
 EOF
 	fi
-	if is_greater "${pbrPackageCompat:-0}" "${pbrLuciCompat:-0}"; then
+	if is_greater "${packageCompat:-0}" "${luciCompat:-0}"; then
 		json_add_object
 		json_add_string 'id' 'warningOutdatedLuciPackage'
 		json_close_object
-	elif is_greater "${pbrLuciCompat:-0}" "${pbrPackageCompat:-0}"; then
+	elif is_greater "${luciCompat:-0}" "${packageCompat:-0}"; then
 		json_add_object
 		json_add_string 'id' 'warningOutdatedPrincipalPackage'
 		json_close_object
