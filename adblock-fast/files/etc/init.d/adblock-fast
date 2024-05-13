@@ -1995,7 +1995,6 @@ adb_status() {
 
 # shellcheck disable=SC2120
 adb_stop() {
-	echo "stopping"
 	local validation_result="$3"
 	load_environment "$validation_result" 'quiet' || return 0
 	if [ -s "$outputFile" ]; then
