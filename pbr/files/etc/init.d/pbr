@@ -1925,7 +1925,7 @@ policy_routing_nft() {
 
 policy_process() {
 	local i j uid="$9"
-	if [ -z "$uid" ]; then # first non-recursive call
+	if [ -z "$uid" ]; then # first call
 		[ "$enabled" -gt 0 ] || return 0
 		unset processPolicyError
 		uid="$1"
@@ -1980,6 +1980,7 @@ policy_process() {
 				dest_addr="$(process_url "$dest_addr")"
 				[ -n "$dest_addr" ] && policy_process "$name" "$interface" "$src_addr" "$src_port" "$dest_addr" "$dest_port" "$proto" "$chain" "$uid"
 			else
+				# if only src_addr is set add option 121 to dhcp leases?
 				policy_routing "$name" "$interface" "$src_addr" "$src_port" "$dest_addr" "$dest_port" "$proto" "$chain" "$uid"
 			fi
 		fi
