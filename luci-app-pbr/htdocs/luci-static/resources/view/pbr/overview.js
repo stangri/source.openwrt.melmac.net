@@ -302,6 +302,7 @@ return view.extend({
 
 		o = s.option(form.Value, "dest_dns", _("Remote DNS"));
 		o.optional = false;
+		o.rmempty = false;
 		o.datatype = "list(or(cidr,host,network,ipaddr))";
 		reply.interfaces.forEach((element) => {
 			element === "ignore" || o.value(element);
