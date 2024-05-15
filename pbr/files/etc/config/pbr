@@ -37,6 +37,12 @@ config include
 	option path '/usr/share/pbr/pbr.user.wg_server_and_client'
 	option enabled '0'
 
+config dns_policy
+	option name 'Redirect Local IP DNS'
+	option src_addr '192.168.1.5'
+	option dest_dns '1.1.1.1'
+	option enabled '0'
+
 config policy
 	option name 'Ignore Local Requests'
 	option interface 'ignore'

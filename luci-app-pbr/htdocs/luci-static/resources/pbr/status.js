@@ -313,6 +313,10 @@ var status = baseclass.extend({
 						"Policy '%s' has no source/destination parameters"
 					),
 					errorPolicyNoInterface: _("Policy '%s' has no assigned interface"),
+					errorPolicyNoDns: _("Policy '%s' has no assigned DNS"),
+					errorPolicyProcessNoInterfaceDns: _(
+						"Interface '%s' has no assigned DNS"
+					),
 					errorPolicyUnknownInterface: _(
 						"Policy '%s' has an unknown interface"
 					),

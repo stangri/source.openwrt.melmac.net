@@ -12,7 +12,7 @@ USE_PROCD=1
 
 readonly packageName='pbr'
 readonly PKG_VERSION='dev-test'
-readonly packageCompat='1'
+readonly packageCompat='3'
 readonly serviceName="$packageName $PKG_VERSION"
 readonly serviceTrapSignals='exit SIGHUP SIGQUIT SIGKILL'
 readonly packageConfigFile="/etc/config/${packageName}"
@@ -106,6 +106,7 @@ firewallWanZone=
 wanGW4=
 wanGW6=
 serviceStartTrigger=
+processDnsPolicyError=
 processPolicyError=
 processPolicyWarning=
 resolver_set_supported=
@@ -396,6 +397,8 @@ get_text() {
 		errorUnexpectedExit) r="Unexpected exit or service termination: '%s'!";;
 		errorPolicyNoSrcDest) r="Policy '%s' has no source/destination parameters!";;
 		errorPolicyNoInterface) r="Policy '%s' has no assigned interface!";;
+		errorPolicyNoDns) r="Policy '%s' has no assigned DNS!";;
+		errorPolicyProcessNoInterfaceDns) r="Interface '%s' has no assigned DNS!";;
 		errorPolicyUnknownInterface) r="Policy '%s' has an unknown interface!";;
 		errorPolicyProcessCMD) r="'%s'!";;
 		errorFailedSetup) r="Failed to set up '%s'!";;
@@ -986,7 +989,7 @@ cleanup_rt_tables() {
 }
 
 cleanup_main_chains() {
-	local i
+	local i j
 	for i in $chainsList; do
 		i="$(str_to_lower "$i")"
 		nft_call flush chain inet "$nftTable" "${nftPrefix}_${i}"
@@ -996,11 +999,13 @@ cleanup_main_chains() {
 		ipt -t mangle -D "${i}" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
 		ipt -t mangle -F "${iptPrefix}_${i}"
 		ipt -t mangle -X "${iptPrefix}_${i}"
+		ipt -t nat -F "${iptPrefix}_${i}"
+		ipt -t nat -X "${iptPrefix}_${i}"
 	done
 }
 
 cleanup_marking_chains() {
-	local i
+	local i j
 	for i in $(get_mark_nft_chains); do
 		nft_call flush chain inet "$nftTable" "$i"
 		nft_call delete chain inet "$nftTable" "$i"
@@ -1499,6 +1504,241 @@ traffic_killswitch() {
 	esac
 }
 
+# original idea by @egc112: https://github.com/egc112/OpenWRT-egc-add-on/tree/main/stop-dns-leak
+dns_policy_routing() { if is_nft_mode; then dns_policy_routing_nft "$@"; else dns_policy_routing_iptables "$@"; fi; }
+dns_policy_routing_iptables() {
+	local mark param4 param6 i negation value dest4 dest6 ipInsertOption="-A"
+	local ip4error='1' ip6error='1'
+	local name="$1" src_addr="$2" dest_dns="$3" proto='tcp udp' chain uid="$5"
+	chain="$(str_to_upper "$4")"
+	chain="${chain:-PREROUTING}"
+
+	if [ -n "$ipv6_enabled" ] && { is_ipv6 "$src_addr" || is_ipv6 "$dest_dns"; }; then
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessNoIpv6' "$name"
+		return 1
+	fi
+
+	if is_family_mismatch "$src_addr" "$dest_dns"; then 
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessMismatchFamily' "${name}: '$src_addr' '$dest_dns'"
+		return 1
+	fi
+
+	if is_supported_interface "$dest_dns"; then
+		local d
+		for d in $(uci -q get network."$dest_dns".dns); do
+			if ! is_family_mismatch "$src_addr" "$d"; then
+				if is_ipv4 "$d"; then
+					dest_dns4="${dest_dns4:-$d}"
+				elif is_ipv6 "$d"; then
+					dest_dns6="${dest_dns6:-$d}"
+				fi
+			fi
+		done
+	else
+		dest_dns4="$dest_dns"
+		dest_dns6="$dest_dns"
+	fi
+
+	if [ -z "${dest_dns4}${dest_dns6}" ]; then
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessNoInterfaceDns' "'$dest_dns'"
+		return 1
+	fi
+
+	dest4="--dport 53 -j DNAT --to $dest_dns4"
+	dest6="--dport 53 -j DNAT --to $dest_dns6"
+
+	for i in $proto; do
+		param4="-t nat ${ipInsertOption} ${iptPrefix}_${chain} ${dest4} -p $i"
+		param6="-t nat ${ipInsertOption} ${iptPrefix}_${chain} ${dest6} -p $i"
+		if [ -n "$src_addr" ]; then
+			if [ "${src_addr:0:1}" = "!" ]; then
+				negation='!'; value="${src_addr:1}"
+			else
+				unset negation; value="$src_addr";
+			fi
+			if is_phys_dev "$value"; then
+				param4="$param4 ${negation:+$negation }-m physdev --physdev-in ${value:1}"
+				param6="$param6 ${negation:+$negation }-m physdev --physdev-in ${value:1}"
+			elif is_ipv4_netmask "$value"; then
+				local target='src' type='net'
+				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" && \
+					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" "$value"; then
+					param4="$param4 -m set ${negation:+$negation }--match-set ${ipsPrefix}_${iface}_4_${target}_${type}_${uid} $target"
+					param6="$param6 -m set ${negation:+$negation }--match-set ${ipsPrefix}_${iface}_6_${target}_${type}_${uid} $target"
+				else
+					param4="$param4 ${negation:+$negation }-s $value"
+					param6="$param6 ${negation:+$negation }-s $value"
+				fi
+			elif is_mac_address "$value"; then
+				local target='src' type='mac'
+				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" && \
+					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" "$value"; then
+					param4="$param4 -m set ${negation:+$negation }--match-set ${ipsPrefix}_${iface}_4_${target}_${type}_${uid} $target"
+					param6="$param6 -m set ${negation:+$negation }--match-set ${ipsPrefix}_${iface}_6_${target}_${type}_${uid} $target"
+				else
+					param4="$param4 -m mac ${negation:+$negation }--mac-source $value"
+					param6="$param6 -m mac ${negation:+$negation }--mac-source $value"
+				fi
+			else
+				local target='src' type='ip'
+				if ips 'create' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" && \
+					ips 'add' "$iface" "$target" "$type" "$uid" "${name}: $src_addr" "$value"; then
+					param4="$param4 -m set ${negation:+$negation }--match-set ${ipsPrefix}_${iface}_4_${target}_${type}_${uid} $target"
+					param6="$param6 -m set ${negation:+$negation }--match-set ${ipsPrefix}_${iface}_6_${target}_${type}_${uid} $target"
+				else
+					local resolvedIP4 resolvedIP6
+					resolvedIP4="$(resolveip_to_ipt4 "$value")"
+					resolvedIP6="$(resolveip_to_ipt6 "$value")"
+					if [ -z "$resolvedIP4" ] && [ -z "$resolvedIP6" ]; then
+						state add 'errorSummary' 'errorFailedToResolve' "$value"
+					fi
+					param4="$param4 ${negation:+$negation }-s $resolvedIP4"
+					param6="$param6 ${negation:+$negation }-s $resolvedIP6"
+				fi
+			fi
+		fi
+
+		if [ -n "$name" ]; then
+			param4="$param4 -m comment --comment $(str_extras_to_underscore "$name")"
+			param6="$param6 -m comment --comment $(str_extras_to_underscore "$name")"
+		fi
+
+		local ipv4_error='0' ipv6_error='0'
+		if [ "$param4" = "$param6" ]; then
+			ipt4 "$param4" || ipv4_error='1'
+		else
+			ipt4 "$param4" || ipv4_error='1'
+			ipt6 "$param6" || ipv6_error='1'
+		fi
+
+	if [ -n "$ipv6_enabled" ] && [ "$ipv4_error" -eq '1' ] && [ "$ipv6_error" -eq '1' ]; then
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessInsertionFailed' "$name"
+		state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param4"
+		state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param6"
+		logger -t "$packageName" "ERROR: iptables $param4"
+		logger -t "$packageName" "ERROR: iptables $param6"
+	elif [ -z "$ipv6_enabled" ] && [ "$ipv4_error" -eq '1' ]; then
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessInsertionFailedIpv4' "$name"
+		state add 'errorSummary' 'errorPolicyProcessCMD' "iptables $param4"
+		logger -t "$packageName" "ERROR: iptables $param4"
+	fi
+
+	done
+}
+dns_policy_routing_nft() {
+	local mark i nftInsertOption='add'
+	local param4 param6 proto_i negation value dest4 dest6 dest_dns4 dest_dns6
+	local name="$1" src_addr="$2" dest_dns="$3" proto chain uid="$5"
+	proto='tcp udp'
+	chain="$(str_to_lower "$4")"
+	chain="${chain:-prerouting}"
+
+	if [ -z "$ipv6_enabled" ] && { is_ipv6 "$src_addr" || is_ipv6 "$dest_dns"; }; then
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessNoIpv6' "$name"
+		return 1
+	fi
+
+	if is_family_mismatch "$src_addr" "$dest_dns"; then 
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessMismatchFamily' "${name}: '$src_addr' '$dest_dns'"
+		return 1
+	fi
+
+	if is_supported_interface "$dest_dns"; then
+		local d
+		for d in $(uci -q get network."$dest_dns".dns); do
+			if ! is_family_mismatch "$src_addr" "$d"; then
+				if is_ipv4 "$d"; then
+					dest_dns4="${dest_dns4:-$d}"
+				elif is_ipv6 "$d"; then
+					dest_dns6="${dest_dns6:-$d}"
+				fi
+			fi
+		done
+	else
+		dest_dns4="$dest_dns"
+		dest_dns6="$dest_dns"
+	fi
+
+	if [ -z "${dest_dns4}${dest_dns6}" ]; then
+		processPolicyError='true'
+		state add 'errorSummary' 'errorPolicyProcessNoInterfaceDns' "'$dest_dns'"
+		return 1
+	fi
+
+	dest4="dport 53 counter dnat ip to $dest_dns4"
+	dest6="dport 53 counter dnat ip to $dest_dns6"
+
+	for proto_i in $proto; do
+		unset param4
+		unset param6
+
+		if [ -n "$src_addr" ]; then
+			if [ "${src_addr:0:1}" = "!" ]; then
+				negation='!='; value="${src_addr:1}"
+			else
+				unset negation; value="$src_addr";
+			fi
+			if is_phys_dev "$value"; then
+				param4="${param4:+$param4 }iifname ${negation:+$negation }${value:1}"
+				param6="${param6:+$param6 }iifname ${negation:+$negation }${value:1}"
+			elif is_mac_address "$value"; then
+				local target='src' type='mac'
+				if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
+					nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
+					param4="${param4:+$param4 }ether saddr ${negation:+$negation }@${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+					param6="${param6:+$param6 }ether saddr ${negation:+$negation }@${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				else
+					param4="${param4:+$param4 }ether saddr ${negation:+$negation }${value}"
+					param6="${param6:+$param6 }ether saddr ${negation:+$negation }${value}"
+				fi
+			else
+				local target='src' type='ip'
+				if nftset 'create' "$iface" "$target" "$type" "$uid" "$name" && \
+					nftset 'add' "$iface" "$target" "$type" "$uid" "$name" "$value"; then
+					param4="${param4:+$param4 }${nftIPv4Flag} saddr ${negation:+$negation }@${nftPrefix}_${iface}_4_${target}_${type}_${uid}"
+					param6="${param6:+$param6 }${nftIPv6Flag} saddr ${negation:+$negation }@${nftPrefix}_${iface}_6_${target}_${type}_${uid}"
+				else
+					param4="${param4:+$param4 }${nftIPv4Flag} saddr ${negation:+$negation }${value}"
+					param6="${param6:+$param6 }${nftIPv6Flag} saddr ${negation:+$negation }${value}"
+				fi
+			fi
+		fi
+
+		param4="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} ${param4} ${dest4} comment \"$name\""
+		param6="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} ${param6} ${dest6} comment \"$name\""
+		local ipv4_error='0' ipv6_error='0'
+		if [ "$policy_routing_nft_prev_param4" != "$param4" ]; then
+			nft4 "$param4" || ipv4_error='1'
+			policy_routing_nft_prev_param4="$param4"
+		fi
+		if [ "$policy_routing_nft_prev_param6" != "$param6" ] && \
+			[ "$param4" != "$param6" ]; then
+			nft6 "$param6" || ipv6_error='1'
+			policy_routing_nft_prev_param6="$param6"
+		fi
+		if [ -n "$ipv6_enabled" ] && [ "$ipv4_error" -eq '1' ] && [ "$ipv6_error" -eq '1' ]; then
+			processPolicyError='true'
+			state add 'errorSummary' 'errorPolicyProcessInsertionFailed' "$name"
+			state add 'errorSummary' 'errorPolicyProcessCMD' "nft $param4"
+			state add 'errorSummary' 'errorPolicyProcessCMD' "nft $param6"
+			logger -t "$packageName" "ERROR: nft $param4"
+			logger -t "$packageName" "ERROR: nft $param6"
+		elif [ -z "$ipv6_enabled" ] && [ "$ipv4_error" -eq '1' ]; then
+			processPolicyError='true'
+			state add 'errorSummary' 'errorPolicyProcessInsertionFailedIpv4' "$name"
+			state add 'errorSummary' 'errorPolicyProcessCMD' "nft $param4"
+			logger -t "$packageName" "ERROR: nft $param4"
+		fi
+	done
+}
+
 policy_routing() { if is_nft_mode; then policy_routing_nft "$@"; else policy_routing_iptables "$@"; fi; }
 policy_routing_iptables() {
 	local mark param4 param6 i negation value dest4 dest6 ipInsertOption="-A"
@@ -1921,6 +2161,51 @@ policy_routing_nft() {
 			fi
 		fi
 	done
+}
+
+dns_policy_process() {
+	local i j uid="$9"
+	if [ -z "$uid" ]; then # first call
+		[ "$enabled" -gt 0 ] || return 0
+		unset processDnsPolicyError
+		uid="$1"
+		if is_nft_mode; then
+			chain="$(str_to_lower "$chain")"
+		else
+			chain="$(str_to_upper "$chain")"
+		fi
+		output 2 "Routing '$name' DNS to $dest_dns "
+		if [ -z "${src_addr}" ]; then
+			state add 'errorSummary' 'errorPolicyNoSrcDest' "$name"
+			output_fail; return 1;
+		fi
+		if [ -z "$dest_dns" ]; then
+			state add 'errorSummary' 'errorPolicyNoDns' "$name"
+			output_fail; return 1;
+		fi
+
+		dns_policy_process "$name" "$src_addr" "$dest_dns" "$chain" "$uid"
+		if [ -n "$processPolicyError" ]; then
+			output_fail
+		else
+			output_ok
+		fi
+	else # recursive call, get options from passed variables
+		local name="$1" src_addr="$2" dest_dns="$3" chain="$4"
+		if str_contains "$src_addr" '[ ;\{\}]'; then
+			for i in $(str_extras_to_space "$src_addr"); do [ -n "$i" ] && dns_policy_process "$name" "$i" "$dest_dns" "$chain" "$uid"; done
+		elif str_contains "$dest_dns" '[ ;\{\}]'; then
+			for i in $(str_extras_to_space "$dest_dns"); do [ -n "$i" ] && dns_policy_process "$name" "$src_addr" "$i" "$chain" "$uid"; done
+		else
+			if is_url "$src_addr"; then
+				src_addr="$(process_url "$src_addr")"
+				[ -n "$src_addr" ] && dns_policy_process "$name" "$src_addr" "$dest_dns" "$chain" "$uid"
+			else
+				# if only src_addr is set add option 121 to dhcp leases?
+				dns_policy_routing "$name" "$src_addr" "$dest_dns" "$chain" "$uid"
+			fi
+		fi
+	fi
 }
 
 policy_process() {
@@ -2521,6 +2806,7 @@ start_service() {
 					i="$(str_to_upper "$i")"
 					ipt -t mangle -N "${iptPrefix}_${i}"
 					ipt -t mangle "$rule_create_option" "$i" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
+					ipt -t nat -N "${iptPrefix}_${i}"
 				done
 			fi
 			json_add_array 'gateways'
@@ -2529,6 +2815,12 @@ start_service() {
 			interface_process 'tor' 'destroy'
 			is_tor_running && interface_process 'tor' 'reload'
 			json_close_array
+			if is_config_enabled 'dns_policy'; then
+				output 1 'Processing dns policies '
+				config_load "$packageName"
+				config_foreach load_validate_dns_policy 'dns_policy' dns_policy_process
+				output 1 '\n'
+			fi
 			if is_config_enabled 'policy'; then
 				output 1 'Processing policies '
 				config_load "$packageName"
@@ -2564,6 +2856,7 @@ start_service() {
 					i="$(str_to_upper "$i")"
 					ipt -t mangle -N "${iptPrefix}_${i}"
 					ipt -t mangle "$rule_create_option" "$i" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
+					ipt -t nat -N "${iptPrefix}_${i}"
 				done
 			fi
 			output 1 'Processing interfaces '
@@ -2575,6 +2868,12 @@ start_service() {
 			json_close_array
 			ip route flush cache
 			output 1 '\n'
+			if is_config_enabled 'dns_policy'; then
+				output 1 'Processing dns policies '
+				config_load "$packageName"
+				config_foreach load_validate_dns_policy 'dns_policy' dns_policy_process
+				output 1 '\n'
+			fi
 			if is_config_enabled 'policy'; then
 				output 1 'Processing policies '
 				config_load "$packageName"
@@ -2936,6 +3235,19 @@ load_validate_config() {
 		'nft_set_gc_interval:or("", string)'\
 		'nft_set_policy:or("", memory, performance):performance'\
 		'nft_set_timeout:or("", string)'
+}
+
+# shellcheck disable=SC2120
+load_validate_dns_policy() {
+	local name
+	local enabled
+	local src_addr
+	local dest_dns
+	uci_load_validate "$packageName" 'policy' "$1" "${2}${3:+ $3}" \
+		'name:string:Untitled' \
+		'enabled:bool:1' \
+		'src_addr:list(neg(or(host,network,macaddr,string)))' \
+		'dest_dns:list(or(host,network,string))'
 }
 
 # shellcheck disable=SC2120

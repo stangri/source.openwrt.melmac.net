@@ -7,7 +7,7 @@ PKG_NAME:=luci-app-pbr
 PKG_LICENSE:=AGPL-3.0-or-later
 PKG_MAINTAINER:=Stan Grishin <stangri@melmac.ca>
 PKG_VERSION:=1.1.5
-PKG_RELEASE:=1
+PKG_RELEASE:=3
 
 LUCI_TITLE:=Policy Based Routing Service Web UI
 LUCI_DESCRIPTION:=Provides Web UI for Policy Based Routing Service.

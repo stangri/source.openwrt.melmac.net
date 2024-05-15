@@ -274,6 +274,41 @@ return view.extend({
 
 		s = m.section(
 			form.GridSection,
+			"dns_policy",
+			_("DNS Policies"),
+			_(
+				"Name, local address and remote DNS fields are required. Multiple local " +
+					"addresses/devices/domains can be space separated."
+			)
+		);
+		s.rowcolors = true;
+		s.sortable = true;
+		s.anonymous = true;
+		s.addremove = true;
+
+		o = s.option(form.Flag, "enabled", _("Enabled"));
+		o.default = "1";
+		o.editable = true;
+
+		o = s.option(form.Value, "name", _("Name"));
+		o.optional = false;
+
+		o = s.option(form.Value, "src_addr", _("Local addresses / devices"));
+		o.optional = false;
+		o.datatype =
+			"list(neg(or(cidr,host,ipmask,ipaddr,macaddr,network,string)))";
+		o.rmempty = true;
+		o.default = "";
+
+		o = s.option(form.Value, "dest_dns", _("Remote DNS"));
+		o.optional = false;
+		o.datatype = "list(or(cidr,host,network,ipaddr))";
+		reply.interfaces.forEach((element) => {
+			element === "ignore" || o.value(element);
+		});
+
+		s = m.section(
+			form.GridSection,
 			"policy",
 			_("Policies"),
 			_(
