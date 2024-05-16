@@ -159,13 +159,13 @@ output() {
 	if [ -z "$verbosity" ] && [ -n "$packageName" ]; then
 		verbosity="$(uci_get "$packageName" 'config' 'verbosity' '2')"
 	fi
-	if [ $# -ne 1 ] && is_integer "$1"; then
-		if [ $((verbosity & $1)) -gt 0 ] || [ "$verbosity" = "$1" ]; then shift; text="$*"; else return 0; fi
+	if [ "$#" -ne '1' ] && is_integer "$1"; then
+		if [ "$((verbosity & $1))" -gt '0' ] || [ "$verbosity" = "$1" ]; then shift; text="$*"; else return 0; fi
 	fi
 	text="${text:-$*}";
 	[ -t 1 ] && printf "%b" "$text"
 	msg="${text//$serviceName /service }";
-	if [ "$(printf "%b" "$msg" | wc -l)" -gt 0 ]; then
+	if [ "$(printf "%b" "$msg" | wc -l)" -gt '0' ]; then
 		[ -s "$sharedMemoryOutput" ] && memmsg="$(cat "$sharedMemoryOutput")"
 		logmsg="$(printf "%b" "${memmsg}${msg}" | sed 's/\x1b\[[0-9;]*m//g')"
 		logger -t "${packageName:-service} [$$]" "$(printf "%b" "$logmsg")"
@@ -203,7 +203,7 @@ pbr_get_gateway6() {
 # shellcheck disable=SC2016
 is_bad_user_file_nft_call() { grep -q '"\$nft" list' "$1" || grep '"\$nft" -f' "$1";}
 is_config_enabled() {
-	_check_config() { local en; config_get_bool en "$1" 'enabled' 1; [ "$en" -gt 0 ] && _cfg_enabled=0; }
+	_check_config() { local en; config_get_bool en "$1" 'enabled' '1'; [ "$en" -gt '0' ] && _cfg_enabled=0; }
 	local cfg="$1" _cfg_enabled=1
 	[ -n "$1" ] || return 1
 	config_load "$packageName"
@@ -217,7 +217,7 @@ is_domain() { ! is_ipv6 "$1" && str_contains "$1" '[a-zA-Z]'; }
 is_dslite() { local p; network_get_protocol p "$1"; [ "${p:0:6}" = "dslite" ]; }
 is_family_mismatch() { ( is_ipv4_netmask "${1//!}" && is_ipv6 "${2//!}" ) || ( is_ipv6 "${1//!}" && is_ipv4_netmask "${2//!}" ); }
 is_greater() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
-is_greater_or_equal() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" = "$2"; }
+is_greater_or_equal() { test "$(printf '%s\n' "$@" | sort -V | head -n '1')" = "$2"; }
 is_ignored_interface() { str_contains_word "$ignored_interface" "$1"; }
 is_ignore_target() { [ "$(str_to_lower "$1")" = 'ignore' ]; }
 is_integer() {
@@ -304,7 +304,7 @@ ipv4_leases_to_nftset() { [ -s '/tmp/dhcp.leases' ] || return 1; grep "$1" '/tmp
 # shellcheck disable=SC2016
 ipv6_leases_to_nftset() { [ -s '/tmp/hosts/odhcpd' ] || return 1; grep -v '^#' '/tmp/hosts/odhcpd' | grep "$1" | awk '{print $1}' | sed -n 'H;${x;s/\n/,/g;s/^,//;p;};d' | tr '\n' ' '; }
 # shellcheck disable=SC3037
-ports_to_nftset() { echo -ne "$1"; }
+ports_to_nftset() { echo -en "$1"; }
 get_mark_ipt_chains() { [ -n "$(command -v iptables-save)" ] && iptables-save | grep ":${iptPrefix}_MARK_" | awk '{ print $1 }' | sed 's/://'; }
 get_mark_nft_chains() { [ -x "$nft" ] && "$nft" list table inet "$nftTable" 2>/dev/null | grep chain | grep "${nftPrefix}_mark_" | awk '{ print $2 }'; }
 get_ipsets() { [ -x "$(command -v ipset)" ] && ipset list | grep "${ipsPrefix}_" | awk '{ print $2 }'; }
@@ -480,9 +480,9 @@ load_package_config() {
 	_check_user_files_for_bad_nft_calls() {
 		local cfg="$1"
 		local en path
-		config_get_bool en   "$cfg" 'enabled' 1
+		config_get_bool en   "$cfg" 'enabled' '1'
 		config_get      path "$cfg" 'path'
-		[ "$en" -eq 0 ] && return 0
+		[ "$en" -eq '0' ] && return 0
 		[ -z "$path" ] && return 0
 		[ -s "$path" ] || return 0
 		is_bad_user_file_nft_call "$path" && user_file_check_result='bad'
@@ -520,10 +520,10 @@ load_package_config() {
 	config_get      wan_mark                  'config' 'wan_mark' '010000'
 	fw_mask="0x${fw_mask}"
 	wan_mark="0x${wan_mark}"
-	[ -n "$ipv6_enabled" ] && [ "$ipv6_enabled" -eq 0 ] && unset ipv6_enabled
-	[ -n "$nft_file_support" ] && [ "$nft_file_support" -eq 0 ] && unset nft_file_support
-	[ -n "$nft_user_set_counter" ] && [ "$nft_user_set_counter" -eq 0 ] && unset nft_user_set_counter
-	[ -n "$secure_reload" ] && [ "$secure_reload" -eq 0 ] && unset secure_reload
+	[ -n "$ipv6_enabled" ] && [ "$ipv6_enabled" -eq '0' ] && unset ipv6_enabled
+	[ -n "$nft_file_support" ] && [ "$nft_file_support" -eq '0' ] && unset nft_file_support
+	[ -n "$nft_user_set_counter" ] && [ "$nft_user_set_counter" -eq '0' ] && unset nft_user_set_counter
+	[ -n "$secure_reload" ] && [ "$secure_reload" -eq '0' ] && unset secure_reload
 	config_foreach _check_user_files_for_bad_nft_calls 'include'
 	[ -n "$user_file_check_result" ] && unset nft_file_support
 	[ -n "$nft_file_support" ] && unset secure_reload
@@ -571,7 +571,7 @@ load_environment() {
 	load_package_config "$param"
 	case "$param" in
 		on_start)
-			if [ "$enabled" -eq 0 ]; then
+			if [ "$enabled" -eq '0' ]; then
 				state add 'errorSummary' 'errorServiceDisabled'
 				return 1
 			fi
@@ -652,7 +652,7 @@ is_wan_up() {
 	fi
 	while [ -z "$wanGW" ] ; do
 		load_network "$param"
-		if [ $((sleepCount)) -gt $((procd_boot_timeout)) ] || [ -n "$wanGW" ]; then break; fi
+		if [ "$((sleepCount))" -gt "$((procd_boot_timeout))" ] || [ -n "$wanGW" ]; then break; fi
 		output "$serviceName waiting for $procd_wan_interface gateway...\\n"
 		sleep 1
 		network_flush_cache
@@ -704,7 +704,7 @@ ipt() {
 	if [ -n "$ipv6_enabled" ] && [ -x "$ip6tables" ]; then
 		"$ip6tables" $d >/dev/null 2>&1 && failFlagIpv6=0
 	fi
-	[ "$failFlagIpv4" -eq 0 ] || [ "$failFlagIpv6" -eq 0 ]
+	[ "$failFlagIpv4" -eq '0' ] || [ "$failFlagIpv6" -eq '0' ]
 }
 
 # shellcheck disable=SC2086
@@ -719,7 +719,7 @@ ips() {
 
 	[ -x "$ipset" ] || return 1
 
-	if [ "${#ipset4}" -gt 31 ]; then 
+	if [ "${#ipset4}" -gt '31' ]; then 
 		state add 'errorSummary' 'errorIpsetNameTooLong' "$ipset4"
 		return 1
 	fi
@@ -865,7 +865,7 @@ nftset() {
 
 	[ -x "$nft" ] || return 1
 
-	if [ "${#nftset4}" -gt 255 ]; then 
+	if [ "${#nftset4}" -gt '255' ]; then 
 		state add 'errorSummary' 'errorNftsetNameTooLong' "$nftset4"
 		return 1
 	fi
@@ -990,7 +990,7 @@ cleanup_rt_tables() {
 
 cleanup_main_chains() {
 	local i j
-	for i in $chainsList; do
+	for i in $chainsList dstnat_lan; do
 		i="$(str_to_lower "$i")"
 		nft_call flush chain inet "$nftTable" "${nftPrefix}_${i}"
 	done
@@ -999,9 +999,9 @@ cleanup_main_chains() {
 		ipt -t mangle -D "${i}" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
 		ipt -t mangle -F "${iptPrefix}_${i}"
 		ipt -t mangle -X "${iptPrefix}_${i}"
-		ipt -t nat -F "${iptPrefix}_${i}"
-		ipt -t nat -X "${iptPrefix}_${i}"
 	done
+	ipt -t nat -F "${iptPrefix}_PREROUTING"
+	ipt -t nat -X "${iptPrefix}_PREROUTING"
 }
 
 cleanup_marking_chains() {
@@ -1473,7 +1473,7 @@ traffic_killswitch() {
 				ipt -A "${iptPrefix}_KILLSWITCH" -s "$lan_subnet" -o "$wan6_device" -j REJECT
 				ipt -I FORWARD -j "${iptPrefix}_KILLSWITCH" || s=1
 			fi
-			if [ "$s" -eq 0 ]; then
+			if [ "$s" -eq '0' ]; then
 				output_okn
 			else
 				output_failn
@@ -1492,7 +1492,7 @@ traffic_killswitch() {
 				ipt -X "${iptPrefix}_KILLSWITCH" || s=1
 			fi
 			if [ -n "$secure_reload" ] && ! nft_file 'enabled'; then
-				if [ "$s" -eq 0 ]; then
+				if [ "$s" -eq '0' ]; then
 					output_okn
 				else
 					output_failn
@@ -1508,10 +1508,9 @@ traffic_killswitch() {
 dns_policy_routing() { if is_nft_mode; then dns_policy_routing_nft "$@"; else dns_policy_routing_iptables "$@"; fi; }
 dns_policy_routing_iptables() {
 	local mark param4 param6 i negation value dest4 dest6 ipInsertOption="-A"
-	local ip4error='1' ip6error='1'
-	local name="$1" src_addr="$2" dest_dns="$3" proto='tcp udp' chain uid="$5"
-	chain="$(str_to_upper "$4")"
-	chain="${chain:-PREROUTING}"
+	local ip4error='1' ip6error='1' iface='dns'
+	local name="$1" src_addr="$2" dest_dns="$3" uid="$4"
+	local proto='tcp udp' chain='PREROUTING'
 
 	if [ -n "$ipv6_enabled" ] && { is_ipv6 "$src_addr" || is_ipv6 "$dest_dns"; }; then
 		processPolicyError='true'
@@ -1521,7 +1520,7 @@ dns_policy_routing_iptables() {
 
 	if is_family_mismatch "$src_addr" "$dest_dns"; then 
 		processPolicyError='true'
-		state add 'errorSummary' 'errorPolicyProcessMismatchFamily' "${name}: '$src_addr' '$dest_dns'"
+		state add 'errorSummary' 'errorPolicyProcessMismatchFamily' "${name}: '${src_addr}' '${dest_dns}'"
 		return 1
 	fi
 
@@ -1633,10 +1632,8 @@ dns_policy_routing_iptables() {
 dns_policy_routing_nft() {
 	local mark i nftInsertOption='add'
 	local param4 param6 proto_i negation value dest4 dest6 dest_dns4 dest_dns6
-	local name="$1" src_addr="$2" dest_dns="$3" proto chain uid="$5"
-	proto='tcp udp'
-	chain="$(str_to_lower "$4")"
-	chain="${chain:-prerouting}"
+	local name="$1" src_addr="$2" dest_dns="$3" uid="$4"
+	local proto='tcp udp' chain='dstnat_lan' iface='dns'
 
 	if [ -z "$ipv6_enabled" ] && { is_ipv6 "$src_addr" || is_ipv6 "$dest_dns"; }; then
 		processPolicyError='true'
@@ -1711,8 +1708,8 @@ dns_policy_routing_nft() {
 			fi
 		fi
 
-		param4="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} ${param4} ${dest4} comment \"$name\""
-		param6="$nftInsertOption rule inet $nftTable ${nftPrefix}_${chain} ${param6} ${dest6} comment \"$name\""
+		param4="$nftInsertOption rule inet ${nftTable} ${nftPrefix}_${chain} ${param4} ${proto_i:+$proto_i }${dest4} comment \"$name\""
+		param6="$nftInsertOption rule inet ${nftTable} ${nftPrefix}_${chain} ${param6} ${proto_i:+$proto_i }${dest6} comment \"$name\""
 		local ipv4_error='0' ipv6_error='0'
 		if [ "$policy_routing_nft_prev_param4" != "$param4" ]; then
 			nft4 "$param4" || ipv4_error='1'
@@ -1737,6 +1734,46 @@ dns_policy_routing_nft() {
 			logger -t "$packageName" "ERROR: nft $param4"
 		fi
 	done
+}
+
+dns_policy_process() {
+	local i j uid="$4"
+	if [ -z "$uid" ]; then # first call
+		[ "$enabled" -gt '0' ] || return 0
+		unset processDnsPolicyError
+		uid="$1"
+		output 2 "Routing '$name' DNS to $dest_dns "
+		if [ -z "${src_addr}" ]; then
+			state add 'errorSummary' 'errorPolicyNoSrcDest' "$name"
+			output_fail; return 1;
+		fi
+		if [ -z "$dest_dns" ]; then
+			state add 'errorSummary' 'errorPolicyNoDns' "$name"
+			output_fail; return 1;
+		fi
+
+		dns_policy_process "$name" "$src_addr" "$dest_dns" "$uid"
+		if [ -n "$processPolicyError" ]; then
+			output_fail
+		else
+			output_ok
+		fi
+	else # recursive call, get options from passed variables
+		local name="$1" src_addr="$2" dest_dns="$3" chain="$4"
+		if str_contains "$src_addr" '[ ;\{\}]'; then
+			for i in $(str_extras_to_space "$src_addr"); do [ -n "$i" ] && dns_policy_process "$name" "$i" "$dest_dns" "$uid"; done
+		elif str_contains "$dest_dns" '[ ;\{\}]'; then
+			for i in $(str_extras_to_space "$dest_dns"); do [ -n "$i" ] && dns_policy_process "$name" "$src_addr" "$i" "$uid"; done
+		else
+			if is_url "$src_addr"; then
+				src_addr="$(process_url "$src_addr")"
+				[ -n "$src_addr" ] && dns_policy_process "$name" "$src_addr" "$dest_dns" "$uid"
+			else
+				# if only src_addr is set add option 121 to dhcp leases?
+				dns_policy_routing "$name" "$src_addr" "$dest_dns" "$uid"
+			fi
+		fi
+	fi
 }
 
 policy_routing() { if is_nft_mode; then policy_routing_nft "$@"; else policy_routing_iptables "$@"; fi; }
@@ -2163,55 +2200,10 @@ policy_routing_nft() {
 	done
 }
 
-dns_policy_process() {
-	local i j uid="$9"
-	if [ -z "$uid" ]; then # first call
-		[ "$enabled" -gt 0 ] || return 0
-		unset processDnsPolicyError
-		uid="$1"
-		if is_nft_mode; then
-			chain="$(str_to_lower "$chain")"
-		else
-			chain="$(str_to_upper "$chain")"
-		fi
-		output 2 "Routing '$name' DNS to $dest_dns "
-		if [ -z "${src_addr}" ]; then
-			state add 'errorSummary' 'errorPolicyNoSrcDest' "$name"
-			output_fail; return 1;
-		fi
-		if [ -z "$dest_dns" ]; then
-			state add 'errorSummary' 'errorPolicyNoDns' "$name"
-			output_fail; return 1;
-		fi
-
-		dns_policy_process "$name" "$src_addr" "$dest_dns" "$chain" "$uid"
-		if [ -n "$processPolicyError" ]; then
-			output_fail
-		else
-			output_ok
-		fi
-	else # recursive call, get options from passed variables
-		local name="$1" src_addr="$2" dest_dns="$3" chain="$4"
-		if str_contains "$src_addr" '[ ;\{\}]'; then
-			for i in $(str_extras_to_space "$src_addr"); do [ -n "$i" ] && dns_policy_process "$name" "$i" "$dest_dns" "$chain" "$uid"; done
-		elif str_contains "$dest_dns" '[ ;\{\}]'; then
-			for i in $(str_extras_to_space "$dest_dns"); do [ -n "$i" ] && dns_policy_process "$name" "$src_addr" "$i" "$chain" "$uid"; done
-		else
-			if is_url "$src_addr"; then
-				src_addr="$(process_url "$src_addr")"
-				[ -n "$src_addr" ] && dns_policy_process "$name" "$src_addr" "$dest_dns" "$chain" "$uid"
-			else
-				# if only src_addr is set add option 121 to dhcp leases?
-				dns_policy_routing "$name" "$src_addr" "$dest_dns" "$chain" "$uid"
-			fi
-		fi
-	fi
-}
-
 policy_process() {
 	local i j uid="$9"
 	if [ -z "$uid" ]; then # first call
-		[ "$enabled" -gt 0 ] || return 0
+		[ "$enabled" -gt '0' ] || return 0
 		unset processPolicyError
 		uid="$1"
 		if is_nft_mode; then
@@ -2315,7 +2307,7 @@ interface_routing() {
 				fi
 				$ip_bin -4 rule del table "$tid" >/dev/null 2>&1
 				$ip_bin -4 route flush table "$tid" >/dev/null 2>&1
-				if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
+				if [ -n "$gw4" ] || [ "$strict_enforcement" -ne '0' ]; then
 					ipv4_error=0
 					if [ -z "$gw4" ]; then
 						try "$ip_bin" -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
@@ -2348,7 +2340,7 @@ EOF
 					ipv6_error=0
 					$ip_bin -6 rule del table "$tid" >/dev/null 2>&1
 					$ip_bin -6 route flush table "$tid" >/dev/null 2>&1
-					if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne 0 ]; then
+					if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne '0' ]; then
 						if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 							try "$ip_bin" -6 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv6_error=1
 						elif "$ip_bin" -6 route list table main | grep -q " dev $dev6 "; then
@@ -2369,10 +2361,10 @@ EOF
 					try "$ip_bin" -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$((priority-1))" >/dev/null 2>&1 || ipv6_error=1
 				fi
 			fi
-			if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
+			if [ "$ipv4_error" -eq '0' ] || [ "$ipv6_error" -eq '0' ]; then
 				dscp="$(uci_get "$packageName" 'config' "${iface}_dscp")"
 				if is_nft_mode; then
-					if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
+					if [ "${dscp:-0}" -ge '1' ] && [ "${dscp:-0}" -le '63' ]; then
 						try nft add rule inet "$nftTable" "${nftPrefix}_prerouting ${nftIPv4Flag} dscp ${dscp} goto ${nftPrefix}_mark_${mark}" || s=1
 						if [ -n "$ipv6_enabled" ]; then
 							try nft add rule inet "$nftTable" "${nftPrefix}_prerouting ${nftIPv6Flag} dscp ${dscp} goto ${nftPrefix}_mark_${mark}" || s=1
@@ -2385,7 +2377,7 @@ EOF
 						fi
 					fi
 				else
-					if [ "${dscp:-0}" -ge 1 ] && [ "${dscp:-0}" -le 63 ]; then
+					if [ "${dscp:-0}" -ge '1' ] && [ "${dscp:-0}" -le '63' ]; then
 						ipt -t mangle -I "${iptPrefix}_PREROUTING" -m dscp --dscp "${dscp}" -g "${iptPrefix}_MARK_${mark}" || s=1
 					fi
 					if [ "$iface" = "$icmp_interface" ]; then
@@ -2427,7 +2419,7 @@ EOF
 			if ! is_netifd_table_interface "$iface"; then
 				$ip_bin route flush table "$tid" >/dev/null 2>&1
 			fi
-			if [ -n "$gw4" ] || [ "$strict_enforcement" -ne 0 ]; then
+			if [ -n "$gw4" ] || [ "$strict_enforcement" -ne '0' ]; then
 				if [ -z "$gw4" ]; then
 					try "$ip_bin" -4 route add unreachable default table "$tid" >/dev/null 2>&1 || ipv4_error=1
 				else
@@ -2437,7 +2429,7 @@ EOF
 			fi
 			if [ -n "$ipv6_enabled" ]; then
 				ipv6_error=0
-				if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne 0 ]; then
+				if { [ -n "$gw6" ] && [ "$gw6" != "::/0" ]; } || [ "$strict_enforcement" -ne '0' ]; then
 					if [ -z "$gw6" ] || [ "$gw6" = "::/0" ]; then
 						try "$ip_bin" -6 route add unreachable default table "$tid" || ipv6_error=1
 					elif $ip_bin -6 route list table main | grep -q " dev $dev6 "; then
@@ -2454,7 +2446,7 @@ EOF
 				fi
 				try "$ip_bin" -6 rule add fwmark "${mark}/${fw_mask}" table "$tid" priority "$priority" || ipv6_error=1
 			fi
-			if [ "$ipv4_error" -eq 0 ] || [ "$ipv6_error" -eq 0 ]; then
+			if [ "$ipv4_error" -eq '0' ] || [ "$ipv6_error" -eq '0' ]; then
 				s=0
 			else
 				s=1
@@ -2512,7 +2504,7 @@ interface_process() {
 
 	is_supported_interface "$iface" || return 0
 	is_wan6 "$iface" && return 0
-	[ $((ifaceMark)) -gt $((fw_mask)) ] && return 1
+	[ "$((ifaceMark))" -gt "$((fw_mask))" ] && return 1
 
 	if is_ovpn "$iface" && ! is_ovpn_valid "$iface"; then
 		: || state add 'warningSummary' 'warningInvalidOVPNConfig' "$iface"
@@ -2652,7 +2644,7 @@ interface_process() {
 
 user_file_process() {
 	local shellBin="${SHELL:-/bin/ash}"
-	[ "$enabled" -gt 0 ] || return 0
+	[ "$enabled" -gt '0' ] || return 0
 	if [ ! -s "$path" ]; then
 		state add 'errorSummary' 'errorUserFileNotFound' "$path"
 		output_fail
@@ -2806,8 +2798,8 @@ start_service() {
 					i="$(str_to_upper "$i")"
 					ipt -t mangle -N "${iptPrefix}_${i}"
 					ipt -t mangle "$rule_create_option" "$i" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
-					ipt -t nat -N "${iptPrefix}_${i}"
 				done
+				ipt -t nat -N "${iptPrefix}_PREROUTING"
 			fi
 			json_add_array 'gateways'
 			interface_process 'all' 'prepare'
@@ -2815,16 +2807,16 @@ start_service() {
 			interface_process 'tor' 'destroy'
 			is_tor_running && interface_process 'tor' 'reload'
 			json_close_array
-			if is_config_enabled 'dns_policy'; then
-				output 1 'Processing dns policies '
-				config_load "$packageName"
-				config_foreach load_validate_dns_policy 'dns_policy' dns_policy_process
-				output 1 '\n'
-			fi
 			if is_config_enabled 'policy'; then
 				output 1 'Processing policies '
 				config_load "$packageName"
 				config_foreach load_validate_policy 'policy' policy_process
+				output 1 '\n'
+			fi
+			if is_config_enabled 'dns_policy'; then
+				output 1 'Processing dns policies '
+				config_load "$packageName"
+				config_foreach load_validate_dns_policy 'dns_policy' dns_policy_process
 				output 1 '\n'
 			fi
 			if is_config_enabled 'include'; then
@@ -2856,8 +2848,8 @@ start_service() {
 					i="$(str_to_upper "$i")"
 					ipt -t mangle -N "${iptPrefix}_${i}"
 					ipt -t mangle "$rule_create_option" "$i" -m mark --mark "0x0/${fw_mask}" -j "${iptPrefix}_${i}"
-					ipt -t nat -N "${iptPrefix}_${i}"
 				done
+				ipt -t nat -N "${iptPrefix}_PREROUTING"
 			fi
 			output 1 'Processing interfaces '
 			json_add_array 'gateways'
@@ -2868,16 +2860,16 @@ start_service() {
 			json_close_array
 			ip route flush cache
 			output 1 '\n'
-			if is_config_enabled 'dns_policy'; then
-				output 1 'Processing dns policies '
-				config_load "$packageName"
-				config_foreach load_validate_dns_policy 'dns_policy' dns_policy_process
-				output 1 '\n'
-			fi
 			if is_config_enabled 'policy'; then
 				output 1 'Processing policies '
 				config_load "$packageName"
 				config_foreach load_validate_policy 'policy' policy_process
+				output 1 '\n'
+			fi
+			if is_config_enabled 'dns_policy'; then
+				output 1 'Processing dns policies '
+				config_load "$packageName"
+				config_foreach load_validate_dns_policy 'dns_policy' dns_policy_process
 				output 1 '\n'
 			fi
 			if is_config_enabled 'include'; then
@@ -2902,7 +2894,7 @@ start_service() {
 	[ -n "$gatewaySummary" ] && json_add_string 'gateways' "$gatewaySummary"
 	[ -n "$errorSummary" ] && json_add_string 'errors' "$errorSummary"
 	[ -n "$warningSummary" ] && json_add_string 'warnings' "$warningSummary"
-	if [ "$strict_enforcement" -ne 0 ] && str_contains "$gatewaySummary" '0.0.0.0'; then
+	if [ "$strict_enforcement" -ne '0' ] && str_contains "$gatewaySummary" '0.0.0.0'; then
 		json_add_string 'mode' 'strict'
 	fi
 	json_close_object
@@ -2986,7 +2978,7 @@ stop_service() {
 	resolver 'cleanup_all'
 	resolver 'compare_hash' && resolver 'restart'
 	traffic_killswitch 'remove'
-	if [ "$enabled" -ne 0 ]; then
+	if [ "$enabled" -ne '0' ]; then
 		if [ -n "$nft_file_mode" ]; then
 			output "$serviceName (fw4 nft file mode) stopped "; output_okn;
 		elif is_nft_mode; then
@@ -3008,73 +3000,6 @@ status_service() {
 	else
 		status_service_iptables "$@"
 	fi
-}
-
-status_service_nft() {
-	local i dev dev6 wan_tid
-
-	json_load "$(ubus call system board)"; json_select release; json_get_var dist distribution; json_get_var vers version
-	if [ -n "$wanIface4" ]; then
-		network_get_gateway wanGW4 "$wanIface4"
-		network_get_device dev "$wanIface4"
-	fi
-	if [ -n "$wanIface6" ]; then
-		network_get_device dev6 "$wanIface6"
-		wanGW6=$($ip_bin -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
-		[ "$wanGW6" = "default" ] && wanGW6=$($ip_bin -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
-	fi
-	while [ "${1:0:1}" = "-" ]; do param="${1//-/}"; eval "set_$param=1"; shift; done
-	[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
-	status="$serviceName running on $dist $vers."
-	[ -n "$wanIface4" ] && status="$status WAN (IPv4): ${wanIface4}/${dev}/${wanGW4:-0.0.0.0}."
-	[ -n "$wanIface6" ] && status="$status WAN (IPv6): ${wanIface6}/${dev6}/${wanGW6:-::/0}."
-
-	echo "$_SEPARATOR_"
-	echo "$packageName - environment"
-	echo "$status"
-	echo "$_SEPARATOR_"
-	dnsmasq --version 2>/dev/null | sed '/^$/,$d'
-	if nft_file 'exists'; then
-		echo "$_SEPARATOR_"
-		echo "$packageName fw4 nft file: $nftPermFile"
-		sed '1d;2d;' "$nftPermFile"
-	fi
-	echo "$_SEPARATOR_"
-	echo "$packageName chains - policies"
-	for i in forward input output prerouting postrouting; do
-		"$nft" -a list table inet "$nftTable" | sed -n "/chain ${nftPrefix}_${i} {/,/\t}/p"
-	done
-	echo "$_SEPARATOR_"
-	echo "$packageName chains - marking"
-	for i in $(get_mark_nft_chains); do
-		"$nft" -a list table inet "$nftTable" | sed -n "/chain ${i} {/,/\t}/p"
-	done
-	echo "$_SEPARATOR_"
-	echo "$packageName nft sets"
-	for i in $(get_nft_sets); do
-		"$nft" -a list table inet "$nftTable" | sed -n "/set ${i} {/,/\t}/p"
-	done
-	if [ -s "$dnsmasqFile" ]; then
-		echo "$_SEPARATOR_"
-		echo "dnsmasq sets"
-		cat "$dnsmasqFile"
-	fi
-#	echo "$_SEPARATOR_"
-#	ip rule list | grep "${packageName}_"
-	echo "$_SEPARATOR_"
-	tableCount="$(grep -c "${packageName}_" $rtTablesFile)" || tableCount=0
-	wan_tid=$(($(get_rt_tables_next_id)-tableCount))
-	i=0; while [ $i -lt "$tableCount" ]; do 
-		echo "IPv4 table $((wan_tid + i)) route: $($ip_bin -4 route show table $((wan_tid + i)) | grep default)"
-		echo "IPv4 table $((wan_tid + i)) rule(s):"
-		$ip_bin -4 rule list table "$((wan_tid + i))"
-		if [ -n "$ipv6_enabled" ]; then
-			echo "IPv6 table $((wan_tid + i)) route: $($ip_bin -6 route show table $((wan_tid + i)) | grep default)"
-			echo "IPv6 table $((wan_tid + i)) rule(s):"
-			$ip_bin -6 route show table $((wan_tid + i))
-		fi
-		i=$((i + 1))
-	done
 }
 
 status_service_iptables() {
@@ -3113,7 +3038,7 @@ status_service_iptables() {
 		if [ -n "$set_d" ]; then route; else route | grep '^default'; fi
 		if [ -n "$set_d" ]; then ip rule list; fi
 		wan_tid=$(($(get_rt_tables_next_id)-tableCount))
-		i=0; while [ $i -lt "$tableCount" ]; do 
+		i=0; while [ "$i" -lt "$tableCount" ]; do 
 			echo "IPv4 table $((wan_tid + i)) route: $($ip_bin -4 route show table $((wan_tid + i)) | grep default)"
 			echo "IPv4 table $((wan_tid + i)) rule(s):"
 			$ip_bin -4 rule list table "$((wan_tid + i))"
@@ -3121,7 +3046,7 @@ status_service_iptables() {
 		done
 
 		if [ -n "$ipv6_enabled" ]; then
-			i=0; while [ $i -lt "$tableCount" ]; do
+			i=0; while [ "$i" -lt "$tableCount" ]; do
 				$ip_bin -6 route show table $((wan_tid + i)) | while read -r param; do
 					echo "IPv6 Table $((wan_tid + i)): $param"
 				done
@@ -3155,7 +3080,7 @@ status_service_iptables() {
 				fi
 			fi
 			i=0; ifaceMark="$wan_mark";
-			while [ $i -lt "$tableCount" ]; do
+			while [ "$i" -lt "$tableCount" ]; do
 				if iptables -v -t "$(str_to_lower $j)" -S "${iptPrefix}_MARK_${ifaceMark}" >/dev/null 2>&1; then
 					echo "$_SEPARATOR_"
 					echo "$j IP Table MARK Chain: ${iptPrefix}_MARK_${ifaceMark}"
@@ -3200,6 +3125,73 @@ status_service_iptables() {
 	else
 		printf "%b" "Your support details have been logged to '/var/${packageName}-support'. $__OK__\\n"
 	fi
+}
+
+status_service_nft() {
+	local i dev dev6 wan_tid
+
+	json_load "$(ubus call system board)"; json_select release; json_get_var dist distribution; json_get_var vers version
+	if [ -n "$wanIface4" ]; then
+		network_get_gateway wanGW4 "$wanIface4"
+		network_get_device dev "$wanIface4"
+	fi
+	if [ -n "$wanIface6" ]; then
+		network_get_device dev6 "$wanIface6"
+		wanGW6=$($ip_bin -6 route show | grep -m1 " dev $dev6 " | awk '{print $1}')
+		[ "$wanGW6" = "default" ] && wanGW6=$($ip_bin -6 route show | grep -m1 " dev $dev6 " | awk '{print $3}')
+	fi
+	while [ "${1:0:1}" = "-" ]; do param="${1//-/}"; eval "set_$param=1"; shift; done
+	[ -e "/var/${packageName}-support" ] && rm -f "/var/${packageName}-support"
+	status="$serviceName running on $dist $vers."
+	[ -n "$wanIface4" ] && status="$status WAN (IPv4): ${wanIface4}/${dev}/${wanGW4:-0.0.0.0}."
+	[ -n "$wanIface6" ] && status="$status WAN (IPv6): ${wanIface6}/${dev6}/${wanGW6:-::/0}."
+
+	echo "$_SEPARATOR_"
+	echo "$packageName - environment"
+	echo "$status"
+	echo "$_SEPARATOR_"
+	dnsmasq --version 2>/dev/null | sed '/^$/,$d'
+	if nft_file 'exists'; then
+		echo "$_SEPARATOR_"
+		echo "$packageName fw4 nft file: $nftPermFile"
+		sed '1d;2d;' "$nftPermFile"
+	fi
+	echo "$_SEPARATOR_"
+	echo "$packageName chains - policies"
+	for i in $chainsList dstnat_lan; do
+		"$nft" -a list table inet "$nftTable" | sed -n "/chain ${nftPrefix}_${i} {/,/\t}/p"
+	done
+	echo "$_SEPARATOR_"
+	echo "$packageName chains - marking"
+	for i in $(get_mark_nft_chains); do
+		"$nft" -a list table inet "$nftTable" | sed -n "/chain ${i} {/,/\t}/p"
+	done
+	echo "$_SEPARATOR_"
+	echo "$packageName nft sets"
+	for i in $(get_nft_sets); do
+		"$nft" -a list table inet "$nftTable" | sed -n "/set ${i} {/,/\t}/p"
+	done
+	if [ -s "$dnsmasqFile" ]; then
+		echo "$_SEPARATOR_"
+		echo "dnsmasq sets"
+		cat "$dnsmasqFile"
+	fi
+#	echo "$_SEPARATOR_"
+#	ip rule list | grep "${packageName}_"
+	echo "$_SEPARATOR_"
+	tableCount="$(grep -c "${packageName}_" $rtTablesFile)" || tableCount=0
+	wan_tid=$(($(get_rt_tables_next_id)-tableCount))
+	i=0; while [ "$i" -lt "$tableCount" ]; do 
+		echo "IPv4 table $((wan_tid + i)) route: $($ip_bin -4 route show table $((wan_tid + i)) | grep default)"
+		echo "IPv4 table $((wan_tid + i)) rule(s):"
+		$ip_bin -4 rule list table "$((wan_tid + i))"
+		if [ -n "$ipv6_enabled" ]; then
+			echo "IPv6 table $((wan_tid + i)) route: $($ip_bin -6 route show table $((wan_tid + i)) | grep default)"
+			echo "IPv6 table $((wan_tid + i)) rule(s):"
+			$ip_bin -6 route show table $((wan_tid + i))
+		fi
+		i=$((i + 1))
+	done
 }
 
 # shellcheck disable=SC2120

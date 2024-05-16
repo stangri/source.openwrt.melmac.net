@@ -238,7 +238,7 @@ get_supported_interfaces() {
 	for i in $supported_interface; do
 		is_xray "$i" && ifacesSupported="$ifacesSupported $i"
 	done
-	[ "$webui_show_ignore_target" -eq "1" ] && ifacesSupported="$ifacesSupported ignore"
+	[ "$webui_show_ignore_target" -eq '1' ] && ifacesSupported="$ifacesSupported ignore"
 	json_init
 	json_add_object "$packageName"
 	json_add_array 'interfaces'

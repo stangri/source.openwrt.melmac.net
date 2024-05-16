@@ -62,7 +62,7 @@ msgstr ""
 msgid "Basic Configuration"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:372
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:337
 msgid "Chain"
 msgstr ""
 
@@ -82,7 +82,7 @@ msgstr ""
 msgid "Controls both system log and console output verbosity."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:414
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:415
 msgid "Custom User File Includes"
 msgstr ""
 
@@ -90,15 +90,15 @@ msgstr ""
 msgid "Custom user file '%s' not found or empty"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:278
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:356
 msgid "DNS Policies"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:405
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:406
 msgid "DSCP Tag"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:392
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:393
 msgid "DSCP Tagging"
 msgstr ""
 
@@ -148,9 +148,9 @@ msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:163
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:262
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:289
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:325
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:427
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:290
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:367
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:428
 msgid "Enabled"
 msgstr ""
 
@@ -246,7 +246,7 @@ msgstr ""
 msgid "Installed AdGuardHome (%s) doesn't support 'ipset_file' option."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:381
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:346
 msgid "Interface"
 msgstr ""
 
@@ -263,11 +263,11 @@ msgid "Invalid OpenVPN config for '%s' interface"
 msgstr ""
 
 #: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:296
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:331
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:374
 msgid "Local addresses / devices"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:337
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:302
 msgid "Local ports"
 msgstr ""
 
@@ -279,12 +279,12 @@ msgstr ""
 msgid "Mode"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:293
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:329
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:294
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:371
 msgid "Name"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:315
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:280
 msgid ""
 "Name, interface and at least one other field are required. Multiple local "
 "and remote addresses/devices/domains and ports can be space separated. "
@@ -292,7 +292,7 @@ msgid ""
 "fields are left blank."
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:280
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:358
 msgid ""
 "Name, local address and remote DNS fields are required. Multiple local "
 "addresses/devices/domains can be space separated."
@@ -311,7 +311,7 @@ msgstr ""
 msgid "Output verbosity"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:432
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:433
 msgid "Path"
 msgstr ""
 
@@ -335,7 +335,7 @@ msgstr ""
 msgid "Please unset 'src_addr', 'src_port' and 'dest_port' for policy '%s'"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:313
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:278
 msgid "Policies"
 msgstr ""
 
@@ -376,7 +376,7 @@ msgstr ""
 msgid "Policy Routing"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:355
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:320
 msgid "Protocol"
 msgstr ""
 
@@ -388,15 +388,15 @@ msgstr ""
 msgid "Refer to https://docs.openwrt.melmac.net/pbr/#procd_wan_interface"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:303
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:381
 msgid "Remote DNS"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:343
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:308
 msgid "Remote addresses / domains"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:349
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:314
 msgid "Remote ports"
 msgstr ""
 
@@ -434,7 +434,7 @@ msgstr ""
 msgid "Rule Create option"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:416
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:417
 msgid ""
 "Run the following user files after setting up but before restarting DNSMASQ. "
 "See the %sREADME%s for details."
@@ -477,7 +477,7 @@ msgstr ""
 msgid "Service Warnings"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:394
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:395
 msgid ""
 "Set DSCP tags (in range between 1 and 63) for specific interfaces. See the "
 "%sREADME%s for details."
@@ -646,7 +646,7 @@ msgstr ""
 msgid "Web UI Configuration"
 msgstr ""
 
-#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:364
+#: applications/luci-app-pbr/htdocs/luci-static/resources/view/pbr/overview.js:329
 msgid "all"
 msgstr ""
 
