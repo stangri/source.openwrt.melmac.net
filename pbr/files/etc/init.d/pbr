@@ -1759,7 +1759,7 @@ dns_policy_process() {
 			output_ok
 		fi
 	else # recursive call, get options from passed variables
-		local name="$1" src_addr="$2" dest_dns="$3" chain="$4"
+		local name="$1" src_addr="$2" dest_dns="$3"
 		if str_contains "$src_addr" '[ ;\{\}]'; then
 			for i in $(str_extras_to_space "$src_addr"); do [ -n "$i" ] && dns_policy_process "$name" "$i" "$dest_dns" "$uid"; done
 		elif str_contains "$dest_dns" '[ ;\{\}]'; then
