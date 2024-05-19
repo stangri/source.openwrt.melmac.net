@@ -1751,7 +1751,6 @@ dns_policy_process() {
 			state add 'errorSummary' 'errorPolicyNoDns' "$name"
 			output_fail; return 1;
 		fi
-
 		dns_policy_process "$name" "$src_addr" "$dest_dns" "$uid"
 		if [ -n "$processPolicyError" ]; then
 			output_fail
