@@ -18,7 +18,7 @@ if [ ! -s "$TARGET_DL_FILE_4" ]; then
 fi
 if [ -s "$TARGET_DL_FILE_4" ]; then
 	if [ -n "$nft" ] && [ -x "$nft" ]; then
-		while read -r p; do "$nft" "add element $TARGET_TABLE $TARGET_NFTSET_4 { $p }" || _ret=1; done < "$TARGET_DL_FILE_4"
+		while read -r p; do nft "add element $TARGET_TABLE $TARGET_NFTSET_4 { $p }" || _ret=1; done < "$TARGET_DL_FILE_4"
 	elif ipset -q list "$TARGET_IPSET_4" >/dev/null 2>&1; then
 		if awk -v ipset="$TARGET_IPSET_4" '{print "add " ipset " " $1}' "$TARGET_DL_FILE_4" | ipset restore -!; then
 			_ret=0
@@ -33,7 +33,7 @@ if [ -n "$TARGET_DL_FILE_6" ] && [ ! -s "$TARGET_DL_FILE_6" ]; then
 fi
 if [ -s "$TARGET_DL_FILE_6" ]; then
 	if [ -n "$nft" ] && [ -x "$nft" ]; then
-		while read -r p; do "$nft" "add element $TARGET_TABLE $TARGET_NFTSET_6 { $p }" || _ret=1; done < "$TARGET_DL_FILE_6"
+		while read -r p; do nft "add element $TARGET_TABLE $TARGET_NFTSET_6 { $p }" || _ret=1; done < "$TARGET_DL_FILE_6"
 	elif ipset -q list "$TARGET_IPSET_6" >/dev/null 2>&1; then
 		if awk -v ipset="$TARGET_IPSET_6" '{print "add " ipset " " $1}' "$TARGET_DL_FILE_6" | ipset restore -!; then
 			_ret=0
