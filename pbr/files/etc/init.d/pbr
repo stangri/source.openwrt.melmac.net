@@ -12,7 +12,7 @@ USE_PROCD=1
 
 readonly packageName='pbr'
 readonly PKG_VERSION='dev-test'
-readonly packageCompat='3'
+readonly packageCompat='4'
 readonly serviceName="$packageName $PKG_VERSION"
 readonly serviceTrapSignals='exit SIGHUP SIGQUIT SIGKILL'
 readonly packageConfigFile="/etc/config/${packageName}"
@@ -40,7 +40,6 @@ readonly ipsPrefix='pbr'
 readonly iptPrefix='PBR'
 # shellcheck disable=SC2155
 readonly agh="$(command -v AdGuardHome)"
-readonly aghConfigFile='/etc/adguardhome.yaml'
 readonly aghIpsetFile="/var/run/${packageName}.adguardhome.ipsets"
 # shellcheck disable=SC2155
 readonly nft="$(command -v nft)"
@@ -90,6 +89,7 @@ nft_set_policy=
 nft_set_timeout=
 
 # run-time
+aghConfigFile='/etc/AdGuardHome/AdGuardHome.yaml'
 gatewaySummary=
 errorSummary=
 warningSummary=
@@ -333,8 +333,8 @@ is_running_nft_file() { [ -s "$nftPermFile" ]; }
 is_running_nft() { "$nft" list table inet fw4 | grep chain | grep -q pbr_mark_ >/dev/null 2>&1; }
 is_running() { is_running_iptables || is_running_nft; }
 check_ipset() { { [ -n "$ipset" ] && "$ipset" help hash:net; } >/dev/null 2>&1; }
-check_nft() { [ -n "$nft" ]; }
-check_agh() { [ -n "$agh" ] && [ -s "$aghConfigFile" ]; }
+check_nft() { [ -x "$nft" ]; }
+check_agh() { [ -x "$agh" ] && { [ -s "$aghConfigFile" ] || [ -s "${agh%/*}/AdGuardHome.yaml" ]; }; }
 check_dnsmasq() { command -v dnsmasq >/dev/null 2>&1; }
 check_unbound() { command -v unbound >/dev/null 2>&1; }
 check_agh_ipset() {
@@ -520,6 +520,9 @@ load_package_config() {
 	config_get      wan_mark                  'config' 'wan_mark' '010000'
 	fw_mask="0x${fw_mask}"
 	wan_mark="0x${wan_mark}"
+	if [ -x "$agh" ] && [ ! -s "$aghConfigFile" ]; then
+		[ -s "${agh%/*}/AdGuardHome.yaml" ] && aghConfigFile="${agh%/*}/AdGuardHome.yaml"
+	fi
 	[ -n "$ipv6_enabled" ] && [ "$ipv6_enabled" -eq '0' ] && unset ipv6_enabled
 	[ -n "$nft_file_support" ] && [ "$nft_file_support" -eq '0' ] && unset nft_file_support
 	[ -n "$nft_user_set_counter" ] && [ "$nft_user_set_counter" -eq '0' ] && unset nft_user_set_counter
