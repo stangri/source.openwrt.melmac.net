@@ -11,6 +11,8 @@ USE_PROCD=1
 readonly PKG_VERSION='dev-test'
 readonly PROG=/usr/bin/netclient
 
+[ -n "${IPKG_INSTROOT}" ] && return 0
+
 extra_command 'version' 'Show version information'
 
 version() { echo "Version: $PKG_VERSION"; }
