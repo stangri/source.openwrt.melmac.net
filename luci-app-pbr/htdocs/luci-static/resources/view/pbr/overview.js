@@ -11,9 +11,13 @@ var pkg = {
 	get Name() {
 		return "pbr";
 	},
-
+	get ReadmeCompat() {
+		return "1.1.5-8/";
+	},
 	get URL() {
-		return "https://docs.openwrt.melmac.net/" + pkg.Name + "/";
+		return (
+			"https://docs.openwrt.melmac.net/" + pkg.Name + "/" + pkg.ReadmeCompat
+		);
 	},
 };
 
@@ -279,7 +283,10 @@ return view.extend({
 			_(
 				"Name, interface and at least one other field are required. Multiple local and remote " +
 					"addresses/devices/domains and ports can be space separated. Placeholders below represent just " +
-					"the format/syntax and will not be used if fields are left blank."
+					"the format/syntax and will not be used if fields are left blank. For more information on options, check the %sREADME%s."
+			).format(
+				'<a href="' + pkg.URL + '#PolicyOptions" target="_blank">',
+				"</a>"
 			)
 		);
 		s.rowcolors = true;
@@ -356,7 +363,10 @@ return view.extend({
 			_("DNS Policies"),
 			_(
 				"Name, local address and remote DNS fields are required. Multiple local " +
-					"addresses/devices/domains can be space separated."
+					"addresses/devices can be space separated. For more information on options, check the %sREADME%s."
+			).format(
+				'<a href="' + pkg.URL + '#DNSPolicyOptions" target="_blank">',
+				"</a>"
 			)
 		);
 		s.rowcolors = true;
