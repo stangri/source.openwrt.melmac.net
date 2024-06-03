@@ -8,20 +8,7 @@
 "require view";
 "require adblock-fast.status as adb";
 
-var pkg = {
-	get Name() {
-		return "adblock-fast";
-	},
-	get URL() {
-		return "https://docs.openwrt.melmac.net/" + pkg.Name + "/";
-	},
-	humanFileSize: function (bytes, si = false, dp = 2) {
-		return `%${si ? 1000 : 1024}.${dp ?? 0}mB`.format(bytes);
-	},
-	isObjEmpty: function (obj) {
-		return Object.keys(obj).length === 0;
-	},
-};
+var pkg = adb.pkg;
 
 return view.extend({
 	load: function () {
