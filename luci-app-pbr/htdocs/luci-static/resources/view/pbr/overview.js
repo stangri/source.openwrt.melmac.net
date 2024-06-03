@@ -7,19 +7,7 @@
 "require view";
 "require pbr.status as pbr";
 
-var pkg = {
-	get Name() {
-		return "pbr";
-	},
-	get ReadmeCompat() {
-		return "1.1.5-8/";
-	},
-	get URL() {
-		return (
-			"https://docs.openwrt.melmac.net/" + pkg.Name + "/" + pkg.ReadmeCompat
-		);
-	},
-};
+var pkg = pbr.pkg;
 
 return view.extend({
 	load: function () {

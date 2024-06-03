@@ -10,8 +10,13 @@ var pkg = {
 	get Name() {
 		return "pbr";
 	},
+	get ReadmeCompat() {
+		return "1.1.5-8/";
+	},
 	get URL() {
-		return "https://docs.openwrt.melmac.net/" + pkg.Name + "/";
+		return (
+			"https://docs.openwrt.melmac.net/" + pkg.Name + "/" + pkg.ReadmeCompat
+		);
 	},
 };
 
@@ -560,6 +565,8 @@ RPC.on("setInitAction", function (reply) {
 
 return L.Class.extend({
 	status: status,
+	pkg: pkg,
+	getInitStatus: getInitStatus,
 	getInterfaces: getInterfaces,
 	getPlatformSupport: getPlatformSupport,
 });
