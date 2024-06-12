@@ -22,3 +22,6 @@
 [submodule "luci-app-https-dns-proxy"]
 	path = luci-app-https-dns-proxy
 	url = git@github.com:stangri/luci-app-https-dns-proxy.git
+[submodule "luci-app-pbr"]
+	path = luci-app-pbr
+	url = git@github.com:stangri/luci-app-pbr.git
