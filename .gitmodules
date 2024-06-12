@@ -19,3 +19,6 @@
 [submodule "luci-app-fakeinternet"]
 	path = luci-app-fakeinternet
 	url = git@github.com:stangri/luci-app-fakeinternet.git
+[submodule "luci-app-https-dns-proxy"]
+	path = luci-app-https-dns-proxy
+	url = git@github.com:stangri/luci-app-https-dns-proxy.git
