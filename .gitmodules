@@ -31,3 +31,6 @@
 [submodule "pbr"]
 	path = pbr
 	url = git@github.com:stangri/pbr.git
+[submodule "slider-support"]
+	path = slider-support
+	url = git@github.com:stangri/slider-support.git
