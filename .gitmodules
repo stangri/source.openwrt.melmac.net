@@ -7,3 +7,6 @@
 [submodule "fakeinternet"]
 	path = fakeinternet
 	url = git@github.com:stangri/fakeinternet.git
+[submodule "https-dns-proxy"]
+	path = https-dns-proxy
+	url = git@github.com:stangri/https-dns-proxy.git
