@@ -10,3 +10,6 @@
 [submodule "https-dns-proxy"]
 	path = https-dns-proxy
 	url = git@github.com:stangri/https-dns-proxy.git
+[submodule "luci-app-adblock-fast"]
+	path = luci-app-adblock-fast
+	url = git@github.com:stangri/luci-app-adblock-fast.git
