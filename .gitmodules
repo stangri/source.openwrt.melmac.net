@@ -1,3 +1,6 @@
 [submodule "netclient"]
 	path = netclient
 	url = git@github.com:stangri/netclient.git
+[submodule "adblock-fast"]
+	path = adblock-fast
+	url = git@github.com:stangri/adblock-fast.git
