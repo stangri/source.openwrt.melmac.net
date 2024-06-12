@@ -4,3 +4,6 @@
 [submodule "adblock-fast"]
 	path = adblock-fast
 	url = git@github.com:stangri/adblock-fast.git
+[submodule "fakeinternet"]
+	path = fakeinternet
+	url = git@github.com:stangri/fakeinternet.git
