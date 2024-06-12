@@ -1,0 +1,3 @@
+[submodule "netclient"]
+	path = netclient
+	url = git@github.com:stangri/netclient.git
