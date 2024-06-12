@@ -13,3 +13,6 @@
 [submodule "luci-app-adblock-fast"]
 	path = luci-app-adblock-fast
 	url = git@github.com:stangri/luci-app-adblock-fast.git
+[submodule "luci-app-advanced-reboot"]
+	path = luci-app-advanced-reboot
+	url = git@github.com:stangri/luci-app-advanced-reboot.git
