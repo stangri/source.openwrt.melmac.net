@@ -25,3 +25,6 @@
 [submodule "luci-app-pbr"]
 	path = luci-app-pbr
 	url = git@github.com:stangri/luci-app-pbr.git
+[submodule "luci-app-wlanblinket"]
+	path = luci-app-wlanblinket
+	url = git@github.com:stangri/luci-app-wlanblinket.git
