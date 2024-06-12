@@ -43,3 +43,6 @@
 [submodule "luci-app-wireshark-helper"]
 	path = luci-app-wireshark-helper
 	url = git@github.com:stangri/luci-app-wireshark-helper.git
+[submodule "luci-app-wlanblinker"]
+	path = luci-app-wlanblinker
+	url = git@github.com:stangri/luci-app-wlanblinker.git
