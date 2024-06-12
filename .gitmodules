@@ -34,3 +34,6 @@
 [submodule "slider-support"]
 	path = slider-support
 	url = git@github.com:stangri/slider-support.git
+[submodule "wireshark-helper"]
+	path = wireshark-helper
+	url = git@github.com:stangri/wireshark-helper.git
