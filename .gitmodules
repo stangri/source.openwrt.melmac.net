@@ -43,3 +43,6 @@
 [submodule "luci-app-wlanblinker"]
 	path = luci-app-wlanblinker
 	url = git@github.com:stangri/luci-app-wlanblinker.git
+[submodule "sunwait"]
+	path = sunwait
+	url = git@github.com:stangri/sunwait.git
