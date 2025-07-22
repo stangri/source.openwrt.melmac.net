@@ -46,3 +46,6 @@
 [submodule "sunwait"]
 	path = sunwait
 	url = git@github.com:stangri/sunwait.git
+[submodule "stangri"]
+	path = stangri
+	url = https://github.com/stangri/stangri.git
