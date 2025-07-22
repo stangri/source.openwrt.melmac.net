@@ -1,6 +1,6 @@
 # stangri's OpenWrt packages sources
 
-This repo contains source code for the packages I'm maintaining for OpenWrt. For more information check out [documentation](https://docs.openwrt.melmac.net) or [browse code at GitHub](https://github.com/stangri/source.openwrt.melmac.net).
+This repo contains source code for the packages I'm maintaining for OpenWrt. For more information check out [documentation](https://docs.openwrt.melmac.ca) or [browse code at GitHub](https://github.com/stangri/source.openwrt.melmac.ca).
 
 Individual packages and are available in their own repositories:
 
@@ -22,15 +22,15 @@ Individual packages and are available in their own repositories:
 
 Documentation for packages is available at:
 
-- [adblock-fast](https://docs.openwrt.melmac.net/adblock-fast/)
-- [fakeinternet](https://docs.openwrt.melmac.net/fakeinternet/)
-- [https-dns-proxy](https://docs.openwrt.melmac.net/https-dns-proxy/)
-- [luci-app-advanced-reboot](https://docs.openwrt.melmac.net/luci-app-advanced-reboot/)
-- [netclient](https://docs.openwrt.melmac.net/netclient/)
-- [pbr](https://docs.openwrt.melmac.net/pbr/)
-- [slider-support](https://docs.openwrt.melmac.net/slider-support/)
-- [wireshark-helper](https://docs.openwrt.melmac.net/wireshark-helper/)
-- [wlanblinker](https://docs.openwrt.melmac.net/wlanblinker/)
+- [adblock-fast](https://docs.openwrt.melmac.ca/adblock-fast/)
+- [fakeinternet](https://docs.openwrt.melmac.ca/fakeinternet/)
+- [https-dns-proxy](https://docs.openwrt.melmac.ca/https-dns-proxy/)
+- [luci-app-advanced-reboot](https://docs.openwrt.melmac.ca/luci-app-advanced-reboot/)
+- [netclient](https://docs.openwrt.melmac.ca/netclient/)
+- [pbr](https://docs.openwrt.melmac.ca/pbr/)
+- [slider-support](https://docs.openwrt.melmac.ca/slider-support/)
+- [wireshark-helper](https://docs.openwrt.melmac.ca/wireshark-helper/)
+- [wlanblinker](https://docs.openwrt.melmac.ca/wlanblinker/)
 
 <!-- markdownlint-disable MD033 -->
 
