@@ -4,9 +4,6 @@
 [submodule "adblock-fast"]
 	path = adblock-fast
 	url = git@github.com:stangri/adblock-fast.git
-[submodule "fakeinternet"]
-	path = fakeinternet
-	url = git@github.com:stangri/fakeinternet.git
 [submodule "https-dns-proxy"]
 	path = https-dns-proxy
 	url = git@github.com:stangri/https-dns-proxy.git
@@ -16,9 +13,6 @@
 [submodule "luci-app-advanced-reboot"]
 	path = luci-app-advanced-reboot
 	url = git@github.com:stangri/luci-app-advanced-reboot.git
-[submodule "luci-app-fakeinternet"]
-	path = luci-app-fakeinternet
-	url = git@github.com:stangri/luci-app-fakeinternet.git
 [submodule "luci-app-https-dns-proxy"]
 	path = luci-app-https-dns-proxy
 	url = git@github.com:stangri/luci-app-https-dns-proxy.git
@@ -28,21 +22,6 @@
 [submodule "pbr"]
 	path = pbr
 	url = git@github.com:stangri/pbr.git
-[submodule "slider-support"]
-	path = slider-support
-	url = git@github.com:stangri/slider-support.git
-[submodule "wireshark-helper"]
-	path = wireshark-helper
-	url = git@github.com:stangri/wireshark-helper.git
-[submodule "wlanblinker"]
-	path = wlanblinker
-	url = git@github.com:stangri/wlanblinker.git
-[submodule "luci-app-wireshark-helper"]
-	path = luci-app-wireshark-helper
-	url = git@github.com:stangri/luci-app-wireshark-helper.git
-[submodule "luci-app-wlanblinker"]
-	path = luci-app-wlanblinker
-	url = git@github.com:stangri/luci-app-wlanblinker.git
 [submodule "sunwait"]
 	path = sunwait
 	url = git@github.com:stangri/sunwait.git
