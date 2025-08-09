@@ -28,3 +28,9 @@
 [submodule "stangri"]
 	path = stangri
 	url = https://github.com/stangri/stangri.git
+[submodule "remote-agent"]
+	path = remote-agent
+	url = https://github.com/stangri/remote-agent
+[submodule "remote-controller"]
+	path = remote-controller
+	url = https://github.com/stangri/remote-controller
