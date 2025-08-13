@@ -34,3 +34,6 @@
 [submodule "remote-controller"]
 	path = remote-controller
 	url = https://github.com/stangri/remote-controller
+[submodule "luci-app-yaaw"]
+	path = luci-app-yaaw
+	url = git@github.com:stangri/luci-app-yaaw.git
